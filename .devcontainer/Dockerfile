@@ -1,38 +1,26 @@
-FROM ubuntu:latest
+# mise 公式の Debian イメージ。git、curl、CA 証明書と mise を含み、
+# PATH に /mise/shims、MISE_DATA_DIR に /mise が設定済み。
+FROM jdxcode/mise:2026.9.12-debian
 
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
-	git \
-	curl \
 	openssh-client \
-	ca-certificates \
-	libpq-dev \
-	wget \
+	procps \
 	&& rm -rf /var/lib/apt/lists/*
 
-# GitHub公式ホストのaptリポジトリ（cli.github.com）からghコマンドを導入する。
-# DebianディストリビューションのaptリポジトリにあるghはGitHub CLIとは別物のため使用しない。
-RUN mkdir -p -m 755 /etc/apt/keyrings \
-	&& out=$(mktemp) && wget -nv -O"$out" https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-	&& cat "$out" | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-	&& chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-	&& mkdir -p -m 755 /etc/apt/sources.list.d \
-	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-	&& apt-get update \
-	&& apt-get install -y --no-install-recommends gh \
-	&& rm -rf /var/lib/apt/lists/*
+# ツール(Node、pnpm、gh、rtk など)は mise.toml と mise.lock のとおりにイメージへ入れる。
+WORKDIR /tmp/mise-bootstrap
+COPY mise.toml mise.lock ./
+RUN mise trust \
+	&& mise install --locked \
+	&& rm -rf /mise/cache /tmp/mise-bootstrap
 
-# rtkの導入
-ARG RTK_VERSION=0.45.0
-
-RUN set -eux; \
-	case "$(dpkg --print-architecture)" in \
-	amd64) rtk_target="x86_64-unknown-linux-musl" ;; \
-	arm64) rtk_target="aarch64-unknown-linux-gnu" ;; \
-	*) echo "Unsupported architecture" >&2; exit 1 ;; \
-	esac; \
-	curl -fsSL "https://github.com/rtk-ai/rtk/releases/download/v${RTK_VERSION}/rtk-${rtk_target}.tar.gz" \
-	| tar -xz -C /usr/local/bin rtk; \
-	chmod +x /usr/local/bin/rtk
+# 起動後は、リポジトリの mise.toml をグローバル設定として読む。
+# これにより、/workspaces の外のディレクトリでも同じツールを使える。
+# グローバル設定のルートも /workspaces にして、タスクをリポジトリ直下で実行させる
+# (未指定だとホームディレクトリで実行される)。
+ENV MISE_GLOBAL_CONFIG_FILE=/workspaces/mise.toml \
+	MISE_GLOBAL_CONFIG_ROOT=/workspaces \
+	MISE_TRUSTED_CONFIG_PATHS=/workspaces
 
 WORKDIR /workspaces
