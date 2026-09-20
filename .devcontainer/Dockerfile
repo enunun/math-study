@@ -6,6 +6,7 @@ RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
 	openssh-client \
 	procps \
+	jq \
 	&& rm -rf /var/lib/apt/lists/*
 
 # ツール(Node，pnpm，gh，rtkなど)はmise.tomlとmise.lockのとおりにイメージへ入れる．
