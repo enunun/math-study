@@ -10,7 +10,8 @@
 				"anthropic.claude-code",
 				"growthjack.claude-code-usage",
 				"astro-build.astro-vscode",
-				"unifiedjs.vscode-mdx"
+				"unifiedjs.vscode-mdx",
+				"oxc.oxc-vscode"
 			]
 		}
 	},

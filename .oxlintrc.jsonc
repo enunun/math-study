@@ -1,0 +1,69 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "promise", "node"],
+  // 実験的な nursery 以外の、すべてのカテゴリを error にする。
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "pedantic": "error",
+    "perf": "error",
+    "style": "error",
+    "restriction": "error",
+  },
+  "options": {
+    // 型情報を使うルールを有効にする。TypeScript の診断は astro check が担う。
+    "typeAware": true,
+    "reportUnusedDisableDirectives": "error",
+  },
+  "rules": {
+    // 互いに矛盾する。Astro や各種の設定ファイルは default export を要求する。
+    "import/no-default-export": "off",
+    "import/no-named-export": "off",
+    "import/prefer-default-export": "off",
+
+    // null を使わない方針(unicorn/no-null)と矛盾する。
+    "no-undefined": "off",
+
+    // 整形は oxfmt が担う。
+    "sort-imports": "off",
+
+    // 設定オブジェクトのキーは、アルファベット順より意味のまとまりで並べる。
+    "sort-keys": "off",
+
+    // 宣言は、1つの文に1つの変数とする。
+    "one-var": "off",
+
+    // ?.、async/await、オブジェクトのスプレッドは標準の構文。Wasm の初期化や fetch にも使う。
+    "oxc/no-optional-chaining": "off",
+    "oxc/no-async-await": "off",
+    "oxc/no-rest-spread-properties": "off",
+
+    // 三項演算子と、行内コメントは使う。
+    "no-ternary": "off",
+    "no-inline-comments": "off",
+
+    // コメントは日本語で書くため、大文字始まりの規則は適用できない。
+    "capitalized-comments": "off",
+
+    // 数値リテラルは、0、1、-1 だけ許す。
+    "no-magic-numbers": ["error", { "ignore": [-1, 0, 1] }],
+
+    // 関数は宣言で書く。アロー関数はコールバックに使える。
+    "func-style": ["error", "declaration", { "allowArrowFunctions": true }],
+
+    // DOM の型(Element など)は readonly にできない。
+    "typescript/prefer-readonly-parameter-types": "off",
+  },
+  "overrides": [
+    {
+      // Astro のコンポーネントは、PascalCase のファイル名にする。
+      // 先頭のコードブロックは常にモジュールとして扱われる。
+      "files": ["**/*.astro"],
+      "rules": {
+        "unicorn/filename-case": ["error", { "cases": { "kebabCase": true, "pascalCase": true } }],
+        "import/unambiguous": "off",
+      },
+    },
+  ],
+  "ignorePatterns": ["**/dist/**", "**/.astro/**"],
+}

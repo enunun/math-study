@@ -25,7 +25,22 @@ description = "ビルド済みのサイトを、公開時と同じ base パス�
 depends = ["build"]
 run = "pnpm --filter site preview --host"
 
-[tasks.check]
-description = "型検査とビルドを実行する"
+[tasks.fmt]
+description = "コードを整形する"
 depends = ["install"]
-run = ["pnpm --filter site check", "pnpm --filter site build"]
+run = "pnpm exec oxfmt"
+
+[tasks.lint]
+description = "厳格な設定でリントする"
+depends = ["install"]
+run = "pnpm exec oxlint --deny-warnings"
+
+[tasks.check]
+description = "整形、リント、型検査、ビルドを検査する"
+depends = ["install"]
+run = [
+  "pnpm exec oxfmt --check",
+  "pnpm exec oxlint --deny-warnings",
+  "pnpm --filter site check",
+  "pnpm --filter site build",
+]
