@@ -7,21 +7,20 @@ const { open = false } = Astro.props;
 ---
 
 <span class:list={['detail', { 'is-open': open }]}>
-  <span class="detail-static" aria-hidden="true">。</span>
+  <span class="detail-body"><slot /></span>
   <button
     type="button"
     class="detail-toggle"
     aria-expanded={open ? 'true' : 'false'}
     aria-label="補足"
   >
-    <span class="detail-mark-closed" aria-hidden="true">…</span>
-    <span class="detail-mark-open" aria-hidden="true">。</span>
+    <span class="detail-mark-closed" aria-hidden="true">［…］</span>
+    <span class="detail-mark-open" aria-hidden="true">［閉じる］</span>
   </button>
-  <span class="detail-body"><slot /></span>
 </span>
 
 <style>
-  /* JavaScriptが無効なとき(htmlにjsクラスがないとき)は、補足を常に表示する。 */
+  /* JavaScriptが無効なとき(htmlにjsクラスがないとき)は，補足を常に表示し，切り替えボタンを隠す． */
   .detail-toggle {
     display: none;
     padding: 0;
@@ -29,16 +28,13 @@ const { open = false } = Astro.props;
     background: none;
     color: var(--sl-color-text-accent);
     font: inherit;
+    font-size: 0.85em;
     cursor: pointer;
   }
 
   .detail-toggle:focus-visible {
     outline: 2px solid var(--sl-color-accent);
     outline-offset: 2px;
-  }
-
-  .detail-mark-closed {
-    border-block-end: 1px dotted currentcolor;
   }
 
   .detail-mark-open {
@@ -57,11 +53,13 @@ const { open = false } = Astro.props;
     display: inline;
   }
 
-  :global(html.js) .detail-static {
+  :global(html.js) .detail:not(.is-open) .detail-body {
     display: none;
   }
 
-  :global(html.js) .detail:not(.is-open) .detail-body {
-    display: none;
+  @media print {
+    :global(html.js) .detail-toggle {
+      display: none;
+    }
   }
 </style>

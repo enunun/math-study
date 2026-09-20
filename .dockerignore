@@ -1,6 +1,6 @@
-# ビルドコンテキストは、DockerfileがCOPYするファイルだけに絞る。
-# .devcontainer/claude-home/の認証情報やnode_modulesをデーモンへ送らないための許可リスト方式。
-# Dockerfileで新しくファイルをCOPYするときは、ここに追加する。
+# ビルドコンテキストは，DockerfileがCOPYするファイルだけに絞る．
+# .devcontainer/claude-home/の認証情報やnode_modulesをデーモンへ送らないための許可リスト方式．
+# Dockerfileで新しくファイルをCOPYするときは，ここに追加する．
 *
 !mise.toml
 !mise.lock

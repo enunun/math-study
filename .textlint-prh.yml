@@ -2,7 +2,7 @@ version: 1
 rules:
   - expected: $1：
     pattern: /([ぁ-んァ-ヶ一-龠々ー」]\)|[ぁ-んァ-ヶ一-龠々ー）」])[:：]\s*/
-    prh: 和文の直後のコロンは、全角にする。後ろにスペースを入れない。
+    prh: 和文の直後のコロンは，全角にする．後ろにスペースを入れない．
     specs:
       - from: '公開先: 本文'
         to: '公開先：本文'
@@ -14,3 +14,21 @@ rules:
         to: 'Note: 注意'
       - from: 'foo(): bar'
         to: 'foo(): bar'
+
+  - expected: ，
+    pattern: /、/
+    prh: 読点は，全角のコンマ「，」にする．
+    specs:
+      - from: 本文、続き
+        to: 本文，続き
+      - from: 本文，続き
+        to: 本文，続き
+
+  - expected: ．
+    pattern: /。/
+    prh: 句点は，全角のピリオド「．」にする．
+    specs:
+      - from: 文である。
+        to: 文である．
+      - from: 文である．
+        to: 文である．

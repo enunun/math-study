@@ -1,5 +1,5 @@
-# コミット時に、ステージしたファイルを検査する。
-# CIは、同じ設定のツールをリポジトリ全体に対して実行する(mise run check)。
+# コミット時に，ステージしたファイルを検査する．
+# CIは，同じ設定のツールをリポジトリ全体に対して実行する(mise run check)．
 pre-commit:
   parallel: true
   skip:
@@ -11,7 +11,7 @@ pre-commit:
         - '*.{ts,tsx,js,mjs,cjs,json,jsonc,css,md,mdx,yml,yaml,toml}'
         - '**/*.{ts,tsx,js,mjs,cjs,json,jsonc,css,md,mdx,yml,yaml,toml}'
       run: pnpm exec oxfmt --check --no-error-on-unmatched-pattern {staged_files}
-      fail_text: 整形が必要です。`mise run fmt`を実行してください。
+      fail_text: 整形が必要です．`mise run fmt`を実行してください．
     code:
       glob:
         - '*.{ts,tsx,js,mjs,cjs,astro}'

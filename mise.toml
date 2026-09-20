@@ -22,7 +22,7 @@ depends = ["install"]
 run = "pnpm --filter site build"
 
 [tasks.preview]
-description = "ビルド済みのサイトを、公開時と同じbaseパスで確認する"
+description = "ビルド済みのサイトを，公開時と同じbaseパスで確認する"
 depends = ["build"]
 run = "pnpm --filter site preview --host"
 
@@ -47,7 +47,7 @@ depends = ["install"]
 run = "pnpm exec markdownlint-cli2"
 
 [tasks."lint:text"]
-description = "textlintで文章を検査する(文体、和欧文間のスペース、AIらしい表現)"
+description = "textlintで文章を検査する(文体，和欧文間のスペース，AIらしい表現)"
 depends = ["install"]
 run = "pnpm exec textlint site/src/content"
 
@@ -60,10 +60,10 @@ description = "Gitのフック(コミット時の検査)を設定する"
 run = "lefthook install"
 
 [tasks.setup]
-description = "開発環境を整える(依存パッケージ、型定義、Gitのフック)"
+description = "開発環境を整える(依存パッケージ，型定義，Gitのフック)"
 depends = ["sync", "hooks"]
 
 [tasks.check]
-description = "整形、リント、型検査、ビルドを検査する(CIと同じ)"
+description = "整形，リント，型検査，ビルドを検査する(CIと同じ)"
 depends = ["lint"]
 run = ["pnpm exec oxfmt --check", "pnpm --filter site check", "pnpm --filter site build"]
