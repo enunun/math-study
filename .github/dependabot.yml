@@ -9,3 +9,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # astro check は TypeScript のプログラム用 API に依存し、TypeScript 7 以降はまだ対応していない。
+      # Astro が対応したら外す(https://github.com/withastro/roadmap/discussions/1321)。
+      - dependency-name: typescript
+        versions: [">=7"]
