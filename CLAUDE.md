@@ -138,6 +138,48 @@ rtk init --global       # Add RTK to ~/.claude/CLAUDE.md
 Overall average: **60-90% token reduction** on common development operations.
 <!-- /rtk-instructions -->
 
+# math-study
+
+A study site for mathematics (Astro 7, Starlight, MDX). `README.md` (Japanese) gives the overview. `docs/tech-decisions.md` records the technical decisions and the facts verified along the way.
+
+## Working conventions
+
+- This is a solo project: work on `main` only. Do not use branches or pull requests. Commit finished work and push it to `main`, and split unrelated changes into separate commits.
+- Pushing publishes the site through GitHub Pages. After a push, confirm that the GitHub Actions `build` and `deploy` jobs succeed.
+- After a change, run `mise run check`. For changes that affect rendering or behavior, also run `mise run e2e` and check the appearance with `mise run screenshot`. The procedure is in the `verify-site` skill.
+- Read the `write-content` skill before writing site content or documentation.
+- Run `finalize-artifacts` before reporting a deliverable as done (see "Artifact Cleanup" below).
+- Prefix commands with `rtk`. The hook is in `.claude/settings.json`; do not install it in the user-level settings.
+- `git commit` runs lefthook hooks. If they fail, fix what they report. Never use `--no-verify`.
+
+## Language
+
+- Write everything meant for Claude in English: `CLAUDE.md`, `.claude/skills/**`, and `docs/**`. Only `README.md` and the site content (`site/src/content/**`) are in Japanese. Code comments and commit messages are also in Japanese.
+- Japanese text follows these rules. textlint enforces them on the site content and `README.md`, in CI and in the pre-commit hook.
+  - Use the plain form (である調), not ですます.
+  - Use the full-width comma "，" (U+FF0C) and full-width period "．" (U+FF0E). Never use "、" or "。".
+  - Put no space between Japanese and Latin text, digits, or inline code ("MDXの記法", not "MDX の記法").
+  - Use a full-width colon "：" after Japanese text, with no space after it.
+  - Avoid AI-sounding writing: bold-prefix bullet lists, hype, and emphasis in ordinary sentences.
+
+## Pitfalls
+
+- In agent environments (`CLAUDECODE=1`), `astro preview` starts a background server and the command itself exits. E2E tests use `e2e/serve.ts` instead. If you start a preview by hand, manage it with `astro preview status` and `astro preview stop`.
+- Type-aware linting (oxlint) needs the type definitions that `astro sync` generates. `mise run lint` runs `sync` first.
+- In the container, `mise.toml` is read as the global config, so `mise lock` needs `--global`.
+- Keep `typescript` on the 6.x line: `astro check` does not support TypeScript 7.
+- pnpm 12 allows dependency build scripts only when listed. Add them to `allowBuilds` in `pnpm-workspace.yaml`.
+- Write the textlint config in `.textlintrc.yml`. In MDX, `textlint-disable` comments do not work, so rewrite the text to avoid a false positive.
+- oxfmt does not format `.astro` files. Put logic in `.ts` files and keep `.astro` files thin.
+- The Playwright browsers live in `/opt/ms-playwright`. If the version of `@playwright/test` in `package.json` drifts from the installed browsers, run `mise run browsers`.
+- The test page (`site/src/content/docs/dev/notation.mdx`) is hidden from the sidebar and search. Update it whenever the notation changes.
+
+## Skills
+
+- `verify-site`: how to verify a change (build, lint, E2E, screenshots).
+- `write-content`: how to write content and use the notation (writing rules, folding components, handling lint findings).
+- `finalize-artifacts`: how to finish a deliverable.
+
 # Artifact Cleanup
 
 ## Golden Rule

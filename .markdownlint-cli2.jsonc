@@ -1,6 +1,6 @@
 {
-  // MarkdownとMDX(Starlightのcontent)を検査する．
-  "globs": ["site/src/content/**/*.{md,mdx}"],
+  // サイトの文書(MarkdownとMDX)と，README，開発者向けの文書を検査する．
+  "globs": ["site/src/content/**/*.{md,mdx}", "README.md", "docs/**/*.md"],
   "config": {
     // ルールは，番号(MD013など)ではなく，説明的な別名で指定する．
     "default": true,

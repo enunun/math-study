@@ -49,7 +49,7 @@ run = "pnpm exec markdownlint-cli2"
 [tasks."lint:text"]
 description = "textlintで文章を検査する(文体，和欧文間のスペース，AIらしい表現)"
 depends = ["install"]
-run = "pnpm exec textlint site/src/content"
+run = "pnpm exec textlint site/src/content README.md"
 
 [tasks.lint]
 description = "すべてのリントを実行する"
@@ -68,6 +68,11 @@ run = "pnpm exec playwright install --only-shell chromium"
 description = "ブラウザで動作を確認する(ビルド済みのサイトを対象にする)"
 depends = ["build", "browsers"]
 run = "pnpm exec playwright test"
+
+[tasks.screenshot]
+description = "ページのスクリーンショットを撮る(引数の一覧はmise run screenshotで表示する)"
+depends = ["build", "browsers"]
+run = "node e2e/screenshot.ts"
 
 [tasks.setup]
 description = "開発環境を整える(依存パッケージ，型定義，Playwrightのブラウザ，Gitのフック)"

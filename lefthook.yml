@@ -18,8 +18,13 @@ pre-commit:
         - '**/*.{ts,tsx,js,mjs,cjs,astro}'
       run: mise run sync && pnpm exec oxlint --deny-warnings {staged_files}
     markdown:
-      glob: 'site/src/content/**/*.{md,mdx}'
+      glob:
+        - 'site/src/content/**/*.{md,mdx}'
+        - 'README.md'
+        - 'docs/**/*.md'
       run: pnpm exec markdownlint-cli2 --no-globs {staged_files}
     text:
-      glob: 'site/src/content/**/*.{md,mdx}'
+      glob:
+        - 'site/src/content/**/*.{md,mdx}'
+        - 'README.md'
       run: pnpm exec textlint {staged_files}

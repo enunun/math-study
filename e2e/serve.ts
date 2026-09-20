@@ -40,7 +40,7 @@ function resolveFile(url: string): string | undefined {
 
 // ビルド済みのサイト(site/dist)を，公開時と同じbaseパスで配信する．
 // astro previewは，エージェント環境ではバックグラウンドで起動して終了するため，使わない．
-createServer((request, response) => {
+const server = createServer((request, response) => {
   const file = resolveFile(request.url ?? '/');
   if (file === undefined || !existsSync(file)) {
     response.writeHead(STATUS_NOT_FOUND, { 'content-type': 'text/plain; charset=utf-8' });
@@ -51,4 +51,7 @@ createServer((request, response) => {
     'content-type': CONTENT_TYPES[path.extname(file)] ?? 'application/octet-stream',
   });
   createReadStream(file).pipe(response);
-}).listen(PORT, '127.0.0.1');
+});
+server.listen(PORT, '127.0.0.1');
+
+export { server };
