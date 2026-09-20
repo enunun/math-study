@@ -7,11 +7,15 @@ pre-commit:
     - rebase
   commands:
     format:
-      glob: '**/*.{ts,tsx,js,mjs,cjs,json,jsonc,css,md,mdx,yml,yaml,toml}'
+      glob:
+        - '*.{ts,tsx,js,mjs,cjs,json,jsonc,css,md,mdx,yml,yaml,toml}'
+        - '**/*.{ts,tsx,js,mjs,cjs,json,jsonc,css,md,mdx,yml,yaml,toml}'
       run: pnpm exec oxfmt --check --no-error-on-unmatched-pattern {staged_files}
       fail_text: 整形が必要です。`mise run fmt`を実行してください。
     code:
-      glob: '**/*.{ts,tsx,js,mjs,cjs,astro}'
+      glob:
+        - '*.{ts,tsx,js,mjs,cjs,astro}'
+        - '**/*.{ts,tsx,js,mjs,cjs,astro}'
       run: mise run sync && pnpm exec oxlint --deny-warnings {staged_files}
     markdown:
       glob: 'site/src/content/**/*.{md,mdx}'
