@@ -16,7 +16,7 @@
 		}
 	},
 	"forwardPorts": [4321],
-	"postCreateCommand": "mise run install",
+	"postCreateCommand": "mise run setup",
 	"initializeCommand": "mkdir -p \"${localWorkspaceFolder}/.devcontainer/claude-home/.claude\" \"${localWorkspaceFolder}/.devcontainer/rtk-home/.config/rtk\" \"${localWorkspaceFolder}/.devcontainer/rtk-home/.local/share/rtk\"",
 	"mounts": [
 		"source=${localWorkspaceFolder}/.devcontainer/claude-home/.claude,target=/root/.claude,type=bind",

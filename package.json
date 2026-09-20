@@ -2,9 +2,18 @@
   "name": "math-study",
   "private": true,
   "devDependencies": {
+    "@textlint-ja/textlint-rule-preset-ai-writing": "^1.7.0",
+    "markdownlint-cli2": "^0.23.2",
     "oxfmt": "^0.68.0",
     "oxlint": "^1.83.0",
-    "oxlint-tsgolint": "^7.0.2002"
+    "oxlint-tsgolint": "^7.0.2002",
+    "textlint": "^15.8.0",
+    "textlint-filter-rule-comments": "^1.3.0",
+    "textlint-plugin-mdx": "^1.1.0",
+    "textlint-rule-ja-space-around-code": "^3.0.3",
+    "textlint-rule-ja-space-between-half-and-full-width": "^3.0.3",
+    "textlint-rule-preset-ja-spacing": "^3.0.3",
+    "textlint-rule-preset-ja-technical-writing": "^12.0.2"
   },
   "engines": {
     "node": ">=22.12.0"

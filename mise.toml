@@ -3,6 +3,7 @@ node = "24"
 pnpm = "12"
 gh = "2"
 rtk = "0.45.0"
+lefthook = "2"
 
 [settings]
 lockfile = true
@@ -21,31 +22,48 @@ depends = ["install"]
 run = "pnpm --filter site build"
 
 [tasks.preview]
-description = "ビルド済みのサイトを、公開時と同じ base パスで確認する"
+description = "ビルド済みのサイトを、公開時と同じbaseパスで確認する"
 depends = ["build"]
 run = "pnpm --filter site preview --host"
 
 [tasks.sync]
-description = "Astro の型定義を生成する(型を使うリントが参照する)"
+description = "Astroの型定義を生成する(型を使うリントが参照する)"
 depends = ["install"]
 run = "pnpm --filter site exec astro sync"
 
 [tasks.fmt]
-description = "コードを整形する"
+description = "コードと文書を整形する"
 depends = ["install"]
 run = "pnpm exec oxfmt"
 
-[tasks.lint]
-description = "厳格な設定でリントする"
+[tasks."lint:code"]
+description = "oxlintで厳格にリントする"
 depends = ["sync"]
 run = "pnpm exec oxlint --deny-warnings"
 
+[tasks."lint:markdown"]
+description = "markdownlintでMarkdownを検査する"
+depends = ["install"]
+run = "pnpm exec markdownlint-cli2"
+
+[tasks."lint:text"]
+description = "textlintで文章を検査する(文体、和欧文間のスペース、AIらしい表現)"
+depends = ["install"]
+run = "pnpm exec textlint site/src/content"
+
+[tasks.lint]
+description = "すべてのリントを実行する"
+depends = ["lint:code", "lint:markdown", "lint:text"]
+
+[tasks.hooks]
+description = "Gitのフック(コミット時の検査)を設定する"
+run = "lefthook install"
+
+[tasks.setup]
+description = "開発環境を整える(依存パッケージ、型定義、Gitのフック)"
+depends = ["sync", "hooks"]
+
 [tasks.check]
-description = "整形、リント、型検査、ビルドを検査する"
-depends = ["sync"]
-run = [
-  "pnpm exec oxfmt --check",
-  "pnpm exec oxlint --deny-warnings",
-  "pnpm --filter site check",
-  "pnpm --filter site build",
-]
+description = "整形、リント、型検査、ビルドを検査する(CIと同じ)"
+depends = ["lint"]
+run = ["pnpm exec oxfmt --check", "pnpm --filter site check", "pnpm --filter site build"]
