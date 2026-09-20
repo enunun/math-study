@@ -59,9 +59,19 @@ depends = ["lint:code", "lint:markdown", "lint:text"]
 description = "Gitのフック(コミット時の検査)を設定する"
 run = "lefthook install"
 
+[tasks.browsers]
+description = "Playwrightのブラウザを，package.jsonの版に合わせて入れる(入っていれば何もしない)"
+depends = ["install"]
+run = "pnpm exec playwright install --only-shell chromium"
+
+[tasks.e2e]
+description = "ブラウザで動作を確認する(ビルド済みのサイトを対象にする)"
+depends = ["build", "browsers"]
+run = "pnpm exec playwright test"
+
 [tasks.setup]
-description = "開発環境を整える(依存パッケージ，型定義，Gitのフック)"
-depends = ["sync", "hooks"]
+description = "開発環境を整える(依存パッケージ，型定義，Playwrightのブラウザ，Gitのフック)"
+depends = ["sync", "browsers", "hooks"]
 
 [tasks.check]
 description = "整形，リント，型検査，ビルドを検査する(CIと同じ)"

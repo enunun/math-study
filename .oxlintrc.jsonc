@@ -51,6 +51,9 @@
     // 数値リテラルは，0，1，-1だけ許す．
     "no-magic-numbers": ["error", { "ignore": [-1, 0, 1] }],
 
+    // 型のインポートは，値のインポートと別の行に書く．
+    "no-duplicate-imports": ["error", { "allowSeparateTypeImports": true }],
+
     // 関数は宣言で書く．アロー関数はコールバックに使える．
     "func-style": ["error", "declaration", { "allowArrowFunctions": true }],
 
@@ -65,6 +68,19 @@
       "rules": {
         "unicorn/filename-case": ["error", { "cases": { "kebabCase": true, "pascalCase": true } }],
         "import/unambiguous": "off",
+      },
+    },
+    {
+      // E2Eテストと，その設定，配信用のスクリプトは，Node.jsで実行する．
+      // describeには多数のテストをまとめ，期待値には件数などの数値を書く．
+      // innerTextはPlaywrightのメソッドで，DOMのプロパティではない．
+      "files": ["e2e/**", "playwright.config.ts"],
+      "rules": {
+        "import/no-nodejs-modules": "off",
+        "node/no-sync": "off",
+        "max-lines-per-function": "off",
+        "no-magic-numbers": "off",
+        "unicorn/prefer-dom-node-text-content": "off",
       },
     },
   ],

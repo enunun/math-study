@@ -12,8 +12,14 @@ RUN apt-get update \
 WORKDIR /tmp/mise-bootstrap
 COPY mise.toml mise.lock ./
 RUN mise trust \
-	&& mise install --locked \
-	&& rm -rf /mise/cache /tmp/mise-bootstrap
+	&& mise install --locked
+
+# Playwright(ブラウザでの動作確認)のChromiumと，実行に必要なシステムのライブラリを入れる．
+# 版は，package.jsonの@playwright/testに合わせる．食い違っても，mise run browsersで必要な版が加わる．
+ARG PLAYWRIGHT_VERSION=1.63.0
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+RUN mise exec -- npx --yes playwright@${PLAYWRIGHT_VERSION} install --with-deps --only-shell chromium \
+	&& rm -rf /var/lib/apt/lists/* /root/.npm /mise/cache /tmp/mise-bootstrap
 
 # 起動後は，リポジトリのmise.tomlをグローバル設定として読む．
 # これにより，/workspacesの外のディレクトリでも同じツールを使える．
