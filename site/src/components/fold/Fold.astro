@@ -1,0 +1,65 @@
+---
+interface Props {
+  kind: 'proof' | 'detail';
+  title?: string;
+  open?: boolean;
+}
+
+const labels = { proof: '証明', detail: '補足' } as const;
+const { kind, title, open = false } = Astro.props;
+---
+
+<details class:list={['fold', `fold-${kind}`]} open={open}>
+  <summary>
+    <span class="fold-label">{labels[kind]}</span>
+    {title && <span class="fold-title">{' '}{title}</span>}
+  </summary>
+  <div class="fold-body"><slot /></div>
+</details>
+
+<style>
+  .fold {
+    margin-block: 1.5rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-inline-start-width: 0.3rem;
+    border-radius: 0.4rem;
+  }
+
+  .fold-proof {
+    border-inline-start-color: var(--sl-color-accent);
+  }
+
+  summary {
+    padding: 0.6rem 0.9rem;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  summary:focus-visible {
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: 2px;
+  }
+
+  .fold-label {
+    color: var(--sl-color-text-accent);
+  }
+
+  .fold-title {
+    margin-inline-start: 0.3em;
+  }
+
+  .fold[open] > summary {
+    border-block-end: 1px solid var(--sl-color-gray-5);
+  }
+
+  .fold-body {
+    margin-top: 0;
+    padding: 0.4rem 1.1rem 1rem;
+  }
+</style>
+
+<script>
+  import { installAutoOpen } from './auto-open';
+
+  installAutoOpen();
+</script>
