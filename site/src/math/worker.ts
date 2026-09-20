@@ -1,12 +1,15 @@
 import { parentPort, workerData } from 'node:worker_threads';
 
+import type { Environments, Macros } from './macros';
+
 /**
  * MathJaxを動かすWorkerスレッド．ViteやAstroの実行環境を通さず，Node.jsのネイティブなモジュールとして動く．
  * メインスレッドとは，メッセージでやり取りする．
  */
 
 interface WorkerInit {
-  macros: Record<string, string | [string, number]>;
+  macros: Macros;
+  environments: Environments;
   fontUrl: string;
 }
 
@@ -43,6 +46,7 @@ function buildConfig(init: WorkerInit): Record<string, unknown> {
     tex: {
       packages: { '[-]': ['noundefined'], '[+]': ['bussproofs'] },
       macros: init.macros,
+      environments: init.environments,
       formatError: (_jax: unknown, error: Error) => {
         throw error;
       },

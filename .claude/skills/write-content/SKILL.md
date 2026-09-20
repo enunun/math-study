@@ -41,7 +41,9 @@ import { Detail, Proof, Remark } from '@/components/fold';
 
 Math is rendered at build time by MathJax 4. Write inline math as `$…$` and display math as `$$…$$`. The details and the rendered examples are on the test page (`site/src/content/docs/dev/notation.mdx`).
 
-- Custom macros are defined in `site/src/math/macros.ts` (`\R`, `\N`, `\Z`, `\Q`, `\C`, `\abs{x}`, `\norm{v}`, `\set{…}`, `\rank`). After changing them, update the list on the test page.
+- Custom macros are defined in `site/src/math/macros.ts`. After changing them, update the list on the test page.
+  - Number sets use the names of the LaTeX `numbersets` package: `\NaturalNumbers`, `\Integers`, `\RationalNumbers`, `\RealNumbers`, `\ComplexNumbers`. They take an optional style, `\RealNumbers[bfup]`, with `bb` (blackboard bold, the default), `bfup` (upright bold), and `bfit` (italic bold). `\NumberSet[style]{X}` sets any letter the same way.
+  - The others are `\abs{x}`, `\norm{v}`, `\set{…}`, and `\rank`.
 - An undefined macro or a TeX syntax error fails the build. The message shows the file line and the TeX source.
 - Write proof trees in the `bussproofs` notation with `\AxiomC`, `\UnaryInfC`, `\BinaryInfC`, `\TrinaryInfC`, `\RightLabel`, and `\LeftLabel`. Write a sequent as one formula inside `\AxiomC{$\Gamma \vdash A$}`. The `\Axiom…\fCenter…` form renders but gets no speech string.
 - Each formula gets an English speech string in `aria-label`. Japanese inside `\text{…}` is read one character at a time, and `\norm` is read as "metric". These are limits of MathJax's speech engine.

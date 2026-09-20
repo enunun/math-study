@@ -50,10 +50,21 @@ function collectSites(tree: Root): MathSite[] {
   return sites;
 }
 
+/**
+ * Starlightが，本文の中で隣り合う要素に付ける上の余白(`margin-top`)を，数式の内側で無効にするクラス．
+ * MathJaxのCHTMLは`mjx-num`と`mjx-dbox`などの独自要素を隣り合わせに並べるため，
+ * このクラスがないと，分数や上付き文字，導出木の規則名の位置がずれる．
+ */
+const STARLIGHT_EXCLUDE_CLASS = 'not-content';
+
 /** 描画した要素で，文書の中の要素を置き換える． */
 function replace(target: Element, container: Element): void {
+  const { className } = container.properties;
   target.tagName = container.tagName;
-  target.properties = container.properties;
+  target.properties = {
+    ...container.properties,
+    className: [...(Array.isArray(className) ? className : []), STARLIGHT_EXCLUDE_CLASS],
+  };
   target.children = container.children;
 }
 

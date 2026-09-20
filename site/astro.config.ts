@@ -4,11 +4,11 @@ import { defineConfig } from 'astro/config';
 import remarkMath from 'remark-math';
 
 import { FONT_DIRECTORY, mathjaxIntegration, STYLESHEET_FILE } from './src/integrations/mathjax';
-import { macros } from './src/math/macros';
+import { environments, macros } from './src/math/macros';
 import { rehypeMathjax } from './src/plugins/rehype-mathjax';
 
 const base = '/math-study';
-const math = { macros, fontUrl: `${base}/${FONT_DIRECTORY}` };
+const math = { macros, environments, fontUrl: `${base}/${FONT_DIRECTORY}` };
 
 // https://astro.build/config
 export default defineConfig({

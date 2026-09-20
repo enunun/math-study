@@ -5,12 +5,13 @@ import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { macros } from '../math/macros';
+import { environments, macros } from '../math/macros';
 import { getRenderer, shutdownRenderer } from '../math/renderer';
 import { rehypeMathjax } from './rehype-mathjax';
 
 const options = {
   macros,
+  environments,
   fontUrl: '/math-study/mathjax-fonts',
   cssUrl: '/math-study/mathjax.css',
 };
@@ -32,7 +33,7 @@ afterAll(async () => {
 
 describe('rehypeMathjax', () => {
   it('行内の式を，読み上げ用のaria-labelとroleを付けたCHTMLにする', async () => {
-    const html = await render(String.raw`$x \in \R$`);
+    const html = await render(String.raw`$x \in \RealNumbers$`);
     expect(html).toContain('<mjx-container');
     expect(html).toContain('role="math"');
     expect(html).toContain('aria-label="x is a member of the real numbers"');
@@ -46,10 +47,30 @@ $$`);
     expect(html).toContain('aria-label="the absolute value of x is greater than or equal to 0"');
   });
 
-  it('自作マクロを展開する', async () => {
-    const html = await render(String.raw`$\N \subset \Z \subset \Q \subset \R \subset \C$`);
+  it('数の集合のマクロを，numbersetsパッケージの名前で展開する', async () => {
+    const html = await render(
+      String.raw`$\NaturalNumbers \subset \Integers \subset \RationalNumbers \subset \RealNumbers \subset \ComplexNumbers$`,
+    );
     expect(html).toContain('the natural numbers');
     expect(html).toContain('the complex numbers');
+  });
+
+  it('数の集合のスタイルを，任意引数で切り替える', async () => {
+    const blackboard = await render(String.raw`$\RealNumbers$`);
+    expect(await render(String.raw`$\RealNumbers[bb]$`)).toBe(blackboard);
+    expect(await render(String.raw`$\NumberSet{R}$`)).toBe(blackboard);
+    const upright = await render(String.raw`$\RealNumbers[bfup]$`);
+    const italic = await render(String.raw`$\RealNumbers[bfit]$`);
+    expect(upright).not.toBe(blackboard);
+    expect(italic).not.toBe(blackboard);
+    expect(italic).not.toBe(upright);
+    expect(await render(String.raw`$\NumberSet[bfup]{R}$`)).toBe(upright);
+  });
+
+  it('未知の数の集合のスタイルを，ビルドの失敗にする', async () => {
+    await expect(render(String.raw`$\RealNumbers[unknown]$`)).rejects.toThrow(
+      /Unknown environment 'numbersetstyleunknown'/u,
+    );
   });
 
   it('引数を取る自作マクロを展開する', async () => {
@@ -85,6 +106,11 @@ $$`,
     expect(html).not.toContain('data-braille');
   });
 
+  it('Starlightの余白の規則から外すため，数式の要素にnot-contentのクラスを付ける', async () => {
+    expect(await render('$x$')).toMatch(/<mjx-container class="[^"]*\bnot-content\b/u);
+    expect(await render('$$x$$')).toMatch(/<mjx-container class="[^"]*\bnot-content\b/u);
+  });
+
   it('数式のある文書だけに，CSSを読み込むlinkを加える', async () => {
     expect(await render('$x$')).toContain('<link rel="stylesheet" href="/math-study/mathjax.css">');
     expect(await render('数式のない文書である．')).not.toContain('mathjax.css');
@@ -116,7 +142,7 @@ $$`,
     const documents = [
       '$a + b$',
       String.raw`$$\int_0^1 x\,dx$$`,
-      String.raw`$\R$と$\N$`,
+      String.raw`$\RealNumbers$と$\NaturalNumbers$`,
       String.raw`$\set{1, 2}$`,
     ];
     const sequential: string[] = [];

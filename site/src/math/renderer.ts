@@ -4,11 +4,12 @@ import type { Element } from 'hast';
 import { fromHtml } from 'hast-util-from-html';
 import { visit } from 'unist-util-visit';
 
-import type { Macros } from './macros';
+import type { Environments, Macros } from './macros';
 import type { Request, Response } from './worker';
 
 interface RendererOptions {
   macros: Macros;
+  environments: Environments;
   /** CHTMLの出力が参照するフォントの，配信先のURL(baseパスを含む)． */
   fontUrl: string;
 }

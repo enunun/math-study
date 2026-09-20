@@ -72,6 +72,8 @@ What was verified while building it:
 - Removing `noundefined` and throwing from `formatError` together makes both an undefined macro ("Undefined control sequence") and an unclosed brace ("Missing close brace") fail. `TexError` does not extend `Error`, so the message is read from its `message` property. The error carries the file line through `file.fail`.
 - MathJax does not expect concurrent renders, and Astro processes pages concurrently. Requests are queued and sent one at a time. A test compares concurrent and sequential results.
 - The stylesheet grows with the characters used (about 10.5 KB for the base, 16 to 18 KB for typical content). `outputJax.clearCache()` resets it to the base. A per-page inline `<style>` does not work, because the MDX output escapes its text (`&#x22;`) and browsers do not decode entities in `<style>`. So the CSS is one shared file: it is written to `dist/` after all pages are rendered, and the dev server serves the current accumulated CSS. Only pages with math get a `<link>`.
+- Starlight's `markdown.css` (in `@layer starlight.content`) gives `margin-top: 1rem` to every element that follows a sibling in the content, except inside `.not-content`. CHTML places `mjx-num`, `mjx-dbox`, `mjx-script`, and similar elements next to each other, so fractions, integral limits, and proof-tree labels came out with 16px gaps. Adding `not-content` to each `mjx-container` fixes it, and `e2e/math.spec.ts` checks the computed margins inside math.
+- The number-set macros follow the LaTeX `numbersets` package (github.com/enunun/numbersets, v0.2.0): `\NaturalNumbers`, `\Integers`, `\RationalNumbers`, `\RealNumbers`, `\ComplexNumbers`, `\NumberSet[style]{X}`, and the styles `bb`, `bfup`, `bfit`. MathJax 4 has no `\csname`. Macro expansion substitutes arguments as text but inserts a space when a control sequence is followed by a letter (`ParseUtil.addArgs`), so `\numbersetstyle#1` cannot build a name. Inside `\begin{…#1}` it can, and the environments come from the `configmacros` `environments` option. The begin code is prepended to the remaining input, so it must be `\mathbb` (which then takes the braced content) and not `\mathbb{`. An unknown style fails the build with "Unknown environment".
 - The dev server may pass middleware URLs with the base stripped, so the CSS middleware accepts both forms.
 - `chtml.displayOverflow: 'scroll'` makes a long display formula scroll inside its own container, without a page-wide horizontal scroll (checked at a 390 px viewport).
 - Stripping the `data-semantic*`, `data-speech*`, `data-braille*`, and `data-latex` attributes, which only the browser-side explorer uses, cuts each formula's HTML by roughly a third.
@@ -80,7 +82,6 @@ What was verified while building it:
 Known limits:
 
 - Speech strings are English only. `\norm` is read as "metric", and the `\Axiom…\fCenter…` form gets no speech.
-- A proof tree's right label is drawn slightly above the inference line.
 - Generating speech costs about 23 ms per formula, and there is no cache yet.
 
 ## Open items

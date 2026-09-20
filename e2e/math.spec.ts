@@ -23,6 +23,18 @@ test.describe('数式', () => {
     await expect(page.getByRole('math', { name: /inference rule/u })).toBeVisible();
   });
 
+  test('Starlightの本文の余白が，数式の内側に及ばない', async ({ page }) => {
+    await page.goto(PAGE);
+    // Starlightは，本文の中で隣り合う要素に，1rem(16px)の上の余白を付ける．
+    // 数式の内側の分数や上付き文字が，離れて描画されないことを確かめる．
+    const spaced = await page.$$eval('mjx-container *', (elements) =>
+      elements
+        .filter((element) => getComputedStyle(element).marginTop === '16px')
+        .map((element) => element.tagName),
+    );
+    expect(spaced).toEqual([]);
+  });
+
   test('フォントとCSSが，エラーなく読み込まれる', async ({ page }) => {
     const failed: string[] = [];
     const errors: string[] = [];

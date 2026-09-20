@@ -169,14 +169,14 @@ import { Detail, Proof, Remark } from '@/components/fold';
 ### 行内の式と別行立ての式
 
 ```mdx
-任意の$x \in \R$について，$\abs{x} \ge 0$が成り立つ．
+任意の$x \in \RealNumbers$について，$\abs{x} \ge 0$が成り立つ．
 
 $$
 \int_0^1 x^2 \, dx = \frac{1}{3}
 $$
 ```
 
-任意の$x \in \R$について，$\abs{x} \ge 0$が成り立つ．
+任意の$x \in \RealNumbers$について，$\abs{x} \ge 0$が成り立つ．
 
 $$
 \int_0^1 x^2 \, dx = \frac{1}{3}
@@ -200,11 +200,20 @@ $$
 
 マクロは，`site/src/math/macros.ts`に定義する．定義を変えたら，次の一覧も更新する．
 
-- `\R`，`\N`，`\Z`，`\Q`，`\C`：実数，自然数，整数，有理数，複素数の全体の集合を表す黒板太字である．
+- `\NaturalNumbers`，`\Integers`，`\RationalNumbers`，`\RealNumbers`，`\ComplexNumbers`：自然数，整数，有理数，実数，複素数の全体の集合である．名前は，LaTeXのnumbersetsパッケージに合わせている．
+- `\NumberSet[スタイル]{N}`：任意の文字を，数の集合の書体で組む．
 - `\abs{x}`：絶対値である．
 - `\norm{v}`：ノルムである．
 - `\set{…}`：波括弧で囲んだ集合である．
 - `\rank`：階数の演算子名である．
+
+数の集合の書体は，`[…]`の引数で選ぶ．書体は，黒板太字の`bb`，立体の太字の`bfup`，斜体の太字の`bfit`で，省略すると`bb`になる．
+
+```mdx
+$\RealNumbers$，$\RealNumbers[bfup]$，$\RealNumbers[bfit]$，$\NumberSet[bfup]{K}$
+```
+
+$\RealNumbers$，$\RealNumbers[bfup]$，$\RealNumbers[bfit]$，$\NumberSet[bfup]{K}$
 
 定義のないマクロや，構文の誤りは，ビルドの失敗になる．失敗した式は，ファイルの行と列，元のTeXとともに表示される．
 
