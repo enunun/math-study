@@ -44,6 +44,9 @@ importers:
       textlint-rule-preset-ja-technical-writing:
         specifier: ^12.0.2
         version: 12.0.2
+      textlint-rule-prh:
+        specifier: ^6.1.0
+        version: 6.1.0
 
   site:
     dependencies:

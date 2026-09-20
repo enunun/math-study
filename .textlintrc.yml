@@ -3,19 +3,24 @@ plugins:
   mdx: true
 
 filters:
-  # Markdown(.md)では、<!-- textlint-disable ルール名 -->のコメントで、範囲を指定して検査を止められる。
+  # Markdown(.md)では、HTMLコメントのtextlint-disableで、範囲を指定して検査を止められる。
   # MDXでは、このコメントが効かない。
   comments: true
 
 rules:
-  # 技術文書の文体(文の長さ、読点の数、ですます調の統一、弱い表現など)。
+  # 技術文書の文体(文の長さ、読点の数、常体の統一、弱い表現など)。
   preset-ja-technical-writing:
-    # 見出し、本文、箇条書きのすべてを、ですます調にそろえる。
+    # 本文と箇条書きを、常体(である調)にそろえる。見出しは指定しない。
     no-mix-dearu-desumasu:
       preferInHeader: ''
-      preferInBody: ですます
-      preferInList: ですます
+      preferInBody: である
+      preferInList: である
       strict: false
+
+  # 和文の中のコロンを、全角にする。辞書は.textlint-prh.ymlに書く。
+  prh:
+    rulePaths:
+      - ./.textlint-prh.yml
 
   # 和文と欧文の間、和文とインラインコードの間には、スペースを入れない。
   preset-ja-spacing:
@@ -25,5 +30,5 @@ rules:
       before: false
       after: false
 
-  # AI が書いたように見える表現(機械的な箇条書き、誇張、強調の乱用など)。
+  # AIが書いたように見える表現(機械的な箇条書き、誇張、強調の乱用など)。
   '@textlint-ja/preset-ai-writing': true

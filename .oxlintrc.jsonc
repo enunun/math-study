@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "oxc", "import", "promise", "node"],
-  // 実験的な nursery 以外の、すべてのカテゴリを error にする。
+  // 実験的なnursery以外の、すべてのカテゴリをerrorにする。
   "categories": {
     "correctness": "error",
     "suspicious": "error",
@@ -11,20 +11,20 @@
     "restriction": "error",
   },
   "options": {
-    // 型情報を使うルールを有効にする。TypeScript の診断は astro check が担う。
+    // 型情報を使うルールを有効にする。TypeScriptの診断はastro checkが担う。
     "typeAware": true,
     "reportUnusedDisableDirectives": "error",
   },
   "rules": {
-    // 互いに矛盾する。Astro や各種の設定ファイルは default export を要求する。
+    // 互いに矛盾する。Astroや各種の設定ファイルはdefault exportを要求する。
     "import/no-default-export": "off",
     "import/no-named-export": "off",
     "import/prefer-default-export": "off",
 
-    // null を使わない方針(unicorn/no-null)と矛盾する。
+    // nullを使わない方針(unicorn/no-null)と矛盾する。
     "no-undefined": "off",
 
-    // 整形は oxfmt が担う。
+    // 整形はoxfmtが担う。
     "sort-imports": "off",
 
     // 設定オブジェクトのキーは、アルファベット順より意味のまとまりで並べる。
@@ -33,7 +33,7 @@
     // 宣言は、1つの文に1つの変数とする。
     "one-var": "off",
 
-    // ?.、async/await、オブジェクトのスプレッドは標準の構文。Wasm の初期化や fetch にも使う。
+    // ?.、async/await、オブジェクトのスプレッドは標準の構文。Wasmの初期化やfetchにも使う。
     "oxc/no-optional-chaining": "off",
     "oxc/no-async-await": "off",
     "oxc/no-rest-spread-properties": "off",
@@ -45,21 +45,21 @@
     // コメントは日本語で書くため、大文字始まりの規則は適用できない。
     "capitalized-comments": "off",
 
-    // 数式のコードでは、x、n、i などの1文字の変数名が自然。
+    // 数式のコードでは、x、n、iなどの1文字の変数名が自然。
     "id-length": "off",
 
-    // 数値リテラルは、0、1、-1 だけ許す。
+    // 数値リテラルは、0、1、-1だけ許す。
     "no-magic-numbers": ["error", { "ignore": [-1, 0, 1] }],
 
     // 関数は宣言で書く。アロー関数はコールバックに使える。
     "func-style": ["error", "declaration", { "allowArrowFunctions": true }],
 
-    // DOM の型(Element など)は readonly にできない。
+    // DOMの型(Elementなど)はreadonlyにできない。
     "typescript/prefer-readonly-parameter-types": "off",
   },
   "overrides": [
     {
-      // Astro のコンポーネントは、PascalCase のファイル名にする。
+      // Astroのコンポーネントは、PascalCaseのファイル名にする。
       // 先頭のコードブロックは常にモジュールとして扱われる。
       "files": ["**/*.astro"],
       "rules": {

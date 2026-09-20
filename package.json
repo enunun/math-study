@@ -13,7 +13,8 @@
     "textlint-rule-ja-space-around-code": "^3.0.3",
     "textlint-rule-ja-space-between-half-and-full-width": "^3.0.3",
     "textlint-rule-preset-ja-spacing": "^3.0.3",
-    "textlint-rule-preset-ja-technical-writing": "^12.0.2"
+    "textlint-rule-preset-ja-technical-writing": "^12.0.2",
+    "textlint-rule-prh": "^6.1.0"
   },
   "engines": {
     "node": ">=22.12.0"

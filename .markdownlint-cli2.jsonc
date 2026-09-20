@@ -1,19 +1,19 @@
 {
-  // Markdown と MDX(Starlight の content)を検査する。
+  // MarkdownとMDX(Starlightのcontent)を検査する。
   "globs": ["site/src/content/**/*.{md,mdx}"],
   "config": {
-    // ルールは、番号(MD013 など)ではなく、説明的な別名で指定する。
+    // ルールは、番号(MD013など)ではなく、説明的な別名で指定する。
     "default": true,
 
     // 日本語の文は、行の長さで折り返さない。
     "line-length": false,
 
-    // MDX で使うコンポーネントは、インライン HTML として許可する。
+    // MDXで使うコンポーネントは、インラインHTMLとして許可する。
     "no-inline-html": {
       "allowed_elements": ["Proof", "Detail"],
     },
 
-    // Starlight は、frontmatter の title を1つ目の見出しとして扱う。
+    // Starlightは、frontmatterのtitleを1つ目の見出しとして扱う。
     "first-line-heading": {
       "front_matter_title": "^\\s*title\\s*[:=]",
     },

@@ -7,7 +7,7 @@ function reveal(target: Element | undefined): void {
   }
 }
 
-/** URL のハッシュを、デコードした要素の id として返す。不正な文字列のときは空文字を返す。 */
+/** URLのハッシュを、デコードした要素のidとして返す。不正な文字列のときは空文字を返す。 */
 function readHashId(): string {
   try {
     return decodeURIComponent(location.hash.slice(1));
@@ -16,7 +16,7 @@ function readHashId(): string {
   }
 }
 
-/** URL のハッシュが指す要素が、閉じた折り畳みの中にある場合に開く。 */
+/** URLのハッシュが指す要素が、閉じた折り畳みの中にある場合に開く。 */
 function revealHashTarget(): void {
   const id = readHashId();
   if (id) {
@@ -33,7 +33,7 @@ function revealHighlights(): void {
 
 /**
  * 折り畳みを、ハッシュ、検索のハイライト、印刷に合わせて開くハンドラを登録する。
- * ハイライトは Pagefind のスクリプトが後から挿入するため、DOM の変化を監視する。
+ * ハイライトはPagefindのスクリプトが後から挿入するため、DOMの変化を監視する。
  * 印刷では、閉じた折り畳みの中身も出力されるよう、印刷の間だけすべて開く。
  */
 function installAutoOpen(): void {
