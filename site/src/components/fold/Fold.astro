@@ -1,11 +1,11 @@
 ---
 interface Props {
-  kind: 'proof' | 'detail';
+  kind: 'proof' | 'remark';
   title?: string;
   open?: boolean;
 }
 
-const labels = { proof: '証明', detail: '補足' } as const;
+const labels = { proof: '証明', remark: '補足' } as const;
 const { kind, title, open = false } = Astro.props;
 ---
 

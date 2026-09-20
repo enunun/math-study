@@ -1,0 +1,10 @@
+---
+import Fold from './Fold.astro';
+
+interface Props {
+  title?: string;
+  open?: boolean;
+}
+---
+
+<Fold kind="remark" {...Astro.props}><slot /></Fold>

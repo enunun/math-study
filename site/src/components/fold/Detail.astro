@@ -1,10 +1,67 @@
 ---
-import Fold from './Fold.astro';
-
 interface Props {
-  title?: string;
   open?: boolean;
 }
+
+const { open = false } = Astro.props;
 ---
 
-<Fold kind="detail" {...Astro.props}><slot /></Fold>
+<span class:list={['detail', { 'is-open': open }]}>
+  <span class="detail-static" aria-hidden="true">。</span>
+  <button
+    type="button"
+    class="detail-toggle"
+    aria-expanded={open ? 'true' : 'false'}
+    aria-label="補足"
+  >
+    <span class="detail-mark-closed" aria-hidden="true">…</span>
+    <span class="detail-mark-open" aria-hidden="true">。</span>
+  </button>
+  <span class="detail-body"><slot /></span>
+</span>
+
+<style>
+  /* JavaScriptが無効なとき(htmlにjsクラスがないとき)は、補足を常に表示する。 */
+  .detail-toggle {
+    display: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--sl-color-text-accent);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .detail-toggle:focus-visible {
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: 2px;
+  }
+
+  .detail-mark-closed {
+    border-block-end: 1px dotted currentcolor;
+  }
+
+  .detail-mark-open {
+    display: none;
+  }
+
+  .is-open .detail-mark-closed {
+    display: none;
+  }
+
+  .is-open .detail-mark-open {
+    display: inline;
+  }
+
+  :global(html.js) .detail-toggle {
+    display: inline;
+  }
+
+  :global(html.js) .detail-static {
+    display: none;
+  }
+
+  :global(html.js) .detail:not(.is-open) .detail-body {
+    display: none;
+  }
+</style>
