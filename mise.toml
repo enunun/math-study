@@ -25,6 +25,11 @@ description = "ビルド済みのサイトを、公開時と同じ base パス�
 depends = ["build"]
 run = "pnpm --filter site preview --host"
 
+[tasks.sync]
+description = "Astro の型定義を生成する(型を使うリントが参照する)"
+depends = ["install"]
+run = "pnpm --filter site exec astro sync"
+
 [tasks.fmt]
 description = "コードを整形する"
 depends = ["install"]
@@ -32,12 +37,12 @@ run = "pnpm exec oxfmt"
 
 [tasks.lint]
 description = "厳格な設定でリントする"
-depends = ["install"]
+depends = ["sync"]
 run = "pnpm exec oxlint --deny-warnings"
 
 [tasks.check]
 description = "整形、リント、型検査、ビルドを検査する"
-depends = ["install"]
+depends = ["sync"]
 run = [
   "pnpm exec oxfmt --check",
   "pnpm exec oxlint --deny-warnings",
