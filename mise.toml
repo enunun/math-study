@@ -1,0 +1,29 @@
+[tools]
+node = "24"
+pnpm = "12"
+
+[settings]
+lockfile = true
+
+[tasks.install]
+description = "依存パッケージをインストールする"
+run = "pnpm install --frozen-lockfile"
+
+[tasks.dev]
+description = "開発サーバーを起動する"
+run = "pnpm --filter site dev --host"
+
+[tasks.build]
+description = "サイトをビルドする"
+depends = ["install"]
+run = "pnpm --filter site build"
+
+[tasks.preview]
+description = "ビルド済みのサイトを、公開時と同じ base パスで確認する"
+depends = ["build"]
+run = "pnpm --filter site preview --host"
+
+[tasks.check]
+description = "型検査とビルドを実行する"
+depends = ["install"]
+run = ["pnpm --filter site check", "pnpm --filter site build"]

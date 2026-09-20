@@ -1,0 +1,6 @@
+packages:
+  - site
+
+# 依存パッケージのインストール時スクリプトは、明示的に許可したものだけ実行する。
+allowBuilds:
+  esbuild: false
