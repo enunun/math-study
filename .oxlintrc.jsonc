@@ -45,6 +45,9 @@
     // コメントは日本語で書くため、大文字始まりの規則は適用できない。
     "capitalized-comments": "off",
 
+    // 数式のコードでは、x、n、i などの1文字の変数名が自然。
+    "id-length": "off",
+
     // 数値リテラルは、0、1、-1 だけ許す。
     "no-magic-numbers": ["error", { "ignore": [-1, 0, 1] }],
 
