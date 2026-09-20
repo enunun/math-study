@@ -96,3 +96,13 @@ lefthook-local.yml
 test-results/
 playwright-report/
 blob-report/
+
+# ---------------------------------------------------------------
+# MathJax fonts (copied from node_modules at build time)
+# ---------------------------------------------------------------
+site/public/mathjax-fonts/
+
+# ---------------------------------------------------------------
+# pnpm store (its location depends on the container; keep it out of git)
+# ---------------------------------------------------------------
+.pnpm-store/

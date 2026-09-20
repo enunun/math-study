@@ -59,6 +59,9 @@
 
     // DOMの型(Elementなど)はreadonlyにできない．
     "typescript/prefer-readonly-parameter-types": "off",
+
+    // awaitのないasync関数を禁じるrequire-awaitと矛盾する．Promiseを返すだけの関数は，asyncにしない．
+    "typescript/promise-function-async": "off",
   },
   "overrides": [
     {
@@ -83,6 +86,43 @@
         "max-lines-per-function": "off",
         "no-magic-numbers": "off",
         "unicorn/prefer-dom-node-text-content": "off",
+      },
+    },
+    {
+      // 型の宣言ファイルは，importやexportを持たない，スクリプトとして書く．
+      "files": ["**/*.d.ts"],
+      "rules": {
+        "import/unambiguous": "off",
+      },
+    },
+    {
+      // 単体テストは，describeに多数のテストをまとめる．
+      "files": ["**/*.test.ts"],
+      "rules": {
+        "max-lines-per-function": "off",
+        "max-statements": "off",
+      },
+    },
+    {
+      // ビルド時にNode.jsで動く処理(MathJaxのWorker，Astroの統合，rehypeプラグイン)．
+      // Node.jsの組み込みモジュールを使う．親ディレクトリのモジュールは，設定ファイルからも読み込まれるため，
+      // tsconfigの別名ではなく相対パスで読み込む．
+      // Workerとのメッセージのやり取りは，new Promiseで待ち受ける．Workerは，トップレベルのawaitでMathJaxを起動する．
+      // postMessageのtargetOriginは，windowのメッセージ用の引数で，Workerには当てはまらない．
+      // グローバルなMathJaxオブジェクトと，workerDataは，型を主張して読む．
+      // メッセージのハンドラと，開発サーバーのミドルウェアには，async関数を渡す．
+      // ミドルウェアは，中で例外を処理する．
+      "files": ["site/src/math/**", "site/src/integrations/**", "site/src/plugins/**"],
+      "rules": {
+        "import/no-nodejs-modules": "off",
+        "import/no-relative-parent-imports": "off",
+        "promise/avoid-new": "off",
+        "node/no-top-level-await": "off",
+        "unicorn/require-post-message-target-origin": "off",
+        "typescript/no-unsafe-type-assertion": "off",
+        "typescript/no-misused-promises": "off",
+        "typescript/strict-void-return": "off",
+        "oxc/no-async-endpoint-handlers": "off",
       },
     },
   ],

@@ -13,6 +13,7 @@ const CONTENT_TYPES: Record<string, string> = {
   '.js': 'text/javascript',
   '.json': 'application/json',
   '.svg': 'image/svg+xml',
+  '.woff2': 'font/woff2',
   '.xml': 'application/xml',
 };
 

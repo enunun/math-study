@@ -12,6 +12,7 @@ const USAGE = `使い方：mise run screenshot -- <ページのパス> <出力�
   --full               ページ全体を撮る
   --click <selector>   撮る前に押す要素(複数指定できる．順に押す)
   --clip <selector>    この要素だけを撮る
+  --scroll <selector>  撮る前に，この要素までスクロールする
 例：mise run screenshot -- dev/notation/ /tmp/notation.png --theme dark --click .detail-toggle
 `;
 
@@ -23,6 +24,7 @@ const { values, positionals } = parseArgs({
     full: { type: 'boolean', default: false },
     click: { type: 'string', multiple: true, default: [] },
     clip: { type: 'string' },
+    scroll: { type: 'string' },
   },
 });
 const [pagePath, output] = positionals;
@@ -62,6 +64,9 @@ if (pagePath === undefined || output === undefined) {
   const page = await context.newPage();
   await page.goto(`${BASE_URL}${pagePath}`);
   await clickInOrder(page, values.click);
+  if (values.scroll !== undefined) {
+    await page.locator(values.scroll).first().scrollIntoViewIfNeeded();
+  }
   await capture(page, output);
   await browser.close();
   process.stdout.write(`${output}\n`);

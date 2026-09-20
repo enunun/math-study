@@ -55,6 +55,11 @@ run = "pnpm exec textlint site/src/content README.md"
 description = "すべてのリントを実行する"
 depends = ["lint:code", "lint:markdown", "lint:text"]
 
+[tasks.test]
+description = "単体テストを実行する"
+depends = ["install"]
+run = "pnpm --filter site test"
+
 [tasks.hooks]
 description = "Gitのフック(コミット時の検査)を設定する"
 run = "lefthook install"
@@ -79,6 +84,11 @@ description = "開発環境を整える(依存パッケージ，型定義，Play
 depends = ["sync", "browsers", "hooks"]
 
 [tasks.check]
-description = "整形，リント，型検査，ビルドを検査する(CIと同じ)"
+description = "整形，リント，型検査，単体テスト，ビルドを検査する(CIと同じ)"
 depends = ["lint"]
-run = ["pnpm exec oxfmt --check", "pnpm --filter site check", "pnpm --filter site build"]
+run = [
+  "pnpm exec oxfmt --check",
+  "pnpm --filter site check",
+  "pnpm --filter site test",
+  "pnpm --filter site build",
+]

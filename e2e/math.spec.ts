@@ -1,0 +1,71 @@
+import { expect, test } from '@playwright/test';
+
+const PAGE = 'dev/notation/';
+const NARROW = { width: 390, height: 800 };
+
+test.describe('数式', () => {
+  test('行内の式が描画され，読み上げ用のroleとaria-labelが付く', async ({ page }) => {
+    await page.goto(PAGE);
+    await expect(
+      page.getByRole('math', { name: 'x is a member of the real numbers' }),
+    ).toBeVisible();
+  });
+
+  test('自作マクロが展開される', async ({ page }) => {
+    await page.goto(PAGE);
+    await expect(
+      page.getByRole('math', { name: 'the absolute value of x is greater than or equal to 0' }),
+    ).toBeVisible();
+  });
+
+  test('導出木が描画される', async ({ page }) => {
+    await page.goto(PAGE);
+    await expect(page.getByRole('math', { name: /inference rule/u })).toBeVisible();
+  });
+
+  test('フォントとCSSが，エラーなく読み込まれる', async ({ page }) => {
+    const failed: string[] = [];
+    const errors: string[] = [];
+    page.on('response', (response) => {
+      if (response.status() >= 400) {
+        failed.push(response.url());
+      }
+    });
+    page.on('pageerror', (error) => errors.push(String(error)));
+    await page.goto(PAGE);
+    await page.evaluate(() => document.fonts.ready);
+    const loaded = await page.evaluate(
+      () =>
+        [...document.fonts].filter(
+          (font) => font.family.startsWith('MJX') && font.status === 'loaded',
+        ).length,
+    );
+    expect(loaded).toBeGreaterThan(0);
+    expect(failed).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+
+  test('式のあるページだけが，mathjax.cssを読み込む', async ({ page }) => {
+    const requested: string[] = [];
+    page.on('request', (request) => requested.push(request.url()));
+    await page.goto('');
+    expect(requested.some((url) => url.endsWith('/mathjax.css'))).toBe(false);
+    await page.goto(PAGE);
+    expect(requested.some((url) => url.endsWith('/mathjax.css'))).toBe(true);
+  });
+
+  test('幅の狭い画面で，長い式は，ページを横にあふれさせず，式の中でスクロールする', async ({
+    page,
+  }) => {
+    await page.setViewportSize(NARROW);
+    await page.goto(PAGE);
+    const pageOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(pageOverflow).toBeLessThanOrEqual(0);
+    const scrollable = await page.$$eval('mjx-container[display]', (containers) =>
+      containers.some((container) => container.scrollWidth > container.clientWidth),
+    );
+    expect(scrollable).toBe(true);
+  });
+});
