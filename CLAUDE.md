@@ -151,6 +151,7 @@ A study site for mathematics (Astro 7, Starlight, MDX). `README.md` (Japanese) g
 - Run `finalize-artifacts` before reporting a deliverable as done (see "Artifact Cleanup" below).
 - Prefix commands with `rtk`. The hook is in `.claude/settings.json`; do not install it in the user-level settings.
 - `git commit` runs lefthook hooks. If they fail, fix what they report. Never use `--no-verify`.
+- Before `git add -A`, read `git status --short`: check the number of entries and the paths. A pnpm store (`.pnpm-store/`, 26,000 files) once slipped into a commit and a push because its location changed after a container rebuild. It is git-ignored now. Rewriting history and force-pushing need the user's confirmation.
 
 ## Language
 
@@ -173,6 +174,11 @@ A study site for mathematics (Astro 7, Starlight, MDX). `README.md` (Japanese) g
 - oxfmt does not format `.astro` files. Put logic in `.ts` files and keep `.astro` files thin.
 - The Playwright browsers live in `/opt/ms-playwright`. If the version of `@playwright/test` in `package.json` drifts from the installed browsers, run `mise run browsers`.
 - The test page (`site/src/content/docs/dev/notation.mdx`) is hidden from the sidebar and search. Update it whenever the notation changes.
+- Math (MathJax 4) is rendered at build time by `site/src/plugins/rehype-mathjax.ts`. MathJax itself runs in a native Worker thread (`site/src/math/worker.ts`), not through Vite: the plugin module is loaded by the short-lived Vite runner that reads `astro.config.ts`, and a lazy `import()` after that runner closes fails with "Vite module runner has been closed". Terminating the Worker (`astro:build:done`, `astro:server:done`) is also what lets the process exit; without it, MathJax's speech threads keep it alive.
+- Do not inline the MathJax CSS with a `<style>` element: the MDX output HTML-escapes its text (`&#x22;`), and browsers do not decode entities in `<style>`. The CSS is one shared file, `mathjax.css`. It is written to `dist/` at `astro:build:done` and served by a dev-server middleware; pages with math get a `<link>` to it. The fonts are copied to `site/public/mathjax-fonts/` (git-ignored) at config setup.
+- Undefined macros and TeX syntax errors fail the build, with the file line and the TeX source in the message. MathJax's `TexError` does not extend `Error`, so read its `message` property instead of using `instanceof Error`.
+- Add math macros in `site/src/math/macros.ts` and update the list on the test page. Speech strings are English only. Known quirks: `\norm` is read as "metric", the `\Axiom…\fCenter…` form gets no speech, and a proof tree's right label sits slightly high.
+- `mise run test` runs the Vitest unit tests (`site/src/**/*.test.ts`). `mise run check` includes them.
 
 ## Skills
 

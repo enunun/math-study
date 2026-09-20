@@ -9,7 +9,7 @@ Confirm that a change builds, works under the same base path as production, and 
 
 ## Procedure
 
-1. Run `mise run check`. It runs formatting, oxlint, markdownlint, textlint, the type check (`astro check`), and the build. CI runs the same thing.
+1. Run `mise run check`. It runs formatting, oxlint, markdownlint, textlint, the type check (`astro check`), the Vitest unit tests, and the build. CI runs the same thing.
 2. For changes that affect rendering or behavior, run `mise run e2e`. It builds `site/dist` and runs the tests in `e2e/`.
 3. For changes that affect appearance, take screenshots and look at the images (next section).
 4. After committing and pushing, confirm that CI succeeded (the section after next).
@@ -23,11 +23,12 @@ mise run screenshot -- dev/notation/ /tmp/notation.png --full
 mise run screenshot -- dev/notation/ /tmp/dark.png --theme dark
 mise run screenshot -- dev/notation/ /tmp/mobile.png --width 390 --full
 mise run screenshot -- dev/notation/ /tmp/detail.png --clip ".detail" --click ".detail-toggle"
+mise run screenshot -- dev/notation/ /tmp/math.png --scroll "h3#導出木"
 ```
 
 - Write the page path relative to the production base path (`/math-study/`).
 - Check the light and dark themes, and both a wide window and a narrow one (about 390px).
-- `--click` performs interactions before the shot, in order. `--clip` captures only the given element. `--full` captures the whole page.
+- `--click` performs interactions before the shot, in order. `--clip` captures only the given element. `--scroll` scrolls to an element first, which is the way to look at a section of a long page. `--full` captures the whole page (large; the image is downscaled when read).
 - Running `mise run screenshot` without arguments prints the usage.
 
 ## Checking CI
@@ -58,6 +59,7 @@ Check these by hand, in a local browser or with assistive technology.
 - Whether browser find-in-page (Ctrl+F) opens a closed fold. It differs between browsers.
 - Real printing and print preview.
 - Real highlighting when opening a page from the site search (Pagefind).
+- Speech quality of formulas. The `aria-label` strings are generated in English; listen to them with a screen reader if it matters.
 
 ## Troubleshooting
 
@@ -66,3 +68,4 @@ Check these by hand, in a local browser or with assistive technology.
 - Port 4322 is in use: stop the existing process. Playwright reuses an existing server.
 - E2E shows stale content: `mise run e2e` builds first. Running `pnpm exec playwright test` directly may serve an old `site/dist`.
 - Type-aware lint reports many `no-unsafe-*` errors: `site/.astro/types.d.ts` is missing. Run `mise run sync`.
+- Math looks wrong or the build hangs: run `mise run test` first (the plugin's unit tests cover macros, proof trees, speech labels, error positions, and concurrent pages). Then look at `mise run screenshot -- dev/notation/ /tmp/math.png --scroll "h3#導出木"`. A build that never exits means the MathJax Worker was not terminated.

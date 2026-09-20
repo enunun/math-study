@@ -62,13 +62,36 @@ The technical decisions for the mathematics study site, and the facts verified a
 - oxfmt does not format `.astro` files. Its `sortImports` moves a leading `// @ts-check` along with the import, so config files are `.ts`.
 - Mafs has had no release since October 2024 and no commit since March 2025. The plotting library has not been chosen yet.
 
+## Math pipeline (implemented)
+
+Flow: `remark-math` finds `$…$` and `$$…$$`, the rehype plugin (`site/src/plugins/rehype-mathjax.ts`) sends each formula to MathJax 4, and the result replaces the formula in the tree. MathJax runs in a native Worker thread (`site/src/math/worker.ts`) that the main thread talks to by messages (`site/src/math/renderer.ts`). The Astro integration (`site/src/integrations/mathjax.ts`) copies the fonts, provides the CSS, and stops the Worker. Macros live in `site/src/math/macros.ts`.
+
+What was verified while building it:
+
+- The plugin module is loaded by the short-lived Vite runner that reads `astro.config.ts`. That runner is closed afterwards, so a lazy `import()` in the plugin fails with "Vite module runner has been closed". A Worker thread outside Vite avoids this, and `terminate()` also stops MathJax's own speech threads. Without a shutdown the process never exits.
+- Removing `noundefined` and throwing from `formatError` together makes both an undefined macro ("Undefined control sequence") and an unclosed brace ("Missing close brace") fail. `TexError` does not extend `Error`, so the message is read from its `message` property. The error carries the file line through `file.fail`.
+- MathJax does not expect concurrent renders, and Astro processes pages concurrently. Requests are queued and sent one at a time. A test compares concurrent and sequential results.
+- The stylesheet grows with the characters used (about 10.5 KB for the base, 16 to 18 KB for typical content). `outputJax.clearCache()` resets it to the base. A per-page inline `<style>` does not work, because the MDX output escapes its text (`&#x22;`) and browsers do not decode entities in `<style>`. So the CSS is one shared file: it is written to `dist/` after all pages are rendered, and the dev server serves the current accumulated CSS. Only pages with math get a `<link>`.
+- The dev server may pass middleware URLs with the base stripped, so the CSS middleware accepts both forms.
+- `chtml.displayOverflow: 'scroll'` makes a long display formula scroll inside its own container, without a page-wide horizontal scroll (checked at a 390 px viewport).
+- Stripping the `data-semantic*`, `data-speech*`, `data-braille*`, and `data-latex` attributes, which only the browser-side explorer uses, cuts each formula's HTML by roughly a third.
+- The fonts are 105 woff2 files (1.8 MB). The base CSS references 35 of them, and the browser loads only the ranges it needs. They are copied to `site/public/mathjax-fonts/` at config setup and are git-ignored.
+
+Known limits:
+
+- Speech strings are English only. `\norm` is read as "metric", and the `\Axiom…\fCenter…` form gets no speech.
+- A proof tree's right label is drawn slightly above the inference line.
+- Generating speech costs about 23 ms per formula, and there is no cache yet.
+
 ## Open items
 
 - The plotting library (a custom SVG, Mafs, or JSXGraph).
 - The range of expressions the polynomial calculator handles.
 - Automated accessibility checks (axe).
 - Running E2E tests in CI.
-- Automatic theorem numbering (below).
+- Automatic theorem numbering (below), and equation numbers (`\tag`, `\label`) for math.
+- A cache for speech generation, if build time becomes a problem.
+- Rendering math in the browser for the calculator, with the same macros.
 
 ## Theorem numbering design
 

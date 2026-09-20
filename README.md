@@ -6,8 +6,8 @@
 
 - 実装済み(サイト)：Astro 7とStarlightのサイト，折り畳みのコンポーネント(`Proof`，`Detail`，`Remark`)，記法のテストページ．
 - 実装済み(開発基盤)：リントと整形，コミット時の検査，E2Eテスト，GitHub Pagesへの公開．
-- 実装中：MathJax 4による数式の描画(マクロ，証明図，読み上げ用の`aria-label`)．
-- 予定：Rustで書いた多項式電卓とグラフ(Wasm)，定理番号の自動採番．
+- 実装済み(数式)：MathJax 4による数式の描画(自作マクロ，証明図，読み上げ用の`aria-label`)．未定義のマクロと構文の誤りは，ビルドの失敗にする．
+- 予定：Rustで書いた多項式電卓とグラフ(Wasm)，定理番号の自動採番，式番号．
 
 技術選定の理由と，確認した事実は，[docs/tech-decisions.md](docs/tech-decisions.md)(英語)にまとめてある．
 
@@ -33,16 +33,17 @@ devcontainerで開く．Dockerfileは，mise公式のDebianイメージを土台
 
 作業は，`mise run`のタスクで行う．一覧は`mise tasks`で表示する．
 
-| タスク                | 内容                                                        |
-| --------------------- | ----------------------------------------------------------- |
-| `mise run dev`        | 開発サーバーを起動する(`http://localhost:4321/math-study/`) |
-| `mise run build`      | サイトをビルドする                                          |
-| `mise run preview`    | ビルドしたサイトを，公開時と同じbaseパスで確認する          |
-| `mise run check`      | 整形，リント，型検査，ビルドを検査する．CIと同じ内容である  |
-| `mise run lint`       | oxlint，markdownlint，textlintを実行する                    |
-| `mise run fmt`        | コードと文書を整形する                                      |
-| `mise run e2e`        | ブラウザで動作を確認する                                    |
-| `mise run screenshot` | ページのスクリーンショットを撮る                            |
+| タスク                | 内容                                                                   |
+| --------------------- | ---------------------------------------------------------------------- |
+| `mise run dev`        | 開発サーバーを起動する(`http://localhost:4321/math-study/`)            |
+| `mise run build`      | サイトをビルドする                                                     |
+| `mise run preview`    | ビルドしたサイトを，公開時と同じbaseパスで確認する                     |
+| `mise run check`      | 整形，リント，型検査，単体テスト，ビルドを検査する．CIと同じ内容である |
+| `mise run lint`       | oxlint，markdownlint，textlintを実行する                               |
+| `mise run fmt`        | コードと文書を整形する                                                 |
+| `mise run test`       | 単体テストを実行する                                                   |
+| `mise run e2e`        | ブラウザで動作を確認する                                               |
+| `mise run screenshot` | ページのスクリーンショットを撮る                                       |
 
 変更したら，`mise run check`を通す．表示や動作に関わる変更は，`mise run e2e`も通す．手順の詳細は，`.claude/skills/verify-site/SKILL.md`にある．
 

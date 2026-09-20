@@ -15,7 +15,7 @@ Rules and notation for the site content (`site/src/content/**`) and `README.md`,
 - Use a full-width colon "：" after Japanese text, with no space after it ("公開先：`/x`"). Colons after Latin text stay half-width.
 - Avoid AI-sounding writing: bold-prefix bullet lists ("**Item**：description"), hype, and emphasis in ordinary sentences.
 - Keep each sentence within 100 characters and within three commas. Do not repeat the same particle within a sentence.
-- A lone Latin letter (a variable such as x) is flagged as an "unnatural alphabet". Until math can be written with MathJax, use example sentences without variables.
+- A lone Latin letter outside math (a variable such as x written as plain text) is flagged as an "unnatural alphabet". Write variables inside `$…$`.
 
 Code, code blocks, and inline code are not checked.
 
@@ -36,6 +36,16 @@ import { Detail, Proof, Remark } from '@/components/fold';
 ```
 
 `Proof` and `Remark` accept `open`, which shows them expanded from the start. They can be nested. Full examples and the verification checklist are on the test page (`site/src/content/docs/dev/notation.mdx`). Update that page whenever the notation changes.
+
+## Math
+
+Math is rendered at build time by MathJax 4. Write inline math as `$…$` and display math as `$$…$$`. The details and the rendered examples are on the test page (`site/src/content/docs/dev/notation.mdx`).
+
+- Custom macros are defined in `site/src/math/macros.ts` (`\R`, `\N`, `\Z`, `\Q`, `\C`, `\abs{x}`, `\norm{v}`, `\set{…}`, `\rank`). After changing them, update the list on the test page.
+- An undefined macro or a TeX syntax error fails the build. The message shows the file line and the TeX source.
+- Write proof trees in the `bussproofs` notation with `\AxiomC`, `\UnaryInfC`, `\BinaryInfC`, `\TrinaryInfC`, `\RightLabel`, and `\LeftLabel`. Write a sequent as one formula inside `\AxiomC{$\Gamma \vdash A$}`. The `\Axiom…\fCenter…` form renders but gets no speech string.
+- Each formula gets an English speech string in `aria-label`. Japanese inside `\text{…}` is read one character at a time, and `\norm` is read as "metric". These are limits of MathJax's speech engine.
+- Text inside math is not checked by textlint, so a lone Latin letter as a variable is fine inside `$…$`.
 
 ## Lint
 
