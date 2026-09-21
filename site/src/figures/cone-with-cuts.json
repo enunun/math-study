@@ -1,0 +1,44 @@
+{
+  "version": "0.1.0",
+  "description": "円錐と，2つの平面による切り口．水平な平面の切り口は円，傾いた平面の切り口は楕円である．",
+  "view": { "azimuth": 60, "elevation": 35, "unit": "1cm" },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "range": [-3, 3], "label": "x" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "range": [-3, 3], "label": "y" },
+    { "id": "z_axis", "type": "axis", "direction": "z", "range": [-1, 3.5], "label": "z" },
+    { "id": "origin_label", "type": "label", "at": [0, 0, 0], "anchor": "north east", "tex": "O" },
+    {
+      "id": "cone",
+      "type": "surface",
+      "vars": ["r", "t"],
+      "expr": ["r*cos(t)", "r*sin(t)", "r"],
+      "domain": [
+        [0, 2],
+        [0, "2*pi"]
+      ]
+    },
+    {
+      "id": "rim",
+      "type": "curve",
+      "var": "t",
+      "expr": ["2*cos(t)", "2*sin(t)", "2"],
+      "domain": [0, "2*pi"]
+    },
+    {
+      "id": "level_cut",
+      "type": "cut",
+      "surface": "cone",
+      "normal": [0, 0, 1],
+      "offset": 1.2,
+      "style": { "color": "blue" }
+    },
+    {
+      "id": "slanted_cut",
+      "type": "cut",
+      "surface": "cone",
+      "normal": [0, -0.4, 1],
+      "offset": 0.8,
+      "style": { "color": "red" }
+    }
+  ]
+}

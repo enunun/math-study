@@ -138,6 +138,8 @@ pub enum Object {
     Region(Region),
     /// 曲面．式で書く．空間の図でだけ使える．
     Surface(Surface),
+    /// 曲面の，平面による切り口．空間の図でだけ使える．
+    Cut(Cut),
 }
 
 /// 軸の向き．
@@ -434,6 +436,23 @@ pub struct Segment {
     pub style: Style,
 }
 
+/// 曲面の，平面による切り口．平面は，法線と定数で`normal・p = offset`と書く．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Cut {
+    /// 識別子．
+    pub id: String,
+    /// 切る曲面の`id`．
+    pub surface: String,
+    /// 平面の法線．3個の，数か式である．
+    pub normal: Vec<Bound>,
+    /// 平面の定数(`normal・p = offset`の右辺)．数か式である．
+    pub offset: Bound,
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
 /// 曲面．2つの変数の式で，空間の点を表す．輪郭と，曲面に隠れる線を，三角形の網から求める．
 ///
 /// 曲面は不透明な殻で，ほかのオブジェクトの線を隠す．輪郭は，視線が曲面に接する所である．
@@ -605,6 +624,7 @@ impl Object {
             Self::Segment(o) => &o.id,
             Self::Region(o) => &o.id,
             Self::Surface(o) => &o.id,
+            Self::Cut(o) => &o.id,
         }
     }
 
@@ -624,6 +644,7 @@ impl Object {
             Self::Segment(_) => "segment",
             Self::Region(_) => "region",
             Self::Surface(_) => "surface",
+            Self::Cut(_) => "cut",
         }
     }
 }

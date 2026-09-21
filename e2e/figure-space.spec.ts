@@ -41,6 +41,10 @@ function third(page: Page): Locator {
   return page.locator('.figure').nth(2);
 }
 
+function fourth(page: Page): Locator {
+  return page.locator('.figure').nth(3);
+}
+
 function center({ x, y, width, height }: Box): [number, number] {
   return [x + width / 2, y + height / 2];
 }
@@ -49,7 +53,7 @@ test.describe('空間の図', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     // ラベルの数式が描画されるまで待つ．
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(12);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(16);
   });
 
   test('SVGは，画像として説明を持ち，隠れた部分で分かれた線と，輪郭がある', async ({ page }) => {
@@ -177,6 +181,23 @@ test.describe('空間の図', () => {
     expect(thick.length).toBeGreaterThanOrEqual(2);
   });
 
+  test('切り口は，色を付けた線で描かれ，曲面に隠れる部分は点線になる', async ({ page }) => {
+    const paths = fourth(page).locator('svg path');
+    const strokes = await paths.evaluateAll((elements) =>
+      elements.map((element) => ({
+        stroke: element.getAttribute('stroke'),
+        dashed: element.hasAttribute('stroke-dasharray'),
+      })),
+    );
+    const blue = strokes.filter(({ stroke }) => stroke === 'var(--figure-blue)');
+    const red = strokes.filter(({ stroke }) => stroke === 'var(--figure-red)');
+    // 各切り口は，見える部分と隠れる部分に分かれる．
+    expect(blue.length).toBeGreaterThanOrEqual(2);
+    expect(red.length).toBeGreaterThanOrEqual(2);
+    expect(blue.some(({ dashed }) => dashed)).toBe(true);
+    expect(blue.some(({ dashed }) => !dashed)).toBe(true);
+  });
+
   for (const scheme of ['light', 'dark'] as const) {
     test(`図の色は，文字の色に従う(${scheme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });
@@ -203,7 +224,7 @@ test.describe('空間の図', () => {
     page.on('pageerror', (error) => problems.push(String(error)));
     page.on('requestfailed', (request) => problems.push(request.url()));
     await page.reload();
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(12);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(16);
     expect(problems).toEqual([]);
   });
 });

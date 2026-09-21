@@ -6,14 +6,16 @@
 //! 線は，まず点で刻み，隠れ方が変わる区間を二分法で詰めて，隠れた部分と見える部分に分ける．
 //! 刻みの間に，隠れ方が2回変わる細かい隠れは，見つけられない．
 
+use std::collections::HashMap;
 use std::f64::consts::TAU;
 
-use crate::compile::{Compiled, CurvePlot, LabelPlot, Plot, SurfacePlot};
+use crate::compile::{Compiled, CurvePlot, CutPlot, LabelPlot, Plot, SurfacePlot};
 use crate::figure::{Bounds, Figure, Item, LabelItem, Path, Stroke};
 use crate::render::{AXIS_WIDTH, CURVE_WIDTH, MARGIN, arrow_head, stroke_of, with_variable};
 use crate::sample::{sample, sample_with_parameters};
 use crate::scene::{
-    Anchor, Axis, Direction, Hidden, Label, Line, Object, Scene, SpaceView, Sphere, Style, Surface,
+    Anchor, Axis, Cut, Direction, Hidden, Label, Line, Object, Scene, SpaceView, Sphere, Style,
+    Surface,
 };
 use crate::surface::{Frame, Mesh, Rim};
 
@@ -98,6 +100,8 @@ struct Space {
     balls: Vec<Ball>,
     /// 曲面の網．シーンの中の曲面の順に並ぶ．
     meshes: Vec<Mesh>,
+    /// 曲面の`id`から，`meshes`の中の番号．
+    mesh_of: HashMap<String, usize>,
 }
 
 impl Space {
@@ -151,9 +155,20 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
             _ => None,
         })
         .collect();
+    let mesh_of: HashMap<String, usize> = scene
+        .objects
+        .iter()
+        .filter_map(|object| match object {
+            Object::Surface(surface) => Some(surface.id.clone()),
+            _ => None,
+        })
+        .enumerate()
+        .map(|(index, id)| (id, index))
+        .collect();
     let space = Space {
         camera,
         meshes,
+        mesh_of,
         balls: scene
             .objects
             .iter()
@@ -174,6 +189,9 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
                 if let Some(mesh) = meshes.next() {
                     items.extend(surface_items(surface, mesh, &space));
                 }
+            }
+            (Object::Cut(cut), Plot::Cut(placed)) => {
+                items.extend(cut_items(cut, placed, &space));
             }
             (Object::Axis(axis), _) => items.extend(axis_items(axis, &space)),
             (Object::Label(label), Plot::Label(placed)) => {
@@ -398,6 +416,33 @@ fn surface_items(surface: &Surface, mesh: &Mesh, space: &Space) -> Vec<Item> {
                 &space.camera,
             ));
         }
+    }
+    items
+}
+
+/// 曲面の切り口の線．曲面の上にあるので，曲面に隠れる部分は，隠れた部分の線で描く．
+fn cut_items(cut: &Cut, placed: &CutPlot, space: &Space) -> Vec<Item> {
+    let Some(mesh) = space
+        .mesh_of
+        .get(&cut.surface)
+        .and_then(|index| space.meshes.get(*index))
+    else {
+        return Vec::new();
+    };
+    let stroke = stroke_of(&cut.style, Line::Solid, CURVE_WIDTH);
+    let mut items = Vec::new();
+    for line in &mesh.cut(placed.normal, placed.offset) {
+        let steps: Vec<f64> = (0..line.len())
+            .map(|k| f64::from(u32::try_from(k).unwrap_or(u32::MAX)))
+            .collect();
+        let at = |t: f64| polyline_at(line, t).0;
+        let pieces = split_by_visibility(&steps, &at, &|t| space.hidden(at(t)));
+        items.extend(piece_items(
+            &pieces,
+            stroke,
+            cut.style.hidden,
+            &space.camera,
+        ));
     }
     items
 }

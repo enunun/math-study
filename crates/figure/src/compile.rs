@@ -5,8 +5,8 @@ use std::collections::HashMap;
 use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, is_reserved_name};
 use crate::scene::{
-    Anchor, Axis, Bound, Curve, Direction, Graph, Grid, Label, Object, Point, Position, Region,
-    Scene, Surface, View,
+    Anchor, Axis, Bound, Curve, Cut, Direction, Graph, Grid, Label, Object, Point, Position,
+    Region, Scene, Surface, View,
 };
 use crate::validate::curve_expressions;
 
@@ -73,6 +73,14 @@ pub struct LinkPlot {
     pub to: [f64; 2],
 }
 
+/// 式を読んだ後の，切り口の平面．
+pub struct CutPlot {
+    /// 平面の法線．
+    pub normal: [f64; 3],
+    /// 平面の定数．
+    pub offset: f64,
+}
+
 /// 式を読んだ後の，曲面．
 pub struct SurfacePlot {
     /// x，y，z座標の式．名前の順は，2つの変数，媒介変数と点の座標である．
@@ -89,6 +97,8 @@ pub struct RegionPlot {
 
 /// 式を読んだ後の，描く対象．
 pub enum Plot {
+    /// 切り口．
+    Cut(CutPlot),
     /// 曲面．
     Surface(SurfacePlot),
     /// 領域．
@@ -230,6 +240,9 @@ fn compile_object(
         Object::Point(point) => compile_point(point, names, parameters, scope)
             .map(Plot::Point)
             .map_err(|kind| Error::in_object(&point.id, kind)),
+        Object::Cut(cut) => compile_cut(cut, names, parameters)
+            .map(Plot::Cut)
+            .map_err(|kind| Error::in_object(&cut.id, kind)),
         Object::Surface(surface) => compile_surface(surface, names, parameters)
             .map(Plot::Surface)
             .map_err(|kind| Error::in_object(&surface.id, kind)),
@@ -298,6 +311,27 @@ fn compile_curve(
     }
     let domain = evaluate_domain(&curve.domain, names, parameters)?;
     Ok(CurvePlot { exprs, domain })
+}
+
+/// 切り口の平面の式を評価し，法線が0でない有限のベクトルであることを確かめる．
+fn compile_cut(cut: &Cut, names: &[&str], parameters: &[f64]) -> Result<CutPlot, ErrorKind> {
+    let evaluate = |field: &'static str, index: usize, bound: &Bound| {
+        evaluate_bound(field, bound, index, names, parameters)
+    };
+    let mut normal = [0.0; 3];
+    for (index, (slot, bound)) in normal.iter_mut().zip(&cut.normal).enumerate() {
+        *slot = evaluate("normal", index, bound)?;
+    }
+    let offset = evaluate("offset", 0, &cut.offset)?;
+    let length = normal.iter().map(|c| c * c).sum::<f64>().sqrt();
+    if normal.iter().all(|c| c.is_finite()) && offset.is_finite() && length > 0.0 {
+        Ok(CutPlot { normal, offset })
+    } else {
+        Err(ErrorKind::Invalid(
+            "平面の法線(`normal`)は0でない有限のベクトルに，定数(`offset`)は有限の数にする．"
+                .to_owned(),
+        ))
+    }
 }
 
 fn compile_surface(

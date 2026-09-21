@@ -127,7 +127,7 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Result<
                     items.extend(link_item(&segment.style, Arrow::None, link, scale));
                 }
             }
-            Object::Parameter(_) | Object::Sphere(_) | Object::Surface(_) => {}
+            Object::Parameter(_) | Object::Sphere(_) | Object::Surface(_) | Object::Cut(_) => {}
         }
     }
     Ok(Figure {

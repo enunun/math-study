@@ -418,8 +418,23 @@ impl Mesh {
             .iter()
             .map(|normal| dot(*normal, self.frame.toward))
             .collect();
-        let value = |k: usize| facing.get(k).copied().unwrap_or(0.0);
-        // 辺の上の，法線と視線の内積が0の点と，同じ三角形の中で結ばれる，2つの辺．
+        self.level_curves(&facing, &normals)
+    }
+
+    /// 平面`normal・p = offset`による，曲面の切り口の線．網の辺の上で，平面の式の値が0になる点を結んだ，
+    /// 空間の折れ線である．
+    #[must_use]
+    pub fn cut(&self, normal: Point3, offset: f64) -> Vec<Vec<Rim>> {
+        let values: Vec<f64> = (0..self.points.len())
+            .map(|k| self.point(k).map_or(0.0, |p| dot(normal, p) - offset))
+            .collect();
+        self.level_curves(&values, &self.vertex_normals())
+    }
+
+    /// 頂点ごとの値が0になる所を，網の辺の上で補間して結んだ線．閉じた線は，始めと終わりが同じ点になる．
+    fn level_curves(&self, values: &[f64], normals: &[Point3]) -> Vec<Vec<Rim>> {
+        let value = |k: usize| values.get(k).copied().unwrap_or(0.0);
+        // 辺の上の，値が0の点と，同じ三角形の中で結ばれる，2つの辺．
         let mut positions: BTreeMap<Edge, Rim> = BTreeMap::new();
         let mut links: BTreeMap<Edge, Vec<Edge>> = BTreeMap::new();
         for corners in &self.indices {

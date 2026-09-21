@@ -56,6 +56,8 @@ pub enum ErrorKind {
     NameConflict(String),
     /// ベクトルか線分が，存在しない点(点でないオブジェクトを含む)を指している．中身は，指された`id`．
     UnknownPoint(String),
+    /// 切り口が，存在しない曲面(曲面でないオブジェクトを含む)を指している．中身は，指された`id`．
+    UnknownSurface(String),
     /// 領域が，存在しないグラフ(グラフでないオブジェクトを含む)を指している．中身は，指された`id`．
     UnknownGraph(String),
     /// 曲線の式の数が合わない．
@@ -88,6 +90,7 @@ impl ErrorKind {
             Self::NameConflict(_) => "name_conflict",
             Self::UnknownPoint(_) => "unknown_point",
             Self::UnknownGraph(_) => "unknown_graph",
+            Self::UnknownSurface(_) => "unknown_surface",
         }
     }
 }
@@ -173,6 +176,10 @@ impl fmt::Display for Error {
             ErrorKind::UnknownPoint(name) => write!(
                 f,
                 "点「{name}」がない．`from`と`to`には，`point`オブジェクトの`id`を書く．"
+            ),
+            ErrorKind::UnknownSurface(name) => write!(
+                f,
+                "曲面「{name}」がない．`surface`には，`surface`オブジェクトの`id`を書く．"
             ),
             ErrorKind::UnknownGraph(name) => write!(
                 f,

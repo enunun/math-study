@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::scene::{
-    Axis, Bound, CM_PER_PT, Curve, Direction, Graph, Grid, Label, MAX_WIDTH_PT, Object, Point,
+    Axis, Bound, CM_PER_PT, Curve, Cut, Direction, Graph, Grid, Label, MAX_WIDTH_PT, Object, Point,
     Position, Region, Scene, SpaceView, Sphere, Style, Surface, View,
 };
 
@@ -39,6 +39,14 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
             _ => None,
         })
         .collect();
+    let surfaces: HashSet<&str> = scene
+        .objects
+        .iter()
+        .filter_map(|object| match object {
+            Object::Surface(surface) => Some(surface.id.as_str()),
+            _ => None,
+        })
+        .collect();
     let mut seen = HashSet::new();
     for object in &scene.objects {
         let id = object.id();
@@ -51,6 +59,7 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
         validate_object(object, &scene.view).map_err(|kind| Error::in_object(id, kind))?;
         check_endpoints(object, &points).map_err(|kind| Error::in_object(id, kind))?;
         check_graphs(object, &graphs).map_err(|kind| Error::in_object(id, kind))?;
+        check_surface(object, &surfaces).map_err(|kind| Error::in_object(id, kind))?;
     }
     // 式の構文，名前，定義域は，型では確かめられないので，式を読んで確かめる．
     compile(scene).map(drop)
@@ -74,6 +83,7 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Surface(surface) => {
             space_only("surface", view).and_then(|()| validate_surface(surface))
         }
+        Object::Cut(cut) => space_only("cut", view).and_then(|()| validate_cut(cut)),
         Object::Parameter(_) => Ok(()),
     }
 }
@@ -90,6 +100,7 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::Segment(o) => Some(&o.style),
         Object::Region(o) => Some(&o.style),
         Object::Surface(o) => Some(&o.style),
+        Object::Cut(o) => Some(&o.style),
         Object::Label(_) | Object::Parameter(_) => None,
     }
 }
@@ -168,6 +179,28 @@ fn validate_surface(surface: &Surface) -> Result<(), ErrorKind> {
         )));
     }
     Ok(())
+}
+
+fn validate_cut(cut: &Cut) -> Result<(), ErrorKind> {
+    if cut.normal.len() == 3 {
+        Ok(())
+    } else {
+        Err(ErrorKind::Invalid(
+            "平面の法線(`normal`)は，3個の数か式で書く．".to_owned(),
+        ))
+    }
+}
+
+/// 切り口が切る曲面は，`surface`オブジェクトの`id`でなければならない．
+fn check_surface(object: &Object, surfaces: &HashSet<&str>) -> Result<(), ErrorKind> {
+    let Object::Cut(cut) = object else {
+        return Ok(());
+    };
+    if surfaces.contains(cut.surface.as_str()) {
+        Ok(())
+    } else {
+        Err(ErrorKind::UnknownSurface(cut.surface.clone()))
+    }
 }
 
 fn validate_region(region: &Region) -> Result<(), ErrorKind> {
