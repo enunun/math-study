@@ -147,6 +147,7 @@ A study site for mathematics (Astro 7, Starlight, MDX). `README.md` (Japanese) g
 - This is a solo project: work on `main` only. Do not use branches or pull requests. Commit finished work and push it to `main`, and split unrelated changes into separate commits.
 - Pushing publishes the site through GitHub Pages. After a push, confirm that the GitHub Actions `build` and `deploy` jobs succeed.
 - After a change, run `mise run check`. For changes that affect rendering or behavior, also run `mise run e2e` and check the appearance with `mise run screenshot`. The procedure is in the `verify-site` skill.
+- Record what you learn in the same change, so the next session and the human maintainer can find it. Put durable knowledge where it belongs: `CLAUDE.md` for conventions and pitfalls, `.claude/skills/**` for procedures, `docs/tech-decisions.md` for decisions and verified facts, and `README.md` plus `site/src/content/docs/dev/internals.mdx` (Japanese, for humans) for how the system works. Do not leave findings only in the conversation or the scratchpad. If a change alters who does what, what is custom-built, or how a feature is used, update `internals.mdx` and the "Code map" below in the same commit. Skip this only when the information is already recorded.
 - Read the `write-content` skill before writing site content or documentation.
 - Run `finalize-artifacts` before reporting a deliverable as done (see "Artifact Cleanup" below).
 - Prefix commands with `rtk`. The hook is in `.claude/settings.json`; do not install it in the user-level settings.
@@ -185,6 +186,18 @@ A study site for mathematics (Astro 7, Starlight, MDX). `README.md` (Japanese) g
 - Math macros are named by meaning in the numbersets style (`\RealNumbers`). Do not add short aliases such as `\R`.
 - Speech strings are English only. Known quirks: `\norm` is read as "metric", and the `\Axiom…\fCenter…` form gets no speech.
 - `mise run test` runs the Vitest unit tests (`site/src/**/*.test.ts`). `mise run check` includes them.
+
+## Code map
+
+Build-time pipeline: MDX → remark (`remark-math`) → rehype (`rehypeStatements`, then `rehypeMathjax`) → Astro components with Starlight → static HTML. `site/astro.config.ts` wires it together. The human-facing explanation is `site/src/content/docs/dev/internals.mdx`.
+
+- `site/src/math/macros.ts`: TeX macros and the `environments` used to pick number-set styles. `renderer.ts` is the main-thread client (Worker, request queue, moves the speech string to `aria-label`). `worker.ts` runs MathJax and holds its configuration.
+- `site/src/integrations/mathjax.ts`: copies fonts to `public/mathjax-fonts/`, writes `mathjax.css` (and serves it in dev), and stops the Worker.
+- `site/src/plugins/rehype-mathjax.ts`: replaces each formula with MathJax output, adds `not-content`, keeps the `id` set by the numbering step.
+- `site/src/plugins/rehype-statements.ts`: the numbering and reference step. It uses `plugins/statements/`: `tree.ts` (node types, `DocumentError`), `collect.ts` (statement kinds, page identifiers, numbering), `equations.ts` (`\label` → `\tag`), `math-sites.ts` (finds formulas in hast and mdast), `scan.ts` (reads a whole MDX file for the catalog), `catalog.ts` (index of other pages, page URLs). `inspect.ts`, `test-support.ts`, and `test-processor.ts` are unit-test helpers.
+- `site/src/components/fold/` (`Proof`, `Remark`, `Detail`, `auto-open.ts`) and `site/src/components/statement/` (`Definition`, `Lemma`, `Proposition`, `Theorem`, `Corollary`): the components. `Ref` has no component; the plugin replaces it.
+- `site/src/content.config.ts`: the `pageId` frontmatter schema. `site/src/content/docs/dev/`: the hidden pages (`notation.mdx` notation reference, `abs.mdx` cross-reference target, `internals.mdx` explanation).
+- `e2e/`: Playwright specs and helpers. `.remarkrc.mjs`, `.textlintrc.yml`, `.oxlintrc.jsonc`, `lefthook.yml`, `mise.toml`: lint and task configuration.
 
 ## Skills
 

@@ -1,0 +1,192 @@
+---
+title: 仕組みの解説
+description: サイトの仕組みを，どの部品が何をしているか，どこが自作か，どう使うかの順に説明する，開発用のページである．
+sidebar:
+  hidden: true
+pagefind: false
+head:
+  - tag: meta
+    attrs:
+      name: robots
+      content: noindex
+---
+
+このページは，サイトの仕組みを人間が理解するための解説である．次の3点を中心に説明する．
+
+- どこまでを，どの部品が担当しているか．
+- 自分で実装したのは，どこか．
+- それを利用するには，どう書き，どう変更するか．
+
+書き方の一覧と動作確認は，`/math-study/dev/notation/`のページにある．Claude向けの手順と注意点は，`CLAUDE.md`と`.claude/skills/`にある．技術選定の理由と，確認した事実は，`docs/tech-decisions.md`(英語)にある．
+
+## 全体像
+
+記事は，MDXのファイルとして書く．ビルドのとき，Astroが次の順に処理して，静的なHTMLにする．
+
+```text
+MDXファイル(site/src/content/docs/**/*.mdx)
+   │
+   ▼  Astro(@astrojs/mdx)が読み込む
+remark … Markdownの構文木を作る．remark-mathが，$…$を数式の節にする．
+   │
+   ▼  Markdownの構文木を，HTMLの構文木(hast)に変える
+rehype … HTMLの構文木を書き換える
+   ├─ rehypeStatements(自作)  定義，定理，式の番号付けと，参照の解決
+   └─ rehypeMathjax(自作)     数式を，MathJaxでHTMLにする
+   │
+   ▼  Proof，Theoremなどのコンポーネントを組み立てる
+Astro と Starlight … レイアウト，サイドバー，検索，ダークモード
+   │
+   ▼
+静的なHTML，CSS，JavaScript(site/dist) → GitHub Pages
+```
+
+数式の描画，番号付け，参照の解決は，すべてビルドのときに終わる．ブラウザに届くのは，描画済みのHTMLとCSS，フォントである．MathJax本体は，ブラウザに読み込まない．
+
+ブラウザで動く自作のJavaScriptは，折り畳みと補足の開閉だけである(`site/src/components/fold/auto-open.ts`)．検索やテーマの切り替えは，Starlightのスクリプトが行う．
+
+## 部品の分担
+
+| 領域                                                 | 担当する部品                                                         | 自作か                                   |
+| ---------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------- |
+| ページの生成，MDXの読み込み                          | Astro，`@astrojs/mdx`                                                | 既存．設定(`site/astro.config.ts`)は自作 |
+| レイアウト，サイドバー，検索，ダークモード           | Starlight，Pagefind                                                  | 既存                                     |
+| 文中の`$…$`と`$$…$$`の検出                           | remark-math                                                          | 既存                                     |
+| TeXから数式のHTMLへの変換，読み上げ用の文字列，導出木 | MathJax 4(`bussproofs`を含む)                                        | 既存                                     |
+| MathJaxの呼び出し，CSSとフォントの配信，マクロ       | `site/src/math/`，`site/src/integrations/mathjax.ts`，`site/src/plugins/rehype-mathjax.ts` | 自作                                     |
+| 定義，定理，式の番号と参照                           | `site/src/plugins/rehype-statements.ts`，`site/src/plugins/statements/` | 自作                                     |
+| 折り畳み，補足，定理の見た目                         | `site/src/components/fold/`，`site/src/components/statement/`        | 自作                                     |
+| 検査                                                 | oxlint，remark-lint，markdownlint，textlint，Vitest，Playwright      | 既存の道具に，自作の設定                 |
+| 公開                                                 | GitHub Actions，GitHub Pages                                         | 既存の道具に，自作の設定                 |
+
+自作したのは，既存の部品同士をつなぐ部分と，既存の部品にない機能である．MathJaxとAstroとStarlightの中身は，変更していない．
+
+## 数式のしくみ
+
+### 数式の流れ
+
+1. remark-mathが，`$x$`と`$$…$$`を，`language-math`のクラスを持つ`code`要素にする．別行立ての式は，`pre`が包む．
+2. `rehypeMathjax`が，すべての式を集め，TeXを1つずつ`renderer.ts`に渡す．
+3. `renderer.ts`は，MathJaxを動かすWorker(`worker.ts`)へ，メッセージでTeXを送る．
+4. MathJaxが，TeXをHTML(`mjx-container`)にし，読み上げ用の英語の文字列も作る．
+5. `renderer.ts`が，読み上げ用の文字列を`aria-label`に移し，ブラウザで使わない属性を削る．`rehypeMathjax`が，`not-content`のクラスを付けて，文書の中の式を置き換える．
+6. 全ページの処理が終わると，使った文字の分のCSSを，1つの`mathjax.css`にまとめて書き出す．数式のあるページだけが，このCSSを読み込む．フォントは，設定の読み込み時に`public/mathjax-fonts/`へ複製する．
+
+### 自作した部分と，MathJaxの部分
+
+MathJaxが担当するのは，TeXの解釈，HTMLの生成，導出木，読み上げ用の文字列である．自作したのは，それを使うための次の仕組みである．
+
+| 自作の仕組み         | 内容                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------ |
+| Worker               | MathJaxを，Astroの実行環境の外のスレッドで動かす．Astroの設定を読む一時的な環境が閉じた後でも，MathJaxを使える． |
+| キュー               | Astroはページを並行して処理するが，MathJaxは同時の描画を想定していない．リクエストは，1つずつ送る．   |
+| CSSとフォントの配信  | ビルドでは`dist/`へ書き出す．開発サーバーでは，同じURLで，その時点のCSSを返す．                        |
+| エラーの扱い         | 未定義のマクロと構文の誤りを，行の位置つきのビルドの失敗にする．MathJaxの既定では，未定義のマクロが文字として描画される． |
+| `not-content`の付与  | Starlightが本文の要素に付ける上の余白を，数式の内側で無効にする．付けないと，分数や上付き文字が離れて描画される． |
+| マクロ               | `site/src/math/macros.ts`．LaTeXのnumbersetsパッケージに合わせた名前を持つ．                           |
+
+Workerを使うのは，MathJaxを普通に読み込むと，Astroの設定を読む一時的な環境が閉じた後に，読み込みに失敗するためである．Workerを終了することで，ビルドのプロセスも終了できる．
+
+### マクロ
+
+マクロは，`site/src/math/macros.ts`に，意味の分かる名前で定義する．短縮名は作らない．数の集合は，`\RealNumbers`のように書き，`\RealNumbers[bfup]`で書体を選べる．
+
+MathJax 4には`\csname`がなく，マクロでは，引数の値から別のマクロの名前を組み立てられない．そのため，書体の切り替えは，環境の名前(`\begin{numbersetstyle…}`)を使う，回り道で実現している．
+
+## 定義，定理，式番号のしくみ
+
+### 番号付けの流れ
+
+MDXの`<Theorem>`などの要素は，rehypeの構文木に，そのまま残る．`rehypeStatements`は，その要素と，数式の`\label`を読み，次の順に処理する．
+
+1. ページの識別子を決める．frontmatterの`pageId`があればそれを，なければファイル名を使う．
+2. `Definition`，`Lemma`，`Proposition`，`Theorem`，`Corollary`を，文書の順に数え，「定理abs-3」のラベルと，リンクの飛び先(アンカー)を決める．要素には，`label`と`anchor`の属性として渡す．見た目は，Astroのコンポーネントが作る．
+3. `\label{識別子}`のある別行立ての式に，連番を付ける．`\label`を取り除いて，MathJaxの`\tag{abs-1}`を加え，式を包む要素に`id`を付ける．番号の描画は，MathJaxが行う．
+4. `<Ref />`を，ラベルの文字を持つリンク(`<a>`)に置き換える．`<Proof of="…">`の題名を，その定理のラベルにする．
+5. 別のページの定理や式を参照するときは，`catalog.ts`が作る一覧を引く．
+
+### ほかのページの参照
+
+Astroは，ページを並行して処理し，プラグインには，1ページずつしか見えない．そこで，`catalog.ts`が，`content/docs/**/*.mdx`をすべて読み，各ページの番号付きの要素の一覧を作る．ファイルの更新時刻を覚えていて，変わったファイルだけを読み直す．開発サーバーでも，編集が反映される．
+
+一覧の作成と，ページの変換は，同じ関数(`findStatementNodes`，`numberPageItems`)を使う．このため，両者の番号は，必ず一致する．
+
+### ラベルの規則
+
+- ラベルは，種類，ページの識別子，連番をつなげた形である(「定理abs-3」，「式(abs-1)」)．
+- 連番は，ページごとに1から数える．定義から系までは共通の連番で，式は別の連番である．
+- ページの識別子は，サイト全体で一意にする．重なるとビルドが失敗する．そのため，章立てを決めなくても，ラベルが一意になる．
+- 定理や式に`id`を付けると，アンカーがその`id`になる．定理を挿入して連番が変わっても，リンクは壊れない．
+
+### 自作した理由
+
+remark-mathは，式に番号を付けない．MathJaxの自動採番は，式を1つずつ描画する今の方式に合わない．未来の式への参照を解決できず，未定義の参照は，エラーとして扱われず，そのまま描画される．ほかのページの番号を引く機能は，どちらにもない．そのため，番号付けと参照の解決は，`rehypeStatements`が行う．
+
+### 制約
+
+- 番号を付けられる式は，段落から独立した別行立ての式(`$$…$$`)で，`\label`が1つのものだけである．複数行に分けるときは，`aligned`で1つの式にまとめる．
+- 式の中の`\ref`と`\eqref`は使えない．参照は，本文の`<Ref />`で書く．
+- ほかのページから参照されるページは，ファイル名を，小文字の英数字，ハイフン，アンダースコアにする．Starlightが作るURLと，一致させるためである．
+
+## 折り畳みと補足のしくみ
+
+`Proof`と`Remark`は，HTMLの`details`要素で，JavaScriptなしでも開閉できる．`Detail`は，文の途中に置く補足で，JavaScriptが有効なときだけ，切り替えのボタンが現れる．無効なときは，常に表示される．
+
+ブラウザで動くのは，`auto-open.ts`である．次の場合に，閉じている折り畳みと補足を開く．
+
+- URLのハッシュが，その中の要素を指しているとき．
+- 検索でハイライトされた語が，その中にあるとき．
+- 印刷するとき．
+
+折り畳みの中の定理や式も，ハッシュで指せば，その折り畳みが自動で開く．
+
+## 検査と公開
+
+| 対象                             | 道具                | コマンド                  |
+| -------------------------------- | ------------------- | ------------------------- |
+| コードと文書の整形               | oxfmt(MDXを除く)    | `mise run fmt`            |
+| TypeScriptなどのコード           | oxlint              | `mise run lint:code`      |
+| MDXの構文と構造                  | remark-lint         | `mise run lint:mdx`       |
+| READMEと`docs/`のMarkdown        | markdownlint        | `mise run lint:markdown`  |
+| 日本語の文章                     | textlint            | `mise run lint:text`      |
+| 型                               | `astro check`       | `mise run check`に含む    |
+| 単体テスト                       | Vitest              | `mise run test`           |
+| ブラウザでの動作                 | Playwright          | `mise run e2e`            |
+| 見た目の確認                     | Playwrightの撮影    | `mise run screenshot`     |
+| 上のすべてとビルド               | すべて              | `mise run check`          |
+
+`mise run check`は，CIと同じ内容である．コミットのときは，lefthookが，ステージしたファイルだけを検査する．`main`にpushすると，GitHub Actionsが`check`を実行し，成功すると，GitHub Pagesへ公開する．
+
+MDXの検査には，ビルドと同じ構文木で読むremark-lintを使う．閉じていないタグや，式の誤りは，コミットのときに見つかる．
+
+## 使い方
+
+### 記事を書く
+
+書き方は，`/math-study/dev/notation/`のページに，例つきでまとめてある．コード例と描画結果を並べてあるので，そのまま写して使える．
+
+### マクロを足す
+
+1. `site/src/math/macros.ts`に，意味の分かる名前で定義する．
+2. `notation.mdx`の「自作マクロ」の一覧に，1行足す．
+3. 単体テスト(`rehype-mathjax.test.ts`)に，展開の例を足す．
+
+### 定義や定理の種類を足す
+
+1. `site/src/plugins/statements/collect.ts`の`STATEMENT_KINDS`に，要素の名前と，ラベルの先頭の語を足す．
+2. `site/src/components/statement/`に，既存のものと同じ形のコンポーネントを足し，`index.ts`から出す．
+3. `.markdownlint-cli2.jsonc`の設定は不要である．MDXは，remark-lintが検査するため，登録は要らない．
+
+### 新しいコンポーネントを足す
+
+Astroのコンポーネントとして，`site/src/components/`に置く．中に，隣り合う独自要素を並べるときは，Starlightの余白の規則を避けるため，`not-content`のクラスを付ける．MDXに書く要素の追加は，`notation.mdx`に，例と動作確認を足す．
+
+### うまくいかないとき
+
+| 症状                                     | 原因と確認する場所                                                                                     |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| ビルドが，数式で失敗する                 | メッセージに，ファイルの行とTeXがある．未定義のマクロか，構文の誤りである．                            |
+| ビルドが，参照や識別子で失敗する         | メッセージに，ファイルの行と理由がある．指す先がない，重複，使えない文字のどれかである．               |
+| コミットが，MDXの検査で止まる            | 閉じていないタグや，式の`{…}`の誤りである．`mise run lint:mdx`で，位置を確認できる．                   |
+| 分数や導出木の規則名がずれる             | Starlightの余白が，数式の内側に及んでいる．`not-content`のクラスが付いているか確かめる．               |
+| 数式のフォントが読み込めない             | フォントは，Astroの設定を読み込むときに，`public/mathjax-fonts/`へ複製される．開発サーバーやビルドを，起動し直す． |

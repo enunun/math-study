@@ -72,6 +72,10 @@ A display formula (`$$…$$`, on its own) that contains `\label{id}` gets a numb
 - Do not use `\ref` or `\eqref` inside math: MathJax renders an unknown reference as `(???)`, so the build rejects them. Reference equations from prose with `<Ref />`.
 - `<Proof of="…">` accepts only statement identifiers, not equation identifiers.
 
+## Keeping the explanations in sync
+
+The notation page (`dev/notation.mdx`) is the reference for writers, and `dev/internals.mdx` explains how the system works (who does what, what is custom, how to extend it). When you change notation, macros, numbering, or the pipeline, update the matching page in the same commit, and keep the "Code map" in `CLAUDE.md` current.
+
 ## Lint
 
 ```sh

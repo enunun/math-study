@@ -11,6 +11,8 @@
 - 実装済み(式番号)：別行立ての式の`\label`による自動採番と，`Ref`による参照．
 - 予定：Rustで書いた多項式電卓とグラフ(Wasm)．
 
+サイトの仕組み(どの部品が何をしているか，どこが自作か，どう使うか)は，[仕組みの解説](https://enunun.github.io/math-study/dev/internals/)にある．ソースは`site/src/content/docs/dev/internals.mdx`である．
+
 技術選定の理由と，確認した事実は，[docs/tech-decisions.md](docs/tech-decisions.md)(英語)にまとめてある．
 
 ## 技術構成
