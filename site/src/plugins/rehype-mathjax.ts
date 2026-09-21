@@ -67,6 +67,8 @@ function replace(target: Element, container: Element): void {
   target.properties = {
     ...container.properties,
     ...(id === undefined ? {} : { id }),
+    // 別行立ての式は，長いと横にスクロールする．キーボードでもスクロールできるよう，フォーカスできるようにする．
+    ...(container.properties.display === undefined ? {} : { tabIndex: 0 }),
     className: [...(Array.isArray(className) ? className : []), STARLIGHT_EXCLUDE_CLASS],
   };
   target.children = container.children;

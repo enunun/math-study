@@ -7,6 +7,7 @@ import remarkMath from 'remark-math';
 
 import { FONT_DIRECTORY, mathjaxIntegration, STYLESHEET_FILE } from './src/integrations/mathjax';
 import { environments, macros } from './src/math/macros';
+import { rehypeFocusableTables } from './src/plugins/rehype-focusable-tables';
 import { rehypeMathjax } from './src/plugins/rehype-mathjax';
 import { rehypeStatements } from './src/plugins/rehype-statements';
 
@@ -27,6 +28,7 @@ export default defineConfig({
       remarkPlugins: [remarkMath],
       rehypePlugins: [
         [rehypeStatements, statements],
+        rehypeFocusableTables,
         [rehypeMathjax, { ...math, cssUrl: `${base}/${STYLESHEET_FILE}` }],
       ],
     }),
@@ -34,6 +36,8 @@ export default defineConfig({
   integrations: [
     starlight({
       title: '数学の学習サイト',
+      // コードブロックは折り返す．横にスクロールする領域は，キーボードで操作できない．
+      expressiveCode: { defaultProps: { wrap: true } },
       defaultLocale: 'root',
       locales: { root: { label: '日本語', lang: 'ja' } },
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/enunun/math-study' }],

@@ -111,6 +111,11 @@ $$`,
     expect(await render('$$x$$')).toMatch(/<mjx-container class="[^"]*\bnot-content\b/u);
   });
 
+  it('別行立ての式だけを，スクロールに備えて，フォーカスできるようにする', async () => {
+    expect(await render('$$\nx\n$$')).toContain('tabindex="0"');
+    expect(await render('$x$')).not.toContain('tabindex');
+  });
+
   it('数式のある文書だけに，CSSを読み込むlinkを加える', async () => {
     expect(await render('$x$')).toContain('<link rel="stylesheet" href="/math-study/mathjax.css">');
     expect(await render('数式のない文書である．')).not.toContain('mathjax.css');
