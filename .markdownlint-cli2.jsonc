@@ -1,27 +1,12 @@
 {
-  // サイトの文書(MarkdownとMDX)と，README，開発者向けの文書を検査する．
-  "globs": ["site/src/content/**/*.{md,mdx}", "README.md", "docs/**/*.md"],
+  // サイトのMarkdown，README，開発者向けの文書を検査する．MDXは，remark-lint(.remarkrc.mjs)が検査する．
+  "globs": ["site/src/content/**/*.md", "README.md", "docs/**/*.md"],
   "config": {
     // ルールは，番号(MD013など)ではなく，説明的な別名で指定する．
     "default": true,
 
     // 日本語の文は，行の長さで折り返さない．
     "line-length": false,
-
-    // MDXで使うコンポーネントは，インラインHTMLとして許可する．
-    "no-inline-html": {
-      "allowed_elements": [
-        "Corollary",
-        "Definition",
-        "Detail",
-        "Lemma",
-        "Proof",
-        "Proposition",
-        "Ref",
-        "Remark",
-        "Theorem",
-      ],
-    },
 
     // Starlightは，frontmatterのtitleを1つ目の見出しとして扱う．
     "first-line-heading": {

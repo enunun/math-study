@@ -5,7 +5,7 @@ description: Rules and notation for writing the site content (Markdown, MDX) and
 
 # write-content
 
-Rules and notation for the site content (`site/src/content/**`) and `README.md`, which are written in Japanese. textlint and markdownlint check them mechanically. Everything else meant for Claude (`CLAUDE.md`, skills, `docs/**`) is written in English.
+Rules and notation for the site content (`site/src/content/**`) and `README.md`, which are written in Japanese. textlint checks the prose, remark-lint checks MDX, and markdownlint checks `README.md` and `docs/`. Everything else meant for Claude (`CLAUDE.md`, skills, `docs/**`) is written in English.
 
 ## Writing rules for Japanese text
 
@@ -66,14 +66,15 @@ Bad identifiers, duplicate identifiers, and references that point nowhere fail t
 
 ```sh
 mise run lint:text
+mise run lint:mdx
 mise run lint:markdown
 pnpm exec textlint --fix site/src/content README.md
 ```
 
-- The checked files are `site/src/content` and `README.md` (textlint), plus `docs/` (markdownlint). Staged files are also checked at commit time.
+- The checked files are `site/src/content` and `README.md` (textlint), `site/src/content/**/*.mdx` (remark-lint, `mise run lint:mdx`), and `README.md` and `docs/` (markdownlint). Staged files are also checked at commit time.
 - `textlint --fix` only repairs what can be fixed automatically (spaces, colons, punctuation). Review the diff afterwards; a fix can change the meaning, for example a space inside a quoted string.
 - In MDX, `textlint-disable` comments do not work. Rewrite the text to avoid a false positive.
-- When using a new component in MDX, add it to `allowed_elements` in `.markdownlint-cli2.jsonc`.
+- A new component in MDX needs no lint configuration. An unclosed tag or a broken `{…}` expression fails `lint:mdx` with the file position.
 - Headings must be unique within a page (`no-duplicate-heading`), so give repeated section names a distinguishing word.
 - To change the writing rules, edit `.textlintrc.yml` and `.textlint-prh.yml`. Give each `prh` rule `specs` with before and after examples.
 

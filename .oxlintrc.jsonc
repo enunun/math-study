@@ -89,6 +89,13 @@
       },
     },
     {
+      // remark-lintの設定は，使うプラグインを並べるため，依存が多くなる．
+      "files": [".remarkrc.mjs"],
+      "rules": {
+        "import/max-dependencies": "off",
+      },
+    },
+    {
       // 型の宣言ファイルは，importやexportを持たない，スクリプトとして書く．
       "files": ["**/*.d.ts"],
       "rules": {

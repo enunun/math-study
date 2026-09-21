@@ -340,14 +340,14 @@ import { Definition, Lemma, Proposition, Theorem, Corollary } from '@/components
 
 ## 文章の規則と検査
 
-コミット時とCIで，`site/src/content`のMarkdownとMDXを，textlintとmarkdownlintで検査する．
+コミット時とCIで，`site/src/content`のMarkdownとMDXを，文章はtextlintで，MDXの構文と構造はremark-lintで検査する．
 
 - 和文と欧文の間，和文とインラインコードの間には，スペースを入れない(「MDXの記法」「`mise run dev`を実行」)．
 - 本文と箇条書きは，常体(である調)にそろえる．
 - 和文の後ろのコロンは，全角の「：」にする．後ろにスペースを入れない．
 - 読点は全角のコンマ「，」，句点は全角のピリオド「．」にする．`、`と`。`は使わない．
 - 太字とコロンを使った箇条書きや誇張した表現など，AIが書いたように見える書き方を避ける．
-- 見出しの階層を飛ばさず，リストの前後に空行を入れる．MDXで使うコンポーネントは，`.markdownlint-cli2.jsonc`の許可リストに追加する．
+- 見出しの階層を飛ばさず，リストの前後に空行を入れる．MDXで使うコンポーネントの登録は要らない．閉じていないタグや，式の誤りは，ビルドの前にremark-lintが見つける．
 
 検査と修正のコマンドは次のとおりである．
 

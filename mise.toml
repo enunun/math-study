@@ -42,9 +42,14 @@ depends = ["sync"]
 run = "pnpm exec oxlint --deny-warnings"
 
 [tasks."lint:markdown"]
-description = "markdownlintでMarkdownを検査する"
+description = "markdownlintでMarkdown(README，docs)を検査する"
 depends = ["install"]
 run = "pnpm exec markdownlint-cli2"
+
+[tasks."lint:mdx"]
+description = "remark-lintでMDXを検査する(MDXの構文の誤りと，Markdownの構造)"
+depends = ["install"]
+run = "pnpm exec remark site/src/content --ext mdx --frail --quiet --no-stdout"
 
 [tasks."lint:text"]
 description = "textlintで文章を検査する(文体，和欧文間のスペース，AIらしい表現)"
@@ -53,7 +58,7 @@ run = "pnpm exec textlint site/src/content README.md"
 
 [tasks.lint]
 description = "すべてのリントを実行する"
-depends = ["lint:code", "lint:markdown", "lint:text"]
+depends = ["lint:code", "lint:markdown", "lint:mdx", "lint:text"]
 
 [tasks.test]
 description = "単体テストを実行する"

@@ -9,7 +9,7 @@ Confirm that a change builds, works under the same base path as production, and 
 
 ## Procedure
 
-1. Run `mise run check`. It runs formatting, oxlint, markdownlint, textlint, the type check (`astro check`), the Vitest unit tests, and the build. CI runs the same thing.
+1. Run `mise run check`. It runs formatting, oxlint, remark-lint (MDX), markdownlint, textlint, the type check (`astro check`), the Vitest unit tests, and the build. CI runs the same thing.
 2. For changes that affect rendering or behavior, run `mise run e2e`. It builds `site/dist` and runs the tests in `e2e/`.
 3. For changes that affect appearance, take screenshots and look at the images (next section).
 4. After committing and pushing, confirm that CI succeeded (the section after next).
