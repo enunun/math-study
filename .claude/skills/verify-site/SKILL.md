@@ -54,6 +54,8 @@ git rev-parse HEAD
 curl -s "https://api.github.com/repos/enunun/math-study/actions/workflows/deploy.yml/runs?branch=main&per_page=3"
 ```
 
+The API allows only 60 unauthenticated requests per hour, shared by everything on the container (mise's `github` backend included). Poll at intervals of 30 seconds or more with a small number of calls, and check `curl https://api.github.com/rate_limit` first. If the limit is exhausted, do not wait for the reset: say that the push is done and the status is unchecked, and let the user confirm.
+
 Find the run whose `head_sha` matches the local commit and read its `status` and `conclusion`. If it failed, reproduce it locally: CI has no generated files such as `site/.astro`, so something can pass locally and fail in CI. Delete them (`rm -rf site/.astro site/dist`) and rerun `mise run check`.
 
 ## Adding E2E tests
