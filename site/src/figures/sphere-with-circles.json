@@ -1,11 +1,12 @@
 {
   "version": "0.1.0",
-  "description": "半径2の球と，球の面の上の2つの円．球の裏側の円の部分は点線で描く．",
+  "description": "半径2の球と，球の面の上の2つの円と，原点O．球の裏側の円の部分は点線で描く．",
   "view": { "azimuth": 60, "elevation": 20, "unit": "0.8cm" },
   "objects": [
     { "id": "x_axis", "type": "axis", "direction": "x", "range": [-5, 5], "label": "x" },
     { "id": "y_axis", "type": "axis", "direction": "y", "range": [-5, 5], "label": "y" },
     { "id": "z_axis", "type": "axis", "direction": "z", "range": [-5, 5], "label": "z" },
+    { "id": "origin_label", "type": "label", "at": [0, 0, 0], "anchor": "north east", "tex": "O" },
     {
       "id": "equator",
       "type": "curve",

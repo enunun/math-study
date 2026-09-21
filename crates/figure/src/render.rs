@@ -52,7 +52,7 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Figure 
     for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
         match object {
             Object::Axis(axis) => items.extend(axis_items(axis, view, scale)),
-            Object::Label(label) => items.push(Item::Label(label_item(label, scale))),
+            Object::Label(label) => items.extend(label_item(label, scale).map(Item::Label)),
             Object::Graph(_) | Object::Curve(_) => {
                 items.extend(plot_items(object, plot, compiled, scale));
             }
@@ -75,12 +75,16 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Figure 
     }
 }
 
-fn label_item(label: &Label, scale: Scale) -> LabelItem {
-    LabelItem {
-        at: scale.point(label.at[0], label.at[1]),
+fn label_item(label: &Label, scale: Scale) -> Option<LabelItem> {
+    // 位置の数は，検査で確かめてある．
+    let [x, y] = label.at.as_slice() else {
+        return None;
+    };
+    Some(LabelItem {
+        at: scale.point(*x, *y),
         anchor: label.anchor,
         tex: label.tex.clone(),
-    }
+    })
 }
 
 /// 軸の線と，先端の矢じり，軸の名前．

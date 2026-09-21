@@ -40,7 +40,7 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
 fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
     match object {
         Object::Axis(axis) => validate_axis(axis, view),
-        Object::Label(label) => plane_only("label", view).and_then(|()| validate_label(label)),
+        Object::Label(label) => validate_label(label, view),
         Object::Graph(graph) => plane_only("graph", view).and_then(|()| validate_graph(graph)),
         Object::Curve(curve) => validate_curve(curve, view),
         Object::Sphere(sphere) => space_only("sphere", view).and_then(|()| validate_sphere(sphere)),
@@ -82,7 +82,16 @@ fn validate_axis(axis: &Axis, view: &View) -> Result<(), ErrorKind> {
     }
 }
 
-fn validate_label(label: &Label) -> Result<(), ErrorKind> {
+fn validate_label(label: &Label, view: &View) -> Result<(), ErrorKind> {
+    let (kind, expected) = match view {
+        View::Plane(_) => ("平面", 2),
+        View::Space(_) => ("空間", 3),
+    };
+    if label.at.len() != expected {
+        return Err(ErrorKind::Invalid(format!(
+            "ラベルの位置`at`は，{kind}の図では{expected}個の数で書く．"
+        )));
+    }
     non_empty("tex", &label.tex)
 }
 

@@ -149,6 +149,7 @@ describe('Wasmの空間の図', () => {
         'x_axis:axis',
         'y_axis:axis',
         'z_axis:axis',
+        'origin_label:label',
         'ball:sphere',
       ]);
     }
@@ -164,7 +165,7 @@ describe('Wasmの空間の図', () => {
     // 3本の軸が，それぞれ球に隠れる．
     expect(dotted).toHaveLength(3);
     expect(paths.at(-1)?.stroke.line).toBe('solid');
-    expect(outcome.figure.items.filter((item) => item.type === 'label')).toHaveLength(3);
+    expect(outcome.figure.items.filter((item) => item.type === 'label')).toHaveLength(4);
   });
 
   it('TikZは，ネイティブのRustで作った期待する出力と，一字も違わない', async () => {

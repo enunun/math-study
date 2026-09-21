@@ -45,7 +45,7 @@ test.describe('空間の図', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     // ラベルの数式が描画されるまで待つ．
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(6);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(8);
   });
 
   test('SVGは，画像として説明を持ち，隠れた部分で分かれた線と，輪郭がある', async ({ page }) => {
@@ -111,6 +111,16 @@ test.describe('空間の図', () => {
     expect(Math.abs(center(label)[0] - center(axis)[0])).toBeLessThan(TOLERANCE);
   });
 
+  test('Oの名前は，原点の左下に置く', async ({ page }) => {
+    const paths = first(page).locator('svg path');
+    const outline = await geometry(paths.nth(9));
+    const [cx, cy] = center(outline);
+    const label = await box(first(page).locator('.figure-label').nth(3));
+    // 箱の右上の角が，原点(球の中心)に合う．
+    expect(Math.abs(label.x + label.width - cx)).toBeLessThan(TOLERANCE * 2);
+    expect(Math.abs(label.y - cy)).toBeLessThan(TOLERANCE * 2);
+  });
+
   test('幅の狭い画面では，画面に収まるよう縮み，横にはみ出さない', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 800 });
     const svg = await box(first(page).locator('svg'));
@@ -166,7 +176,7 @@ test.describe('空間の図', () => {
     page.on('pageerror', (error) => problems.push(String(error)));
     page.on('requestfailed', (request) => problems.push(request.url()));
     await page.reload();
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(6);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(8);
     expect(problems).toEqual([]);
   });
 });

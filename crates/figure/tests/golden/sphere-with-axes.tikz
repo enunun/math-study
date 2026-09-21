@@ -3,12 +3,13 @@
 % --- シーン ---
 % {
 %   "version": "0.1.0",
-%   "description": "半径2の球と，球を通る3本の座標軸．球に隠れた軸の部分は点線で描く．",
+%   "description": "半径2の球と，球を通る3本の座標軸と，原点O．球に隠れた軸の部分は点線で描く．",
 %   "view": { "azimuth": 60, "elevation": 20, "unit": "0.8cm" },
 %   "objects": [
 %     { "id": "x_axis", "type": "axis", "direction": "x", "range": [-5, 5], "label": "x" },
 %     { "id": "y_axis", "type": "axis", "direction": "y", "range": [-5, 5], "label": "y" },
 %     { "id": "z_axis", "type": "axis", "direction": "z", "range": [-5, 5], "label": "z" },
+%     { "id": "origin_label", "type": "label", "at": [0, 0, 0], "anchor": "north east", "tex": "O" },
 %     { "id": "ball", "type": "sphere", "center": [0, 0, 0], "radius": 2 }
 %   ]
 % }
@@ -26,6 +27,7 @@
 \draw[line width=0.6pt, dotted] (0,-1.6) -- (0,1.5035);
 \draw[line width=0.6pt, -{Stealth}] (0,1.5035) -- (0,3.7588);
 \node[anchor=south] at (0,3.7588) {$z$};
+\node[anchor=north east] at (0,0) {O};
 \draw[line width=0.8pt] (1.6,0) -- (1.5923,0.1568) -- (1.5693,0.3121)
   -- (1.5311,0.4645) -- (1.4782,0.6123) -- (1.4111,0.7542) -- (1.3304,0.8889)
   -- (1.2368,1.015) -- (1.1314,1.1314) -- (1.015,1.2368) -- (0.8889,1.3304)

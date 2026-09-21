@@ -270,6 +270,41 @@ fn 描く範囲は_描いた要素の外枠に余白を足したものである(
     );
 }
 
+// ---- ラベル ----
+
+#[test]
+fn 原点のラベルは_原点の投影に置き_球の内側でも描く() {
+    let origin = r#"{ "id": "o", "type": "label", "at": [0, 0, 0],
+                      "anchor": "north east", "tex": "O" }"#;
+    let figure = figure_of(&space_scene(
+        60.0,
+        20.0,
+        "0.8cm",
+        &format!("{origin}, {BALL}"),
+    ));
+    let names = labels(&figure);
+    assert_eq!(names.len(), 1);
+    assert!(close2(names[0].at, [0.0, 0.0], 1e-12));
+    assert_eq!(names[0].anchor, Anchor::NorthEast);
+    assert_eq!(names[0].tex, "O");
+}
+
+#[test]
+fn ラベルは_空間の位置を投影した所に置く() {
+    let text = r#"{ "id": "p", "type": "label", "at": [1, 2, 3], "tex": "$P$" }"#;
+    let figure = figure_of(&space_scene(60.0, 20.0, "0.8cm", text));
+    let names = labels(&figure);
+    assert!(close2(
+        names[0].at,
+        project([1.0, 2.0, 3.0], 60.0, 20.0, 0.8),
+        1e-9
+    ));
+    assert_eq!(names[0].anchor, Anchor::Center);
+    // 描く範囲に，ラベルの位置が入る．
+    assert!(figure.bounds.min[0] < names[0].at[0] && names[0].at[0] < figure.bounds.max[0]);
+    assert!(figure.bounds.min[1] < names[0].at[1] && names[0].at[1] < figure.bounds.max[1]);
+}
+
 // ---- 球の輪郭 ----
 
 #[test]
@@ -476,13 +511,13 @@ fn 隠れた線の種類は_styleのhiddenで選べる() {
 }
 
 #[test]
-fn 最初の空間の図は_3本の軸と球の輪郭と3つの名前からできる() {
+fn 最初の空間の図は_3本の軸と球の輪郭と_軸の名前と原点の名前からできる() {
     let figure = figure_of(SPHERE_WITH_AXES);
     let names: Vec<&str> = labels(&figure)
         .iter()
         .map(|label| label.tex.as_str())
         .collect();
-    assert_eq!(names, ["$x$", "$y$", "$z$"]);
+    assert_eq!(names, ["$x$", "$y$", "$z$", "O"]);
     // 各軸は，球に隠れる部分で3つに分かれ，球の輪郭が1本．
     let lines: Vec<Line> = paths(&figure).iter().map(|path| path.stroke.line).collect();
     let dotted = lines.iter().filter(|line| **line == Line::Dotted).count();

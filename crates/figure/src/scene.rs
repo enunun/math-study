@@ -212,8 +212,8 @@ pub enum Anchor {
 pub struct Label {
     /// 識別子．
     pub id: String,
-    /// 置く位置(数学の座標)．
-    pub at: [f64; 2],
+    /// 置く位置(数学の座標)．平面の図では2個，空間の図では3個の数で書く．
+    pub at: Vec<f64>,
     /// 位置の基準．
     #[serde(default)]
     pub anchor: Anchor,

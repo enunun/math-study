@@ -47,7 +47,7 @@ fn 空間の図を読める() {
     assert_eq!(view.elevation, 20.0);
     assert_eq!(view.unit.to_cm(), 0.8);
     let kinds: Vec<&str> = scene.objects.iter().map(Object::type_name).collect();
-    assert_eq!(kinds, ["axis", "axis", "axis", "sphere"]);
+    assert_eq!(kinds, ["axis", "axis", "axis", "label", "sphere"]);
 }
 
 #[test]
@@ -145,16 +145,34 @@ fn 空間の軸には_範囲が必要である() {
 }
 
 #[test]
-fn 空間では_グラフとラベルは使えない() {
-    for object in [
+fn 空間では_グラフは使えない() {
+    let error = error_of(&space_scene(
         r#"{ "id": "g", "type": "graph", "var": "x", "expr": "x", "domain": [0, 1] }"#,
-        r#"{ "id": "g", "type": "label", "at": [0, 0], "tex": "O" }"#,
-    ] {
-        let error = error_of(&space_scene(object));
-        assert!(matches!(error.kind, ErrorKind::Invalid(_)), "{error}");
-        assert_in_object(&error, "g");
-        assert!(error.to_string().contains("空間"), "{error}");
-    }
+    ));
+    assert!(matches!(error.kind, ErrorKind::Invalid(_)), "{error}");
+    assert_in_object(&error, "g");
+    assert!(error.to_string().contains("空間"), "{error}");
+}
+
+#[test]
+fn ラベルの位置は_平面で2個_空間で3個の数で書く() {
+    let scene = parse_scene(&space_scene(
+        r#"{ "id": "o", "type": "label", "at": [0, 0, 0], "anchor": "north east", "tex": "O" }"#,
+    ))
+    .expect("読める");
+    assert_eq!(scene.objects.len(), 1);
+    let space = error_of(&space_scene(
+        r#"{ "id": "o", "type": "label", "at": [0, 0], "tex": "O" }"#,
+    ));
+    assert!(matches!(space.kind, ErrorKind::Invalid(_)), "{space}");
+    assert_in_object(&space, "o");
+    assert!(space.to_string().contains("3個"), "{space}");
+    let plane = error_of(&plane_scene(
+        r#"{ "id": "o", "type": "label", "at": [0, 0, 0], "tex": "O" }"#,
+    ));
+    assert!(matches!(plane.kind, ErrorKind::Invalid(_)), "{plane}");
+    assert_in_object(&plane, "o");
+    assert!(plane.to_string().contains("2個"), "{plane}");
 }
 
 #[test]

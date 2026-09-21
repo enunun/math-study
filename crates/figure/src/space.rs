@@ -13,7 +13,7 @@ use crate::figure::{Bounds, Figure, Item, LabelItem, Path, Stroke};
 use crate::render::{AXIS_WIDTH, CURVE_WIDTH, MARGIN, arrow_head, with_variable};
 use crate::sample::{sample, sample_with_parameters};
 use crate::scene::{
-    Anchor, Axis, Direction, Hidden, Line, Object, Scene, SpaceView, Sphere, Style,
+    Anchor, Axis, Direction, Hidden, Label, Line, Object, Scene, SpaceView, Sphere, Style,
 };
 
 /// 空間の点．
@@ -117,6 +117,9 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
     for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
         match (object, plot) {
             (Object::Axis(axis), _) => items.extend(axis_items(axis, &space)),
+            (Object::Label(label), _) => {
+                items.extend(label_item(label, &space.camera).map(Item::Label));
+            }
             (Object::Sphere(sphere), _) => items.push(outline(sphere, &space.camera)),
             (Object::Curve(curve), Plot::Curve(plot)) => {
                 items.extend(curve_items(curve.style, plot, compiled, &space));
@@ -129,6 +132,19 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
         bounds: bounds_of(&items),
         items,
     }
+}
+
+/// 空間の位置に置くラベル．ラベルは，球に隠れない．
+fn label_item(label: &Label, camera: &Camera) -> Option<LabelItem> {
+    // 位置の数は，検査で確かめてある．
+    let [x, y, z] = label.at.as_slice() else {
+        return None;
+    };
+    Some(LabelItem {
+        at: camera.project([*x, *y, *z]),
+        anchor: label.anchor,
+        tex: label.tex.clone(),
+    })
 }
 
 /// 隠れた部分の線の種類．描かないときは`None`．

@@ -86,7 +86,7 @@ Decisions for the minimal figure:
 
 - The engine version stays 0.1.0. The new fields are additive, and no scene has been published.
 - `view` is either a plane view (`x`, `y`, `unit` with two lengths, as before) or a space view: `azimuth` and `elevation` in degrees and `unit`, one length for all three axes. The camera is in the direction `(cos e cos a, cos e sin a, sin e)` from the origin, looking at it. The screen's right is `(-sin a, cos a, 0)` and its up is `(-sin e cos a, -sin e sin a, cos e)`, so `x` comes toward the viewer at azimuth 0 and elevation 0, with `y` to the right and `z` up. A space figure has no visible range: the bounds are those of the drawn items.
-- An object type belongs to one kind of view. `graph` and `label` are plane objects (a space label needs a 3D position, which comes later), `sphere` is a space object, `axis` and `curve` are both, and `parameter` is both. A space `axis` needs `range`; `direction` may be `z` only in a space view. A space `curve` has three expressions.
+- An object type belongs to one kind of view. `graph` is a plane object, `sphere` is a space object, and `axis`, `curve`, `label`, and `parameter` are both. A `label` has two numbers in `at` in a plane view and three in a space view; a label is never hidden by a surface. A space `axis` needs `range`; `direction` may be `z` only in a space view. A space `curve` has three expressions.
 - `style` gets `hidden`: `dotted` (default), `dashed`, or `none` (not drawn), the style of the parts an opaque surface hides. An `axis` gets `style` for it.
 - A point is hidden when the ray from it toward the camera meets a sphere at a positive distance; a point inside a sphere is hidden. The switch points between visible and hidden pieces are refined by bisection.
 - The IR does not change: it is still 2D paths and labels, so SVG and TikZ need no change.
@@ -100,7 +100,8 @@ Implemented (`space.rs`, tests in `tests/space_scene.rs` and `tests/space.rs`, p
 - Only spheres hide. The outline of one sphere is not hidden by another, and a hiding sphere does not hide another sphere's outline.
 - Axes are cut at 64 sample points before bisection, so a hidden interval shorter than one step is missed.
 - A space axis with an arrow draws the head only when its last piece is visible, and a label is always drawn at the positive end. `anchor` for the label is chosen from the eight directions of the projected axis.
-- Not done: labels and points at 3D positions, surfaces given by expressions, plane cuts, hidden-line removal between curves and non-spherical surfaces, ticks, perspective.
+- The origin `O` is a `label` at `[0, 0, 0]` in every space figure, as in plane figures. Its anchor is the free gap between the projected axes (`north east` at azimuth 60 and elevation 20, the lower left of the origin).
+- Not done: points at 3D positions, surfaces given by expressions, plane cuts, hidden-line removal between curves and non-spherical surfaces, ticks, perspective.
 
 ## Scene rules
 
