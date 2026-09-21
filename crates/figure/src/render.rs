@@ -1,6 +1,7 @@
 //! シーンを，描画の中間表現にする．
 
 use crate::arrow::Stealth;
+use crate::clip::clip_polyline;
 use crate::compile::{Compiled, Plot, compile};
 use crate::error::Error;
 use crate::figure::{ArrowHead, Bounds, Figure, Item, LabelItem, Path, Stroke};
@@ -48,13 +49,18 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Figure 
         x: view.unit.x.to_cm(),
         y: view.unit.y.to_cm(),
     };
+    // グラフと曲線は，見える範囲で切り取る．
+    let window = [
+        scale.point(view.x[0], view.y[0]),
+        scale.point(view.x[1], view.y[1]),
+    ];
     let mut items = Vec::new();
     for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
         match object {
             Object::Axis(axis) => items.extend(axis_items(axis, view, scale)),
             Object::Label(label) => items.extend(label_item(label, scale).map(Item::Label)),
             Object::Graph(_) | Object::Curve(_) => {
-                items.extend(plot_items(object, plot, compiled, scale));
+                items.extend(plot_items(object, plot, compiled, scale, window));
             }
             Object::Parameter(_) | Object::Sphere(_) => {}
         }
@@ -146,8 +152,14 @@ pub fn arrow_head(arrow: Arrow, end: [f64; 2], direction: [f64; 2]) -> Option<Ar
     }
 }
 
-/// グラフや曲線を標本化した，折れ線．線が切れると，折れ線が分かれる．
-fn plot_items(object: &Object, plot: &Plot, compiled: &Compiled, scale: Scale) -> Vec<Item> {
+/// グラフや曲線を標本化して，見える範囲で切り取った，折れ線．線が切れるか，範囲を出ると，折れ線が分かれる．
+fn plot_items(
+    object: &Object,
+    plot: &Plot,
+    compiled: &Compiled,
+    scale: Scale,
+    window: [[f64; 2]; 2],
+) -> Vec<Item> {
     let (paths, style) = match (object, plot) {
         (Object::Graph(graph), Plot::Graph(plot)) => {
             let [start, end] = plot.domain;
@@ -178,8 +190,10 @@ fn plot_items(object: &Object, plot: &Plot, compiled: &Compiled, scale: Scale) -
         }
         _ => return Vec::new(),
     };
+    let [min, max] = window;
     paths
-        .into_iter()
+        .iter()
+        .flat_map(|points| clip_polyline(points, min, max))
         .map(|points| Item::Path(curve_path(points, style)))
         .collect()
 }

@@ -49,6 +49,11 @@ const SCENE_SAMPLES: SceneSample[] = [
     label: '範囲の誤り',
     json: replaceOnce(first, '"x": [-7, 7]', '"x": [7, -7]'),
   },
+  {
+    id: 'clipped',
+    label: '範囲で切り取る',
+    json: replaceOnce(first, '"y": [-1.6, 1.8]', '"y": [-0.5, 0.5]'),
+  },
   { id: 'space', label: '球と軸', json: space },
   {
     id: 'missingRange',

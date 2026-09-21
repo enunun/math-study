@@ -157,8 +157,8 @@ fn 媒介変数の値が式に入る() {
 
 #[test]
 fn 媒介変数表示の曲線は式の値を実寸にして結ぶ() {
-    let json = scene_with(
-        UNIT_1CM,
+    let json = plane_scene(
+        r#"{ "x": [-3, 3], "y": [-3, 3], "unit": { "x": "1cm", "y": "1cm" } }"#,
         r#"{ "id": "c", "type": "curve", "var": "t", "expr": ["2*cos(t)", "2*sin(t)"],
              "domain": [0, "2*pi"], "style": { "line": "dashed" } }"#,
     );
@@ -243,4 +243,88 @@ fn 中間表現は_kindごとに型の名前を持つjsonになる() {
     assert_eq!(value["items"][6]["stroke"]["line"], "dotted");
     assert!(value["items"][5]["arrow"].is_null());
     assert_eq!(value["bounds"]["min"][0], -7.6);
+}
+
+fn plane_scene(view: &str, objects: &str) -> String {
+    format!(
+        r#"{{ "version": "0.1.0", "description": "試験の図",
+             "view": {view}, "objects": [{objects}] }}"#
+    )
+}
+
+const VIEW_2X3: &str = r#"{ "x": [-2, 2], "y": [-1, 3], "unit": { "x": "1cm", "y": "1cm" } }"#;
+
+#[test]
+fn グラフは見える範囲で切り取り_外へ出る部分を描かない() {
+    let parabola =
+        r#"{ "id": "p", "type": "graph", "var": "x", "expr": "x^2", "domain": [-3, 3] }"#;
+    let figure = figure_of(&plane_scene(VIEW_2X3, parabola));
+    assert_eq!(figure.items.len(), 1);
+    let curve = path(&figure.items[0]);
+    // y = x^2 は，y = 3 の所(x = ±sqrt(3))で，範囲の上の辺に出る．
+    for point in &curve.points {
+        assert!(
+            point[0] >= -2.0 - 1e-9 && point[0] <= 2.0 + 1e-9,
+            "{point:?}"
+        );
+        assert!(
+            point[1] >= -1.0 - 1e-9 && point[1] <= 3.0 + 1e-9,
+            "{point:?}"
+        );
+    }
+    let (first, last) = (curve.points[0], *curve.points.last().unwrap());
+    assert!(
+        close(first[1], 3.0) && close(last[1], 3.0),
+        "{first:?} {last:?}"
+    );
+    // 折れ線の弦で切るので，曲線との差は，標本化の許容(0.003cm)程度である．
+    assert!((first[0] + 3.0_f64.sqrt()).abs() < 0.01 && (last[0] - 3.0_f64.sqrt()).abs() < 0.01);
+}
+
+#[test]
+fn 範囲の外にだけあるグラフは_何も描かない() {
+    let far = r#"{ "id": "p", "type": "graph", "var": "x", "expr": "x + 10", "domain": [-1, 1] }"#;
+    assert!(figure_of(&plane_scene(VIEW_2X3, far)).items.is_empty());
+}
+
+#[test]
+fn tanのように何度も範囲を出入りするグラフは_範囲の中の線に分かれる() {
+    let tan = r#"{ "id": "t", "type": "graph", "var": "x", "expr": "tan(x)", "domain": [-2, 2] }"#;
+    let figure = figure_of(&plane_scene(VIEW_2X3, tan));
+    let curves: Vec<&Path> = figure.items.iter().map(path).collect();
+    assert!(curves.len() >= 2, "{}", curves.len());
+    for curve in curves {
+        for point in &curve.points {
+            assert!(
+                point[1] >= -1.0 - 1e-9 && point[1] <= 3.0 + 1e-9,
+                "{point:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn 媒介変数表示の曲線も_見える範囲で切り取り_線の種類を保つ() {
+    // 見える範囲(x: -2から2，y: -1から3)の四方に，はみ出す円．
+    let circle = r#"{ "id": "c", "type": "curve", "var": "t",
+        "expr": ["2.5*cos(t)", "1+2.5*sin(t)"],
+        "domain": [0, "2*pi"], "style": { "line": "dotted" } }"#;
+    let figure = figure_of(&plane_scene(VIEW_2X3, circle));
+    assert!(figure.items.len() >= 2);
+    for item in &figure.items {
+        let curve = path(item);
+        assert_eq!(curve.stroke.line, Line::Dotted);
+        for point in &curve.points {
+            assert!(
+                point[0].abs() <= 2.0 + 1e-9 && point[1] >= -1.0 - 1e-9 && point[1] <= 3.0 + 1e-9
+            );
+        }
+    }
+}
+
+#[test]
+fn 軸は_範囲を指定すれば見える範囲の外にも延ばせる() {
+    let axis = r#"{ "id": "x_axis", "type": "axis", "direction": "x", "range": [-5, 5] }"#;
+    let figure = figure_of(&plane_scene(VIEW_2X3, axis));
+    assert_eq!(path(&figure.items[0]).points, [[-5.0, 0.0], [5.0, 0.0]]);
 }

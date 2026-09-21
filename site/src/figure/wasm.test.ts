@@ -95,6 +95,7 @@ describe('Wasmのシーンの読み込み', () => {
       syntax: 'json',
       range: 'invalid_range',
       expression: 'expression',
+      clipped: 'ok',
       space: 'ok',
       missingRange: 'invalid',
     });
@@ -135,6 +136,27 @@ describe('Wasmのシーンの読み込み', () => {
         expect(outcome.start).toBeGreaterThanOrEqual(0);
         expect(outcome.end).toBeGreaterThanOrEqual(outcome.start ?? 0);
         expect(outcome.line).toBeNull();
+      }
+    }
+  });
+});
+
+describe('Wasmの切り取り', () => {
+  it('グラフは，見える範囲の外へ出た部分を描かない', () => {
+    const outcome = render('clipped');
+    if (outcome.status !== 'ok') {
+      throw new Error('描画できる');
+    }
+    // 縦の見える範囲は，-0.5から0.5で，縦の1単位は2cmなので，y座標は，-1から1(cm)に収まる．
+    const graphs = outcome.figure.items.filter(
+      (item) => item.type === 'path' && item.stroke.width > 0.7,
+    );
+    expect(graphs.length).toBeGreaterThanOrEqual(2);
+    for (const item of graphs) {
+      if (item.type === 'path') {
+        for (const [, y] of item.points) {
+          expect(Math.abs(y)).toBeLessThanOrEqual(1 + 1e-9);
+        }
       }
     }
   });
