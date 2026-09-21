@@ -1,17 +1,14 @@
 import { useMemo, useState } from 'react';
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactElement } from 'react';
 
 import { MathView } from '@/components/calculator/math-view';
+import { renderFigure } from '@/components/figure/render-figure';
+import type { Rendered } from '@/components/figure/render-figure';
 import { useLoaded } from '@/components/use-loaded';
-import { hastToReact } from '@/figure/hast-react';
-import { figureToHast } from '@/figure/svg';
 import { loadSceneEngine } from '@/figure/wasm';
-import type { SceneEngine } from '@/figure/wasm';
 import { camera, screenOf } from '@/projection/camera';
 import type { Camera, Vector3 } from '@/projection/camera';
 import { EXAMPLE_POINT, projectionScene } from '@/projection/scene';
-
-import { InlineMath } from './inline-math';
 
 import './projection-explorer.css';
 
@@ -51,28 +48,6 @@ function matrixTexts(view: Camera): { basis: [string, string]; product: [string,
       `点Pの位置ベクトル(3, 1, 2)の画面の位置は(${num(x)}, ${num(y)})，奥行きは${num(depth)}`,
     ],
   };
-}
-
-interface Rendered {
-  figure: ReactNode;
-  message: string | undefined;
-}
-
-/** シーンを描画して，図の要素にする．ラベルは，ブラウザのMathJaxで組む． */
-function renderFigure(engine: SceneEngine, json: string): Rendered {
-  const outcome = engine.renderScene(json);
-  if (outcome.status !== 'ok') {
-    return { figure: undefined, message: outcome.message };
-  }
-  const hast = figureToHast(outcome.figure);
-  const figure = hastToReact(hast, 'figure', (element, key) => {
-    const [text] = element.children;
-    if (element.tagName === 'code' && text?.type === 'text') {
-      return <InlineMath key={key} tex={text.value} />;
-    }
-    return false;
-  });
-  return { figure, message: undefined };
 }
 
 interface SliderProps {
@@ -122,7 +97,7 @@ function ProjectionExplorer(): ReactElement {
     <div className="projection-explorer">
       <div className="projection-figure">
         {rendered?.figure}
-        {rendered?.message !== undefined && <p role="alert">{rendered.message}</p>}
+        {rendered?.failure !== undefined && <p role="alert">{rendered.failure.message}</p>}
         {engine.failed && <p role="alert">図の読み込みに失敗した．</p>}
         {rendered === undefined && !engine.failed && <p>図を読み込んでいる．</p>}
       </div>

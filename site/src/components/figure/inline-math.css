@@ -1,0 +1,6 @@
+/* MathJaxが描画するまでは，式の文字列を出す． */
+.inline-math:empty::before {
+  content: attr(data-fallback);
+  font-family: var(--sl-font-mono);
+  font-size: 0.8em;
+}

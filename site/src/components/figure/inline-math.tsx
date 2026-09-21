@@ -3,6 +3,8 @@ import type { ReactElement } from 'react';
 
 import { renderMath } from '@/calculator/mathjax';
 
+import './inline-math.css';
+
 /**
  * TeXの式を，行内の数式として，ブラウザのMathJaxで描画する．図のラベルに使う．
  * 描画するまでは，式の文字列をそのまま出す(CSSが出す)．描画は非同期で，式が変わったときは，古い結果を捨てる．
