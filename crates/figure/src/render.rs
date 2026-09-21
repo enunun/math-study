@@ -2,7 +2,7 @@
 
 use crate::arrow::Stealth;
 use crate::clip::clip_polyline;
-use crate::compile::{Compiled, Plot, compile};
+use crate::compile::{Compiled, Plot, TickPlot, compile};
 use crate::error::Error;
 use crate::figure::{ArrowHead, Bounds, Figure, Item, LabelItem, Path, Stroke};
 use crate::sample::sample;
@@ -15,6 +15,8 @@ use crate::space::render_space;
 pub const AXIS_WIDTH: f64 = 0.6;
 /// 曲線の線幅(pt)．`TikZ`の`thick`である．
 pub const CURVE_WIDTH: f64 = 0.8;
+/// 目盛の線の，軸から片側への長さ(pt)．
+const TICK_HALF_LENGTH: f64 = 3.0;
 /// 見える範囲の外側に足す余白(cm)．軸の名前が，範囲の端の外に出る分である．
 pub const MARGIN: f64 = 0.6;
 
@@ -57,7 +59,13 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Figure 
     let mut items = Vec::new();
     for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
         match object {
-            Object::Axis(axis) => items.extend(axis_items(axis, view, scale)),
+            Object::Axis(axis) => {
+                let ticks = match plot {
+                    Plot::Axis(axis_plot) => axis_plot.ticks.as_slice(),
+                    _ => &[],
+                };
+                items.extend(axis_items(axis, ticks, view, scale));
+            }
             Object::Label(label) => items.extend(label_item(label, scale).map(Item::Label)),
             Object::Graph(_) | Object::Curve(_) => {
                 items.extend(plot_items(object, plot, compiled, scale, window));
@@ -94,7 +102,7 @@ fn label_item(label: &Label, scale: Scale) -> Option<LabelItem> {
 }
 
 /// 軸の線と，先端の矢じり，軸の名前．
-fn axis_items(axis: &Axis, view: &PlaneView, scale: Scale) -> Vec<Item> {
+fn axis_items(axis: &Axis, ticks: &[TickPlot], view: &PlaneView, scale: Scale) -> Vec<Item> {
     let (start, end, direction, anchor) = match axis.direction {
         Direction::X => {
             let [low, high] = axis.range.unwrap_or(view.x);
@@ -125,9 +133,45 @@ fn axis_items(axis: &Axis, view: &PlaneView, scale: Scale) -> Vec<Item> {
         },
         arrow: arrow_head(axis.arrow, end, direction),
     })];
+    for tick in ticks {
+        items.extend(tick_items(tick, axis.direction, scale));
+    }
     if let Some(text) = &axis.label {
         items.push(Item::Label(LabelItem {
             at: end,
+            anchor,
+            tex: format!("${text}$"),
+        }));
+    }
+    items
+}
+
+/// 目盛の線と，名前．線は，軸に直角で，軸をまたぐ．名前は，x軸では線の下，y軸では線の左に置く．
+fn tick_items(tick: &TickPlot, direction: Direction, scale: Scale) -> Vec<Item> {
+    let half = TICK_HALF_LENGTH * CM_PER_PT;
+    let ([start, end], name_at, anchor) = match direction {
+        Direction::X => {
+            let [x, y] = scale.point(tick.at, 0.0);
+            ([[x, y - half], [x, y + half]], [x, y - half], Anchor::North)
+        }
+        Direction::Y => {
+            let [x, y] = scale.point(0.0, tick.at);
+            ([[x - half, y], [x + half, y]], [x - half, y], Anchor::East)
+        }
+        // z軸は，空間の図でだけ使える．検査で，平面の図から除かれている．
+        Direction::Z => return Vec::new(),
+    };
+    let mut items = vec![Item::Path(Path {
+        points: vec![start, end],
+        stroke: Stroke {
+            line: Line::Solid,
+            width: AXIS_WIDTH,
+        },
+        arrow: None,
+    })];
+    if let Some(text) = &tick.label {
+        items.push(Item::Label(LabelItem {
+            at: name_at,
             anchor,
             tex: format!("${text}$"),
         }));

@@ -171,6 +171,20 @@ pub struct Axis {
     /// スタイル．空間の図で，隠れた部分の線に使う．
     #[serde(default)]
     pub style: Style,
+    /// 目盛．軸に直角な短い線と，任意の名前を，位置ごとに置く．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ticks: Vec<Tick>,
+}
+
+/// 軸の目盛．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Tick {
+    /// 軸の上の位置．数か，媒介変数と定数を使える式．
+    pub at: Bound,
+    /// 目盛の名前の式．なければ，線だけを引く．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
 }
 
 /// ラベルの位置の基準．TikZのアンカーと同じ名前を使う．

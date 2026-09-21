@@ -69,6 +69,16 @@ fn space_only(type_name: &str, view: &View) -> Result<(), ErrorKind> {
 }
 
 fn validate_axis(axis: &Axis, view: &View) -> Result<(), ErrorKind> {
+    if matches!(view, View::Space(_)) && !axis.ticks.is_empty() {
+        return Err(ErrorKind::Invalid(
+            "空間の図の軸には，目盛(`ticks`)をまだ付けられない．".to_owned(),
+        ));
+    }
+    for tick in &axis.ticks {
+        if let Some(label) = &tick.label {
+            non_empty("label", label)?;
+        }
+    }
     match (view, axis.direction, axis.range) {
         (View::Plane(_), Direction::Z, _) => Err(ErrorKind::Invalid(
             "z軸は，空間の図でだけ使える．平面の図(`view`に`x`，`y`)では，x軸とy軸を使う．"

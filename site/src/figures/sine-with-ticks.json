@@ -1,0 +1,33 @@
+{
+  "version": "0.1.0",
+  "description": "y=sin x のグラフと，座標軸の目盛．x軸にπの整数倍，y軸に1と-1の目盛を付ける．",
+  "view": { "x": [-7, 7], "y": [-1.6, 1.6], "unit": { "x": "1cm", "y": "2cm" } },
+  "objects": [
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "arrow": "stealth",
+      "label": "x",
+      "ticks": [
+        { "at": "-2*pi", "label": "-2\\pi" },
+        { "at": "-pi", "label": "-\\pi" },
+        { "at": "pi", "label": "\\pi" },
+        { "at": "2*pi", "label": "2\\pi" }
+      ]
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y",
+      "arrow": "stealth",
+      "label": "y",
+      "ticks": [
+        { "at": 1, "label": "1" },
+        { "at": -1, "label": "-1" }
+      ]
+    },
+    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "O" },
+    { "id": "sine", "type": "graph", "var": "x", "expr": "sin(x)", "domain": [-7, 7] }
+  ]
+}

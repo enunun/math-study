@@ -328,3 +328,109 @@ fn 軸は_範囲を指定すれば見える範囲の外にも延ばせる() {
     let figure = figure_of(&plane_scene(VIEW_2X3, axis));
     assert_eq!(path(&figure.items[0]).points, [[-5.0, 0.0], [5.0, 0.0]]);
 }
+
+// ---- 目盛 ----
+
+/// 目盛の半分の長さ(cm)．`render.rs`の定数(3pt)と同じ値である．
+const TICK_HALF: f64 = 3.0 * PT_CM;
+
+fn axes_with_ticks(x_extra: &str, y_extra: &str) -> String {
+    plane_scene(
+        r#"{ "x": [-4, 4], "y": [-2, 2], "unit": { "x": "1cm", "y": "2cm" } }"#,
+        &format!(
+            r#"{{ "id": "a", "type": "parameter", "value": 2 }},
+               {{ "id": "x_axis", "type": "axis", "direction": "x" {x_extra} }},
+               {{ "id": "y_axis", "type": "axis", "direction": "y" {y_extra} }}"#
+        ),
+    )
+}
+
+#[test]
+fn x軸の目盛は_軸に直角な短い線で_名前は下に置く() {
+    let figure = figure_of(&axes_with_ticks(
+        r#", "label": "x", "ticks": [ { "at": 1, "label": "1" }, { "at": -2 } ]"#,
+        "",
+    ));
+    // 軸，1の目盛，1の名前，-2の目盛，軸の名前，y軸．
+    let kinds: Vec<&str> = figure
+        .items
+        .iter()
+        .map(|item| match item {
+            Item::Path(_) => "path",
+            Item::Label(_) => "label",
+        })
+        .collect();
+    assert_eq!(kinds, ["path", "path", "label", "path", "label", "path"]);
+    let tick = path(&figure.items[1]);
+    assert!(close(tick.points[0][0], 1.0) && close(tick.points[1][0], 1.0));
+    assert!(close(tick.points[0][1], -TICK_HALF) && close(tick.points[1][1], TICK_HALF));
+    assert_eq!(tick.stroke.line, Line::Solid);
+    assert!(close(tick.stroke.width, 0.6));
+    assert!(tick.arrow.is_none());
+    let name = label(&figure.items[2]);
+    assert!(close(name.at[0], 1.0) && close(name.at[1], -TICK_HALF));
+    assert_eq!((name.anchor, name.tex.as_str()), (Anchor::North, "$1$"));
+    // 名前のない目盛は，線だけである．
+    let bare = path(&figure.items[3]);
+    assert!(close(bare.points[0][0], -2.0));
+    assert_eq!(label(&figure.items[4]).tex, "$x$");
+}
+
+#[test]
+fn y軸の目盛は_縦の単位の大きさに従い_名前は左に置く() {
+    let figure = figure_of(&axes_with_ticks(
+        "",
+        r#", "ticks": [ { "at": 1, "label": "1" } ]"#,
+    ));
+    // x軸，y軸，1の目盛，1の名前．
+    let tick = path(&figure.items[2]);
+    // 縦の1単位は，2cmである．
+    assert!(close(tick.points[0][1], 2.0) && close(tick.points[1][1], 2.0));
+    assert!(close(tick.points[0][0], -TICK_HALF) && close(tick.points[1][0], TICK_HALF));
+    let name = label(&figure.items[3]);
+    assert!(close(name.at[0], -TICK_HALF) && close(name.at[1], 2.0));
+    assert_eq!(name.anchor, Anchor::East);
+}
+
+#[test]
+fn 目盛の位置の式は_媒介変数と定数を使える() {
+    let figure = figure_of(&axes_with_ticks(r#", "ticks": [ { "at": "a*pi/2" } ]"#, ""));
+    let tick = path(&figure.items[1]);
+    assert!(close(tick.points[0][0], std::f64::consts::PI));
+}
+
+#[test]
+fn 目盛を付けても_軸の線と矢じりは変わらない() {
+    let plain = figure_of(&axes_with_ticks("", ""));
+    let ticked = figure_of(&axes_with_ticks(r#", "ticks": [ { "at": 1 } ]"#, ""));
+    assert_eq!(plain.items[0], ticked.items[0]);
+    assert_eq!(plain.bounds, ticked.bounds);
+}
+
+const SINE_WITH_TICKS: &str = include_str!("../../../site/src/figures/sine-with-ticks.json");
+
+#[test]
+fn 目盛つきの図は_軸ごとに目盛の線と名前を持つ() {
+    let figure = figure_of(SINE_WITH_TICKS);
+    let paths = figure
+        .items
+        .iter()
+        .filter(|item| matches!(item, Item::Path(_)))
+        .count();
+    let names: Vec<&str> = figure
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            Item::Label(name) => Some(name.tex.as_str()),
+            Item::Path(_) => None,
+        })
+        .collect();
+    // x軸と目盛4本，y軸と目盛2本，sin x．
+    assert_eq!(paths, 1 + 4 + 1 + 2 + 1);
+    assert_eq!(
+        names,
+        [
+            "$-2\\pi$", "$-\\pi$", "$\\pi$", "$2\\pi$", "$x$", "$1$", "$-1$", "$y$", "O"
+        ]
+    );
+}

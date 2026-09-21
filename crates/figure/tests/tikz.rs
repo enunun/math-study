@@ -199,3 +199,20 @@ fn 出力は同じ入力なら同じになる() {
         tikz_of(SINE_AND_SHIFTED_SINE)
     );
 }
+
+#[test]
+fn 目盛は_軸に直角な短い線と_節点になる() {
+    let json = scene_with(
+        r#"{ "id": "x", "type": "axis", "direction": "x", "arrow": "none",
+             "ticks": [ { "at": 1, "label": "1" } ] }"#,
+    );
+    let output = tikz_of(&json);
+    assert!(
+        output.contains("\\draw[line width=0.6pt] (1,-0.1054) -- (1,0.1054);"),
+        "{output}"
+    );
+    assert!(
+        output.contains("\\node[anchor=north] at (1,-0.1054) {$1$};"),
+        "{output}"
+    );
+}

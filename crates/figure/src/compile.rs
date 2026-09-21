@@ -2,7 +2,7 @@
 
 use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, is_reserved_name};
-use crate::scene::{Bound, Curve, Graph, Object, Scene};
+use crate::scene::{Axis, Bound, Curve, Direction, Graph, Object, Scene, View};
 use crate::validate::curve_expressions;
 
 /// 式を読んだ後の，グラフ．
@@ -21,8 +21,24 @@ pub struct CurvePlot {
     pub domain: [f64; 2],
 }
 
+/// 式を読んだ後の，軸の目盛．
+pub struct TickPlot {
+    /// 評価した位置．
+    pub at: f64,
+    /// 名前の式．
+    pub label: Option<String>,
+}
+
+/// 式を読んだ後の，軸．
+pub struct AxisPlot {
+    /// 目盛．書かれた順に並ぶ．
+    pub ticks: Vec<TickPlot>,
+}
+
 /// 式を読んだ後の，描く対象．
 pub enum Plot {
+    /// 座標軸．
+    Axis(AxisPlot),
     /// 関数のグラフ．
     Graph(GraphPlot),
     /// 曲線．
@@ -62,7 +78,7 @@ pub fn compile(scene: &Scene) -> Result<Compiled, Error> {
     let plots = scene
         .objects
         .iter()
-        .map(|object| compile_object(object, &names, &parameters, curve_expressions(&scene.view)))
+        .map(|object| compile_object(object, &names, &parameters, &scene.view))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(Compiled { parameters, plots })
 }
@@ -71,18 +87,19 @@ fn compile_object(
     object: &Object,
     names: &[&str],
     parameters: &[f64],
-    curve_size: usize,
+    view: &View,
 ) -> Result<Plot, Error> {
     match object {
+        Object::Axis(axis) => compile_axis(axis, names, parameters, view)
+            .map(Plot::Axis)
+            .map_err(|kind| Error::in_object(&axis.id, kind)),
         Object::Graph(graph) => compile_graph(graph, names, parameters)
             .map(Plot::Graph)
             .map_err(|kind| Error::in_object(&graph.id, kind)),
-        Object::Curve(curve) => compile_curve(curve, names, parameters, curve_size)
+        Object::Curve(curve) => compile_curve(curve, names, parameters, curve_expressions(view))
             .map(Plot::Curve)
             .map_err(|kind| Error::in_object(&curve.id, kind)),
-        Object::Axis(_) | Object::Label(_) | Object::Parameter(_) | Object::Sphere(_) => {
-            Ok(Plot::None)
-        }
+        Object::Label(_) | Object::Parameter(_) | Object::Sphere(_) => Ok(Plot::None),
     }
 }
 
@@ -144,6 +161,38 @@ fn compile_curve(
     Ok(CurvePlot { exprs, domain })
 }
 
+/// 目盛の位置を評価し，軸の範囲の中にあることを確かめる．範囲を省いた平面の軸は，見える範囲である．
+fn compile_axis(
+    axis: &Axis,
+    names: &[&str],
+    parameters: &[f64],
+    view: &View,
+) -> Result<AxisPlot, ErrorKind> {
+    let range = axis.range.or(match (view, axis.direction) {
+        (View::Plane(plane), Direction::X) => Some(plane.x),
+        (View::Plane(plane), Direction::Y) => Some(plane.y),
+        _ => None,
+    });
+    let ticks = axis
+        .ticks
+        .iter()
+        .enumerate()
+        .map(|(index, tick)| {
+            let at = evaluate_bound("ticks", &tick.at, index, names, parameters)?;
+            match range {
+                Some([low, high]) if !(low <= at && at <= high) => Err(ErrorKind::Invalid(
+                    format!("目盛の位置{at}は，軸の範囲[{low}, {high}]の外にある．"),
+                )),
+                _ => Ok(TickPlot {
+                    at,
+                    label: tick.label.clone(),
+                }),
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(AxisPlot { ticks })
+}
+
 /// 定義域の端を評価し，有限の数で，下端が上端より小さいことを確かめる．端の式は，変数を使えない．
 fn evaluate_domain(
     domain: &[Bound; 2],
@@ -151,8 +200,8 @@ fn evaluate_domain(
     parameters: &[f64],
 ) -> Result<[f64; 2], ErrorKind> {
     let [low, high] = domain;
-    let low = evaluate_bound(low, 0, names, parameters)?;
-    let high = evaluate_bound(high, 1, names, parameters)?;
+    let low = evaluate_bound("domain", low, 0, names, parameters)?;
+    let high = evaluate_bound("domain", high, 1, names, parameters)?;
     if low.is_finite() && high.is_finite() && low < high {
         Ok([low, high])
     } else {
@@ -161,6 +210,7 @@ fn evaluate_domain(
 }
 
 fn evaluate_bound(
+    field: &'static str,
     bound: &Bound,
     index: usize,
     names: &[&str],
@@ -169,7 +219,7 @@ fn evaluate_bound(
     match bound {
         Bound::Number(value) => Ok(*value),
         Bound::Expression(source) => {
-            Ok(compile_expr("domain", index, source, names)?.eval(parameters))
+            Ok(compile_expr(field, index, source, names)?.eval(parameters))
         }
     }
 }
