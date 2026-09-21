@@ -32,6 +32,120 @@ struct Triangle {
     denominator: f64,
 }
 
+/// 投影した三角形を，画面の一様な格子の升目に振り分けた表．点の問い合わせで，その点の升目にある
+/// 三角形だけを調べ，全三角形を調べずに済ませる．
+struct ScreenGrid {
+    origin: [f64; 2],
+    cell: [f64; 2],
+    counts: [usize; 2],
+    /// 升目ごとの，三角形の番号．
+    buckets: Vec<Vec<usize>>,
+}
+
+/// 値が入る升目の番号．範囲の外は，端の升目にする．
+#[allow(
+    clippy::as_conversions,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
+)]
+fn cell_of(value: f64, origin: f64, size: f64, count: usize) -> usize {
+    let last = count.saturating_sub(1);
+    let index = ((value - origin) / size).floor();
+    if index.is_nan() || index <= 0.0 {
+        0
+    } else if index >= f64::from(u32::try_from(last).unwrap_or(u32::MAX)) {
+        last
+    } else {
+        // 0以上last以下の整数である．
+        index as usize
+    }
+}
+
+impl ScreenGrid {
+    /// 升目の数の上限(1辺)．
+    const MAX_CELLS: usize = 256;
+
+    fn new(triangles: &[Triangle]) -> Self {
+        let (mut low, mut high) = ([f64::INFINITY; 2], [f64::NEG_INFINITY; 2]);
+        for triangle in triangles {
+            low = [low[0].min(triangle.min[0]), low[1].min(triangle.min[1])];
+            high = [high[0].max(triangle.max[0]), high[1].max(triangle.max[1])];
+        }
+        // 三角形の数の平方根を，1辺の升目の数にする．
+        let side = (1..=Self::MAX_CELLS)
+            .find(|n| n.saturating_mul(*n) >= triangles.len())
+            .unwrap_or(Self::MAX_CELLS);
+        let counts = [side; 2];
+        let cell_width = |width: f64| {
+            if width.is_finite() && width > 0.0 {
+                width / f64::from(u32::try_from(side).unwrap_or(1))
+            } else {
+                1.0
+            }
+        };
+        let cell = [cell_width(high[0] - low[0]), cell_width(high[1] - low[1])];
+        let origin = if low.iter().all(|c| c.is_finite()) {
+            low
+        } else {
+            [0.0; 2]
+        };
+        let mut buckets = vec![Vec::new(); side.saturating_mul(side)];
+        for (index, triangle) in triangles.iter().enumerate() {
+            let locate = |at: [f64; 2]| {
+                [
+                    cell_of(at[0], origin[0], cell[0], side),
+                    cell_of(at[1], origin[1], cell[1], side),
+                ]
+            };
+            let first = locate(triangle.min);
+            let last = locate(triangle.max);
+            for column in first[0]..=last[0] {
+                for row in first[1]..=last[1] {
+                    if let Some(bucket) =
+                        buckets.get_mut(row.saturating_mul(side).saturating_add(column))
+                    {
+                        bucket.push(index);
+                    }
+                }
+            }
+        }
+        Self {
+            origin,
+            cell,
+            counts,
+            buckets,
+        }
+    }
+
+    /// 画面の点の升目にある，三角形の番号．
+    fn candidates(&self, at: [f64; 2]) -> &[usize] {
+        let column = cell_of(at[0], self.origin[0], self.cell[0], self.counts[0]);
+        let row = cell_of(at[1], self.origin[1], self.cell[1], self.counts[1]);
+        self.buckets
+            .get(row.saturating_mul(self.counts[0]).saturating_add(column))
+            .map_or(&[], Vec::as_slice)
+    }
+}
+
+impl Triangle {
+    /// 画面の点が三角形の中にあり，三角形が，その点(の奥行き`depth`)よりカメラに近いか．
+    fn covers(&self, at: [f64; 2], depth: f64) -> bool {
+        if at[0] < self.min[0] || at[0] > self.max[0] || at[1] < self.min[1] || at[1] > self.max[1]
+        {
+            return false;
+        }
+        let [a, b, c] = self.screen;
+        let first =
+            ((b[1] - c[1]) * (at[0] - c[0]) + (c[0] - b[0]) * (at[1] - c[1])) / self.denominator;
+        let second =
+            ((c[1] - a[1]) * (at[0] - c[0]) + (a[0] - c[0]) * (at[1] - c[1])) / self.denominator;
+        let weights = [first, second, 1.0 - first - second];
+        let inside = weights.iter().all(|w| *w >= -1e-9);
+        let surface_depth: f64 = weights.iter().zip(self.depth).map(|(w, d)| w * d).sum();
+        inside && surface_depth > depth + 1e-12
+    }
+}
+
 /// 頂点の番号の組．辺の名前に使う．
 type Edge = (usize, usize);
 
@@ -48,6 +162,8 @@ pub struct Mesh {
     indices: Vec<[usize; 3]>,
     /// 隠れ方の判定に使う，投影した三角形．
     triangles: Vec<Triangle>,
+    /// 投影した三角形の，画面の升目への振り分け．
+    grid: ScreenGrid,
     /// 視線の向きに，点をカメラへずらす長さ．曲面の上の点を，網の外側の点として扱うためである．
     offset: f64,
     /// 座標の大きさ．合っているかを比べる誤差の基準にする．
@@ -167,11 +283,13 @@ impl Mesh {
             columns: width,
             indices,
             triangles: Vec::new(),
+            grid: ScreenGrid::new(&[]),
             offset: 2.0 * sag + 1e-9 * scale,
             scale,
             frame,
         };
         result.triangles = result.project_triangles();
+        result.grid = ScreenGrid::new(&result.triangles);
         result
     }
 
@@ -211,29 +329,33 @@ impl Mesh {
 
     /// 点が，この網に隠れているか．点から，カメラへ向かう視線が，網の三角形に当たれば，隠れている．
     /// 曲面の上の点も，網の外側にあるものとして判定できるよう，カメラの側へわずかにずらして調べる．
+    /// 画面の升目にある三角形だけを調べる．
     #[must_use]
     pub fn hides(&self, point: Point3) -> bool {
+        let (at, depth) = self.query(point);
+        self.grid
+            .candidates(at)
+            .iter()
+            .filter_map(|index| self.triangles.get(*index))
+            .any(|triangle| triangle.covers(at, depth))
+    }
+
+    /// `hides`と同じ答えを，全三角形を調べて求める．`hides`の照合に使う．
+    #[must_use]
+    pub fn hides_exhaustive(&self, point: Point3) -> bool {
+        let (at, depth) = self.query(point);
+        self.triangles
+            .iter()
+            .any(|triangle| triangle.covers(at, depth))
+    }
+
+    /// 点を，カメラの側へずらし，画面の位置と，奥行きにする．
+    fn query(&self, point: Point3) -> ([f64; 2], f64) {
         let shifted = zip(point, self.frame.toward, |p, t| p + self.offset * t);
-        let at = [dot(shifted, self.frame.right), dot(shifted, self.frame.up)];
-        let depth = dot(shifted, self.frame.toward);
-        self.triangles.iter().any(|triangle| {
-            if at[0] < triangle.min[0]
-                || at[0] > triangle.max[0]
-                || at[1] < triangle.min[1]
-                || at[1] > triangle.max[1]
-            {
-                return false;
-            }
-            let [a, b, c] = triangle.screen;
-            let first = ((b[1] - c[1]) * (at[0] - c[0]) + (c[0] - b[0]) * (at[1] - c[1]))
-                / triangle.denominator;
-            let second = ((c[1] - a[1]) * (at[0] - c[0]) + (a[0] - c[0]) * (at[1] - c[1]))
-                / triangle.denominator;
-            let weights = [first, second, 1.0 - first - second];
-            let inside = weights.iter().all(|w| *w >= -1e-9);
-            let surface_depth: f64 = weights.iter().zip(triangle.depth).map(|(w, d)| w * d).sum();
-            inside && surface_depth > depth + 1e-12
-        })
+        (
+            [dot(shifted, self.frame.right), dot(shifted, self.frame.up)],
+            dot(shifted, self.frame.toward),
+        )
     }
 
     /// 頂点の法線(長さ1)．位置が同じ頂点(継ぎ目や極)は，法線を合わせて，同じ値にする．

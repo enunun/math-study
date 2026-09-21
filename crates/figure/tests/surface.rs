@@ -423,3 +423,87 @@ fn 放物面の図は_軸と縁と輪郭を描き_隠れた部分を点線にす
             .all(|p| p[0].is_finite() && p[1].is_finite())
     );
 }
+
+// ---- 高速化の照合 ----
+
+use figure::surface::{Frame, Mesh};
+
+/// 2つの変数から，空間の点を返す関数．
+type SurfaceFn<'a> = &'a dyn Fn(f64, f64) -> Option<[f64; 3]>;
+
+fn frame_of(azimuth: f64, elevation: f64) -> Frame {
+    let (a, e) = (azimuth.to_radians(), elevation.to_radians());
+    Frame {
+        right: [-a.sin(), a.cos(), 0.0],
+        up: [-e.sin() * a.cos(), -e.sin() * a.sin(), e.cos()],
+        toward: [e.cos() * a.cos(), e.cos() * a.sin(), e.sin()],
+    }
+}
+
+/// 決まった順に並ぶ，疑似乱数の点(-3から3)．
+fn scattered(count: usize) -> Vec<[f64; 3]> {
+    let mut state = 12_345_u64;
+    let mut next = || {
+        state = state
+            .wrapping_mul(6_364_136_223_846_793_005)
+            .wrapping_add(1_442_695_040_888_963_407);
+        f64::from(u32::try_from(state >> 40).unwrap()) / f64::from(1_u32 << 24) * 6.0 - 3.0
+    };
+    (0..count).map(|_| [next(), next(), next()]).collect()
+}
+
+#[test]
+fn 画面の格子で絞った隠れ方の判定は_全三角形を調べた結果と一致する() {
+    let sphere = |u: f64, v: f64| {
+        Some([
+            2.0 * u.sin() * v.cos(),
+            2.0 * u.sin() * v.sin(),
+            2.0 * u.cos(),
+        ])
+    };
+    let bowl = |x: f64, y: f64| Some([x, y, x * x + y * y]);
+    let cases: [(SurfaceFn, [[f64; 2]; 2]); 2] = [
+        (
+            &sphere,
+            [[0.0, std::f64::consts::PI], [0.0, std::f64::consts::TAU]],
+        ),
+        (&bowl, [[-1.0, 1.0], [-1.0, 1.0]]),
+    ];
+    for (surface, domain) in cases {
+        for (azimuth, elevation) in [(60.0, 20.0), (200.0, 55.0), (10.0, -30.0)] {
+            let mesh = Mesh::build(surface, domain, [40, 40], frame_of(azimuth, elevation));
+            for point in scattered(400) {
+                assert_eq!(mesh.hides(point), mesh.hides_exhaustive(point), "{point:?}");
+            }
+        }
+    }
+}
+
+#[test]
+fn 網が大きくても_隠れ方の判定は速い() {
+    let sphere = |u: f64, v: f64| {
+        Some([
+            2.0 * u.sin() * v.cos(),
+            2.0 * u.sin() * v.sin(),
+            2.0 * u.cos(),
+        ])
+    };
+    let mesh = Mesh::build(
+        &sphere,
+        [[0.0, std::f64::consts::PI], [0.0, std::f64::consts::TAU]],
+        [200, 200],
+        frame_of(60.0, 20.0),
+    );
+    let started = std::time::Instant::now();
+    let hidden = scattered(2_000)
+        .into_iter()
+        .filter(|p| mesh.hides(*p))
+        .count();
+    assert!(hidden > 0);
+    // 全三角形(8万個)を毎回調べると，開発用のビルドでは数秒かかる．
+    assert!(
+        started.elapsed().as_secs_f64() < 1.0,
+        "{:?}",
+        started.elapsed()
+    );
+}
