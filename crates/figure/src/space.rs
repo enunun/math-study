@@ -9,13 +9,17 @@
 use std::collections::HashMap;
 use std::f64::consts::TAU;
 
-use crate::compile::{Compiled, CurvePlot, CutPlot, LabelPlot, Plot, SurfacePlot};
-use crate::figure::{Bounds, Figure, Item, LabelItem, Path, Stroke};
-use crate::render::{AXIS_WIDTH, CURVE_WIDTH, MARGIN, arrow_head, stroke_of, with_variable};
+use crate::compile::{
+    Compiled, CurvePlot, CutPlot, LabelPlot, LinkPlot, Plot, PointPlot, SurfacePlot,
+};
+use crate::figure::{Bounds, DotItem, Figure, Item, LabelItem, Path, Stroke};
+use crate::render::{
+    AXIS_WIDTH, CURVE_WIDTH, DOT_RADIUS, MARGIN, arrow_head, stroke_of, with_variable,
+};
 use crate::sample::{sample, sample_with_parameters};
 use crate::scene::{
-    Anchor, Axis, Cut, Direction, Hidden, Label, Line, Object, Scene, SpaceView, Sphere, Style,
-    Surface,
+    Anchor, Arrow, Axis, Cut, Direction, Hidden, Label, Line, Object, Point, Scene, SpaceView,
+    Sphere, Style, Surface,
 };
 use crate::surface::{Frame, Mesh, Rim};
 
@@ -189,6 +193,15 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
                 if let Some(mesh) = meshes.next() {
                     items.extend(surface_items(surface, mesh, &space));
                 }
+            }
+            (Object::Point(point), Plot::Point(placed)) => {
+                items.extend(point_items(point, placed, &space));
+            }
+            (Object::Vector(vector), Plot::Link(link)) => {
+                items.extend(link_items(&vector.style, vector.arrow, link, &space));
+            }
+            (Object::Segment(segment), Plot::Link(link)) => {
+                items.extend(link_items(&segment.style, Arrow::None, link, &space));
             }
             (Object::Cut(cut), Plot::Cut(placed)) => {
                 items.extend(cut_items(cut, placed, &space));
@@ -416,6 +429,96 @@ fn surface_items(surface: &Surface, mesh: &Mesh, space: &Space) -> Vec<Item> {
                 &space.camera,
             ));
         }
+    }
+    items
+}
+
+/// 空間の座標を，3個の数から作る．
+fn point3(values: &[f64]) -> Option<Point3> {
+    let [x, y, z] = values else {
+        return None;
+    };
+    Some([*x, *y, *z])
+}
+
+/// 点の印と，点の名前．曲面や球に隠れた点の印は，描かない(塗った丸は，点線にできない)．
+/// 名前は，隠れていても，描く．
+fn point_items(point: &Point, placed: &PointPlot, space: &Space) -> Vec<Item> {
+    let Some(position) = point3(&placed.at) else {
+        return Vec::new();
+    };
+    let at = space.camera.project(position);
+    let mut items = Vec::new();
+    if point.dot && !space.hidden(position) {
+        items.push(Item::Dot(DotItem {
+            at,
+            radius: DOT_RADIUS,
+            color: point.style.color,
+        }));
+    }
+    if let Some(text) = &point.label {
+        items.push(Item::Label(LabelItem {
+            at,
+            anchor: point.anchor.unwrap_or(Anchor::SouthWest),
+            tex: format!("${text}$"),
+        }));
+    }
+    items
+}
+
+/// ベクトルか線分の線．隠れた部分は，隠れた部分の線で描く．矢じりは，終点が見えるときだけ付く．
+fn link_items(style: &Style, arrow: Arrow, link: &LinkPlot, space: &Space) -> Vec<Item> {
+    let (Some(from), Some(to)) = (point3(&link.from), point3(&link.to)) else {
+        return Vec::new();
+    };
+    let (start, end) = (space.camera.project(from), space.camera.project(to));
+    let Some(direction) = normalized([end[0] - start[0], end[1] - start[1]]) else {
+        return Vec::new();
+    };
+    let stroke = stroke_of(style, Line::Solid, CURVE_WIDTH);
+    let at = |t: f64| {
+        [
+            from[0] + (to[0] - from[0]) * t,
+            from[1] + (to[1] - from[1]) * t,
+            from[2] + (to[2] - from[2]) * t,
+        ]
+    };
+    let steps: Vec<f64> = (0..=AXIS_STEPS)
+        .map(|step| {
+            if step == AXIS_STEPS {
+                1.0
+            } else {
+                f64::from(step) / f64::from(AXIS_STEPS)
+            }
+        })
+        .collect();
+    let pieces = split_by_visibility(&steps, &at, &|t| space.hidden(at(t)));
+    let last = pieces.len().saturating_sub(1);
+    let mut items = Vec::new();
+    for (index, piece) in pieces.iter().enumerate() {
+        let Some(kind) = piece_line(piece.hidden, stroke.line, style.hidden) else {
+            continue;
+        };
+        // 直線なので，各部分は，両端だけで描く．
+        let (Some(first), Some(final_point)) = (piece.points.first(), piece.points.last()) else {
+            continue;
+        };
+        let head = if index == last && !piece.hidden {
+            arrow_head(arrow, end, direction, stroke.width)
+        } else {
+            None
+        };
+        items.push(Item::Path(Path {
+            points: vec![
+                space.camera.project(*first),
+                space.camera.project(*final_point),
+            ],
+            stroke: Stroke {
+                line: kind,
+                ..stroke
+            },
+            arrow: head,
+        }));
     }
     items
 }

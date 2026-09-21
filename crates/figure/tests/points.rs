@@ -203,23 +203,6 @@ fn ラベルの位置には_式が書け_点の座標を使える() {
 }
 
 #[test]
-fn 空間の図では_点とベクトルと線分はまだ使えない() {
-    for object in [
-        r#"{ "id": "A", "type": "point", "at": [0, 0] }"#,
-        r#"{ "id": "s", "type": "segment", "from": "A", "to": "B" }"#,
-        r#"{ "id": "v", "type": "vector", "from": "A", "to": "B" }"#,
-    ] {
-        let error = parse_scene(&format!(
-            r#"{{ "version": "0.1.0", "description": "a",
-                 "view": {{ "azimuth": 0, "elevation": 0, "unit": "1cm" }},
-                 "objects": [ {object} ] }}"#
-        ))
-        .expect_err("誤りになる");
-        assert!(error.to_string().contains("空間"), "{error}");
-    }
-}
-
-#[test]
 fn 未知の項目は誤りになる() {
     let error = error_of(&format!(
         r#"{A}, {B}, {{ "id": "v", "type": "vector", "from": "A", "to": "B", "head": "big" }}"#
@@ -581,15 +564,4 @@ fn 点のidは_関数や定数の名前にできない() {
     let error = error_of(r#"{ "id": "e", "type": "point", "at": [0, 0] }"#);
     assert_eq!(error.kind, ErrorKind::ReservedName("e".to_owned()));
     assert_eq!(error.object.as_deref(), Some("e"));
-}
-
-#[test]
-fn 空間の図では_位置を点の式で書けない() {
-    let error = parse_scene(
-        r#"{ "version": "0.1.0", "description": "a",
-             "view": { "azimuth": 0, "elevation": 0, "unit": "1cm" },
-             "objects": [ { "id": "t", "type": "label", "at": "A", "tex": "T" } ] }"#,
-    )
-    .expect_err("誤りになる");
-    assert!(error.to_string().contains("空間"), "{error}");
 }

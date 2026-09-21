@@ -159,11 +159,15 @@ fn label_item(label: &Label, placed: &LabelPlot, scale: Scale) -> Option<LabelIt
 }
 
 /// 点の印(塗った丸)の半径(pt)．
-const DOT_RADIUS: f64 = 2.0;
+pub const DOT_RADIUS: f64 = 2.0;
 
 /// 点の印と，点の名前．名前の箱は，既定では，点の右上に置く．
 fn point_items(point: &Point, placed: &PointPlot, scale: Scale) -> Vec<Item> {
-    let at = scale.point(placed.at[0], placed.at[1]);
+    // 座標の数は，検査で確かめてある．
+    let [x, y] = placed.at.as_slice() else {
+        return Vec::new();
+    };
+    let at = scale.point(*x, *y);
     let mut items = Vec::new();
     if point.dot {
         items.push(Item::Dot(DotItem {
@@ -184,8 +188,11 @@ fn point_items(point: &Point, placed: &PointPlot, scale: Scale) -> Vec<Item> {
 
 /// ベクトルか線分の線．終点に矢じりを付けられる．長さがなければ，何も描かない．
 fn link_item(style: &Style, arrow: Arrow, link: &LinkPlot, scale: Scale) -> Option<Item> {
-    let start = scale.point(link.from[0], link.from[1]);
-    let end = scale.point(link.to[0], link.to[1]);
+    let ([from_x, from_y], [to_x, to_y]) = (link.from.as_slice(), link.to.as_slice()) else {
+        return None;
+    };
+    let start = scale.point(*from_x, *from_y);
+    let end = scale.point(*to_x, *to_y);
     let length = (end[0] - start[0]).hypot(end[1] - start[1]);
     if length <= f64::EPSILON {
         return None;

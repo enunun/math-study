@@ -45,6 +45,10 @@ function fourth(page: Page): Locator {
   return page.locator('.figure').nth(3);
 }
 
+function fifth(page: Page): Locator {
+  return page.locator('.figure').nth(4);
+}
+
 function center({ x, y, width, height }: Box): [number, number] {
   return [x + width / 2, y + height / 2];
 }
@@ -53,7 +57,7 @@ test.describe('空間の図', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     // ラベルの数式が描画されるまで待つ．
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(16);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(24);
   });
 
   test('SVGは，画像として説明を持ち，隠れた部分で分かれた線と，輪郭がある', async ({ page }) => {
@@ -198,6 +202,21 @@ test.describe('空間の図', () => {
     expect(blue.some(({ dashed }) => !dashed)).toBe(true);
   });
 
+  test('空間のベクトルの和の図は，対角線のベクトルが，Dの印に届く', async ({ page }) => {
+    const svg = fifth(page).locator('svg');
+    // 軸3本と，破線の辺2本と，ベクトル3本．矢じりは，軸とベクトルの6つ．印は1つ．
+    await expect(svg.locator('path')).toHaveCount(8);
+    await expect(svg.locator('polygon')).toHaveCount(6);
+    await expect(svg.locator('circle')).toHaveCount(1);
+    // 対角線の矢じりの先端は，印の中心にほぼ重なる(単位はcm)．
+    const tip = await svg.locator('polygon').nth(5).getAttribute('points');
+    const [tipX, tipY] = (tip ?? '').split(' ')[0]?.split(',').map(Number) ?? [];
+    const dot = svg.locator('circle');
+    const cx = Number(await dot.getAttribute('cx'));
+    const cy = Number(await dot.getAttribute('cy'));
+    expect(Math.hypot((tipX ?? Number.NaN) - cx, (tipY ?? Number.NaN) - cy)).toBeLessThan(0.05);
+  });
+
   for (const scheme of ['light', 'dark'] as const) {
     test(`図の色は，文字の色に従う(${scheme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });
@@ -224,7 +243,7 @@ test.describe('空間の図', () => {
     page.on('pageerror', (error) => problems.push(String(error)));
     page.on('requestfailed', (request) => problems.push(request.url()));
     await page.reload();
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(16);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(24);
     expect(problems).toEqual([]);
   });
 });

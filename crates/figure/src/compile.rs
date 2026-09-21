@@ -55,8 +55,8 @@ const MAX_GRID_LINES: f64 = 200.0;
 
 /// 式を読んだ後の，点．
 pub struct PointPlot {
-    /// 評価した座標(数学の座標)．
-    pub at: [f64; 2],
+    /// 評価した座標(数学の座標)．平面の図では2個，空間の図では3個である．
+    pub at: Vec<f64>,
 }
 
 /// 式を読んだ後の，ラベルの位置．
@@ -68,9 +68,9 @@ pub struct LabelPlot {
 /// 式を読んだ後の，ベクトルか線分．両端の点の座標を持つ．
 pub struct LinkPlot {
     /// 始点(数学の座標)．
-    pub from: [f64; 2],
+    pub from: Vec<f64>,
     /// 終点(数学の座標)．
-    pub to: [f64; 2],
+    pub to: Vec<f64>,
 }
 
 /// 式を読んだ後の，切り口の平面．
@@ -152,16 +152,18 @@ pub fn compile(scene: &Scene) -> Result<Compiled, Error> {
     }
     // オブジェクトを順に読む．点の座標は，読んだあとに，あとのオブジェクトが使える名前と値に加わる．
     let mut plots = Vec::with_capacity(scene.objects.len());
-    let mut coordinates: HashMap<&str, [f64; 2]> = HashMap::new();
+    let mut coordinates: HashMap<&str, Vec<f64>> = HashMap::new();
+    let dimension = curve_expressions(&scene.view);
     let parameter_count = names.len();
     // 点の式に使える，先に置いた点(idと座標)．
-    let mut placed_points: Vec<(&str, [f64; 2])> = Vec::new();
+    let mut placed_points: Vec<(&str, Vec<f64>)> = Vec::new();
     for object in &scene.objects {
         let visible: Vec<&str> = names.iter().map(String::as_str).collect();
         let scope = VectorScope {
             parameter_names: visible.get(..parameter_count).unwrap_or_default(),
             parameter_values: values.get(..parameter_count).unwrap_or_default(),
             points: &placed_points,
+            dimension,
         };
         let plot = compile_object(object, &visible, &values, &scene.view, &scope)?;
         if let (Object::Point(point), Plot::Point(placed)) = (object, &plot) {
@@ -171,16 +173,16 @@ pub fn compile(scene: &Scene) -> Result<Compiled, Error> {
                     ErrorKind::ReservedName(point.id.clone()),
                 ));
             }
-            placed_points.push((point.id.as_str(), placed.at));
-            for (suffix, value) in [("x", placed.at[0]), ("y", placed.at[1])] {
+            placed_points.push((point.id.as_str(), placed.at.clone()));
+            for (suffix, value) in ["x", "y", "z"].into_iter().zip(&placed.at) {
                 let name = format!("{}_{suffix}", point.id);
                 if names.contains(&name) {
                     return Err(Error::in_object(&point.id, ErrorKind::NameConflict(name)));
                 }
                 names.push(name);
-                values.push(value);
+                values.push(*value);
             }
-            coordinates.insert(point.id.as_str(), placed.at);
+            coordinates.insert(point.id.as_str(), placed.at.clone());
         }
         plots.push(plot);
     }
@@ -196,8 +198,8 @@ pub fn compile(scene: &Scene) -> Result<Compiled, Error> {
             (coordinates.get(from.as_str()), coordinates.get(to.as_str()))
         {
             *plot = Plot::Link(LinkPlot {
-                from: *from,
-                to: *to,
+                from: from.clone(),
+                to: to.clone(),
             });
         }
     }
@@ -211,7 +213,9 @@ pub fn compile(scene: &Scene) -> Result<Compiled, Error> {
 struct VectorScope<'a> {
     parameter_names: &'a [&'a str],
     parameter_values: &'a [f64],
-    points: &'a [(&'a str, [f64; 2])],
+    points: &'a [(&'a str, Vec<f64>)],
+    /// 座標の数．平面の図では2，空間の図では3である．
+    dimension: usize,
 }
 
 fn compile_object(
@@ -484,7 +488,7 @@ fn evaluate_vector(source: &str, scope: &VectorScope) -> Result<Vec<f64>, ErrorK
             .collect();
         expr.eval(&values)
     };
-    let at = vec![component(0), component(1)];
+    let at: Vec<f64> = (0..scope.dimension).map(component).collect();
     if at.iter().all(|value| value.is_finite()) {
         Ok(at)
     } else {
@@ -512,11 +516,13 @@ fn compile_point(
     scope: &VectorScope,
 ) -> Result<PointPlot, ErrorKind> {
     let at = evaluate_position(&point.at, names, parameters, scope)?;
-    match at.as_slice() {
-        [x, y] => Ok(PointPlot { at: [*x, *y] }),
-        _ => Err(ErrorKind::Invalid(
-            "点の座標(`at`)は，2個の数で書く．".to_owned(),
-        )),
+    if at.len() == scope.dimension {
+        Ok(PointPlot { at })
+    } else {
+        Err(ErrorKind::Invalid(format!(
+            "点の座標(`at`)は，{}個の数で書く．",
+            scope.dimension
+        )))
     }
 }
 

@@ -1,0 +1,47 @@
+{
+  "version": "0.1.0",
+  "description": "空間のベクトルaとbの和．aとbを2辺とする平行四辺形の対角線が，a+bである．",
+  "view": { "azimuth": -40, "elevation": 22, "unit": "0.8cm" },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "range": [-1, 4.5], "label": "x" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "range": [-1, 4.5], "label": "y" },
+    { "id": "z_axis", "type": "axis", "direction": "z", "range": [-1, 4], "label": "z" },
+    { "id": "O", "type": "point", "at": [0, 0, 0], "label": "O", "anchor": "north east" },
+    { "id": "A", "type": "point", "at": [3, 0.5, 0] },
+    { "id": "B", "type": "point", "at": [0.5, 3, 1.5] },
+    {
+      "id": "D",
+      "type": "point",
+      "at": "A + B",
+      "dot": true,
+      "label": "D",
+      "style": { "color": "red" }
+    },
+    { "id": "side_a", "type": "segment", "from": "B", "to": "D", "style": { "line": "dashed" } },
+    { "id": "side_b", "type": "segment", "from": "A", "to": "D", "style": { "line": "dashed" } },
+    { "id": "vector_a", "type": "vector", "from": "O", "to": "A" },
+    { "id": "vector_b", "type": "vector", "from": "O", "to": "B" },
+    { "id": "vector_sum", "type": "vector", "from": "O", "to": "D" },
+    {
+      "id": "name_a",
+      "type": "label",
+      "at": "A / 2",
+      "anchor": "north west",
+      "tex": "$\\vec{a}$"
+    },
+    {
+      "id": "name_b",
+      "type": "label",
+      "at": "B / 2",
+      "anchor": "south east",
+      "tex": "$\\vec{b}$"
+    },
+    {
+      "id": "name_sum",
+      "type": "label",
+      "at": "(A + B) / 2",
+      "anchor": "north west",
+      "tex": "$\\vec{a}+\\vec{b}$"
+    }
+  ]
+}

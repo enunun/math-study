@@ -76,15 +76,13 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Curve(curve) => validate_curve(curve, view),
         Object::Sphere(sphere) => space_only("sphere", view).and_then(|()| validate_sphere(sphere)),
         Object::Grid(grid) => plane_only("grid", view).and_then(|()| validate_grid(grid)),
-        Object::Point(point) => plane_only("point", view).and_then(|()| validate_point(point)),
-        Object::Vector(_) => plane_only("vector", view),
-        Object::Segment(_) => plane_only("segment", view),
+        Object::Point(point) => validate_point(point, view),
         Object::Region(region) => plane_only("region", view).and_then(|()| validate_region(region)),
         Object::Surface(surface) => {
             space_only("surface", view).and_then(|()| validate_surface(surface))
         }
         Object::Cut(cut) => space_only("cut", view).and_then(|()| validate_cut(cut)),
-        Object::Parameter(_) => Ok(()),
+        Object::Vector(_) | Object::Segment(_) | Object::Parameter(_) => Ok(()),
     }
 }
 
@@ -115,13 +113,17 @@ fn check_style(style: &Style) -> Result<(), ErrorKind> {
     }
 }
 
-fn validate_point(point: &Point) -> Result<(), ErrorKind> {
+fn validate_point(point: &Point, view: &View) -> Result<(), ErrorKind> {
+    let (kind, expected) = match view {
+        View::Plane(_) => ("平面", 2),
+        View::Space(_) => ("空間", 3),
+    };
     if let Position::Coordinates(list) = &point.at
-        && list.len() != 2
+        && list.len() != expected
     {
-        return Err(ErrorKind::Invalid(
-            "点の座標(`at`)は，2個の数で書く．".to_owned(),
-        ));
+        return Err(ErrorKind::Invalid(format!(
+            "点の座標(`at`)は，{kind}の図では{expected}個の数で書く．"
+        )));
     }
     match &point.label {
         Some(label) => non_empty("label", label),
@@ -298,11 +300,6 @@ fn validate_label(label: &Label, view: &View) -> Result<(), ErrorKind> {
             return Err(ErrorKind::Invalid(format!(
                 "ラベルの位置`at`は，{kind}の図では{expected}個の数で書く．"
             )));
-        }
-        Position::Vector(_) if matches!(view, View::Space(_)) => {
-            return Err(ErrorKind::Invalid(
-                "空間の図では，ラベルの位置を点の式で書けない．3個の座標で書く．".to_owned(),
-            ));
         }
         Position::Vector(_) => {}
     }
