@@ -1,0 +1,191 @@
+---
+title: ユークリッド空間における連続写像の特徴づけ
+description: ユークリッド空間の間の写像が連続であることを，イプシロン・デルタ，点列，開集合，閉集合，閉包で言い換え，その同値を証明する．
+---
+
+import { Detail, Proof, Remark } from '@/components/fold';
+import { Definition, Lemma, Theorem } from '@/components/statement';
+
+この記事では，ユークリッド空間の間の写像$f \colon \RealNumbers^n \to \RealNumbers^m$が連続であることを，5つの条件で言い換える．そして，それらが同値であることを証明する．
+
+## 準備
+
+### ノルムと距離
+
+$\RealNumbers^n$の点$x = (x_1, \dots, x_n)$に対して，ノルム(長さ)を次の式で定める．
+
+$$
+\norm{x} = \sqrt{x_1^2 + x_2^2 + \cdots + x_n^2} \label{euclidean-norm}
+$$
+
+2点$x$と$y$の距離は，$\norm{x - y}$である．ノルムについて，次の三角不等式が成り立つことは，既知とする．
+
+$$
+\norm{x + y} \le \norm{x} + \norm{y}
+$$
+
+<Remark title="1次元の場合">
+
+$n = 1$のとき，ノルムは絶対値$\abs{x}$に一致する．このとき，三角不等式は，<Ref page="absolute-value" to="triangle-inequality" />である．
+
+</Remark>
+
+### 開球，開集合，閉集合，閉包
+
+<Definition id="open-ball" name="開球">
+
+点$a \in \RealNumbers^n$と実数$r > 0$に対して，次の集合を，$a$を中心とする半径$r$の開球という．
+
+$$
+\openball{a}{r} = \set{x \in \RealNumbers^n \mid \norm{x - a} < r}
+$$
+
+</Definition>
+
+<Definition id="open-set" name="開集合と閉集合">
+
+部分集合$U \subset \RealNumbers^n$が開集合であるとは，任意の$a \in U$に対して，ある$r > 0$が存在して，$\openball{a}{r} \subset U$となることをいう．部分集合$F \subset \RealNumbers^n$が閉集合であるとは，補集合$\RealNumbers^n \setminus F$が開集合であることをいう．
+
+</Definition>
+
+<Definition id="closure" name="閉包">
+
+部分集合$A \subset \RealNumbers^n$を含むすべての閉集合の共通部分を，$A$の閉包といい，$\closure{A}$と書く．
+
+</Definition>
+
+開集合の任意個の和集合は開集合だから，閉集合の任意個の共通部分は閉集合である．したがって，閉包$\closure{A}$は，$A$を含む最小の閉集合である．特に，次が成り立つ．
+
+- $\closure{A}$は閉集合であり，$A \subset \closure{A}$である．
+- $F$が閉集合で$A \subset F$ならば，$\closure{A} \subset F$である．
+- $F$が閉集合ならば，$\closure{F} = F$である．
+
+<Lemma id="ball-is-open">
+
+任意の$a \in \RealNumbers^n$と$r > 0$に対して，開球$\openball{a}{r}$は開集合である．
+
+</Lemma>
+
+<Proof of="ball-is-open">
+
+$b \in \openball{a}{r}$とし，$s = r - \norm{b - a}$とおく．$b$は開球の点だから，$s > 0$である．$x \in \openball{b}{s}$とすると，三角不等式より，次が成り立つ．
+
+$$
+\norm{x - a} \le \norm{x - b} + \norm{b - a} < s + \norm{b - a} = r
+$$
+
+よって$x \in \openball{a}{r}$であり，$\openball{b}{s} \subset \openball{a}{r}$を得る．
+
+</Proof>
+
+## 連続性
+
+<Definition id="convergence" name="点列の収束">
+
+$\RealNumbers^n$の点列$(x_k)$が点$a$に収束するとは，$k \to \infty$のとき$\norm{x_k - a} \to 0$となることをいう．このとき，$x_k \to a$と書く．
+
+</Definition>
+
+<Definition id="continuity" name="連続写像">
+
+写像$f \colon \RealNumbers^n \to \RealNumbers^m$が点$a \in \RealNumbers^n$で連続であるとは，次が成り立つことをいう．
+
+$$
+\forall \varepsilon > 0 \; \exists \delta > 0 \; \forall x \in \RealNumbers^n \; \bigl( \norm{x - a} < \delta \Rightarrow \norm{f(x) - f(a)} < \varepsilon \bigr) \label{epsilon-delta}
+$$
+
+すべての点で連続であるとき，$f$は連続であるという．
+
+</Definition>
+
+<Ref to="epsilon-delta" />は，$f(\openball{a}{\delta}) \subset \openball{f(a)}{\varepsilon}$と言い換えられる．
+
+## 主定理
+
+<Theorem id="characterization" name="連続写像の特徴づけ">
+
+写像$f \colon \RealNumbers^n \to \RealNumbers^m$について，次の5つの条件は同値である．
+
+1. $f$は連続である．
+2. 任意の点$a \in \RealNumbers^n$と，$a$に収束する任意の点列$(x_k)$に対して，$f(x_k) \to f(a)$である．
+3. $\RealNumbers^m$の任意の開集合$U$に対して，逆像$\preimage{f}{U}$は$\RealNumbers^n$の開集合である．
+4. $\RealNumbers^m$の任意の閉集合$F$に対して，逆像$\preimage{f}{F}$は$\RealNumbers^n$の閉集合である．
+5. $\RealNumbers^n$の任意の部分集合$A$に対して，$f(\closure{A}) \subset \closure{f(A)}$である．
+
+</Theorem>
+
+<Proof of="characterization">
+
+次の順に，同値を示す．条件1と条件2，条件1と条件3，条件3と条件4，条件4と条件5である．
+
+<Proof title="条件1から条件2">
+
+$x_k \to a$とし，$\varepsilon > 0$を任意にとる．$f$は$a$で連続だから，<Ref to="epsilon-delta" />を満たす$\delta > 0$がある．$x_k \to a$より，ある$K$が存在して，$k \ge K$ならば$\norm{x_k - a} < \delta$となる．このとき，<Ref to="epsilon-delta" />より$\norm{f(x_k) - f(a)} < \varepsilon$である．したがって，$f(x_k) \to f(a)$である．
+
+</Proof>
+
+<Proof title="条件2から条件1">
+
+対偶を示す．$f$がある点$a$で連続でないとする．すると，ある$\varepsilon > 0$が存在して，次が成り立つ．任意の$\delta > 0$に対し，$\norm{x - a} < \delta$かつ$\norm{f(x) - f(a)} \ge \varepsilon$を満たす$x$がある．各$k$について，$\delta = 1/k$に対応する点を$x_k$とする．<Detail>点は，条件を満たすものが1つあれば，どれでもよい．厳密には，可算選択公理を使っている．</Detail>
+
+このとき，$\norm{x_k - a} < 1/k$だから，$x_k \to a$である．一方，すべての$k$で$\norm{f(x_k) - f(a)} \ge \varepsilon$だから，$f(x_k)$は$f(a)$に収束しない．よって，条件2は成り立たない．
+
+</Proof>
+
+<Proof title="条件1から条件3">
+
+$U$を開集合とし，$a \in \preimage{f}{U}$とする．$f(a) \in U$であり，$U$は開集合だから，ある$\varepsilon > 0$で$\openball{f(a)}{\varepsilon} \subset U$となる．$f$は$a$で連続だから，この$\varepsilon$に対して<Ref to="epsilon-delta" />を満たす$\delta > 0$がとれる．すると，$x \in \openball{a}{\delta}$ならば$f(x) \in \openball{f(a)}{\varepsilon} \subset U$となる．よって$\openball{a}{\delta} \subset \preimage{f}{U}$であり，$\preimage{f}{U}$は開集合である．
+
+</Proof>
+
+<Proof title="条件3から条件1">
+
+点$a$と$\varepsilon > 0$を任意にとる．<Ref to="ball-is-open" />より，$U = \openball{f(a)}{\varepsilon}$は開集合である．条件3より，$\preimage{f}{U}$は開集合であり，$a$を含む．したがって，ある$\delta > 0$で$\openball{a}{\delta} \subset \preimage{f}{U}$となる．これは，$\norm{x - a} < \delta$ならば$\norm{f(x) - f(a)} < \varepsilon$であることを意味する．よって，$f$は$a$で連続である．
+
+</Proof>
+
+<Proof title="条件3と条件4">
+
+任意の集合$F \subset \RealNumbers^m$に対して，次が成り立つ．
+
+$$
+\preimage{f}{\RealNumbers^m \setminus F} = \RealNumbers^n \setminus \preimage{f}{F} \label{preimage-complement}
+$$
+
+条件3を仮定し，$F$を閉集合とする．$\RealNumbers^m \setminus F$は開集合だから，<Ref to="preimage-complement" />の左辺は開集合である．よって，右辺$\RealNumbers^n \setminus \preimage{f}{F}$は開集合であり，$\preimage{f}{F}$は閉集合である．逆に，条件4を仮定し，$U$を開集合とする．$F = \RealNumbers^m \setminus U$は閉集合だから，$\preimage{f}{F}$は閉集合である．<Ref to="preimage-complement" />より，$\preimage{f}{U}$は，その補集合として開集合である．
+
+</Proof>
+
+<Proof title="条件4から条件5">
+
+$A \subset \RealNumbers^n$とし，$F = \closure{f(A)}$とおく．$F$は閉集合だから，条件4より$\preimage{f}{F}$は閉集合である．$f(A) \subset F$だから，$A \subset \preimage{f}{F}$である．閉包は$A$を含む最小の閉集合だから，$\closure{A} \subset \preimage{f}{F}$である．すなわち，$f(\closure{A}) \subset F = \closure{f(A)}$である．
+
+</Proof>
+
+<Proof title="条件5から条件4">
+
+$F$を閉集合とし，$A = \preimage{f}{F}$とおく．$f(A) \subset F$であり，$F$は閉集合だから，$\closure{f(A)} \subset F$である．条件5より，$f(\closure{A}) \subset \closure{f(A)} \subset F$となり，$\closure{A} \subset \preimage{f}{F} = A$を得る．$A \subset \closure{A}$と合わせて，$\closure{A} = A$である．閉包は閉集合だから，$A$は閉集合である．
+
+</Proof>
+
+</Proof>
+
+## 例と補足
+
+### 不連続な写像
+
+条件3を使うと，写像が連続でないことを，開集合の逆像で確かめられる．$n = m = 1$として，次の写像を考える．
+
+$$
+f(x) = \begin{cases} 0 & (x < 0) \\ 1 & (x \ge 0) \end{cases} \label{step-function}
+$$
+
+開集合$U = \left( \frac{1}{2}, \frac{3}{2} \right)$を考える．その逆像は，$\preimage{f}{U} = \set{x \in \RealNumbers \mid x \ge 0}$である．この集合は，$0$を含む．しかし，どの$r > 0$についても，$\openball{0}{r}$は負の数$-r/2$を含み，この集合に入らない．よって，この集合は開集合ではない．したがって，<Ref to="step-function" />の$f$は，連続ではない．
+
+<Remark title="定義域が部分集合の場合">
+
+写像が，$\RealNumbers^n$の部分集合$A$の上でだけ定義されている場合も，同じ特徴づけが成り立つ．条件1と条件2は，そのまま成り立つ．条件3から条件5は，開集合，閉集合，閉包を，$A$の相対位相で読み替える．証明は，本文と同じである．
+
+</Remark>
+
+この同値は，距離空間の間の写像でも成り立つ．<Detail>証明で使ったのは，距離の三角不等式と，開球による開集合の定義だけである．</Detail>

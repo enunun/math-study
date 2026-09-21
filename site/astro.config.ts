@@ -38,6 +38,10 @@ export default defineConfig({
       title: '数学の学習サイト',
       // コードブロックは折り返す．横にスクロールする領域は，キーボードで操作できない．
       expressiveCode: { defaultProps: { wrap: true } },
+      sidebar: [
+        { label: 'ホーム', link: '/' },
+        { label: '解析学', items: [{ autogenerate: { directory: 'analysis' } }] },
+      ],
       defaultLocale: 'root',
       locales: { root: { label: '日本語', lang: 'ja' } },
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/enunun/math-study' }],

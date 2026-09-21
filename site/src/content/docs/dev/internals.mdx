@@ -178,6 +178,13 @@ E2Eには，機能ごとの検査に加えて，次の検査がある．対象�
 
 書き方は，`/math-study/dev/notation/`のページに，例つきでまとめてある．コード例と描画結果を並べてあるので，そのまま写して使える．
 
+### 記事を足す
+
+1. `site/src/content/docs/`の下に，分野ごとのディレクトリを作り，その中に`.mdx`を置く．ファイル名は，小文字の英数字とハイフンにする．ほかのページから参照するときに，URLが一致するためである．
+2. 新しい分野のディレクトリは，`site/astro.config.ts`の`sidebar`に，グループとして足す．`{ label: '解析学', items: [{ autogenerate: { directory: 'analysis' } }] }`の形である．既存の分野に足すだけなら，設定は要らない．
+3. frontmatterの`title`と`description`を書く．定理や式の番号に使うページの識別子は，指定がなければファイル名になる．長いときは，`pageId`で短くする．
+4. 定義や定理，証明は，`notation`のページの書き方に従う．`analysis/continuity.mdx`が，一通りの記法を使った例である．
+
 ### マクロを足す
 
 1. `site/src/math/macros.ts`に，意味の分かる名前で定義する．
