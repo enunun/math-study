@@ -136,6 +136,8 @@ pub enum Object {
     Segment(Segment),
     /// 領域．斜線で埋める．平面の図でだけ使える．
     Region(Region),
+    /// 曲面．式で書く．空間の図でだけ使える．
+    Surface(Surface),
 }
 
 /// 軸の向き．
@@ -432,6 +434,49 @@ pub struct Segment {
     pub style: Style,
 }
 
+/// 曲面．2つの変数の式で，空間の点を表す．輪郭と，曲面に隠れる線を，三角形の網から求める．
+///
+/// 曲面は不透明な殻で，ほかのオブジェクトの線を隠す．輪郭は，視線が曲面に接する所である．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Surface {
+    /// 識別子．
+    pub id: String,
+    /// 2つの変数の名前．
+    pub vars: Vec<String>,
+    /// x，y，z座標の式．
+    pub expr: Vec<String>,
+    /// 各変数の範囲．数か式で書く．
+    pub domain: [[Bound; 2]; 2],
+    /// 網の細かさ(各変数の方向の分割数)．細かいほど滑らかで，重い．
+    #[serde(default = "default_mesh", skip_serializing_if = "is_default_mesh")]
+    pub mesh: [usize; 2],
+    /// 定義域の縁(4つの辺)を描くか．球のように，縁が継ぎ目や1点になる曲面では，描かない．
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub boundary: bool,
+    /// スタイル．輪郭と縁の線に使う．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
+impl Surface {
+    /// 網の細かさの既定．
+    pub const DEFAULT_MESH: usize = 48;
+    /// 網の細かさの下限．
+    pub const MIN_MESH: usize = 4;
+    /// 網の細かさの上限．
+    pub const MAX_MESH: usize = 200;
+}
+
+const fn default_mesh() -> [usize; 2] {
+    [Surface::DEFAULT_MESH; 2]
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn is_default_mesh(mesh: &[usize; 2]) -> bool {
+    *mesh == default_mesh()
+}
+
 /// 領域．2つのグラフ(かグラフとx軸)の間を，定義域の中で，平行な斜線で埋める．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -559,6 +604,7 @@ impl Object {
             Self::Vector(o) => &o.id,
             Self::Segment(o) => &o.id,
             Self::Region(o) => &o.id,
+            Self::Surface(o) => &o.id,
         }
     }
 
@@ -577,6 +623,7 @@ impl Object {
             Self::Vector(_) => "vector",
             Self::Segment(_) => "segment",
             Self::Region(_) => "region",
+            Self::Surface(_) => "surface",
         }
     }
 }

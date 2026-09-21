@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "description": "放物面 z=x²+y² と，3本の座標軸．放物面に隠れた軸の部分と，縁の遠い側は点線で描く．",
+  "view": { "azimuth": 60, "elevation": 25, "unit": "0.7cm" },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "range": [-3, 3], "label": "x" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "range": [-3, 3], "label": "y" },
+    { "id": "z_axis", "type": "axis", "direction": "z", "range": [-1, 6], "label": "z" },
+    { "id": "origin_label", "type": "label", "at": [0, 0, 0], "anchor": "north east", "tex": "O" },
+    {
+      "id": "paraboloid",
+      "type": "surface",
+      "vars": ["r", "t"],
+      "expr": ["r*cos(t)", "r*sin(t)", "r^2"],
+      "domain": [
+        [0, 2],
+        [0, "2*pi"]
+      ]
+    },
+    {
+      "id": "rim",
+      "type": "curve",
+      "var": "t",
+      "expr": ["2*cos(t)", "2*sin(t)", "4"],
+      "domain": [0, "2*pi"]
+    }
+  ]
+}

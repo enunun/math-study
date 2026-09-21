@@ -8,13 +8,14 @@
 
 use std::f64::consts::TAU;
 
-use crate::compile::{Compiled, CurvePlot, LabelPlot, Plot};
+use crate::compile::{Compiled, CurvePlot, LabelPlot, Plot, SurfacePlot};
 use crate::figure::{Bounds, Figure, Item, LabelItem, Path, Stroke};
 use crate::render::{AXIS_WIDTH, CURVE_WIDTH, MARGIN, arrow_head, stroke_of, with_variable};
 use crate::sample::{sample, sample_with_parameters};
 use crate::scene::{
-    Anchor, Axis, Direction, Hidden, Label, Line, Object, Scene, SpaceView, Sphere, Style,
+    Anchor, Axis, Direction, Hidden, Label, Line, Object, Scene, SpaceView, Sphere, Style, Surface,
 };
+use crate::surface::{Frame, Mesh, Rim};
 
 /// 空間の点．
 type Point3 = [f64; 3];
@@ -39,6 +40,14 @@ struct Camera {
 }
 
 impl Camera {
+    fn frame(&self) -> Frame {
+        Frame {
+            right: self.right,
+            up: self.up,
+            toward: self.toward,
+        }
+    }
+
     fn new(view: &SpaceView) -> Self {
         let (a, e) = (view.azimuth.to_radians(), view.elevation.to_radians());
         Self {
@@ -83,24 +92,68 @@ impl Ball {
     }
 }
 
-/// 図の全体．投影と，点を隠す球．
+/// 図の全体．投影と，点を隠す球と曲面．
 struct Space {
     camera: Camera,
     balls: Vec<Ball>,
+    /// 曲面の網．シーンの中の曲面の順に並ぶ．
+    meshes: Vec<Mesh>,
 }
 
 impl Space {
+    /// 曲面自身の輪郭の点が隠れているか．自身の網には，輪郭用の判定を使い，ほかの網と球には，そのまま使う．
+    fn rim_hidden(&self, rim: Rim, own: &Mesh) -> bool {
+        self.balls
+            .iter()
+            .any(|ball| ball.hides(rim.0, self.camera.toward))
+            || self.meshes.iter().any(|mesh| {
+                if std::ptr::eq(mesh, own) {
+                    mesh.rim_hidden(rim)
+                } else {
+                    mesh.hides(rim.0)
+                }
+            })
+    }
+
     fn hidden(&self, point: Point3) -> bool {
         self.balls
             .iter()
             .any(|ball| ball.hides(point, self.camera.toward))
+            || self.meshes.iter().any(|mesh| mesh.hides(point))
     }
+}
+
+/// 曲面の式から，三角形の網を作る．
+fn build_mesh(surface: &Surface, plot: &SurfacePlot, compiled: &Compiled, frame: Frame) -> Mesh {
+    let point_at = |u: f64, v: f64| -> Option<Point3> {
+        let mut values = vec![u, v];
+        values.extend_from_slice(&compiled.parameters);
+        let [x, y, z] = plot.exprs.as_slice() else {
+            return None;
+        };
+        let point = [x.eval(&values), y.eval(&values), z.eval(&values)];
+        point.iter().all(|c| c.is_finite()).then_some(point)
+    };
+    Mesh::build(&point_at, plot.domain, surface.mesh, frame)
 }
 
 /// 空間の図を，描画の中間表現にする．
 pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Figure {
+    let camera = Camera::new(view);
+    let meshes = scene
+        .objects
+        .iter()
+        .zip(&compiled.plots)
+        .filter_map(|(object, plot)| match (object, plot) {
+            (Object::Surface(surface), Plot::Surface(placed)) => {
+                Some(build_mesh(surface, placed, compiled, camera.frame()))
+            }
+            _ => None,
+        })
+        .collect();
     let space = Space {
-        camera: Camera::new(view),
+        camera,
+        meshes,
         balls: scene
             .objects
             .iter()
@@ -114,8 +167,14 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
             .collect(),
     };
     let mut items = Vec::new();
+    let mut meshes = space.meshes.iter();
     for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
         match (object, plot) {
+            (Object::Surface(surface), _) => {
+                if let Some(mesh) = meshes.next() {
+                    items.extend(surface_items(surface, mesh, &space));
+                }
+            }
             (Object::Axis(axis), _) => items.extend(axis_items(axis, &space)),
             (Object::Label(label), Plot::Label(placed)) => {
                 items.extend(label_item(label, placed, &space.camera).map(Item::Label));
@@ -195,7 +254,7 @@ fn axis_items(axis: &Axis, space: &Space) -> Vec<Item> {
             }
         })
         .collect();
-    let pieces = split_by_visibility(&steps, &at, space);
+    let pieces = split_by_visibility(&steps, &at, &|t| space.hidden(at(t)));
     let direction = normalized(space.camera.project(unit_vector));
     let end = space.camera.project(at(high));
     let last = pieces.len().saturating_sub(1);
@@ -299,25 +358,89 @@ fn curve_items(style: Style, plot: &CurvePlot, compiled: &Compiled, space: &Spac
     let mut items = Vec::new();
     for line in lines {
         let steps: Vec<f64> = line.iter().map(|(t, _)| *t).collect();
-        for piece in split_by_visibility(&steps, &|t| at(t).unwrap_or([f64::NAN; 3]), space) {
-            let Some(kind) = piece_line(piece.hidden, stroke.line, style.hidden) else {
-                continue;
-            };
-            items.push(Item::Path(Path {
-                points: piece
-                    .points
-                    .iter()
-                    .map(|point| space.camera.project(*point))
-                    .collect(),
-                stroke: Stroke {
-                    line: kind,
-                    ..stroke
-                },
-                arrow: None,
-            }));
+        let point = |t: f64| at(t).unwrap_or([f64::NAN; 3]);
+        let pieces = split_by_visibility(&steps, &point, &|t| space.hidden(point(t)));
+        items.extend(piece_items(&pieces, stroke, style.hidden, &space.camera));
+    }
+    items
+}
+
+/// 曲面の輪郭と，縁(`boundary`)の線．隠れた部分は，隠れた部分の線の種類で描く．
+fn surface_items(surface: &Surface, mesh: &Mesh, space: &Space) -> Vec<Item> {
+    let stroke = stroke_of(&surface.style, Line::Solid, CURVE_WIDTH);
+    let indices = |count: usize| -> Vec<f64> {
+        (0..count)
+            .map(|k| f64::from(u32::try_from(k).unwrap_or(u32::MAX)))
+            .collect()
+    };
+    let mut items = Vec::new();
+    for line in &mesh.silhouette() {
+        let at = |t: f64| polyline_at(line, t);
+        let pieces = split_by_visibility(&indices(line.len()), &|t| at(t).0, &|t| {
+            space.rim_hidden(at(t), mesh)
+        });
+        items.extend(piece_items(
+            &pieces,
+            stroke,
+            surface.style.hidden,
+            &space.camera,
+        ));
+    }
+    if surface.boundary {
+        for line in &mesh.boundary() {
+            let rims: Vec<Rim> = line.iter().map(|p| (*p, [0.0; 3])).collect();
+            let at = |t: f64| polyline_at(&rims, t).0;
+            let pieces = split_by_visibility(&indices(line.len()), &at, &|t| space.hidden(at(t)));
+            items.extend(piece_items(
+                &pieces,
+                stroke,
+                surface.style.hidden,
+                &space.camera,
+            ));
         }
     }
     items
+}
+
+/// 折れ線(点と法線の組)の，番号`t`の位置．頂点の番号の間は，直線で補う．
+fn polyline_at(points: &[Rim], t: f64) -> Rim {
+    let mut found = points.first().copied().unwrap_or(([f64::NAN; 3], [0.0; 3]));
+    let mix = |a: Point3, b: Point3, ratio: f64| {
+        [
+            a[0] + (b[0] - a[0]) * ratio,
+            a[1] + (b[1] - a[1]) * ratio,
+            a[2] + (b[2] - a[2]) * ratio,
+        ]
+    };
+    for (k, pair) in points.windows(2).enumerate() {
+        let start = f64::from(u32::try_from(k).unwrap_or(u32::MAX));
+        if let [from, to] = pair
+            && t >= start
+        {
+            let ratio = (t - start).min(1.0);
+            found = (mix(from.0, to.0, ratio), mix(from.1, to.1, ratio));
+        }
+    }
+    found
+}
+
+/// 隠れ方の同じ部分を，線にする．隠れた部分は，`hidden`の種類で描き，`none`なら描かない．
+fn piece_items(pieces: &[Piece], stroke: Stroke, hidden: Hidden, camera: &Camera) -> Vec<Item> {
+    pieces
+        .iter()
+        .filter_map(|piece| {
+            let line = piece_line(piece.hidden, stroke.line, hidden)?;
+            Some(Item::Path(Path {
+                points: piece
+                    .points
+                    .iter()
+                    .map(|point| camera.project(*point))
+                    .collect(),
+                stroke: Stroke { line, ..stroke },
+                arrow: None,
+            }))
+        })
+        .collect()
 }
 
 /// 見える部分と隠れた部分の線の種類．描かないときは`None`．
@@ -338,15 +461,19 @@ struct Piece {
 /// パラメータの列に沿った曲線を，隠れ方が同じ部分に分ける．
 ///
 /// 隣り合う刻みで隠れ方が変わるところは，二分法で切り替わりの点を詰め，前後の部分が共有する．
-fn split_by_visibility(steps: &[f64], at: &dyn Fn(f64) -> Point3, space: &Space) -> Vec<Piece> {
+fn split_by_visibility(
+    steps: &[f64],
+    at: &dyn Fn(f64) -> Point3,
+    hidden_at: &dyn Fn(f64) -> bool,
+) -> Vec<Piece> {
     let mut pieces: Vec<Piece> = Vec::new();
     let mut previous: Option<(f64, bool)> = None;
     for &t in steps {
         let point = at(t);
-        let hidden = space.hidden(point);
+        let hidden = hidden_at(t);
         match (previous, pieces.last_mut()) {
             (Some((before, was_hidden)), Some(current)) if was_hidden != hidden => {
-                let switch = find_switch(before, t, was_hidden, at, space);
+                let switch = find_switch(before, t, was_hidden, at, hidden_at);
                 current.points.push(switch);
                 pieces.push(Piece {
                     hidden,
@@ -370,12 +497,12 @@ fn find_switch(
     to: f64,
     hidden_at_from: bool,
     at: &dyn Fn(f64) -> Point3,
-    space: &Space,
+    hidden_at: &dyn Fn(f64) -> bool,
 ) -> Point3 {
     let (mut near, mut far) = (from, to);
     for _ in 0..BISECTIONS {
         let middle = f64::midpoint(near, far);
-        if space.hidden(at(middle)) == hidden_at_from {
+        if hidden_at(middle) == hidden_at_from {
             near = middle;
         } else {
             far = middle;

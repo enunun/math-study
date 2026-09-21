@@ -6,7 +6,7 @@ use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, is_reserved_name};
 use crate::scene::{
     Anchor, Axis, Bound, Curve, Direction, Graph, Grid, Label, Object, Point, Position, Region,
-    Scene, View,
+    Scene, Surface, View,
 };
 use crate::validate::curve_expressions;
 
@@ -73,6 +73,14 @@ pub struct LinkPlot {
     pub to: [f64; 2],
 }
 
+/// 式を読んだ後の，曲面．
+pub struct SurfacePlot {
+    /// x，y，z座標の式．名前の順は，2つの変数，媒介変数と点の座標である．
+    pub exprs: Vec<Expr>,
+    /// 評価した，各変数の範囲．
+    pub domain: [[f64; 2]; 2],
+}
+
 /// 式を読んだ後の，領域．
 pub struct RegionPlot {
     /// 評価した，xの範囲．
@@ -81,6 +89,8 @@ pub struct RegionPlot {
 
 /// 式を読んだ後の，描く対象．
 pub enum Plot {
+    /// 曲面．
+    Surface(SurfacePlot),
     /// 領域．
     Region(RegionPlot),
     /// 点．
@@ -220,6 +230,9 @@ fn compile_object(
         Object::Point(point) => compile_point(point, names, parameters, scope)
             .map(Plot::Point)
             .map_err(|kind| Error::in_object(&point.id, kind)),
+        Object::Surface(surface) => compile_surface(surface, names, parameters)
+            .map(Plot::Surface)
+            .map_err(|kind| Error::in_object(&surface.id, kind)),
         Object::Region(region) => compile_region(region, names, parameters)
             .map(Plot::Region)
             .map_err(|kind| Error::in_object(&region.id, kind)),
@@ -285,6 +298,44 @@ fn compile_curve(
     }
     let domain = evaluate_domain(&curve.domain, names, parameters)?;
     Ok(CurvePlot { exprs, domain })
+}
+
+fn compile_surface(
+    surface: &Surface,
+    names: &[&str],
+    parameters: &[f64],
+) -> Result<SurfacePlot, ErrorKind> {
+    let [first, second] = surface.vars.as_slice() else {
+        return Err(ErrorKind::Invalid(
+            "曲面の変数(`vars`)は，2つの名前で書く．".to_owned(),
+        ));
+    };
+    for var in [first, second] {
+        if is_reserved_name(var) {
+            return Err(ErrorKind::ReservedName(var.clone()));
+        }
+        if names.contains(&var.as_str()) {
+            return Err(ErrorKind::NameConflict(var.clone()));
+        }
+    }
+    let with_vars: Vec<&str> = [first.as_str(), second.as_str()]
+        .into_iter()
+        .chain(names.iter().copied())
+        .collect();
+    let exprs = surface
+        .expr
+        .iter()
+        .enumerate()
+        .map(|(index, source)| compile_expr("expr", index, source, &with_vars))
+        .collect::<Result<Vec<_>, _>>()?;
+    let [u_domain, v_domain] = &surface.domain;
+    Ok(SurfacePlot {
+        exprs,
+        domain: [
+            evaluate_domain(u_domain, names, parameters)?,
+            evaluate_domain(v_domain, names, parameters)?,
+        ],
+    })
 }
 
 fn compile_region(

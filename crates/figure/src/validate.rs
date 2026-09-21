@@ -6,7 +6,7 @@ use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::scene::{
     Axis, Bound, CM_PER_PT, Curve, Direction, Graph, Grid, Label, MAX_WIDTH_PT, Object, Point,
-    Position, Region, Scene, SpaceView, Sphere, Style, View,
+    Position, Region, Scene, SpaceView, Sphere, Style, Surface, View,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -71,6 +71,9 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Vector(_) => plane_only("vector", view),
         Object::Segment(_) => plane_only("segment", view),
         Object::Region(region) => plane_only("region", view).and_then(|()| validate_region(region)),
+        Object::Surface(surface) => {
+            space_only("surface", view).and_then(|()| validate_surface(surface))
+        }
         Object::Parameter(_) => Ok(()),
     }
 }
@@ -86,6 +89,7 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::Vector(o) => Some(&o.style),
         Object::Segment(o) => Some(&o.style),
         Object::Region(o) => Some(&o.style),
+        Object::Surface(o) => Some(&o.style),
         Object::Label(_) | Object::Parameter(_) => None,
     }
 }
@@ -125,6 +129,43 @@ fn check_endpoints(object: &Object, points: &HashSet<&str>) -> Result<(), ErrorK
         if !points.contains(name.as_str()) {
             return Err(ErrorKind::UnknownPoint(name.clone()));
         }
+    }
+    Ok(())
+}
+
+fn validate_surface(surface: &Surface) -> Result<(), ErrorKind> {
+    let [first, second] = surface.vars.as_slice() else {
+        return Err(ErrorKind::Invalid(
+            "曲面の変数(`vars`)は，2つの名前で書く．".to_owned(),
+        ));
+    };
+    check_variable(first)?;
+    check_variable(second)?;
+    if first == second {
+        return Err(ErrorKind::NameConflict(first.clone()));
+    }
+    if surface.expr.len() != 3 {
+        return Err(ErrorKind::ExpressionCount {
+            expected: 3,
+            found: surface.expr.len(),
+        });
+    }
+    for expr in &surface.expr {
+        non_empty("expr", expr)?;
+    }
+    for domain in &surface.domain {
+        check_domain(domain)?;
+    }
+    if surface
+        .mesh
+        .iter()
+        .any(|count| !(Surface::MIN_MESH..=Surface::MAX_MESH).contains(count))
+    {
+        return Err(ErrorKind::Invalid(format!(
+            "網の細かさ(`mesh`)は，各方向とも，{}以上{}以下にする．",
+            Surface::MIN_MESH,
+            Surface::MAX_MESH
+        )));
     }
     Ok(())
 }

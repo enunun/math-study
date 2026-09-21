@@ -37,6 +37,10 @@ function second(page: Page): Locator {
   return page.locator('.figure').nth(1);
 }
 
+function third(page: Page): Locator {
+  return page.locator('.figure').nth(2);
+}
+
 function center({ x, y, width, height }: Box): [number, number] {
   return [x + width / 2, y + height / 2];
 }
@@ -45,7 +49,7 @@ test.describe('空間の図', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     // ラベルの数式が描画されるまで待つ．
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(8);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(12);
   });
 
   test('SVGは，画像として説明を持ち，隠れた部分で分かれた線と，輪郭がある', async ({ page }) => {
@@ -150,6 +154,29 @@ test.describe('空間の図', () => {
     }
   });
 
+  test('式で書いた曲面は，輪郭と縁が実線で，曲面に隠れた軸が点線で描かれる', async ({ page }) => {
+    const svg = third(page).locator('svg');
+    // 矢じりは，見える先端に付く3つである．
+    await expect(svg.locator('polygon')).toHaveCount(3);
+    const dashed = await svg
+      .locator('path')
+      .evaluateAll((elements) =>
+        elements.map((element) => element.hasAttribute('stroke-dasharray')),
+      );
+    expect(dashed.some(Boolean)).toBe(true);
+    expect(dashed.some((value) => !value)).toBe(true);
+    // 線の太さ0.8ptの実線(輪郭と縁)が，あわせて2本以上ある．
+    const widths = await svg
+      .locator('path')
+      .evaluateAll((elements) =>
+        elements.map((element) =>
+          Number(/[\d.]+/u.exec(getComputedStyle(element).strokeWidth)?.[0]),
+        ),
+      );
+    const thick = widths.filter((width) => Math.abs(width - (0.8 * 2.54) / 72.27) < 1e-4);
+    expect(thick.length).toBeGreaterThanOrEqual(2);
+  });
+
   for (const scheme of ['light', 'dark'] as const) {
     test(`図の色は，文字の色に従う(${scheme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });
@@ -176,7 +203,7 @@ test.describe('空間の図', () => {
     page.on('pageerror', (error) => problems.push(String(error)));
     page.on('requestfailed', (request) => problems.push(request.url()));
     await page.reload();
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(8);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(12);
     expect(problems).toEqual([]);
   });
 });

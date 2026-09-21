@@ -26,6 +26,7 @@ mod render;
 pub mod sample;
 pub mod scene;
 mod space;
+mod surface;
 pub mod tikz;
 mod validate;
 pub mod version;
