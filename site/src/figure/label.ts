@@ -62,5 +62,5 @@ function labelToMath(tex: string): string {
     .join('');
 }
 
-export { anchorShift, labelToMath };
+export { anchorShift, labelToMath, splitOnDollars };
 export type { Shift };

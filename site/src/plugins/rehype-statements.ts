@@ -4,7 +4,14 @@ import type { VFile } from 'vfile';
 
 import { createCatalog } from './statements/catalog';
 import type { Catalog, CatalogOptions } from './statements/catalog';
-import { findStatementNodes, resolvePageId, toInfo } from './statements/collect';
+import {
+  FIGURE_COMPONENT,
+  findFigureNodes,
+  findStatementNodes,
+  numberFigures,
+  resolvePageId,
+  toInfo,
+} from './statements/collect';
 import type { Statement, StatementInfo } from './statements/collect';
 import { EQUATION_COMPONENT, findLabelledEquations, numberPageItems } from './statements/equations';
 import type { Equation, LabelledEquation } from './statements/equations';
@@ -26,8 +33,8 @@ type Options = CatalogOptions;
 interface Target {
   label: string;
   href: string;
-  /** 定義や定理ではなく，式を指すときはtrue． */
-  equation: boolean;
+  /** 定義や定理，式，図のどれを指すか． */
+  kind: 'statement' | 'equation' | 'figure';
 }
 
 /** 参照の要素の属性(`to`や`of`)が指す，定義や定理を探す関数． */
@@ -46,6 +53,7 @@ type OwnPage = Scope & { pageId: string };
 /** 変換の対象になる要素． */
 interface Targets {
   statementNodes: JsxElement[];
+  figureNodes: JsxElement[];
   equations: LabelledEquation<HastMathSite>[];
   refs: JsxElement[];
   proofs: JsxElement[];
@@ -57,7 +65,7 @@ function readDeclaredPageId(file: VFile): unknown {
   return astro?.frontmatter?.pageId;
 }
 
-/** 定義や定理の要素に，コンポーネントが表示に使うラベルとアンカーを渡す． */
+/** 定義や定理，図の要素に，コンポーネントが表示に使うラベルとアンカーを渡す． */
 function decorate(statements: readonly Statement[]): void {
   for (const { node, label, anchor } of statements) {
     setStringAttribute(node, 'label', label);
@@ -80,6 +88,13 @@ function readReference(
   return { id, page: readStringAttribute(element, 'page') };
 }
 
+function kindOf(component: string): Target['kind'] {
+  if (component === EQUATION_COMPONENT) {
+    return 'equation';
+  }
+  return component === FIGURE_COMPONENT ? 'figure' : 'statement';
+}
+
 /** 定義や定理の集まりから，識別子の定義や定理を探す． */
 function locate(scope: Scope, id: string, element: JsxElement): Target {
   const target = scope.statements.find((statement) => statement.id === id);
@@ -92,7 +107,7 @@ function locate(scope: Scope, id: string, element: JsxElement): Target {
   return {
     label: target.label,
     href: `${scope.url}#${target.anchor}`,
-    equation: target.component === EQUATION_COMPONENT,
+    kind: kindOf(target.component),
   };
 }
 
@@ -127,10 +142,10 @@ async function titleProof(proof: JsxElement, resolve: Resolve): Promise<void> {
       proof.position?.start,
     );
   }
-  const { label, equation } = await resolve(proof, 'of');
-  if (equation) {
+  const { label, kind } = await resolve(proof, 'of');
+  if (kind !== 'statement') {
     throw new DocumentError(
-      `<Proof>のofには，定義や定理の識別子を書く．${label}は式である．`,
+      `<Proof>のofには，定義や定理の識別子を書く．${label}は${kind === 'equation' ? '式' : '図'}である．`,
       proof.position?.start,
     );
   }
@@ -180,6 +195,7 @@ function findTargets(tree: Root): Targets {
   const elements = collectJsxElements(tree);
   return {
     statementNodes: findStatementNodes(tree),
+    figureNodes: findFigureNodes(tree),
     equations: findLabelledEquations(collectHastMathSites(tree)),
     refs: elements.filter((element) => element.name === 'Ref'),
     proofs: elements.filter(
@@ -198,36 +214,49 @@ function decorateEquations(equations: readonly Equation<HastMathSite>[]): void {
   }
 }
 
-/** ページの識別子を決め，定義や定理と式に番号を付ける． */
-async function numberPage(
-  { statementNodes, equations: labelled }: Targets,
-  file: VFile,
-  catalog: Catalog,
-): Promise<OwnPage> {
+/** 定義や定理，式に加えて，図に番号を付ける．図の識別子は，定義や定理，式の識別子と重ならない． */
+function numberWithFigures(
+  { statementNodes, figureNodes, equations: labelled }: Targets,
+  pageId: string,
+): { infos: StatementInfo[]; equations: Equation<HastMathSite>[] } {
+  const { statements, equations } = numberPageItems(statementNodes, labelled, pageId);
+  const equationInfos = equations.map(({ info }) => info);
+  const taken = new Set(
+    [...statements, ...equationInfos].flatMap(({ id }) => (id === undefined ? [] : [id])),
+  );
+  const figures = numberFigures(figureNodes, pageId, taken);
+  decorate(statements);
+  decorate(figures);
+  return {
+    infos: [
+      ...statements.map((statement) => toInfo(statement)),
+      ...equationInfos,
+      ...figures.map((figure) => toInfo(figure)),
+    ],
+    equations,
+  };
+}
+
+/** ページの識別子を決め，定義や定理，式，図に番号を付ける． */
+async function numberPage(targets: Targets, file: VFile, catalog: Catalog): Promise<OwnPage> {
   if (file.path === '') {
     throw new DocumentError('文書のファイルの場所が分からない．', undefined);
   }
   const pageId = resolvePageId(readDeclaredPageId(file), file.path);
-  const { statements, equations } = numberPageItems(statementNodes, labelled, pageId);
   await catalog.assertUnique(pageId, file.path);
-  decorate(statements);
+  const { infos, equations } = numberWithFigures(targets, pageId);
   decorateEquations(equations);
-  return {
-    pageId,
-    statements: [
-      ...statements.map((statement) => toInfo(statement)),
-      ...equations.map(({ info }) => info),
-    ],
-    url: '',
-    where: 'このページ',
-  };
+  return { pageId, statements: infos, url: '', where: 'このページ' };
 }
 
 /** 文書の1ページを変換する．番号を付け，参照を解決する． */
 async function transform(tree: Root, file: VFile, catalog: Catalog): Promise<void> {
   const targets = findTargets(tree);
-  const { statementNodes, equations, refs, proofs } = targets;
-  if (statementNodes.length + equations.length + refs.length + proofs.length === 0) {
+  const { statementNodes, figureNodes, equations, refs, proofs } = targets;
+  if (
+    statementNodes.length + figureNodes.length + equations.length + refs.length + proofs.length ===
+    0
+  ) {
     return;
   }
   const resolve = createResolver(await numberPage(targets, file, catalog), catalog);
@@ -240,6 +269,8 @@ async function transform(tree: Root, file: VFile, catalog: Catalog): Promise<voi
  * - 番号は，ページの中の文書の順に，定義，補題，命題，定理，系で共通に数える．
  * - `<Ref to="識別子" />`は，同じページの，その識別子の定義や定理へのリンクになる．
  *   `page="ページの識別子"`を加えると，ほかのページの定義や定理を指す．
+ * - `id`を持つ`<Figure>`にも，「図+ページの識別子+連番」のラベルを付ける．連番は，図だけで数える．
+ *   図への参照は，同じページの図だけを指せる．
  * - `<Proof of="識別子">`は，証明の題名を，その定義や定理のラベルにする．
  * 識別子の誤りや，指す先のない参照は，ビルドの失敗にする．
  */

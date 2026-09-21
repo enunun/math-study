@@ -36,6 +36,7 @@ test.describe('定義と定理', () => {
       '定理abs-3',
       '式(notation-1)',
       '式(abs-1)',
+      '図notation-1',
     ]);
     await expect(links.nth(0)).toHaveAttribute('href', '#even-number');
     await expect(links.nth(1)).toHaveAttribute('href', '#even-square');

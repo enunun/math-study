@@ -87,6 +87,63 @@ describe('rehypeStatements: 番号', () => {
   });
 });
 
+describe('rehypeStatements: 図', () => {
+  it('idを持つ図に，「図+ページの識別子+連番」のラベルを付ける．連番は，定理とは別に数える', async () => {
+    const site = await createSite();
+    const tree = await site.transform(
+      'abs.mdx',
+      [
+        '<Figure src="a" id="fig-a" />',
+        '<Theorem id="thm">t</Theorem>',
+        '<Figure src="b" id="fig-b" />',
+      ].join('\n\n'),
+    );
+    expect(labelsOf(tree)).toEqual([
+      ['図abs-1', 'fig-a'],
+      ['定理abs-1', 'thm'],
+      ['図abs-2', 'fig-b'],
+    ]);
+  });
+
+  it('idのない図には，番号を付けない', async () => {
+    const site = await createSite();
+    const tree = await site.transform(
+      'abs.mdx',
+      '<Figure src="a" />\n\n<Figure src="b" id="fig-b" />',
+    );
+    expect(labelsOf(tree)).toEqual([
+      [undefined, undefined],
+      ['図abs-1', 'fig-b'],
+    ]);
+  });
+
+  it('図への参照を，ラベルのリンクにする', async () => {
+    const site = await createSite();
+    const tree = await site.transform(
+      'abs.mdx',
+      '<Figure src="a" id="fig-a" />\n\n<Ref to="fig-a" />を見る．',
+    );
+    expect(linksOf(tree)).toEqual([['図abs-1', '#fig-a']]);
+  });
+
+  it('図の識別子が，定理や式の識別子と重なるときは，ビルドの失敗にする', async () => {
+    const site = await createSite();
+    await expect(
+      site.transform('abs.mdx', '<Theorem id="a">1</Theorem>\n\n<Figure src="x" id="a" />'),
+    ).rejects.toThrow(/重なっている/u);
+    await expect(
+      site.transform('abs.mdx', '<Figure src="x" id="a" />\n\n<Figure src="y" id="a" />'),
+    ).rejects.toThrow(/重なっている/u);
+  });
+
+  it('証明のofに，図の識別子を書くと，ビルドの失敗にする', async () => {
+    const site = await createSite();
+    await expect(
+      site.transform('abs.mdx', '<Figure src="x" id="f" />\n\n<Proof of="f">b</Proof>'),
+    ).rejects.toThrow(/図である/u);
+  });
+});
+
 describe('rehypeStatements: 参照', () => {
   it('同じページの参照を，ラベルのリンクにする', async () => {
     const site = await createSite();

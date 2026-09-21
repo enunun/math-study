@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { collectJsxElements, DocumentError, readStringAttribute } from './tree';
+import { collectJsxElements, DocumentError, findAttribute, readStringAttribute } from './tree';
 import type { JsxElement, TreeNode } from './tree';
 
 /** 番号を付ける要素の名前と，ラベルの先頭に付く種類の名前．定義，補題，命題，定理，系は，共通の連番を使う． */
@@ -11,6 +11,9 @@ const STATEMENT_KINDS: Readonly<Record<string, string>> = {
   Theorem: '定理',
   Corollary: '系',
 };
+
+/** 番号を付ける図の要素の名前．`id`を持つ図だけに，番号を付ける． */
+const FIGURE_COMPONENT = 'Figure';
 
 /** ページの識別子と定理の識別子に使える文字．英数字と，ハイフン，アンダースコア． */
 const IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]*$/u;
@@ -101,6 +104,48 @@ function numberStatements(nodes: readonly JsxElement[], pageId: string): Stateme
   });
 }
 
+/** `id`を持つ図を，文書の順に集める．`id`のない図は，番号を付けず，参照もされない． */
+function findFigureNodes(tree: TreeNode): JsxElement[] {
+  return collectJsxElements(tree).filter(
+    (element) => element.name === FIGURE_COMPONENT && findAttribute(element, 'id') !== undefined,
+  );
+}
+
+/**
+ * 図に，ページの識別子と，文書の順の連番から，「図abs-2」の形のラベルを付ける．連番は，定義や定理とは別に数える．
+ * 識別子が，定義や定理と式の識別子(`taken`)や，ほかの図の識別子と重なるときは，誤りにする．
+ */
+function numberFigures(
+  nodes: readonly JsxElement[],
+  pageId: string,
+  taken: ReadonlySet<string>,
+): Statement[] {
+  const ids = new Set(taken);
+  return nodes.map((node, index) => {
+    const number = index + 1;
+    const id = readIdentifier(node);
+    if (id === undefined) {
+      throw new DocumentError('図の識別子(id)を読めない．', node.position?.start);
+    }
+    if (ids.has(id)) {
+      throw new DocumentError(
+        `識別子「${id}」が，ページの中で重なっている．識別子は，ページの中で一意にする．`,
+        node.position?.start,
+      );
+    }
+    ids.add(id);
+    return {
+      component: FIGURE_COMPONENT,
+      number,
+      id,
+      name: readStringAttribute(node, 'caption'),
+      label: `図${pageId}-${number}`,
+      anchor: id,
+      node,
+    };
+  });
+}
+
 /**
  * ページの識別子を決める．frontmatterの`pageId`があればそれを，なければファイル名を使う．
  * `index`という名前のファイルは，ディレクトリの名前を使う．
@@ -128,9 +173,12 @@ function toInfo({ node: _node, ...info }: Statement): StatementInfo {
 }
 
 export {
+  FIGURE_COMPONENT,
+  findFigureNodes,
   findStatementNodes,
   IDENTIFIER_PATTERN,
   isValidIdentifier,
+  numberFigures,
   numberStatements,
   resolvePageId,
   STATEMENT_KINDS,

@@ -70,3 +70,16 @@
 .math-color-purple {
   color: var(--figure-purple);
 }
+
+/* 番号と説明文の見出し(<Figure id caption>)． */
+.figure-caption {
+  margin-top: 0.5rem;
+  text-align: center;
+  color: var(--sl-color-gray-2);
+  font-size: var(--sl-text-sm);
+}
+
+.figure-caption strong {
+  margin-inline-end: 0.3em;
+  color: var(--sl-color-text);
+}

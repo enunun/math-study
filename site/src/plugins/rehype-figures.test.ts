@@ -38,6 +38,36 @@ describe('rehypeFigures', () => {
     expect(elementsNamed(inside, 'code')).toHaveLength(4);
   });
 
+  it('番号を付けた図は，idと，番号と説明文の見出しを持つ', async () => {
+    const tree = await transform(
+      '<Figure src="sine-and-shifted-sine" label="図abs-1" anchor="fig-a" caption="正弦と，ずらした正弦" />\n',
+    );
+    const [figure] = elementsNamed(tree, 'figure');
+    expect(figure?.properties.id).toBe('fig-a');
+    const [caption] = elementsNamed(figure ?? tree, 'figcaption');
+    const text = caption?.children.map((child) => (child.type === 'text' ? child.value : ''));
+    expect(text?.join('')).toBe(' 正弦と，ずらした正弦');
+    expect(elementsNamed(caption ?? tree, 'strong')[0]?.children).toEqual([
+      { type: 'text', value: '図abs-1' },
+    ]);
+  });
+
+  it('説明文の$…$は，行内の数式にする', async () => {
+    const tree = await transform(
+      String.raw`<Figure src="sine-and-shifted-sine" label="図abs-1" anchor="fig-a" caption="$y=\sin x$のグラフ" />`,
+    );
+    const [figure] = elementsNamed(tree, 'figure');
+    const [caption] = elementsNamed(figure ?? tree, 'figcaption');
+    const math = elementsNamed(caption ?? tree, 'code');
+    expect(math).toHaveLength(1);
+    expect(math[0]?.properties.className).toContain('language-math');
+  });
+
+  it('labelのない図には，見出しを付けない', async () => {
+    const tree = await transform(PAGE);
+    expect(elementsNamed(tree, 'figcaption')).toHaveLength(0);
+  });
+
   it('前後の文章は，そのまま残る', async () => {
     const tree = await transform(PAGE);
     expect(elementsNamed(tree, 'p')).toHaveLength(2);
