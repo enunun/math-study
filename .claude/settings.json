@@ -11,5 +11,7 @@
         ]
       }
     ]
-  }
+  },
+  "timeZone": "Asia/Tokyo",
+  "timeFormat": "24-hour"
 }
