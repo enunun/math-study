@@ -19,6 +19,11 @@ const state: { loading?: Promise<BrowserMathJax>; queue: Promise<unknown> } = {
   queue: Promise.resolve(),
 };
 
+/** フォントのURL．`BASE_URL`の末尾のスラッシュは，設定によって付くことも付かないこともある． */
+function fontUrl(): string {
+  return `${import.meta.env.BASE_URL.replace(/\/$/u, '')}/${FONT_DIRECTORY}`;
+}
+
 /**
  * ビルド時の描画(`worker.ts`)と，同じマクロと，同じ設定を使う．
  * 読み上げの生成，メニュー，意味づけは，ブラウザでは使わない．結果の読み上げには，呼び出し側が，平文のラベルを付ける．
@@ -33,7 +38,7 @@ function configure(): void {
         throw error;
       },
     },
-    chtml: { fontURL: `${import.meta.env.BASE_URL}${FONT_DIRECTORY}`, displayOverflow: 'scroll' },
+    chtml: { fontURL: fontUrl(), displayOverflow: 'scroll' },
     startup: { typeset: false },
     options: {
       enableMenu: false,
