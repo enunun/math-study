@@ -31,6 +31,15 @@ mise run screenshot -- dev/notation/ /tmp/math.png --scroll "h3#導出木"
 - `--click` performs interactions before the shot, in order. `--clip` captures only the given element. `--scroll` scrolls to an element first, which is the way to look at a section of a long page. `--full` captures the whole page (large; the image is downscaled when read).
 - Running `mise run screenshot` without arguments prints the usage.
 
+## Checking the TikZ output
+
+`mise run tikz` (local only; CI does not run it) compiles the TikZ that the engine writes for every figure of `figure-first.mdx` and `figure-space.mdx` with LuaLaTeX (`standalone`, `luatexja-preset`), rasterizes the PDF with `pdftoppm`, and lays it over a screenshot of the same figure on the built site. It needs TeX Live and `poppler-utils` (see the pitfalls in `CLAUDE.md`). Pass figure names to check a few: `mise run tikz -- vector-addition`.
+
+- Each figure is compared three ways at 3x resolution: `paths` (lines, arrowheads, dots, fills; labels hidden on both sides), `labels` (text only), and `full`. A pixel is ink when it is darker than white; the score is the share of ink that has no ink of the other image within a few pixels. The limits are in `e2e/tikz/settings.ts`: lines may differ by 2 px, labels by 4 px.
+- The result is one image per figure and kind in `tikz-out/` (git-ignored): SVG, PDF, and the difference (red only in the SVG, blue only in the PDF). Open the `-paths.png` or `-labels.png` of a failing figure with the Read tool.
+- A compile error prints the tail of the LaTeX log. The wrapper document is `tikz-out/<name>-<kind>.tex`; the product TikZ is inserted unchanged except for a bounding box (the view plus margin) and, for the two split kinds, options that hide the other half.
+- A change of the drawing (scene fields, arrowheads, dash patterns, label anchors) is not finished until `mise run tikz` passes.
+
 ## Automated browser checks
 
 `mise run e2e` runs three kinds of tests, and CI runs them in the `build` job before `deploy`, so a failure blocks publishing.

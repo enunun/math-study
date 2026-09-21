@@ -38,5 +38,7 @@
   position: absolute;
   padding: 0.3333em;
   line-height: 1;
+  /* TikZの節点の文字の大きさ(\normalsize，10pt)と同じにして，SVGとTikZの出力の見た目を合わせる． */
+  font-size: 10pt;
   white-space: nowrap;
 }

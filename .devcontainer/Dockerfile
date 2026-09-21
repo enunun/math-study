@@ -10,7 +10,15 @@ RUN apt-get update \
 	# Rustのテストを，ネイティブで実行するためのリンカ．Wasmのビルドには要らない．
 	gcc \
 	libc6-dev \
+	# TeX Liveのインストーラ(perl)と，PDFを画像にするpdftoppm(poppler-utils)．
+	perl \
+	poppler-utils \
 	&& rm -rf /var/lib/apt/lists/*
+
+# TeX Liveを，公式のinstall-tlで入れる(図のTikZの出力を，LuaLaTeXでコンパイルして確かめる: mise run tikz)．
+# ネットワークから取得して，数分かかる．mise.tomlの変更で，作り直さないよう，miseより先に置く．
+COPY .devcontainer/install-texlive.sh /tmp/install-texlive.sh
+RUN /tmp/install-texlive.sh && rm -rf /tmp/install-texlive.sh /root/.texlive*
 
 # ツール(Node，pnpm，gh，rtkなど)はmise.tomlとmise.lockのとおりにイメージへ入れる．
 WORKDIR /tmp/mise-bootstrap

@@ -10,7 +10,7 @@ Requirements, reference material, and decisions for the figure feature (2D graph
 - Figures export to TikZ. The TikZ output is a build product and is never edited by hand: to change a figure, change the data it was made from and export again.
 - The data before the TikZ conversion (the scene) is kept in some form.
 - A GUI application (an existing one, or one built here) may be connected later. It is out of scope now, but the design must not block it.
-- Installing TeX Live in the container, to compile the TikZ output, is low priority.
+- The TikZ output is compiled with TeX Live in the container and compared with the SVG (`mise run tikz`); see Verified facts.
 
 ## Reference figures
 
@@ -181,6 +181,16 @@ Read on 2026-09-22. Vector hidden-line removal is classically done with Appel's 
 
 ## Verified facts
 
+### TikZ output compiled and compared with the SVG
+
+Checked on 2026-09-22 with TeX Live 2026 (pgf 3.1.12, LuaHBTeX 1.24), `standalone` with `luatexja-preset`, and the figures on `figure-first` and `figure-space`.
+
+- Every figure compiles without an error. The picture size equals the engine's bounds (the view plus margin), up to rounding.
+- Lines, arrowheads, dots, fills, dashes, colours, and opacity agree with the SVG: with the labels hidden on both sides, no ink in either image lies more than 2 px (0.5 mm) from ink in the other, at 3x resolution (0.0 % of the ink for every figure).
+- Labels agree when their size agrees. A TikZ node is 10 pt (`\normalsize`), so the label size in `figure.css` is 10 pt; with the page's 16 px (12 pt) every label was 30 % larger and the mismatch was 3 to 13 %, against 0 to 8 % now. The MathJax font and Computer Modern look alike at this size.
+- Known difference: the vertical position of a label anchored `north` or `south` differs by up to about 4 px. The HTML label box has a fixed line height (10 pt), while a TikZ node box is as tall as the glyphs of its text (a label with a descender such as `y` is taller than `x`), so the anchored edge sits at a different height. Fitting it would need the height and depth of each label from MathJax.
+- The check wraps the product TikZ in a `standalone` document and adds only a bounding box (`\useasboundingbox`, the view plus margin) and, for the split kinds, options that hide one half. The product itself is not edited.
+
 ### Stealth arrowhead
 
 Read on 2026-09-21 from the master branch of the pgf repository: the declaration of `Stealth` in `tex/generic/pgf/libraries/pgflibraryarrows.meta.code.tex`, and the dimension setup in `tex/generic/pgf/basiclayer/pgfcorearrows.code.tex`.
@@ -189,7 +199,7 @@ Read on 2026-09-21 from the master branch of the pgf repository: the declaration
 - The tip is a closed path of four points (tip, upper back corner, inset point, lower back corner), filled and stroked with mitered joins. The stroke width is `lw' = min(lw, (L − I) / 4)`. The points are pulled inward by the miter lengths: at the tip `0.5·lw'·sqrt(4(L/W)² + 1)`, at the inset point `0.5·lw'·sqrt(4(I/W)² + 1)`, and at the back corners by an angle formula in the source.
 - The visual tip is at `x = L` from the back of the arrow. The line ends at `I + (inset miter) − 0.25·lw'` from the back, so it does not show through the tip.
 - pgf computes the corner miters from the nominal shape (length, width, inset), not from the mitered path, so the real outer corner protrudes past the L × W box by about a tenth of the line width (measured: 0.028 pt at 0.4 pt). The port keeps this; its test allows a tenth of the line width.
-- Port the code from the source, not from this summary. Without TeX Live in the container, the port cannot be compared with real TikZ output yet.
+- Port the code from the source, not from this summary. The port is compared with real TikZ output by `mise run tikz` (see the next section): the paths, arrowheads included, agree with LuaLaTeX and pgf 3.1.12 within 2 px at 3x resolution.
 
 ### Dash patterns
 

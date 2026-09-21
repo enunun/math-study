@@ -26,6 +26,7 @@
 | 文章の検査       | textlint，remark-lint，markdownlint                     |
 | コミット時の検査 | lefthook                                                |
 | ブラウザでの確認 | Playwright                                              |
+| TikZの出力       | TeX Live(LuaLaTeX)，poppler-utils                       |
 | 計算機の核       | Rust，WebAssembly，wasm-bindgen，React                  |
 | 公開             | GitHub Actions，GitHub Pages                            |
 
@@ -51,6 +52,7 @@ devcontainerで開く．Dockerfileは，mise公式のDebianイメージを土台
 | `mise run test`       | 単体テストを実行する                                                       |
 | `mise run e2e`        | ブラウザで動作を確認する                                                   |
 | `mise run screenshot` | ページのスクリーンショットを撮る                                           |
+| `mise run tikz`       | 図のTikZの出力を，LuaLaTeXでコンパイルして，SVGの図と比べる(手元だけ)      |
 
 変更したら，`mise run check`を通す．表示や動作に関わる変更は，`mise run e2e`も通す．手順の詳細は，`.claude/skills/verify-site/SKILL.md`にある．
 

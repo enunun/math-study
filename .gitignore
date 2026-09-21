@@ -112,3 +112,6 @@ site/src/wasm/
 # pnpm store (its location depends on the container; keep it out of git)
 # ---------------------------------------------------------------
 .pnpm-store/
+
+# TikZ出力の比較(mise run tikz)の結果
+tikz-out/
