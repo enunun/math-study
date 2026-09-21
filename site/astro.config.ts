@@ -1,11 +1,13 @@
 import { fileURLToPath } from 'node:url';
 
 import { unified } from '@astrojs/markdown-remark';
+import react from '@astrojs/react';
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 import remarkMath from 'remark-math';
 
-import { FONT_DIRECTORY, mathjaxIntegration, STYLESHEET_FILE } from './src/integrations/mathjax';
+import { mathjaxIntegration } from './src/integrations/mathjax';
+import { FONT_DIRECTORY, STYLESHEET_FILE } from './src/math/constants';
 import { environments, macros } from './src/math/macros';
 import { buildRehypePlugins } from './src/plugins/pipeline';
 
@@ -31,6 +33,8 @@ export default defineConfig({
     }),
   },
   integrations: [
+    // 計算機など，ブラウザで動く部品は，Reactで書く．
+    react(),
     starlight({
       title: '数学の学習サイト',
       // コードブロックは折り返す．横にスクロールする領域は，キーボードで操作できない．

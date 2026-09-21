@@ -9,7 +9,7 @@
 - 実装済み(数式)：MathJax 4による数式の描画(自作マクロ，証明図，読み上げ用の`aria-label`)．未定義のマクロと構文の誤りは，ビルドの失敗にする．
 - 実装済み(定理)：定義，補題，命題，定理，系(`Definition`，`Lemma`，`Proposition`，`Theorem`，`Corollary`)の自動採番と，同じページやほかのページからの参照(`Ref`)．
 - 実装済み(式番号)：別行立ての式の`\label`による自動採番と，`Ref`による参照．
-- 予定：Rustで書いた多項式電卓とグラフ(Wasm)．
+- 実装済み(計算機)：Rustで書いた多項式の計算機(式の展開と微分)を，Wasmにして，ブラウザで動かす．核は，`crates/`にある．グラフは，作っていない．
 
 サイトの仕組み(どの部品が何をしているか，どこが自作か，どう使うか)は，[仕組みの解説](https://enunun.github.io/math-study/dev/internals/)にある．ソースは`site/src/content/docs/dev/internals.mdx`である．
 
@@ -17,19 +17,20 @@
 
 ## 技術構成
 
-| 領域             | 使うもの                            |
-| ---------------- | ----------------------------------- |
-| サイト           | Astro 7，Starlight，MDX             |
-| ツール管理       | mise(Node，pnpm，gh，rtk，lefthook) |
-| 整形とリント     | oxfmt，oxlint                       |
-| 文章の検査       | textlint，remark-lint，markdownlint |
-| コミット時の検査 | lefthook                            |
-| ブラウザでの確認 | Playwright                          |
-| 公開             | GitHub Actions，GitHub Pages        |
+| 領域             | 使うもの                                                |
+| ---------------- | ------------------------------------------------------- |
+| サイト           | Astro 7，Starlight，MDX                                 |
+| ツール管理       | mise(Node，pnpm，gh，rtk，lefthook，Rust，wasm-bindgen) |
+| 整形とリント     | oxfmt，oxlint                                           |
+| 文章の検査       | textlint，remark-lint，markdownlint                     |
+| コミット時の検査 | lefthook                                                |
+| ブラウザでの確認 | Playwright                                              |
+| 計算機の核       | Rust，WebAssembly，wasm-bindgen，React                  |
+| 公開             | GitHub Actions，GitHub Pages                            |
 
 ## 開発環境
 
-devcontainerで開く．Dockerfileは，mise公式のDebianイメージを土台に，ツールとPlaywrightのChromiumを入れる．コンテナの作成後に，`mise run setup`が依存パッケージ，型定義，ブラウザ，Gitのフックを整える．
+devcontainerで開く．Dockerfileは，mise公式のDebianイメージを土台に，ツール(Rustを含む)とPlaywrightのChromiumを入れる．コンテナの作成後に，`mise run setup`が依存パッケージ，型定義，ブラウザ，Gitのフックを整える．
 
 コンテナの外では，miseを入れて`mise run setup`を実行する．Playwrightのブラウザは，Linuxではシステムのライブラリも必要になる．
 
@@ -43,7 +44,8 @@ devcontainerで開く．Dockerfileは，mise公式のDebianイメージを土台
 | `mise run build`      | サイトをビルドする                                                     |
 | `mise run preview`    | ビルドしたサイトを，公開時と同じbaseパスで確認する                     |
 | `mise run check`      | 整形，リント，型検査，単体テスト，ビルドを検査する．CIと同じ内容である |
-| `mise run lint`       | oxlint，markdownlint，remark-lint，textlintを実行する                  |
+| `mise run lint`       | oxlint，rustfmtとclippy，markdownlint，remark-lint，textlintを実行する |
+| `mise run wasm`       | Rustの計算機を，Wasmにして，`site/src/wasm/`へ出力する                 |
 | `mise run fmt`        | コードと文書を整形する                                                 |
 | `mise run test`       | 単体テストを実行する                                                   |
 | `mise run e2e`        | ブラウザで動作を確認する                                               |
@@ -55,6 +57,7 @@ devcontainerで開く．Dockerfileは，mise公式のDebianイメージを土台
 
 | パス             | 内容                                                                              |
 | ---------------- | --------------------------------------------------------------------------------- |
+| `crates/`        | Rustのクレート．多項式の計算機の核と，Wasmの窓口                                  |
 | `site/`          | Astroのサイト．`src/content/docs/`に文書，`src/components/`にコンポーネントを置く |
 | `e2e/`           | E2Eテスト，配信サーバー，スクリーンショットの道具                                 |
 | `docs/`          | 技術選定の記録などの開発者向けの文書                                              |

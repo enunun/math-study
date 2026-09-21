@@ -86,10 +86,10 @@ Known limits:
 
 ## Open items
 
-- The plotting library (a custom SVG, Mafs, or JSXGraph).
-- The range of expressions the polynomial calculator handles.
+- The plotting library (a custom SVG, Mafs, or JSXGraph). The graph is not built for now.
 - A cache for speech generation, if build time becomes a problem.
-- Rendering math in the browser for the calculator, with the same macros.
+- Cache the Cargo build in CI if the build time becomes a problem.
+- Speech strings for the calculator results (the browser MathJax does not generate them; the label is the plain text).
 
 ## Theorem numbering (implemented)
 
@@ -135,3 +135,20 @@ The source has no spaces between Japanese and Latin letters, digits, inline code
 - The gap does not appear next to inline math, because MathJax's inline `mjx-container` is an atomic box (measured gap 0 on the built page, with the property on and off). `rehype-autospace.ts` therefore looks at the neighboring characters at build time and adds classes, and the CSS turns them into a 0.125em margin. It looks through inline wrappers (links, emphasis) but stops at block boundaries and `<br>`, and only Han, Hiragana, Katakana, and `ー` count as Japanese, so punctuation and brackets never get a gap.
 - Nothing is added to the text, so copy and paste, search, and speech are unchanged. Inserting real spaces or thin-space characters at build time was rejected for that reason.
 - Code blocks and the inside of math (`\text{…}`) are `no-autospace`, to keep the monospace grid and the math typesetting.
+
+## Rust and WebAssembly calculator (implemented)
+
+The polynomial calculator takes an expression and shows its expansion and its derivatives. The graph was deferred.
+
+- The core is Rust, compiled to `wasm32-unknown-unknown` and called from a React island. The Rust toolchain (1.98.1, minimal profile, `rustfmt`, `clippy`, the wasm target) and the `wasm-bindgen` CLI are pinned in `mise.toml` and `mise.lock`, so a container, CI, and a developer machine get the same versions without a separate rustup setup.
+- The CLI is installed through mise's `http` backend from the release URL. The `github` backend calls the GitHub API, which allows only 60 unauthenticated requests per hour (a container that also polls the CI status exhausts it). Checksums of the release archives are recorded in `mise.lock`.
+- No `wasm-pack`: `cargo build` produces the `.wasm` and the `wasm-bindgen` CLI is called directly (`mise run wasm`), one package per feature, as decided at the start. The `wasm-bindgen` crate is pinned with `=` to the CLI version because the generated glue checks it at runtime.
+- Workspace: `crates/polynomial` (pure library, native tests) and `crates/polynomial-wasm` (a thin wrapper). Strict lints: clippy `pedantic` plus a deny list (`unwrap`, `expect`, `panic`, indexing, unchecked arithmetic, `as`). All integer arithmetic is `checked_*`, so a large input is an error value, not a panic (a panic in a release wasm is an opaque `unreachable` trap).
+- Numbers are exact rationals over `i128`. Decimal literals become exact fractions (`0.1 + 0.2` is `3/10`). Limits: input 2000 characters, nesting depth 128, 5000 terms in a result, exponent up to 100, and a bound on the term pairs of one multiplication. Overflow is reported, not wrapped.
+- The parser is recursive descent, with the grammar in the module comment: `-x^2` is `-(x^2)`, `^` is right associative, and a `*` may be omitted only before a variable or an opening parenthesis (`2x`, `(x+1)(x-1)`, not `x 2`). Full-width symbols and digits are normalized in the lexer so Japanese input methods work. Division is allowed only by a nonzero constant; exponents must be integers from 0 to 100.
+- Errors carry a span counted in characters (code points), not bytes or UTF-16 units, so the UI can highlight the offending part with `[...source]`. Test: a surrogate-pair character.
+- The JavaScript contract is a tagged union on `status`; an expression error is a value. The TypeScript type is declared in the wasm crate with `typescript_custom_section` and `unchecked_return_type`, so the generated `.d.ts` carries it. The value is built with `serde-wasm-bindgen`.
+- The wasm module is about 188 KB after `wasm-bindgen`. It is loaded lazily through `init` with the `?url` asset URL; GitHub Pages serves `application/wasm`.
+- Browser MathJax renders the result TeX with the same macros as the build-time pages. The `tex-chtml.js` bundle is about 1 MB and is loaded only when a result first needs it. The menu settings override `enable*` options in MathJax 4.1, so speech and enrichment are switched off through `menuOptions.settings`; otherwise a speech worker is started and fails. Conversions are serialized. The `aria-label` of a result is its plain-text form.
+- Tests: Rust unit and integration tests (identities, the binomial theorem, a round trip of the plain-text output through the parser on generated inputs), a JSON-shape test in the wasm crate, Vitest calling the built wasm from Node, and Playwright for the interaction and axe.
+- CI: the `build` job installs the toolchain through `mise-action` (`--locked`) and runs `mise run check`, which builds the wasm first. Native `cargo test` needs a linker; ubuntu runners have `gcc`, and the Dockerfile installs `gcc` and `libc6-dev`.

@@ -9,7 +9,7 @@ Confirm that a change builds, works under the same base path as production, and 
 
 ## Procedure
 
-1. Run `mise run check`. It runs formatting, oxlint, remark-lint (MDX), markdownlint, textlint, the type check (`astro check`), the Vitest unit tests, and the build. CI runs the same thing.
+1. Run `mise run check`. It runs formatting, oxlint, `cargo fmt` and `clippy` (`lint:rust`), remark-lint (MDX), markdownlint, textlint, the type check (`astro check`), the Vitest unit tests, `cargo test`, and the build. The wasm module is built first (`mise run wasm`). CI runs the same thing.
 2. For changes that affect rendering or behavior, run `mise run e2e`. It builds `site/dist` and runs the tests in `e2e/`.
 3. For changes that affect appearance, take screenshots and look at the images (next section).
 4. After committing and pushing, confirm that CI succeeded (the section after next).
@@ -35,7 +35,7 @@ mise run screenshot -- dev/notation/ /tmp/math.png --scroll "h3#導出木"
 
 `mise run e2e` runs three kinds of tests, and CI runs them in the `build` job before `deploy`, so a failure blocks publishing.
 
-- Behavior specs (`fold`, `detail`, `math`, `statements`): what each feature does.
+- Behavior specs (`fold`, `detail`, `math`, `statements`, `home`, `typesetting`, `calculator`): what each feature does. `calculator.spec.ts` also runs axe on the result and the error states, which the all-pages axe check cannot reach because the results appear after the page loads.
 - `accessibility.spec.ts`: axe on every page, in the light and dark themes, at 1280px and 390px, with all folds opened. Any violation fails.
 - `site.spec.ts`: every page opens without console errors, page errors, failed requests, or 4xx/5xx responses, and every internal link (including `#hash` targets) resolves.
 
@@ -83,5 +83,6 @@ Check these by hand, in a local browser or with assistive technology.
 - `astro preview` exits immediately: in agent environments it runs as a background server by design. Check it with `astro preview status` and stop it with `astro preview stop`. E2E tests use their own server (`e2e/serve.ts`).
 - Port 4322 is in use: stop the existing process. Playwright reuses an existing server.
 - E2E shows stale content: `mise run e2e` builds first. Running `pnpm exec playwright test` directly may serve an old `site/dist`.
+- The wasm module is stale or missing (`site/src/wasm/`): run `mise run wasm`. `check`, `build`, `dev`, `sync`, and `test` already do it.
 - Type-aware lint reports many `no-unsafe-*` errors: `site/.astro/types.d.ts` is missing. Run `mise run sync`.
 - Math looks wrong or the build hangs: run `mise run test` first (the plugin's unit tests cover macros, proof trees, speech labels, error positions, and concurrent pages). Then look at `mise run screenshot -- dev/notation/ /tmp/math.png --scroll "h3#導出木"`. A build that never exits means the MathJax Worker was not terminated.

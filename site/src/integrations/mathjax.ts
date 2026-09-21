@@ -5,13 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 import type { AstroIntegration } from 'astro';
 
+import { FONT_DIRECTORY, STYLESHEET_FILE } from '../math/constants';
 import { getRenderer, shutdownRenderer } from '../math/renderer';
 import type { RendererOptions } from '../math/renderer';
-
-/** フォントを配信するディレクトリの名前．public/の直下に作る． */
-const FONT_DIRECTORY = 'mathjax-fonts';
-/** 数式のCSSのファイル名．公開するサイトの直下に置く． */
-const STYLESHEET_FILE = 'mathjax.css';
 
 const STATUS_OK = 200;
 const STATUS_ERROR = 500;
@@ -67,4 +63,4 @@ function mathjaxIntegration(options: RendererOptions & { base: string }): AstroI
   };
 }
 
-export { FONT_DIRECTORY, mathjaxIntegration, STYLESHEET_FILE };
+export { mathjaxIntegration };

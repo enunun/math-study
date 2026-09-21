@@ -58,6 +58,7 @@ Astro と Starlight … レイアウト，サイドバー，検索，ダーク�
 | 折り畳み，補足，定理の見た目                         | `site/src/components/fold/`，`site/src/components/statement/`        | 自作                                     |
 | 検査                                                 | oxlint，remark-lint，markdownlint，textlint，Vitest，Playwright      | 既存の道具に，自作の設定                 |
 | 公開                                                 | GitHub Actions，GitHub Pages                                         | 既存の道具に，自作の設定                 |
+| 多項式の計算機(式の解析と計算，ブラウザでの表示)     | `crates/`(Rust)，`site/src/calculator/`，`site/src/components/calculator/` | 自作                                     |
 
 自作したのは，既存の部品同士をつなぐ部分と，既存の部品にない機能である．MathJaxとAstroとStarlightの中身は，変更していない．
 
@@ -151,17 +152,70 @@ remark-mathは，式に番号を付けない．MathJaxの自動採番は，式�
 
 折り畳みの中の定理や式も，ハッシュで指せば，その折り畳みが自動で開く．
 
+## 計算機のしくみ
+
+多項式の計算機(`/math-study/dev/calculator/`)は，式を入力すると，展開した式と，変数ごとの偏微分を表示する．式の解析と計算は，Rustで書き，WebAssembly(Wasm)にして，ブラウザで動かす．
+
+### 流れ
+
+```text
+入力欄(React) → Wasm(Rust) → 結果のTeXと平文 → 数式の描画(ブラウザのMathJax)
+```
+
+1. 利用者が入力欄に式を書くと，Reactの部品(`polynomial-calculator.tsx`)が，Wasmの`calculate`を呼ぶ．
+2. Wasmの中で，Rustの`polynomial`クレートが，字句解析，構文解析，評価をして，展開した多項式にする．そして，変数ごとに微分する．
+3. 結果は，TeXと平文の2通りの文字列で返る．誤りのときは，説明と，入力の中の位置が返る．
+4. Reactの部品が，TeXを，ブラウザのMathJaxで描画する．ビルド時に描画する記事の数式と，同じマクロを使う．
+
+### 誰が何をしているか
+
+| 領域                                     | 担当する部品                                                                   | 自作か                 |
+| ---------------------------------------- | ------------------------------------------------------------------------------ | ---------------------- |
+| 式の解析，展開，微分，TeXと平文の出力    | `crates/polynomial/`(Rust)                                                     | 自作                   |
+| RustをWasmにして，JavaScriptから呼ぶ橋   | `crates/polynomial-wasm/`(自作)と，wasm-bindgen(既存のCLIとクレート)           | 窓口は自作             |
+| Wasmの読み込み，ブラウザのMathJaxの読み込み | `site/src/calculator/`                                                      | 自作                   |
+| 入力と表示                               | `site/src/components/calculator/`(React)                                       | 自作                   |
+| Rustの道具                               | Rustの本体，cargo，rustfmt，clippy．miseが版を固定する                         | 既存の道具に，自作の設定 |
+
+Rustの核は，ブラウザにも，Astroにも依存しない．そのため，`cargo test`だけで，式の意味を確かめられる．
+
+### Rustの核の作り
+
+- 字句解析(`lexer.rs`)：入力を，数，変数，記号に分ける．全角の記号と数字は，半角にそろえる．
+- 構文解析(`parser.rs`)：再帰下降法で，構文木にする．文法は，このファイルの先頭のコメントにある．
+- 評価(`eval.rs`)：構文木を，展開した多項式にする．
+- 多項式(`polynomial.rs`)：係数は，正確な分数で持つ．足し算，掛け算，累乗，微分を持つ．
+- 出力(`format.rs`)：全次数の大きい順に並べて，TeXと平文にする．平文は，そのまま式として読み戻せる．
+
+数は，128ビットの整数の分数で持つ．あふれるときは，停止せずに，誤りとして返す．入力の長さ，括弧の深さ，結果の項の数，指数にも，上限がある．
+
+### 使える式
+
+- 足し算，引き算，掛け算，割り算，累乗，括弧が使える．
+- 変数は，英字1文字である．掛け算の記号は，変数か開き括弧の前でだけ，省略できる．
+- 割る数は，0でない定数に限る．指数は，0以上で100以下の整数に限る．
+
+### 計算機を変更する
+
+1. `crates/polynomial/`を変更し，`cargo test`で確かめる．
+2. Wasmの窓口(`crates/polynomial-wasm/`)の型を変えたときは，Rustの`Outcome`と，TypeScriptの型の宣言を，同じに保つ．
+3. `mise run wasm`で，Wasmを作り直す．`mise run check`と`mise run dev`は，先に自動で行う．
+4. 表示を変えたときは，`e2e/calculator.spec.ts`を通す．
+
+手順の詳細は，`.claude/skills/rust-wasm/SKILL.md`にある．
+
 ## 検査と公開
 
 | 対象                             | 道具                | コマンド                  |
 | -------------------------------- | ------------------- | ------------------------- |
 | コードと文書の整形               | oxfmt(MDXを除く)    | `mise run fmt`            |
 | TypeScriptなどのコード           | oxlint              | `mise run lint:code`      |
+| Rustのコード                     | rustfmtとclippy     | `mise run lint:rust`      |
 | MDXの構文と構造                  | remark-lint         | `mise run lint:mdx`       |
 | READMEと`docs/`のMarkdown        | markdownlint        | `mise run lint:markdown`  |
 | 日本語の文章                     | textlint            | `mise run lint:text`      |
 | 型                               | `astro check`       | `mise run check`に含む    |
-| 単体テスト                       | Vitest              | `mise run test`           |
+| 単体テスト                       | Vitestとcargo test  | `mise run test`           |
 | ブラウザでの動作                 | Playwright          | `mise run e2e`            |
 | アクセシビリティ                 | axe(Playwright経由) | `mise run e2e`に含む      |
 | リンク切れ，404，コンソールエラー | Playwright          | `mise run e2e`に含む      |
@@ -219,4 +273,6 @@ Astroのコンポーネントとして，`site/src/components/`に置く．中�
 | ビルドが，参照や識別子で失敗する         | メッセージに，ファイルの行と理由がある．指す先がない，重複，使えない文字のどれかである．               |
 | コミットが，MDXの検査で止まる            | 閉じていないタグや，式の`{…}`の誤りである．`mise run lint:mdx`で，位置を確認できる．                   |
 | 分数や導出木の規則名がずれる             | Starlightの余白が，数式の内側に及んでいる．`not-content`のクラスが付いているか確かめる．               |
+| 計算機が古い，またはWasmがない           | `site/src/wasm/`は，生成されたファイルである．`mise run wasm`で作り直す．`check`，`build`，`dev`は，先に自動で行う． |
+| cargo testで，リンカが見つからない       | `gcc`が要る．Dockerfileで入れる．コンテナを再構築するまでは，`apt-get install gcc libc6-dev`で入れる． |
 | 数式のフォントが読み込めない             | フォントは，Astroの設定を読み込むときに，`public/mathjax-fonts/`へ複製される．開発サーバーやビルドを，起動し直す． |

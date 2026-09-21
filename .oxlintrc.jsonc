@@ -27,6 +27,16 @@
     // 整形はoxfmtが担う．
     "sort-imports": "off",
 
+    // Promiseを待たない呼び出し(イベントハンドラの中の非同期処理)は，文としてのvoidで，明示する．
+    "no-void": ["error", { "allowAsStatement": true }],
+
+    // 文字列のスプレッドは，コードポイントごとに分ける．位置を文字(コードポイント)で数える処理で使う．
+    // prefer-spreadと矛盾する．
+    "typescript/no-misused-spread": "off",
+
+    // CSSの読み込みは，副作用のためのimportである．
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }],
+
     // 設定オブジェクトのキーは，アルファベット順より意味のまとまりで並べる．
     "sort-keys": "off",
 
@@ -105,11 +115,21 @@
       },
     },
     {
-      // 単体テストは，describeに多数のテストをまとめる．
+      // 単体テストは，describeに多数のテストをまとめる．期待値には数値を書き，Wasmは，同期で読み込む．
       "files": ["**/*.test.ts"],
       "rules": {
         "max-lines-per-function": "off",
         "max-statements": "off",
+        "no-magic-numbers": "off",
+        "import/no-nodejs-modules": "off",
+        "node/no-sync": "off",
+      },
+    },
+    {
+      // ブラウザで動くMathJaxは，グローバルなオブジェクトから，型を主張して読む．
+      "files": ["site/src/calculator/**"],
+      "rules": {
+        "typescript/no-unsafe-type-assertion": "off",
       },
     },
     {
@@ -140,5 +160,6 @@
       },
     },
   ],
-  "ignorePatterns": ["**/dist/**", "**/.astro/**"],
+  // site/src/wasm/は，wasm-bindgenが生成したコードである．
+  "ignorePatterns": ["**/dist/**", "**/.astro/**", "**/target/**", "site/src/wasm/**"],
 }
