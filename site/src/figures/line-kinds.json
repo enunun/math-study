@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "description": "球と円柱と座標軸．座標軸，球に隠れた軸の点線，2つの曲面の輪郭，交線に，番号を付ける．",
+  "description": "球と円柱と座標軸．与えられた曲線，曲面の輪郭，交線，隠れた部分に，番号を付ける．",
   "view": {
     "azimuth": 60,
     "elevation": 25,
@@ -79,28 +79,21 @@
       "type": "label",
       "at": [0.0634, 1.7098, -0.2719],
       "anchor": "north",
-      "tex": "②"
+      "tex": "④"
     },
     {
       "id": "mark_outline",
       "type": "label",
       "at": [-1.9919, 1.15, 0],
       "anchor": "west",
-      "tex": "③"
+      "tex": "②"
     },
     {
       "id": "mark_common",
       "type": "label",
       "at": [-0.3242, 0.1384, 2.0906],
       "anchor": "west",
-      "tex": "④"
-    },
-    {
-      "id": "mark_polyline",
-      "type": "label",
-      "at": [0.926, -1.1281, 1.7314],
-      "anchor": "south",
-      "tex": "⑤"
+      "tex": "③"
     }
   ]
 }
