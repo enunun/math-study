@@ -125,6 +125,14 @@ $$`,
     expect(await render('本文である．')).toBe('<p>本文である．</p>');
   });
 
+  it('開球，閉包，逆像のマクロを展開する', async () => {
+    const html = await render(
+      String.raw`$\openball{a}{r} \subset \closure{A} \cap \preimage{f}{U}$`,
+    );
+    expect(html).toContain('<mjx-container');
+    expect(html).not.toContain('merror');
+  });
+
   it('未定義のマクロを，ビルドの失敗にする', async () => {
     await expect(render(String.raw`$\undefinedmacro{x}$`)).rejects.toThrow(
       /Undefined control sequence \\undefinedmacro/u,

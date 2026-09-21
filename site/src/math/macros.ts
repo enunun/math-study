@@ -30,6 +30,9 @@ const STYLE_ENVIRONMENT_PREFIX = 'numbersetstyle';
 /** `\NumberSet`の引数の数．スタイル(任意引数)と，組む文字． */
 const NUMBER_SET_ARGUMENT_COUNT = 2;
 
+/** 引数を2つ取るマクロの，引数の数． */
+const TWO_ARGUMENTS = 2;
+
 /** numbersetsの`\DeclareNumberSetCommand{名前}{文字}`に相当する，名前付きの数の集合のマクロ． */
 function declareNumberSetCommand(symbol: string): Macro {
   return [String.raw`\NumberSet[#1]{${symbol}}`, 1, defaultNumberSetStyle];
@@ -56,6 +59,9 @@ const macros: Macros = {
   norm: [String.raw`\left\|#1\right\|`, 1],
   set: [String.raw`\left\{#1\right\}`, 1],
   rank: String.raw`\operatorname{rank}`,
+  openball: [String.raw`B\left(#1, #2\right)`, TWO_ARGUMENTS],
+  closure: [String.raw`\overline{#1}`, 1],
+  preimage: [String.raw`#1^{-1}\left(#2\right)`, TWO_ARGUMENTS],
 };
 
 /**
