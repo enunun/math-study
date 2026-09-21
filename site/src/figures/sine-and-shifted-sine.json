@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "description": "y=sin x のグラフと，x軸の方向に平行移動した点線のグラフ",
+  "view": { "x": [-7, 7], "y": [-1.6, 1.8], "unit": { "x": "1cm", "y": "2cm" } },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "arrow": "stealth", "label": "x" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "arrow": "stealth", "label": "y" },
+    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "south east", "tex": "O" },
+    { "id": "shift", "type": "parameter", "value": -1.2 },
+    { "id": "sine", "type": "graph", "var": "x", "expr": "sin(x)", "domain": [-7, 7] },
+    {
+      "id": "shifted_sine",
+      "type": "graph",
+      "var": "x",
+      "expr": "sin(x - shift)",
+      "domain": [-7, 7],
+      "style": { "line": "dotted" }
+    },
+    {
+      "id": "title",
+      "type": "label",
+      "at": [1, 2],
+      "anchor": "east",
+      "tex": "Graph of $y=\\sin x$"
+    }
+  ]
+}

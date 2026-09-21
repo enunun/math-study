@@ -1,0 +1,15 @@
+[package]
+name = "figure"
+description = "図のシーン(JSON)を読み，検査し，中間表現とTikZに変える．"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+semver = { version = "1", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

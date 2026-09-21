@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/polynomial", "crates/polynomial-wasm"]
+members = ["crates/polynomial", "crates/polynomial-wasm", "crates/figure"]
 resolver = "3"
 
 [workspace.package]

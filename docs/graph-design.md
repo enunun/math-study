@@ -51,6 +51,18 @@ scene (data) → geometry engine (projection, silhouette, visibility) → 2D vec
 - Rust turns a scene into the intermediate representation (IR) and into the TikZ text. TypeScript builds the SVG from the IR and draws the label formulas with MathJax.
 - The scene is a JSON file, one per figure. A GUI that edits graphs (typing an expression, dragging a point) is planned, and the scene must stay easy for it to read and write. This gives the rules below.
 
+- The figure feature is developed test-first: a failing test is written before the code that makes it pass. The first figure's JSON file is a fixture of the tests.
+
+## Implemented
+
+Step 1, the scene, in `crates/figure/` (`parse_scene` is the entry point; the tests are in `crates/figure/tests/`):
+
+- The types of the scene (`scene.rs`): `Scene`, `View`, and the objects `Axis`, `Label`, `Parameter`, `Graph`, `Curve`. They read and write JSON, so a scene that was written out can be read again. Omitted fields take defaults: `arrow` is `stealth`, `anchor` is `center`, and the line is solid. A length is written as a string such as `"2.5mm"` (`cm`, `mm`, `pt`).
+- The version (`version.rs`): the engine version is the workspace version. The engine reads a scene whose major version equals its own (its minor version too while the major version is 0) and that is not newer than itself. The version is checked before any other field, so a newer scene with new fields reports the version, not an unknown field.
+- The checks (`validate.rs`): a non-empty `description`, increasing finite ranges (`view`, `range`, numeric `domain`), identifiers for `id` and `var`, unique `id`s, non-empty expressions and `tex`, two expressions per curve. Unknown fields and unknown object types are rejected.
+- An error carries the `id` of the object it came from (`Error::object`). JSON syntax errors carry the line and the column.
+- Expressions are still plain strings. Their syntax, the names they use, and the order of an expression domain are checked in step 2.
+
 ## Scene rules
 
 - The scene holds inputs only: points, parameters, expressions, and styles. Nothing computed is stored.
@@ -93,7 +105,7 @@ The fields below are those of the first figure, `site/src/figures/sine-and-shift
 ```
 
 - `description` becomes the alternative text of the SVG (the site requires zero axe violations, so a figure needs an accessible name). `view` gives the visible range in mathematical coordinates and the physical length of one unit on each axis, so the two scales can differ.
-- An `id` is made of letters, digits, and `_`, because expressions refer to a `parameter` by its `id`.
+- An `id` starts with a letter and is made of letters, digits, and `_`, because expressions refer to a `parameter` by its `id`.
 - `axis`: one object per axis, so a single axis or a half axis (`range: [0, 5]`) is possible. `direction` is `x` or `y` (`z` in 3D). `arrow` is `stealth` by default and can be `none` or another tip. `range` defaults to the view.
 - `label`: a formula placed at a point with an anchor. The origin `O` is a label, not part of an axis.
 - `parameter`: a named number used in expressions. A GUI shows it as a slider.
@@ -107,7 +119,7 @@ The fields below are those of the first figure, `site/src/figures/sine-and-shift
 - Decide visibility by sampling curves and meshing surfaces, then refine the switch points by bisection. Extract outlines as the curve where the surface normal is perpendicular to the view direction. Add exact shapes for spheres, cylinders, and cones later.
 - Fit smooth curves with Bézier segments in the export.
 - Define each arrowhead (`Stealth`, and later `Latex` and `To`) with the geometry of the TikZ `arrows.meta` tip (see Verified facts), and draw the same shape in SVG.
-- Take the application version from the Rust workspace (`[workspace.package]`) and expose it from Wasm, so the site, the TikZ header comment, and a GUI read one source. The engine reads a scene when its major version equals the engine's (its minor version too while the major version is 0) and it is not newer than the engine; otherwise it reports both versions. A breaking change to the format bumps the version and comes with a migration.
+- Expose the application version from Wasm, so the site, the TikZ header comment, and a GUI read one source. A breaking change to the format bumps the version and comes with a migration.
 - Treat readability of the TikZ output as a non-goal: fidelity to the figure and a compact size matter. Until TeX Live is available, check the output against golden files instead of compiling it.
 - Write the engine version and the scene into a header comment of the TikZ file, so an export can be traced back and reproduced.
 - Render figures to static SVG at build time. A rotating view can be added later with the same Wasm.
