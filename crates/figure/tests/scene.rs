@@ -8,7 +8,7 @@
     clippy::panic
 )]
 
-use figure::scene::{Anchor, Arrow, Bound, Direction, Length, LengthUnit, Line, Object};
+use figure::scene::{Anchor, Arrow, Bound, Direction, Length, LengthUnit, Line, Object, Position};
 use figure::{Scene, parse_scene};
 
 const SINE_AND_SHIFTED_SINE: &str =
@@ -105,7 +105,10 @@ fn ラベルのアンカーを省くと中央になり指定した名前を読�
         panic!("ラベルである");
     };
     assert_eq!(placed.anchor, Anchor::SouthEast);
-    assert_eq!(placed.at, [Bound::Number(0.0), Bound::Number(0.0)]);
+    assert_eq!(
+        placed.at,
+        Position::Coordinates(vec![Bound::Number(0.0), Bound::Number(0.0)])
+    );
     assert_eq!(placed.tex, "O");
 }
 

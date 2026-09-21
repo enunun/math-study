@@ -239,8 +239,9 @@ pub enum Anchor {
 pub struct Label {
     /// 識別子．
     pub id: String,
-    /// 置く位置(数学の座標)．平面の図では2個，空間の図では3個の，数か式で書く．
-    pub at: Vec<Bound>,
+    /// 置く位置(数学の座標)．座標の並び(平面の図では2個，空間の図では3個の，数か式)か，
+    /// 点の式(平面の図だけ)で書く．
+    pub at: Position,
     /// 位置の基準．
     #[serde(default)]
     pub anchor: Anchor,
@@ -357,14 +358,27 @@ impl Hidden {
     }
 }
 
+/// 位置の書き方．座標の並びか，点の式の文字列である．
+///
+/// 点の式は，点の`id`を，原点からの位置ベクトルとして，和と差，数(媒介変数を含む)の倍で書く．
+/// 例：`"B + C - A"`(平行四辺形の頂点)，`"(A + B) / 2"`(中点)，`"A + t * (B - A)"`(線分の上の点)．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Position {
+    /// 点の式．
+    Vector(String),
+    /// 座標の並び．各座標は，数か式である．
+    Coordinates(Vec<Bound>),
+}
+
 /// 点．座標は，数か，媒介変数と，先に置いた点の座標を使う式で書く．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Point {
     /// 識別子．座標は，式の中で`<id>_x`と`<id>_y`の名前になる．
     pub id: String,
-    /// 座標(数学の座標)．
-    pub at: [Bound; 2],
+    /// 位置(数学の座標)．2個の座標の並びか，点の式で書く．
+    pub at: Position,
     /// 点の名前の`TeX`の式．なければ，名前を置かない．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,

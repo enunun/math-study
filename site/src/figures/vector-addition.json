@@ -9,7 +9,7 @@
     {
       "id": "D",
       "type": "point",
-      "at": ["B_x + C_x - A_x", "B_y + C_y - A_y"],
+      "at": "B + C - A",
       "dot": true,
       "label": "D",
       "style": { "color": "red" }
@@ -22,21 +22,21 @@
     {
       "id": "name_a",
       "type": "label",
-      "at": ["(A_x + B_x) / 2", "(A_y + B_y) / 2"],
+      "at": "(A + B) / 2",
       "anchor": "north west",
       "tex": "$\\vec{a}$"
     },
     {
       "id": "name_b",
       "type": "label",
-      "at": ["(A_x + C_x) / 2", "(A_y + C_y) / 2"],
+      "at": "(A + C) / 2",
       "anchor": "south east",
       "tex": "$\\vec{b}$"
     },
     {
       "id": "name_sum",
       "type": "label",
-      "at": ["(A_x + D_x) / 2", "(A_y + D_y) / 2"],
+      "at": "(A + D) / 2",
       "anchor": "north west",
       "tex": "$\\vec{a}+\\vec{b}$"
     }

@@ -129,6 +129,24 @@ enum Node {
 }
 
 impl Node {
+    fn point_kind(&self, is_point: &dyn Fn(usize) -> bool) -> Option<bool> {
+        match self {
+            Self::Number(_) => Some(false),
+            Self::Variable(index) => Some(is_point(*index)),
+            Self::Neg(operand) => operand.point_kind(is_point),
+            Self::Binary(op, left, right) => {
+                let (left, right) = (left.point_kind(is_point)?, right.point_kind(is_point)?);
+                match op {
+                    BinaryOp::Add | BinaryOp::Sub => (left == right).then_some(left),
+                    BinaryOp::Mul => (!(left && right)).then_some(left || right),
+                    BinaryOp::Div => (!right).then_some(left),
+                    BinaryOp::Pow => (!(left || right)).then_some(false),
+                }
+            }
+            Self::Call(_, argument) => (!argument.point_kind(is_point)?).then_some(false),
+        }
+    }
+
     fn eval(&self, values: &[f64]) -> f64 {
         match self {
             Self::Number(value) => *value,
@@ -172,6 +190,16 @@ impl Expr {
         let tokens = lexer::tokenize(&chars)?;
         let root = parser::parse(&tokens, names)?;
         Ok(Self { root })
+    }
+
+    /// 式が，点(ベクトル)の式として正しいかを調べ，値が点なら`Some(true)`，数なら`Some(false)`を返す．
+    /// `is_point`は，`compile`に渡した名前の番号が，点の名前かを答える．
+    ///
+    /// 点は，和と差(点どうし，数どうしだけ)，数の倍(点×数，数×点)，数での割り算(点÷数)ができる．
+    /// 点どうしの積，点への数の足し引き，点を関数やべき乗や割る側に使う式は，正しくない(`None`)．
+    #[must_use]
+    pub fn point_kind(&self, is_point: &dyn Fn(usize) -> bool) -> Option<bool> {
+        self.root.point_kind(is_point)
     }
 
     /// 変数に値を入れて，式を評価する．`values`は，`compile`に渡した`names`と同じ順に並べる．

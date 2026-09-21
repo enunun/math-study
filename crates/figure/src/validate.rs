@@ -6,7 +6,7 @@ use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::scene::{
     Axis, Bound, CM_PER_PT, Curve, Direction, Graph, Grid, Label, MAX_WIDTH_PT, Object, Point,
-    Region, Scene, SpaceView, Sphere, Style, View,
+    Position, Region, Scene, SpaceView, Sphere, Style, View,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -101,6 +101,13 @@ fn check_style(style: &Style) -> Result<(), ErrorKind> {
 }
 
 fn validate_point(point: &Point) -> Result<(), ErrorKind> {
+    if let Position::Coordinates(list) = &point.at
+        && list.len() != 2
+    {
+        return Err(ErrorKind::Invalid(
+            "点の座標(`at`)は，2個の数で書く．".to_owned(),
+        ));
+    }
     match &point.label {
         Some(label) => non_empty("label", label),
         None => Ok(()),
@@ -211,10 +218,19 @@ fn validate_label(label: &Label, view: &View) -> Result<(), ErrorKind> {
         View::Plane(_) => ("平面", 2),
         View::Space(_) => ("空間", 3),
     };
-    if label.at.len() != expected {
-        return Err(ErrorKind::Invalid(format!(
-            "ラベルの位置`at`は，{kind}の図では{expected}個の数で書く．"
-        )));
+    match &label.at {
+        Position::Coordinates(list) if list.len() == expected => {}
+        Position::Coordinates(_) => {
+            return Err(ErrorKind::Invalid(format!(
+                "ラベルの位置`at`は，{kind}の図では{expected}個の数で書く．"
+            )));
+        }
+        Position::Vector(_) if matches!(view, View::Space(_)) => {
+            return Err(ErrorKind::Invalid(
+                "空間の図では，ラベルの位置を点の式で書けない．3個の座標で書く．".to_owned(),
+            ));
+        }
+        Position::Vector(_) => {}
     }
     non_empty("tex", &label.tex)
 }

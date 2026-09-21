@@ -5,7 +5,8 @@ use std::collections::HashMap;
 use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, is_reserved_name};
 use crate::scene::{
-    Anchor, Axis, Bound, Curve, Direction, Graph, Grid, Label, Object, Point, Region, Scene, View,
+    Anchor, Axis, Bound, Curve, Direction, Graph, Grid, Label, Object, Point, Position, Region,
+    Scene, View,
 };
 use crate::validate::curve_expressions;
 
@@ -132,10 +133,25 @@ pub fn compile(scene: &Scene) -> Result<Compiled, Error> {
     // オブジェクトを順に読む．点の座標は，読んだあとに，あとのオブジェクトが使える名前と値に加わる．
     let mut plots = Vec::with_capacity(scene.objects.len());
     let mut coordinates: HashMap<&str, [f64; 2]> = HashMap::new();
+    let parameter_count = names.len();
+    // 点の式に使える，先に置いた点(idと座標)．
+    let mut placed_points: Vec<(&str, [f64; 2])> = Vec::new();
     for object in &scene.objects {
         let visible: Vec<&str> = names.iter().map(String::as_str).collect();
-        let plot = compile_object(object, &visible, &values, &scene.view)?;
+        let scope = VectorScope {
+            parameter_names: visible.get(..parameter_count).unwrap_or_default(),
+            parameter_values: values.get(..parameter_count).unwrap_or_default(),
+            points: &placed_points,
+        };
+        let plot = compile_object(object, &visible, &values, &scene.view, &scope)?;
         if let (Object::Point(point), Plot::Point(placed)) = (object, &plot) {
+            if is_reserved_name(&point.id) {
+                return Err(Error::in_object(
+                    &point.id,
+                    ErrorKind::ReservedName(point.id.clone()),
+                ));
+            }
+            placed_points.push((point.id.as_str(), placed.at));
             for (suffix, value) in [("x", placed.at[0]), ("y", placed.at[1])] {
                 let name = format!("{}_{suffix}", point.id);
                 if names.contains(&name) {
@@ -171,11 +187,19 @@ pub fn compile(scene: &Scene) -> Result<Compiled, Error> {
     })
 }
 
+/// 点の式が使える名前と値．媒介変数と，先に置いた点である．
+struct VectorScope<'a> {
+    parameter_names: &'a [&'a str],
+    parameter_values: &'a [f64],
+    points: &'a [(&'a str, [f64; 2])],
+}
+
 fn compile_object(
     object: &Object,
     names: &[&str],
     parameters: &[f64],
     view: &View,
+    scope: &VectorScope,
 ) -> Result<Plot, Error> {
     match object {
         Object::Axis(axis) => compile_axis(axis, names, parameters, view)
@@ -190,10 +214,10 @@ fn compile_object(
         Object::Grid(grid) => compile_grid(grid, names, parameters, view)
             .map(Plot::Grid)
             .map_err(|kind| Error::in_object(&grid.id, kind)),
-        Object::Label(label) => compile_label(label, names, parameters)
+        Object::Label(label) => compile_label(label, names, parameters, scope)
             .map(Plot::Label)
             .map_err(|kind| Error::in_object(&label.id, kind)),
-        Object::Point(point) => compile_point(point, names, parameters)
+        Object::Point(point) => compile_point(point, names, parameters, scope)
             .map(Plot::Point)
             .map_err(|kind| Error::in_object(&point.id, kind)),
         Object::Region(region) => compile_region(region, names, parameters)
@@ -331,13 +355,68 @@ fn evaluate_coordinates(
         .collect()
 }
 
+/// 位置を評価する．座標の並びは，各座標を評価し，点の式は，成分ごとに評価する．
+fn evaluate_position(
+    position: &Position,
+    names: &[&str],
+    parameters: &[f64],
+    scope: &VectorScope,
+) -> Result<Vec<f64>, ErrorKind> {
+    match position {
+        Position::Coordinates(list) => evaluate_coordinates(list, names, parameters),
+        Position::Vector(source) => evaluate_vector(source, scope),
+    }
+}
+
+/// 点の式を評価する．点を，原点からの位置ベクトルとして扱い，成分ごとに評価する．
+/// 和と差と数倍しか許さないので，成分ごとに評価した結果は，そのままベクトルの計算になる．
+fn evaluate_vector(source: &str, scope: &VectorScope) -> Result<Vec<f64>, ErrorKind> {
+    let parameter_count = scope.parameter_names.len();
+    let names: Vec<&str> = scope
+        .parameter_names
+        .iter()
+        .copied()
+        .chain(scope.points.iter().map(|(id, _)| *id))
+        .collect();
+    let expr = compile_expr("at", 0, source, &names)?;
+    if expr.point_kind(&|index| index >= parameter_count) != Some(true) {
+        return Err(ErrorKind::Invalid(
+            "位置の式は，点の`id`を，和と差と数の倍でつないだ，点の式で書く(点どうしの積，点への数の足し引き，点を関数やべき乗に入れる式，点を含まない式は書けない)．"
+                .to_owned(),
+        ));
+    }
+    let component = |axis: usize| -> f64 {
+        let values: Vec<f64> = scope
+            .parameter_values
+            .iter()
+            .copied()
+            .chain(
+                scope
+                    .points
+                    .iter()
+                    .map(|(_, at)| at.get(axis).copied().unwrap_or(f64::NAN)),
+            )
+            .collect();
+        expr.eval(&values)
+    };
+    let at = vec![component(0), component(1)];
+    if at.iter().all(|value| value.is_finite()) {
+        Ok(at)
+    } else {
+        Err(ErrorKind::Invalid(
+            "座標(`at`)は，有限の数にする．".to_owned(),
+        ))
+    }
+}
+
 fn compile_label(
     label: &Label,
     names: &[&str],
     parameters: &[f64],
+    scope: &VectorScope,
 ) -> Result<LabelPlot, ErrorKind> {
     Ok(LabelPlot {
-        at: evaluate_coordinates(&label.at, names, parameters)?,
+        at: evaluate_position(&label.at, names, parameters, scope)?,
     })
 }
 
@@ -345,8 +424,9 @@ fn compile_point(
     point: &Point,
     names: &[&str],
     parameters: &[f64],
+    scope: &VectorScope,
 ) -> Result<PointPlot, ErrorKind> {
-    let at = evaluate_coordinates(&point.at, names, parameters)?;
+    let at = evaluate_position(&point.at, names, parameters, scope)?;
     match at.as_slice() {
         [x, y] => Ok(PointPlot { at: [*x, *y] }),
         _ => Err(ErrorKind::Invalid(

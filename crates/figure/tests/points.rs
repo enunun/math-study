@@ -9,7 +9,7 @@
     clippy::panic
 )]
 
-use figure::scene::{Anchor, Arrow, Bound, Object};
+use figure::scene::{Anchor, Arrow, Bound, Object, Position};
 use figure::{Error, ErrorKind, Scene, parse_scene};
 
 fn plane_scene(objects: &str) -> String {
@@ -43,7 +43,10 @@ fn 点は_座標を数か式で持ち_名前と点の印を任意で持つ() {
     };
     assert_eq!(
         a.at,
-        [Bound::Number(1.0), Bound::Expression("2*pi".to_owned())]
+        Position::Coordinates(vec![
+            Bound::Number(1.0),
+            Bound::Expression("2*pi".to_owned())
+        ])
     );
     assert_eq!(a.label.as_deref(), Some("A"));
     assert_eq!(a.anchor, Some(Anchor::NorthEast));
@@ -192,10 +195,10 @@ fn ラベルの位置には_式が書け_点の座標を使える() {
     };
     assert_eq!(
         label.at,
-        [
+        Position::Coordinates(vec![
             Bound::Expression("(A_x + B_x)/2".to_owned()),
             Bound::Number(1.0)
-        ]
+        ])
     );
 }
 
@@ -459,4 +462,134 @@ fn ベクトルの和の図は_対角線のベクトルが_dの印に届く() {
     assert!(close(dot.at[0], 5.6) && close(dot.at[1], 5.6));
     assert!(close(sum.points[1][0], dot.at[0]) && close(sum.points[1][1], dot.at[1]));
     assert_eq!(labels(&figure).len(), 4);
+}
+
+// ---- 点の式(位置を，点の和と差，数倍で書く) ----
+
+#[test]
+fn 位置は_座標の並びのほか_点の式の文字列でも書ける() {
+    let scene = scene_of(&format!(
+        r#"{A}, {B},
+           {{ "id": "M", "type": "point", "at": "(A + B) / 2" }},
+           {{ "id": "t", "type": "label", "at": "A - B", "tex": "T" }}"#
+    ));
+    let Object::Point(m) = &scene.objects[2] else {
+        panic!("点である");
+    };
+    assert_eq!(m.at, Position::Vector("(A + B) / 2".to_owned()));
+    let Object::Label(label) = &scene.objects[3] else {
+        panic!("ラベルである");
+    };
+    assert_eq!(label.at, Position::Vector("A - B".to_owned()));
+    let written = serde_json::to_string(&scene).expect("書き出せる");
+    assert!(written.contains(r#""at":"(A + B) / 2""#), "{written}");
+    assert_eq!(parse_scene(&written).expect("読み直せる"), scene);
+}
+
+#[test]
+fn 点の式は_点の和と差と数倍を成分ごとに計算する() {
+    // A(0, 0)，B(3, 1)，C(1, 3)，媒介変数k = 0.5．横の単位2cm，縦の単位1cmの図で，位置を見る．
+    let figure = figure_of(
+        r#"{ "id": "k", "type": "parameter", "value": 0.5 },
+           { "id": "A", "type": "point", "at": [0, 0] },
+           { "id": "B", "type": "point", "at": [3, 1] },
+           { "id": "C", "type": "point", "at": [1, 3] },
+           { "id": "D", "type": "point", "at": "B + C - A", "dot": true },
+           { "id": "E", "type": "point", "at": "A + k * (B - A)", "dot": true },
+           { "id": "F", "type": "point", "at": "-C", "dot": true },
+           { "id": "G", "type": "point", "at": "2 * B / 4 + C * k", "dot": true },
+           { "id": "m", "type": "label", "at": "(A + D) / 2", "tex": "M" }"#,
+    );
+    let at: Vec<[f64; 2]> = dots(&figure).iter().map(|dot| dot.at).collect();
+    let expected = [
+        [8.0, 4.0],   // B + C - A = (4, 4)．横は2cm単位．
+        [3.0, 0.5],   // A + 0.5(B - A) = (1.5, 0.5)
+        [-2.0, -3.0], // -C = (-1, -3)
+        [4.0, 2.0],   // 2B/4 + 0.5C = (1.5 + 0.5, 0.5 + 1.5) = (2, 2)
+    ];
+    for (got, want) in at.iter().zip(expected) {
+        assert!(
+            close(got[0], want[0]) && close(got[1], want[1]),
+            "{got:?} {want:?}"
+        );
+    }
+    // ラベルの位置は，AとDの中点(2, 2)，つまり(4, 2)cmである．
+    let middle = labels(&figure)[0];
+    assert!(close(middle.at[0], 4.0) && close(middle.at[1], 2.0));
+}
+
+#[test]
+fn 点の式は_座標の名前と混ぜて使える() {
+    let ok = parse_scene(&plane_scene(&format!(
+        r#"{A}, {B}, {{ "id": "D", "type": "point", "at": "A + B" }},
+           {{ "id": "g", "type": "graph", "var": "x", "expr": "D_y * x", "domain": [0, 1] }}"#
+    )));
+    assert!(ok.is_ok(), "{ok:?}");
+}
+
+#[test]
+fn 点の式でない式は_誤りになる() {
+    // 点どうしの積，点に数を足す，点を関数に入れる，点で割る，点のべき，点を含まない式．
+    for source in ["A * B", "A + 1", "sin(A)", "1 / A", "A ^ 2", "1 + 2", "k"] {
+        let error = error_of(&format!(
+            r#"{{ "id": "k", "type": "parameter", "value": 1 }}, {A}, {B},
+               {{ "id": "D", "type": "point", "at": "{source}" }}"#
+        ));
+        assert!(
+            matches!(error.kind, ErrorKind::Invalid(_)),
+            "{source}: {error}"
+        );
+        assert_eq!(error.object.as_deref(), Some("D"), "{source}");
+        assert!(error.to_string().contains("点"), "{source}: {error}");
+    }
+}
+
+#[test]
+fn 点の式の名前が未知か_あとに置いた点なら_式の誤りになる() {
+    let unknown = error_of(&format!(
+        r#"{A}, {{ "id": "D", "type": "point", "at": "A + Z" }}"#
+    ));
+    let ErrorKind::Expression { field, index, .. } = &unknown.kind else {
+        panic!("式の誤りである: {unknown}");
+    };
+    assert_eq!((*field, *index), ("at", 0));
+    // 自分も，あとの点も，参照できない．
+    let later = error_of(&format!(
+        r#"{{ "id": "D", "type": "point", "at": "A" }}, {A}"#
+    ));
+    assert!(
+        matches!(later.kind, ErrorKind::Expression { .. }),
+        "{later}"
+    );
+    let own = error_of(r#"{ "id": "D", "type": "point", "at": "D" }"#);
+    assert!(matches!(own.kind, ErrorKind::Expression { .. }), "{own}");
+}
+
+#[test]
+fn 点の式の構文の誤りは_式の中の位置を示す() {
+    let error = error_of(&format!(
+        r#"{A}, {{ "id": "D", "type": "point", "at": "A + " }}"#
+    ));
+    let ErrorKind::Expression { error: inner, .. } = &error.kind else {
+        panic!("式の誤りである: {error}");
+    };
+    assert_eq!(inner.kind, figure::expr::ExprErrorKind::UnexpectedEnd);
+}
+
+#[test]
+fn 点のidは_関数や定数の名前にできない() {
+    let error = error_of(r#"{ "id": "e", "type": "point", "at": [0, 0] }"#);
+    assert_eq!(error.kind, ErrorKind::ReservedName("e".to_owned()));
+    assert_eq!(error.object.as_deref(), Some("e"));
+}
+
+#[test]
+fn 空間の図では_位置を点の式で書けない() {
+    let error = parse_scene(
+        r#"{ "version": "0.1.0", "description": "a",
+             "view": { "azimuth": 0, "elevation": 0, "unit": "1cm" },
+             "objects": [ { "id": "t", "type": "label", "at": "A", "tex": "T" } ] }"#,
+    )
+    .expect_err("誤りになる");
+    assert!(error.to_string().contains("空間"), "{error}");
 }
