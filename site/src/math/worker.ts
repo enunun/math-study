@@ -40,11 +40,11 @@ function buildConfig(init: WorkerInit): Record<string, unknown> {
   return {
     loader: {
       paths: { mathjax: '@mathjax/src/bundle' },
-      load: ['adaptors/liteDOM', '[tex]/bussproofs'],
+      load: ['adaptors/liteDOM', '[tex]/bussproofs', '[tex]/html'],
       require: (file: string): Promise<unknown> => import(file),
     },
     tex: {
-      packages: { '[-]': ['noundefined'], '[+]': ['bussproofs'] },
+      packages: { '[-]': ['noundefined'], '[+]': ['bussproofs', 'html'] },
       macros: init.macros,
       environments: init.environments,
       formatError: (_jax: unknown, error: Error) => {

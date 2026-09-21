@@ -1,7 +1,6 @@
 /* 図(<Figure>)．線と矢じりはSVG，ラベルは，その上に重ねる．色は，文字の色に従う． */
-.figure {
-  margin-block: 1.5rem;
-  /* 線の色の名前(`style.color`)．明るい背景で見やすい色である． */
+/* 線の色の名前(`style.color`)．明るい背景で見やすい色である．数式の色(`\colored`)も，同じ変数を使う． */
+:root {
   --figure-gray: #8a8f98;
   --figure-red: #c62828;
   --figure-blue: #1565c0;
@@ -10,8 +9,12 @@
   --figure-purple: #6a1b9a;
 }
 
+.figure {
+  margin-block: 1.5rem;
+}
+
 /* 暗い背景では，同じ名前を，明るい色にする． */
-:root[data-theme='dark'] .figure {
+:root[data-theme='dark'] {
   --figure-gray: #9aa0a6;
   --figure-red: #ff8a80;
   --figure-blue: #82b1ff;
@@ -41,4 +44,29 @@
   /* TikZの節点の文字の大きさ(\normalsize，10pt)と同じにして，SVGとTikZの出力の見た目を合わせる． */
   font-size: 10pt;
   white-space: nowrap;
+}
+
+/* 数式の一部の色(`\colored{名前}{式}`)．図の線の色と同じである． */
+.math-color-gray {
+  color: var(--figure-gray);
+}
+
+.math-color-red {
+  color: var(--figure-red);
+}
+
+.math-color-blue {
+  color: var(--figure-blue);
+}
+
+.math-color-green {
+  color: var(--figure-green);
+}
+
+.math-color-orange {
+  color: var(--figure-orange);
+}
+
+.math-color-purple {
+  color: var(--figure-purple);
 }

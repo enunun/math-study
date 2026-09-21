@@ -125,6 +125,13 @@ $$`,
     expect(await render('本文である．')).toBe('<p>本文である．</p>');
   });
 
+  it(String.raw`\coloredは，図の色の名前で，式の一部に色の名前のクラスを付ける`, async () => {
+    const html = await render(String.raw`$\colored{red}{x} + \colored{blue}{y}$`);
+    expect(html).toContain('math-color-red');
+    expect(html).toContain('math-color-blue');
+    expect(html).not.toContain('merror');
+  });
+
   it('開球，閉包，逆像のマクロを展開する', async () => {
     const html = await render(
       String.raw`$\openball{a}{r} \subset \closure{A} \cap \preimage{f}{U}$`,
