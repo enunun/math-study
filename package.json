@@ -6,7 +6,7 @@
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@textlint-ja/textlint-rule-preset-ai-writing": "^1.7.0",
-    "@types/node": "^24.13.6",
+    "@types/node": "^26.6.1",
     "@types/pngjs": "^6.0.5",
     "markdownlint-cli2": "^0.23.2",
     "oxfmt": "^0.68.0",
