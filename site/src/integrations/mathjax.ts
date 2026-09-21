@@ -43,7 +43,10 @@ function mathjaxIntegration(options: RendererOptions & { base: string }): AstroI
           }
           try {
             const css = await getRenderer(options).stylesheet();
-            response.writeHead(STATUS_OK, { 'content-type': 'text/css; charset=utf-8' });
+            response.writeHead(STATUS_OK, {
+              'content-type': 'text/css; charset=utf-8',
+              'cache-control': 'no-store',
+            });
             response.end(css);
           } catch (error) {
             response.writeHead(STATUS_ERROR);

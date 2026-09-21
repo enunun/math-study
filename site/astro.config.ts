@@ -13,6 +13,9 @@ import { buildRehypePlugins } from './src/plugins/pipeline';
 
 const base = '/math-study';
 const math = { macros, environments, fontUrl: `${base}/${FONT_DIRECTORY}` };
+// mathjax.cssは，使った文字の分だけを含むため，デプロイのたびに中身が変わる．URLが同じだと，ブラウザやCDNが古いCSSを
+// 残したまま新しいHTMLを表示し，新しい文字の寸法の規則が欠けて，文字が崩れる．設定を読むたびに変わる印を付けて，避ける．
+const stylesheetUrl = `${base}/${STYLESHEET_FILE}?v=${Date.now()}`;
 const statements = {
   contentDirectory: fileURLToPath(new URL('src/content/docs', import.meta.url)),
   base,
@@ -33,7 +36,7 @@ export default defineConfig({
       rehypePlugins: buildRehypePlugins({
         statements,
         figures,
-        mathjax: { ...math, cssUrl: `${base}/${STYLESHEET_FILE}` },
+        mathjax: { ...math, cssUrl: stylesheetUrl },
       }),
     }),
   },

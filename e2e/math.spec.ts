@@ -61,9 +61,21 @@ test.describe('数式', () => {
     const requested: string[] = [];
     page.on('request', (request) => requested.push(request.url()));
     await page.goto('');
-    expect(requested.some((url) => url.endsWith('/mathjax.css'))).toBe(false);
+    const loadsStylesheet = (): boolean =>
+      requested.some((url) => new URL(url).pathname.endsWith('/mathjax.css'));
+    expect(loadsStylesheet()).toBe(false);
     await page.goto(PAGE);
-    expect(requested.some((url) => url.endsWith('/mathjax.css'))).toBe(true);
+    expect(loadsStylesheet()).toBe(true);
+  });
+
+  test('mathjax.cssのURLには，ビルドごとに変わる版の印が付き，古いCSSが使われ続けない', async ({
+    page,
+  }) => {
+    await page.goto(PAGE);
+    const href = await page
+      .locator('link[rel="stylesheet"][href*="mathjax.css"]')
+      .getAttribute('href');
+    expect(href).toMatch(/\/mathjax\.css\?v=\d+$/u);
   });
 
   test('幅の狭い画面で，長い式は，ページを横にあふれさせず，式の中でスクロールする', async ({

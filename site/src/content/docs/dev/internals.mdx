@@ -71,7 +71,7 @@ Astro と Starlight … レイアウト，サイドバー，検索，ダーク�
 3. `renderer.ts`は，MathJaxを動かすWorker(`worker.ts`)へ，メッセージでTeXを送る．
 4. MathJaxが，TeXをHTML(`mjx-container`)にし，読み上げ用の英語の文字列も作る．
 5. `renderer.ts`が，読み上げ用の文字列を`aria-label`に移し，ブラウザで使わない属性を削る．`rehypeMathjax`が，`not-content`のクラスを付けて，文書の中の式を置き換える．
-6. 全ページの処理が終わると，使った文字の分のCSSを，1つの`mathjax.css`にまとめて書き出す．数式のあるページだけが，このCSSを読み込む．フォントは，設定の読み込み時に`public/mathjax-fonts/`へ複製する．
+6. 全ページの処理が終わると，使った文字の分のCSSを，1つの`mathjax.css`にまとめて書き出す．数式のあるページだけが，このCSSを読み込む．フォントは，設定の読み込み時に`public/mathjax-fonts/`へ複製する．CSSの中身はデプロイのたびに変わるため，記事からのリンクには，ビルドごとに変わる`?v=`の印を付ける．付けないと，古いCSSが残ったブラウザで，新しい文字が崩れる．
 
 ### 自作した部分と，MathJaxの部分
 
