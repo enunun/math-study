@@ -1,10 +1,15 @@
 //! シーンを，描画の中間表現にする．
 
+use std::collections::HashMap;
+
 use crate::arrow::Stealth;
 use crate::clip::clip_polyline;
-use crate::compile::{Compiled, GridPlot, LabelPlot, LinkPlot, Plot, PointPlot, TickPlot, compile};
+use crate::compile::{
+    Compiled, GraphPlot, GridPlot, LabelPlot, LinkPlot, Plot, PointPlot, TickPlot, compile,
+};
 use crate::error::Error;
 use crate::figure::{ArrowHead, Bounds, DotItem, Figure, Item, LabelItem, Path, Stroke};
+use crate::region::region_items;
 use crate::sample::sample;
 use crate::scene::{
     Anchor, Arrow, Axis, CM_PER_PT, Direction, Label, Line, Object, PlaneView, Point, Scene, Style,
@@ -46,12 +51,12 @@ impl Scale {
 pub fn render(scene: &Scene) -> Result<Figure, Error> {
     let compiled = compile(scene)?;
     match &scene.view {
-        View::Plane(view) => Ok(render_plane(scene, view, &compiled)),
+        View::Plane(view) => render_plane(scene, view, &compiled),
         View::Space(view) => Ok(render_space(scene, view, &compiled)),
     }
 }
 
-fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Figure {
+fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Result<Figure, Error> {
     let scale = Scale {
         x: view.unit.x.to_cm(),
         y: view.unit.y.to_cm(),
@@ -61,9 +66,32 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Figure 
         scale.point(view.x[0], view.y[0]),
         scale.point(view.x[1], view.y[1]),
     ];
+    // 領域が挟むグラフは，`id`から引く．
+    let graphs: HashMap<&str, &GraphPlot> = scene
+        .objects
+        .iter()
+        .zip(&compiled.plots)
+        .filter_map(|(object, plot)| match (object, plot) {
+            (Object::Graph(graph), Plot::Graph(placed)) => Some((graph.id.as_str(), placed)),
+            _ => None,
+        })
+        .collect();
     let mut items = Vec::new();
     for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
         match object {
+            Object::Region(region) => {
+                if let Plot::Region(placed) = plot {
+                    let unit = [scale.x, scale.y];
+                    items.extend(region_items(
+                        region,
+                        placed,
+                        &graphs,
+                        &compiled.parameters,
+                        unit,
+                        window,
+                    )?);
+                }
+            }
             Object::Axis(axis) => {
                 let ticks = match plot {
                     Plot::Axis(axis_plot) => axis_plot.ticks.as_slice(),
@@ -102,7 +130,7 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Figure 
             Object::Parameter(_) | Object::Sphere(_) => {}
         }
     }
-    Figure {
+    Ok(Figure {
         description: scene.description.clone(),
         bounds: Bounds {
             min: {
@@ -115,7 +143,7 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Figure 
             },
         },
         items,
-    }
+    })
 }
 
 fn label_item(label: &Label, placed: &LabelPlot, scale: Scale) -> Option<LabelItem> {

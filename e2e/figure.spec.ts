@@ -4,7 +4,7 @@ import type { Locator, Page } from '@playwright/test';
 const PAGE = 'dev/figure-first/';
 const TOLERANCE = 3;
 
-/** ページの，最初の図と，2つ目の図(目盛つき)と，3つ目の図(格子つき)と，4つ目の図(ベクトル)． */
+/** ページの，最初の図と，目盛つき，格子つき，ベクトル，領域つきの図． */
 function first(page: Page): Locator {
   return page.locator('.figure').first();
 }
@@ -19,6 +19,10 @@ function third(page: Page): Locator {
 
 function fourth(page: Page): Locator {
   return page.locator('.figure').nth(3);
+}
+
+function fifth(page: Page): Locator {
+  return page.locator('.figure').nth(4);
 }
 
 /** 線幅を含まない，図形の寸法．Playwrightのboundingboxは，線幅と，とがりの分を足す． */
@@ -50,7 +54,7 @@ test.describe('シーンから描いた図', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     // ラベルの数式が描画されるまで待つ．
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(20);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(23);
   });
 
   test('SVGは，画像として説明を持ち，線と矢じりがある', async ({ page }) => {
@@ -216,6 +220,31 @@ test.describe('シーンから描いた図', () => {
     );
   });
 
+  test('領域の斜線は，2つのグラフの交点の間に収まり，斜めに引かれる', async ({ page }) => {
+    const paths = fifth(page).locator('svg path');
+    const widths = await paths.evaluateAll((elements) =>
+      elements.map((element) => Number(/[\d.]+/u.exec(getComputedStyle(element).strokeWidth)?.[0])),
+    );
+    // 軸2本とグラフ2本は，0.6ptと0.8pt．斜線は，0.4ptである．
+    const cmPerPt = 2.54 / 72.27;
+    const hatchIndexes = widths.flatMap((width, index) =>
+      Math.abs(width - 0.4 * cmPerPt) < 1e-4 ? [index] : [],
+    );
+    expect(hatchIndexes.length).toBeGreaterThanOrEqual(6);
+    const yAxis = await geometry(paths.nth(1));
+    const originX = yAxis.x;
+    const cmPx = 37.795;
+    const low = originX - 0.75 * Math.PI * cmPx - 2;
+    const high = originX + 0.25 * Math.PI * cmPx + 2;
+    const boxes = await Promise.all(hatchIndexes.map((index) => geometry(paths.nth(index))));
+    for (const line of boxes) {
+      expect(line.x).toBeGreaterThanOrEqual(low);
+      expect(line.x + line.width).toBeLessThanOrEqual(high);
+      // 45度の斜線は，幅と高さが等しい．
+      expect(Math.abs(line.width - line.height)).toBeLessThan(2);
+    }
+  });
+
   for (const scheme of ['light', 'dark'] as const) {
     test(`色の名前は，背景に合わせた色になる(${scheme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });
@@ -263,7 +292,7 @@ test.describe('シーンから描いた図', () => {
     page.on('pageerror', (error) => problems.push(String(error)));
     page.on('requestfailed', (request) => problems.push(request.url()));
     await page.reload();
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(20);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(23);
     expect(problems).toEqual([]);
   });
 });

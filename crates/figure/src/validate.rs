@@ -6,7 +6,7 @@ use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::scene::{
     Axis, Bound, CM_PER_PT, Curve, Direction, Graph, Grid, Label, MAX_WIDTH_PT, Object, Point,
-    Scene, SpaceView, Sphere, Style, View,
+    Region, Scene, SpaceView, Sphere, Style, View,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -31,6 +31,14 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
             _ => None,
         })
         .collect();
+    let graphs: HashSet<&str> = scene
+        .objects
+        .iter()
+        .filter_map(|object| match object {
+            Object::Graph(graph) => Some(graph.id.as_str()),
+            _ => None,
+        })
+        .collect();
     let mut seen = HashSet::new();
     for object in &scene.objects {
         let id = object.id();
@@ -42,6 +50,7 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
         }
         validate_object(object, &scene.view).map_err(|kind| Error::in_object(id, kind))?;
         check_endpoints(object, &points).map_err(|kind| Error::in_object(id, kind))?;
+        check_graphs(object, &graphs).map_err(|kind| Error::in_object(id, kind))?;
     }
     // 式の構文，名前，定義域は，型では確かめられないので，式を読んで確かめる．
     compile(scene).map(drop)
@@ -61,6 +70,7 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Point(point) => plane_only("point", view).and_then(|()| validate_point(point)),
         Object::Vector(_) => plane_only("vector", view),
         Object::Segment(_) => plane_only("segment", view),
+        Object::Region(region) => plane_only("region", view).and_then(|()| validate_region(region)),
         Object::Parameter(_) => Ok(()),
     }
 }
@@ -75,6 +85,7 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::Point(o) => Some(&o.style),
         Object::Vector(o) => Some(&o.style),
         Object::Segment(o) => Some(&o.style),
+        Object::Region(o) => Some(&o.style),
         Object::Label(_) | Object::Parameter(_) => None,
     }
 }
@@ -106,6 +117,28 @@ fn check_endpoints(object: &Object, points: &HashSet<&str>) -> Result<(), ErrorK
     for name in [from, to] {
         if !points.contains(name.as_str()) {
             return Err(ErrorKind::UnknownPoint(name.clone()));
+        }
+    }
+    Ok(())
+}
+
+fn validate_region(region: &Region) -> Result<(), ErrorKind> {
+    if !(1..=2).contains(&region.between.len()) {
+        return Err(ErrorKind::Invalid(
+            "`between`には，グラフの`id`を1つか2つ書く．".to_owned(),
+        ));
+    }
+    check_domain(&region.domain)
+}
+
+/// 領域が挟むグラフは，`graph`オブジェクトの`id`でなければならない．
+fn check_graphs(object: &Object, graphs: &HashSet<&str>) -> Result<(), ErrorKind> {
+    let Object::Region(region) = object else {
+        return Ok(());
+    };
+    for name in &region.between {
+        if !graphs.contains(name.as_str()) {
+            return Err(ErrorKind::UnknownGraph(name.clone()));
         }
     }
     Ok(())

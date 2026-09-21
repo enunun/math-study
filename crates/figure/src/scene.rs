@@ -134,6 +134,8 @@ pub enum Object {
     Vector(Vector),
     /// 線分．平面の図でだけ使える．
     Segment(Segment),
+    /// 領域．斜線で埋める．平面の図でだけ使える．
+    Region(Region),
 }
 
 /// 軸の向き．
@@ -416,6 +418,51 @@ pub struct Segment {
     pub style: Style,
 }
 
+/// 領域．2つのグラフ(かグラフとx軸)の間を，定義域の中で，平行な斜線で埋める．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Region {
+    /// 識別子．
+    pub id: String,
+    /// 領域を挟む，グラフの`id`．2つなら2つのグラフの間，1つならグラフとx軸の間である．
+    pub between: Vec<String>,
+    /// 領域のxの範囲．数か式で書き，グラフの定義域の中にする．
+    pub domain: [Bound; 2],
+    /// 斜線の角度(度)．x軸から反時計回りに測る．既定は45である．
+    #[serde(default = "default_angle", skip_serializing_if = "is_default_angle")]
+    pub angle: f64,
+    /// 斜線の間隔．既定は3mmである．
+    #[serde(default = "default_gap", skip_serializing_if = "is_default_gap")]
+    pub gap: Length,
+    /// スタイル．斜線の線の種類，色，太さである．太さの既定は0.4ptである．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
+const DEFAULT_ANGLE: f64 = 45.0;
+
+const fn default_angle() -> f64 {
+    DEFAULT_ANGLE
+}
+
+fn default_gap() -> Length {
+    Length {
+        value: 3.0,
+        unit: LengthUnit::Mm,
+    }
+}
+
+// serdeの`skip_serializing_if`は，参照を受け取る関数を要る．
+#[allow(clippy::float_cmp, clippy::trivially_copy_pass_by_ref)]
+fn is_default_angle(angle: &f64) -> bool {
+    *angle == DEFAULT_ANGLE
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn is_default_gap(gap: &Length) -> bool {
+    *gap == default_gap()
+}
+
 /// 格子．見える範囲を，原点から数えた刻みの倍数の位置の線で区切る．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -497,6 +544,7 @@ impl Object {
             Self::Point(o) => &o.id,
             Self::Vector(o) => &o.id,
             Self::Segment(o) => &o.id,
+            Self::Region(o) => &o.id,
         }
     }
 
@@ -514,6 +562,7 @@ impl Object {
             Self::Point(_) => "point",
             Self::Vector(_) => "vector",
             Self::Segment(_) => "segment",
+            Self::Region(_) => "region",
         }
     }
 }

@@ -1,0 +1,19 @@
+{
+  "version": "0.1.0",
+  "description": "y=sin x と y=cos x のグラフと，2つのグラフに挟まれた領域．-3π/4 から π/4 の間を，斜線で埋める．",
+  "view": { "x": [-7, 7], "y": [-1.5, 1.5], "unit": { "x": "1cm", "y": "1.5cm" } },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "arrow": "stealth", "label": "x" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "arrow": "stealth", "label": "y" },
+    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "O" },
+    { "id": "sine", "type": "graph", "var": "x", "expr": "sin(x)", "domain": [-7, 7] },
+    { "id": "cosine", "type": "graph", "var": "x", "expr": "cos(x)", "domain": [-7, 7] },
+    {
+      "id": "between",
+      "type": "region",
+      "between": ["sine", "cosine"],
+      "gap": "2mm",
+      "domain": ["-3*pi/4", "pi/4"]
+    }
+  ]
+}

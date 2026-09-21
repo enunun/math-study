@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, is_reserved_name};
 use crate::scene::{
-    Anchor, Axis, Bound, Curve, Direction, Graph, Grid, Label, Object, Point, Scene, View,
+    Anchor, Axis, Bound, Curve, Direction, Graph, Grid, Label, Object, Point, Region, Scene, View,
 };
 use crate::validate::curve_expressions;
 
@@ -72,8 +72,16 @@ pub struct LinkPlot {
     pub to: [f64; 2],
 }
 
+/// 式を読んだ後の，領域．
+pub struct RegionPlot {
+    /// 評価した，xの範囲．
+    pub domain: [f64; 2],
+}
+
 /// 式を読んだ後の，描く対象．
 pub enum Plot {
+    /// 領域．
+    Region(RegionPlot),
     /// 点．
     Point(PointPlot),
     /// ラベル．
@@ -140,6 +148,7 @@ pub fn compile(scene: &Scene) -> Result<Compiled, Error> {
         }
         plots.push(plot);
     }
+    check_region_domains(scene, &plots)?;
     // ベクトルと線分は，点の座標がすべて決まってから，端の座標を引く．
     for (object, plot) in scene.objects.iter().zip(&mut plots) {
         let (from, to) = match object {
@@ -187,6 +196,9 @@ fn compile_object(
         Object::Point(point) => compile_point(point, names, parameters)
             .map(Plot::Point)
             .map_err(|kind| Error::in_object(&point.id, kind)),
+        Object::Region(region) => compile_region(region, names, parameters)
+            .map(Plot::Region)
+            .map_err(|kind| Error::in_object(&region.id, kind)),
         Object::Parameter(_) | Object::Sphere(_) | Object::Vector(_) | Object::Segment(_) => {
             Ok(Plot::None)
         }
@@ -250,6 +262,52 @@ fn compile_curve(
     let domain = evaluate_domain(&curve.domain, names, parameters)?;
     Ok(CurvePlot { exprs, domain })
 }
+
+fn compile_region(
+    region: &Region,
+    names: &[&str],
+    parameters: &[f64],
+) -> Result<RegionPlot, ErrorKind> {
+    Ok(RegionPlot {
+        domain: evaluate_domain(&region.domain, names, parameters)?,
+    })
+}
+
+/// 領域の範囲は，挟むグラフの定義域の中でなければならない．グラフは，領域よりあとに置いてもよい．
+fn check_region_domains(scene: &Scene, plots: &[Plot]) -> Result<(), Error> {
+    let graph_domains: HashMap<&str, [f64; 2]> = scene
+        .objects
+        .iter()
+        .zip(plots)
+        .filter_map(|(object, plot)| match (object, plot) {
+            (Object::Graph(graph), Plot::Graph(placed)) => Some((graph.id.as_str(), placed.domain)),
+            _ => None,
+        })
+        .collect();
+    for (object, plot) in scene.objects.iter().zip(plots) {
+        let (Object::Region(region), Plot::Region(placed)) = (object, plot) else {
+            continue;
+        };
+        for name in &region.between {
+            let Some([low, high]) = graph_domains.get(name.as_str()) else {
+                continue;
+            };
+            let [from, to] = placed.domain;
+            if from < *low - DOMAIN_TOLERANCE || to > *high + DOMAIN_TOLERANCE {
+                return Err(Error::in_object(
+                    &region.id,
+                    ErrorKind::Invalid(format!(
+                        "領域の範囲[{from}, {to}]が，グラフ「{name}」の定義域[{low}, {high}]の外にある．"
+                    )),
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// 領域の範囲とグラフの定義域を比べるときの，誤差の許容．
+const DOMAIN_TOLERANCE: f64 = 1e-9;
 
 /// 座標の式を評価し，有限の数にする．
 fn evaluate_coordinates(

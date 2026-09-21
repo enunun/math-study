@@ -56,6 +56,8 @@ pub enum ErrorKind {
     NameConflict(String),
     /// ベクトルか線分が，存在しない点(点でないオブジェクトを含む)を指している．中身は，指された`id`．
     UnknownPoint(String),
+    /// 領域が，存在しないグラフ(グラフでないオブジェクトを含む)を指している．中身は，指された`id`．
+    UnknownGraph(String),
     /// 曲線の式の数が合わない．
     ExpressionCount {
         /// 必要な数．
@@ -85,6 +87,7 @@ impl ErrorKind {
             Self::ReservedName(_) => "reserved_name",
             Self::NameConflict(_) => "name_conflict",
             Self::UnknownPoint(_) => "unknown_point",
+            Self::UnknownGraph(_) => "unknown_graph",
         }
     }
 }
@@ -170,6 +173,10 @@ impl fmt::Display for Error {
             ErrorKind::UnknownPoint(name) => write!(
                 f,
                 "点「{name}」がない．`from`と`to`には，`point`オブジェクトの`id`を書く．"
+            ),
+            ErrorKind::UnknownGraph(name) => write!(
+                f,
+                "グラフ「{name}」がない．`between`には，`graph`オブジェクトの`id`を書く．"
             ),
             ErrorKind::ExpressionCount { expected, found } => {
                 write!(f, "式は{expected}個必要だが，{found}個書かれている．")
