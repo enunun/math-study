@@ -208,6 +208,15 @@ Read on 2026-09-21 from the master branch of the pgf repository: the declaration
 
 From `tex/generic/pgf/frontendlayer/tikz/tikz.code.tex` (master, read on 2026-09-21): `dotted` is `dash pattern=on \pgflinewidth off 2pt`, and `dashed` is `dash pattern=on 3pt off 3pt`. The SVG output uses the same lengths.
 
+## Interactive editor
+
+The public page `figure-editor/` builds a scene in the browser and draws it with the same Wasm engine as the articles. Decisions:
+
+- The editor holds a draft of the scene JSON and never validates it itself: the engine's error (with the object `id`) is shown under the preview, so the editor and the engine cannot disagree about what a valid scene is.
+- Initial objects come from `site/src/figure-editor/defaults.json`, and the input fields per object type from the table in `fields.ts`. Every default object, in a plane and in a space view, is rendered by the engine in `create.test.ts`, so a change in the scene format that breaks a default fails a test.
+- Output: the scene JSON (import and export as a file), the `tikzpicture` fragment, and a standalone LuaLaTeX document (`standalone`, `amsmath`, `luatexja-preset`, `arrows.meta`).
+- Not yet: dragging objects in the preview, undo and redo.
+
 ## Open
 
 - The figures required after `s0202graph1`, and the order of the extensions listed under Implemented.

@@ -1,0 +1,85 @@
+{
+  "views": {
+    "plane": { "x": [-5, 5], "y": [-3, 3], "unit": { "x": "1cm", "y": "1cm" } },
+    "space": { "azimuth": 60, "elevation": 20, "unit": "1cm" }
+  },
+  "objects": {
+    "axis": {
+      "plane": { "type": "axis", "direction": "x", "label": "x" },
+      "space": { "type": "axis", "direction": "x", "label": "x", "range": [-3, 3] }
+    },
+    "label": {
+      "plane": { "type": "label", "at": [0, 0], "anchor": "center", "tex": "$A$" },
+      "space": { "type": "label", "at": [0, 0, 0], "anchor": "center", "tex": "$A$" }
+    },
+    "parameter": {
+      "plane": { "type": "parameter", "value": 1 },
+      "space": { "type": "parameter", "value": 1 }
+    },
+    "graph": {
+      "plane": { "type": "graph", "var": "x", "expr": "sin(x)", "domain": [-3, 3] }
+    },
+    "curve": {
+      "plane": { "type": "curve", "var": "t", "expr": ["cos(t)", "sin(t)"], "domain": [0, "2*pi"] },
+      "space": {
+        "type": "curve",
+        "var": "t",
+        "expr": ["cos(t)", "sin(t)", "t/4"],
+        "domain": [0, "2*pi"]
+      }
+    },
+    "grid": {
+      "plane": { "type": "grid", "x_step": 1, "y_step": 1, "style": { "color": "gray" } }
+    },
+    "point": {
+      "plane": { "type": "point", "at": [0, 0], "dot": true },
+      "space": { "type": "point", "at": [0, 0, 0], "dot": true }
+    },
+    "vector": {
+      "plane": { "type": "vector", "from": "", "to": "" },
+      "space": { "type": "vector", "from": "", "to": "" }
+    },
+    "segment": {
+      "plane": { "type": "segment", "from": "", "to": "" },
+      "space": { "type": "segment", "from": "", "to": "" }
+    },
+    "region": {
+      "plane": { "type": "region", "between": [], "domain": [-1, 1] }
+    },
+    "sphere": {
+      "space": { "type": "sphere", "center": [0, 0, 0], "radius": 1 }
+    },
+    "surface": {
+      "space": {
+        "type": "surface",
+        "vars": ["u", "v"],
+        "expr": ["u", "v", "(u^2 - v^2)/2"],
+        "domain": [
+          [-2, 2],
+          [-2, 2]
+        ]
+      }
+    },
+    "bezier": {
+      "space": {
+        "type": "surface",
+        "bezier": [
+          [
+            [0, 0, 0],
+            [0, 2, 0]
+          ],
+          [
+            [2, 0, 0],
+            [2, 2, 1]
+          ]
+        ]
+      }
+    },
+    "cut": {
+      "space": { "type": "cut", "surface": "", "normal": [0, 0, 1], "offset": 0 }
+    },
+    "intersection": {
+      "space": { "type": "intersection", "surfaces": [] }
+    }
+  }
+}
