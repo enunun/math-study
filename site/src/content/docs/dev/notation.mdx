@@ -210,6 +210,7 @@ $$
 - `\openball{a}{r}`：中心$a$，半径$r$の開球である．
 - `\closure{A}`：集合$A$の閉包である．
 - `\preimage{f}{U}`：写像$f$による集合$U$の逆像である．
+- `\colored{色}{式}`：式の一部に，図と同じ色を付ける．色の名前は，図の`style.color`と同じ，`gray`，`red`，`blue`，`green`，`orange`，`purple`である．暗い背景では，図と同じく明るい色になる．
 
 数の集合の書体は，`[…]`の引数で選ぶ．書体は，黒板太字の`bb`，立体の太字の`bfup`，斜体の太字の`bfit`で，省略すると`bb`になる．
 
@@ -218,6 +219,12 @@ $\RealNumbers$，$\RealNumbers[bfup]$，$\RealNumbers[bfit]$，$\NumberSet[bfup]
 ```
 
 $\RealNumbers$，$\RealNumbers[bfup]$，$\RealNumbers[bfit]$，$\NumberSet[bfup]{K}$
+
+```mdx
+$\colored{red}{x} + \colored{blue}{y}$
+```
+
+$\colored{red}{x} + \colored{blue}{y}$
 
 定義のないマクロや，構文の誤りは，ビルドの失敗になる．失敗した式は，ファイルの行と列，元のTeXとともに表示される．
 

@@ -1,0 +1,87 @@
+{
+  "version": "0.1.0",
+  "description": "点P=(3,1,2)へ，x軸，y軸，z軸の向きに，3，1，2だけ進む階段．方位角60度，仰角20度で見る．",
+  "view": {
+    "azimuth": 60,
+    "elevation": 20,
+    "unit": "1.25cm"
+  },
+  "objects": [
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "range": [-1, 4],
+      "label": "x"
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y",
+      "range": [-1, 3],
+      "label": "y"
+    },
+    {
+      "id": "z_axis",
+      "type": "axis",
+      "direction": "z",
+      "range": [-1, 3.2],
+      "label": "z"
+    },
+    {
+      "id": "O",
+      "type": "point",
+      "at": [0, 0, 0],
+      "label": "O",
+      "anchor": "north east"
+    },
+    {
+      "id": "A",
+      "type": "point",
+      "at": [3, 0, 0]
+    },
+    {
+      "id": "B",
+      "type": "point",
+      "at": [3, 1, 0]
+    },
+    {
+      "id": "P",
+      "type": "point",
+      "at": [3, 1, 2],
+      "dot": true,
+      "label": "P",
+      "anchor": "south west"
+    },
+    {
+      "id": "step_x",
+      "type": "vector",
+      "from": "O",
+      "to": "A",
+      "style": {
+        "color": "red",
+        "width": "1.2pt"
+      }
+    },
+    {
+      "id": "step_y",
+      "type": "vector",
+      "from": "A",
+      "to": "B",
+      "style": {
+        "color": "green",
+        "width": "1.2pt"
+      }
+    },
+    {
+      "id": "step_z",
+      "type": "vector",
+      "from": "B",
+      "to": "P",
+      "style": {
+        "color": "blue",
+        "width": "1.2pt"
+      }
+    }
+  ]
+}

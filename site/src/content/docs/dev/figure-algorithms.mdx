@@ -13,6 +13,7 @@ head:
 ---
 
 import { Proof } from '@/components/fold';
+import { ProjectionExplorer } from '@/components/projection/projection-explorer';
 import { Proposition } from '@/components/statement';
 
 このサイトの図は，式で書いた曲線や曲面を，平面の上に描いたものである．紙に描くときには自然にしている作業を，計算で行うには，いくつかの数学が要る．このページでは，その原理を順に説明する．
@@ -45,19 +46,41 @@ $$
 
 ## 平行投影
 
-### 画面の基底
+この節では，空間の点が，画面のどこに写るかを決める．カメラは，無限に遠くにあるとする．すべての視線は，平行になる．点の像は，その点を通る視線が，画面と交わる所である．
 
-空間の点を画面に写す方法は，カメラを無限に遠くに置いた，平行投影である．カメラの向きは，方位角$a$と仰角$e$で決める．方位角は，$xy$平面の上で$x$軸から測った角であり，仰角は，$xy$平面から測った角である．原点からカメラへ向かう単位ベクトルを$\boldsymbol{d}$とする．
+### どの向きから見るか
+
+見る向きは，2つの角で決める．原点からカメラへ向かう単位ベクトルを$\boldsymbol{d}$とする．$\boldsymbol{d}$を$xy$平面へ落とした向きが，$x$軸となす角が，方位角$\colored{blue}{a}$である．$\boldsymbol{d}$が$xy$平面から上へ傾く角が，仰角$\colored{red}{e}$である．
+
+<Figure src="projection-angles" />
+
+図の青い弧が$a$，赤い弧が$e$である．灰色の破線は，$\boldsymbol{d}$の先端から$xy$平面へ下ろした垂線と，その足である．
+
+$\boldsymbol{d}$の高さは$\sin e$である．水平な成分の長さは$\cos e$で，向きは$a$なので，$x$成分と$y$成分は，それぞれ$\cos e \cos a$と$\cos e \sin a$になる．
 
 $$
 \boldsymbol{d} = \begin{bmatrix} \cos e \cos a \\ \cos e \sin a \\ \sin e \end{bmatrix}
 $$
 
-画面の右向きの単位ベクトル$\boldsymbol{r}$と，上向きの単位ベクトル$\boldsymbol{u}$を，次のように定める．
+$a = 60^\circ$，$e = 20^\circ$なら，次の値になる．このサイトの空間の図は，この向きで描くものが多い．
+
+$$
+\boldsymbol{d} \approx \begin{bmatrix} 0.47 \\ 0.81 \\ 0.34 \end{bmatrix}
+$$
+
+### 画面の右と上
+
+画面は，原点を通り，$\boldsymbol{d}$に垂直な平面である．この平面の上に，右向きと上向きの，2本の単位ベクトルを決める．
+
+右向きの$\colored{orange}{\boldsymbol{r}}$は，水平で，$\boldsymbol{d}$と直交する向きである．$\boldsymbol{d}$の水平な成分を，反時計回りに90°回した向きである．上向きの$\colored{purple}{\boldsymbol{u}}$は，$\boldsymbol{d}$と$\boldsymbol{r}$の外積である．
 
 $$
 \boldsymbol{r} = \begin{bmatrix} -\sin a \\ \cos a \\ 0 \end{bmatrix}, \qquad \boldsymbol{u} = \boldsymbol{d} \times \boldsymbol{r} = \begin{bmatrix} -\sin e \cos a \\ -\sin e \sin a \\ \cos e \end{bmatrix}
 $$
+
+<Figure src="projection-screen" />
+
+図は，同じ向きを，別の位置から見たものである．灰色の四角形が画面で，黒い矢が$\boldsymbol{d}$である．橙色の矢が$\colored{orange}{\boldsymbol{r}}$で，紫色の矢が$\colored{purple}{\boldsymbol{u}}$である．
 
 <Proposition id="orthonormal" name="画面の基底">
 
@@ -87,41 +110,63 @@ $$
 
 </Proof>
 
-3つのベクトルを行に並べた行列を$P$とする．
+### 点の写り方
+
+点$P$の像は，$P$から画面へ，$\boldsymbol{d}$に平行な直線を引いて，画面と交わる点$P'$である．図の黒い破線が，その直線である．
+
+$P'$の位置は，$\colored{orange}{\boldsymbol{r}}$の方向の成分$X$と，$\colored{purple}{\boldsymbol{u}}$の方向の成分$Y$で表す．$P$から画面までの距離を，奥行き$Z$と呼ぶ．$P$がカメラの側にあれば，$Z$は正である．$P$の位置ベクトルを$\boldsymbol{p}$とすると，$\boldsymbol{r}$，$\boldsymbol{u}$，$\boldsymbol{d}$は正規直交なので，各成分は内積で求まる．
 
 $$
-P = \begin{bmatrix} \boldsymbol{r}^{\mathsf{T}} \\ \boldsymbol{u}^{\mathsf{T}} \\ \boldsymbol{d}^{\mathsf{T}} \end{bmatrix}, \qquad P\boldsymbol{p} = \begin{bmatrix} \boldsymbol{p} \cdot \boldsymbol{r} \\ \boldsymbol{p} \cdot \boldsymbol{u} \\ \boldsymbol{p} \cdot \boldsymbol{d} \end{bmatrix}
+X = \boldsymbol{p} \cdot \boldsymbol{r}, \qquad Y = \boldsymbol{p} \cdot \boldsymbol{u}, \qquad Z = \boldsymbol{p} \cdot \boldsymbol{d}
 $$
 
-$P$の行は正規直交なので，$PP^{\mathsf{T}} = I$が成り立ち，$P$は回転を表す．点$\boldsymbol{p}$は，回転されたあと，最初の2成分が画面の位置になる．3番目の成分は，カメラに近いほど大きい値で，奥行きと呼ぶ．
+3つのベクトルを行に並べた行列を$M$とすると，3つの式は，1つの式になる．
+
+$$
+M = \begin{bmatrix} \boldsymbol{r}^{\mathsf{T}} \\ \boldsymbol{u}^{\mathsf{T}} \\ \boldsymbol{d}^{\mathsf{T}} \end{bmatrix}, \qquad \begin{bmatrix} X \\ Y \\ Z \end{bmatrix} = M\boldsymbol{p}
+$$
+
+$M$の行は正規直交なので，$MM^{\mathsf{T}} = I$が成り立ち，$M$は回転を表す．点は，回転されたあと，最初の2成分が画面の位置，3番目の成分が奥行きになる．
+
+図の点$P$を，$\boldsymbol{p} = \begin{bmatrix} 3 & 1 & 2 \end{bmatrix}^{\mathsf{T}}$とする．$a = 60^\circ$，$e = 20^\circ$のときの値は，次のとおりである．行列の成分は，小数第2位に丸めてある．
+
+$$
+\begin{bmatrix} X \\ Y \\ Z \end{bmatrix} = \begin{bmatrix} -0.87 & 0.50 & 0 \\ -0.17 & -0.30 & 0.94 \\ 0.47 & 0.81 & 0.34 \end{bmatrix} \begin{bmatrix} 3 \\ 1 \\ 2 \end{bmatrix} \approx \begin{bmatrix} -2.10 \\ 1.07 \\ 2.91 \end{bmatrix}
+$$
+
+図で見ると，橙色の破線が$X\boldsymbol{r}$，その先から紫色の破線が$Y\boldsymbol{u}$で，$P'$に届く．黒い破線の長さが$Z$である．
+
+### 座標軸の像
+
+$P$へは，別の道でも行ける．原点から，$x$軸の向きに3，$y$軸の向きに1，$z$軸の向きに2だけ進む．
+
+<Figure src="projection-staircase" />
+
+投影は線形なので，$P'$は，この3歩の像を足した所になる．1歩の像は，その軸の単位ベクトルの像の，何倍かである．単位ベクトルの像は，$M$の最初の2行の，各列に並ぶ．
+
+$$
+\begin{bmatrix} X \\ Y \end{bmatrix} = \colored{red}{3\begin{bmatrix} -0.87 \\ -0.17 \end{bmatrix}} + \colored{green}{1\begin{bmatrix} 0.50 \\ -0.30 \end{bmatrix}} + \colored{blue}{2\begin{bmatrix} 0 \\ 0.94 \end{bmatrix}} \approx \begin{bmatrix} -2.10 \\ 1.07 \end{bmatrix}
+$$
+
+式の色は，図の矢の色と対応する．赤い矢は左下へ，緑の矢は右下へ，青い矢は上へ向かう．$x$軸は左下，$y$軸は右下，$z$軸は上に向かって見えるのは，このためである．
+
+### 動かして確かめる
+
+方位角と仰角を動かすと，図の向きと行列$M$と$P$の像が，同時に変わる．次のことを試すとよい．
+
+- $a = 0^\circ$，$e = 0^\circ$にする．$x$軸が手前を向き，$y$軸が右，$z$軸が上になる．
+- $e$を大きくする．$xy$平面が開いて見え，$z$軸の像は，長さが$\cos e$に縮む．
+- 曲面を加える．曲面に隠れた軸の部分は，点線になる．
+
+<ProjectionExplorer client:visible />
 
 ### 投影の性質
 
-投影は，$P$の最初の2行による線形写像である．したがって，直線は直線に，平行線は平行線に写り，直線上の比も保たれる．一方，$\boldsymbol{d}$に平行な直線は，画面の1点に写る．この性質が，あとの節で何度も使われる．
+投影は，$M$の最初の2行による線形写像である．したがって，直線は直線に，平行線は平行線に写り，直線上の比も保たれる．一方，$\boldsymbol{d}$に平行な直線は，画面の1点に写る．この性質が，あとの節で何度も使われる．
 
-座標軸の単位ベクトルの像は，2行の行列の列として読める．$a = 60^\circ$，$e = 20^\circ$のときの値を，次に示す．
+<Figure src="bezier-patch" />
 
-$$
-\begin{bmatrix} \boldsymbol{r}^{\mathsf{T}} \\ \boldsymbol{u}^{\mathsf{T}} \end{bmatrix} = \begin{bmatrix} -\sin a & \cos a & 0 \\ -\sin e \cos a & -\sin e \sin a & \cos e \end{bmatrix} \approx \begin{bmatrix} -0.87 & 0.50 & 0 \\ -0.17 & -0.30 & 0.94 \end{bmatrix}
-$$
-
-左の列から順に，$x$軸，$y$軸，$z$軸の単位ベクトルの像である．$x$軸は左下，$y$軸は右下，$z$軸は上に向かう．
-
-<Figure src="sphere-with-axes" />
-
-<Proposition id="axis-lengths" name="軸の像の長さ">
-
-3つの座標軸の単位ベクトルの像の長さの2乗の和は，カメラの向きによらず一定で，2である．
-
-</Proposition>
-
-<Proof of="axis-lengths">
-
-上の2行の行列の6個の成分を，すべて2乗して足す．行ごとに足すと，$\abs{\boldsymbol{r}}^2 + \abs{\boldsymbol{u}}^2 = 2$である．列ごとに足すと，3つの像の長さの2乗の和である．どちらも同じ和なので，命題が成り立つ．
-
-</Proof>
-
-上の数値では，$0.78 + 0.34 + 0.88 = 2$になり，命題と合う．
+曲面も，点の集まりなので，同じ行列で写る．図は，16個の制御点で決まる曲面（ベジエ曲面）である．曲面が隠す軸の部分は，点線で描かれる．どの点が隠れるかは，奥行き$Z$で決まる．次の節で説明する．
 
 ## 隠れる点
 

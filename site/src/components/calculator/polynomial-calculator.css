@@ -28,8 +28,7 @@
 }
 
 .calculator-input input:focus-visible,
-.calculator button:focus-visible,
-.math-view:focus-visible {
+.calculator button:focus-visible {
   outline: 2px solid var(--sl-color-accent);
   outline-offset: 2px;
 }
@@ -84,15 +83,4 @@
 .calculator-error mark {
   background: var(--sl-color-red);
   color: var(--sl-color-white);
-}
-
-.math-view {
-  overflow-x: auto;
-  padding-block: 0.3rem;
-}
-
-/* MathJaxが描画するまでは，平文の表記を出す． */
-.math-view:empty::before {
-  content: attr(data-fallback);
-  font-family: var(--sl-font-mono);
 }

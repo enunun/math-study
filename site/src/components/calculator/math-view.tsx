@@ -3,6 +3,8 @@ import type { ReactElement } from 'react';
 
 import { renderMath } from '@/calculator/mathjax';
 
+import './math-view.css';
+
 interface Props {
   /** 描画するTeX． */
   tex: string;
