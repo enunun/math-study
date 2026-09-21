@@ -705,6 +705,7 @@ fn bounds_of(items: &[Item]) -> Bounds {
             .collect::<Vec<_>>(),
         Item::Label(label) => vec![label.at],
         Item::Dot(dot) => vec![dot.at],
+        Item::Fill(fill) => fill.points.clone(),
     });
     let (min, max) = points.fold(
         ([f64::INFINITY; 2], [f64::NEG_INFINITY; 2]),

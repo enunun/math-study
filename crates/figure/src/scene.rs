@@ -521,6 +521,12 @@ pub struct Region {
     pub between: Vec<String>,
     /// 領域のxの範囲．数か式で書き，グラフの定義域の中にする．
     pub domain: [Bound; 2],
+    /// 斜線を引くか．既定は引く．
+    #[serde(default = "default_true", skip_serializing_if = "is_true")]
+    pub hatch: bool,
+    /// 領域を塗る色．なければ，塗らない．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fill: Option<Fill>,
     /// 斜線の角度(度)．x軸から反時計回りに測る．既定は45である．
     #[serde(default = "default_angle", skip_serializing_if = "is_default_angle")]
     pub angle: f64,
@@ -530,6 +536,42 @@ pub struct Region {
     /// スタイル．斜線の線の種類，色，太さである．太さの既定は0.4ptである．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+}
+
+/// 領域の塗り．
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Fill {
+    /// 塗る色．なければ，文字の色である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<Color>,
+    /// 不透明度(0より大きく1以下)．既定は0.25で，下の線が透ける．
+    #[serde(
+        default = "default_opacity",
+        skip_serializing_if = "is_default_opacity"
+    )]
+    pub opacity: f64,
+}
+
+const DEFAULT_OPACITY: f64 = 0.25;
+
+const fn default_opacity() -> f64 {
+    DEFAULT_OPACITY
+}
+
+#[allow(clippy::float_cmp, clippy::trivially_copy_pass_by_ref)]
+fn is_default_opacity(opacity: &f64) -> bool {
+    *opacity == DEFAULT_OPACITY
+}
+
+const fn default_true() -> bool {
+    true
+}
+
+// serdeの`skip_serializing_if`は，参照を受け取る関数を要る．
+#[allow(clippy::trivially_copy_pass_by_ref)]
+const fn is_true(value: &bool) -> bool {
+    *value
 }
 
 const DEFAULT_ANGLE: f64 = 45.0;

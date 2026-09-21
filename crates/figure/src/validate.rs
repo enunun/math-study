@@ -227,6 +227,13 @@ fn validate_region(region: &Region) -> Result<(), ErrorKind> {
             "`between`には，グラフの`id`を1つか2つ書く．".to_owned(),
         ));
     }
+    if let Some(fill) = &region.fill
+        && !(fill.opacity > 0.0 && fill.opacity <= 1.0)
+    {
+        return Err(ErrorKind::Invalid(
+            "塗りの不透明度(`opacity`)は，0より大きく1以下にする．".to_owned(),
+        ));
+    }
     check_domain(&region.domain)
 }
 

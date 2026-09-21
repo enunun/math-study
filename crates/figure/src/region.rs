@@ -2,10 +2,10 @@
 
 use std::collections::HashMap;
 
-use crate::clip::clip_polyline;
+use crate::clip::{clip_polygon, clip_polyline};
 use crate::compile::{GraphPlot, RegionPlot};
 use crate::error::{Error, ErrorKind};
-use crate::figure::{Item, Path};
+use crate::figure::{FillItem, Item, Path};
 use crate::hatch::hatch_lines;
 use crate::render::{stroke_of, with_variable};
 use crate::sample::{Point, sample};
@@ -63,15 +63,31 @@ pub fn region_items(
     }
     let stroke = stroke_of(&region.style, Line::Solid, HATCH_WIDTH);
     let [min, max] = window;
-    Ok(hatch_lines(&polygon, region.angle, region.gap.to_cm())
-        .iter()
-        .flat_map(|line| clip_polyline(line, min, max))
-        .map(|points| {
-            Item::Path(Path {
+    let mut items = Vec::new();
+    // 塗りは，斜線の下に敷く．
+    if let Some(fill) = &region.fill {
+        let points = clip_polygon(&polygon, min, max);
+        if !points.is_empty() {
+            items.push(Item::Fill(FillItem {
                 points,
-                stroke,
-                arrow: None,
-            })
-        })
-        .collect())
+                color: fill.color.or(region.style.color),
+                opacity: fill.opacity,
+            }));
+        }
+    }
+    if region.hatch {
+        items.extend(
+            hatch_lines(&polygon, region.angle, region.gap.to_cm())
+                .iter()
+                .flat_map(|line| clip_polyline(line, min, max))
+                .map(|points| {
+                    Item::Path(Path {
+                        points,
+                        stroke,
+                        arrow: None,
+                    })
+                }),
+        );
+    }
+    Ok(items)
 }

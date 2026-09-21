@@ -216,3 +216,23 @@ fn 目盛は_軸に直角な短い線と_節点になる() {
         "{output}"
     );
 }
+
+#[test]
+fn 領域の塗りは_tikzの色と不透明度つきの塗りつぶしになる() {
+    let json = r#"{ "version": "0.1.0", "description": "試験の図",
+             "view": { "x": [0, 2], "y": [0, 2], "unit": { "x": "1cm", "y": "1cm" } },
+             "objects": [
+               { "id": "g", "type": "graph", "var": "x", "expr": "x", "domain": [0, 2] },
+               { "id": "r", "type": "region", "between": ["g"], "domain": [0, 2],
+                  "hatch": false, "fill": { "color": "blue", "opacity": 0.3 } },
+               { "id": "s", "type": "region", "between": ["g"], "domain": [0, 1],
+                  "hatch": false, "fill": {} } ] }"#;
+    let output = tikz_of(json);
+    assert!(
+        output.contains("\\fill[blue, opacity=0.3] (0,0)"),
+        "{output}"
+    );
+    assert!(output.contains("-- cycle;"), "{output}");
+    // 色がなければ，色の名前を省く．
+    assert!(output.contains("\\fill[opacity=0.25] (0,0)"), "{output}");
+}

@@ -200,6 +200,42 @@ describe('figureToHast', () => {
     expect(all(dots, 'span')).toHaveLength(0);
   });
 
+  it('塗った多角形は，閉じた図形として，色の変数と不透明度で塗り，線は引かない', () => {
+    const filled = figureToHast({
+      ...FIGURE,
+      items: [
+        {
+          type: 'fill',
+          points: [
+            [0, 0],
+            [2, 0],
+            [1, 1.5],
+          ],
+          color: 'blue',
+          opacity: 0.25,
+        },
+        {
+          type: 'fill',
+          points: [
+            [0, 0],
+            [1, 0],
+            [1, 1],
+          ],
+          color: null,
+          opacity: 0.5,
+        },
+      ],
+    });
+    const [blue, plain] = all(filled, 'path');
+    // yの向きは反転し，閉じる．
+    expect(blue?.properties.d).toBe('M0 0L2 0L1 -1.5Z');
+    expect(blue?.properties.fill).toBe('var(--figure-blue)');
+    expect(blue?.properties.fillOpacity).toBe('0.25');
+    expect(blue?.properties.stroke).toBe('none');
+    expect(plain?.properties.fill).toBe('currentColor');
+    expect(plain?.properties.fillOpacity).toBe('0.5');
+  });
+
   it('何も描かない図は，空のSVGになる', () => {
     const empty = figureToHast({ ...FIGURE, items: [] });
     expect(all(empty, 'svg')).toHaveLength(1);

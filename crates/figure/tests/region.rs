@@ -5,7 +5,8 @@
     clippy::unwrap_used,
     clippy::indexing_slicing,
     clippy::float_cmp,
-    clippy::panic
+    clippy::panic,
+    clippy::arithmetic_side_effects
 )]
 
 use figure::figure::{Figure, Item, Path};
@@ -354,4 +355,145 @@ fn sinとcosの間の領域の図は_交点の間だけを斜線で埋める() {
             assert!(y >= bottom - 0.01 && y <= top + 0.01, "{point:?}");
         }
     }
+}
+
+// ---- 塗り ----
+
+fn fills(figure: &Figure) -> Vec<&figure::figure::FillItem> {
+    figure
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            Item::Fill(fill) => Some(fill),
+            _ => None,
+        })
+        .collect()
+}
+
+fn polygon_area(points: &[[f64; 2]]) -> f64 {
+    let mut sum = 0.0;
+    for (index, point) in points.iter().enumerate() {
+        let next = points[(index + 1) % points.len()];
+        sum += point[0] * next[1] - next[0] * point[1];
+    }
+    sum.abs() / 2.0
+}
+
+const PARABOLA_AND_LINE: &str = r#"{ "id": "lower", "type": "graph", "var": "x", "expr": "x^2", "domain": [0, 1] },
+    { "id": "upper", "type": "graph", "var": "x", "expr": "x", "domain": [0, 1] }"#;
+
+#[test]
+fn 塗りを指定すると_領域が色つきの多角形になり_斜線も引く() {
+    let figure = figure_of(
+        "10cm",
+        &format!(
+            r#"{PARABOLA_AND_LINE},
+               {{ "id": "r", "type": "region", "between": ["lower", "upper"], "domain": [0, 1],
+                  "fill": {{ "color": "blue", "opacity": 0.3 }} }}"#
+        ),
+    )
+    .expect("描画できる");
+    let all = fills(&figure);
+    assert_eq!(all.len(), 1);
+    assert_eq!(all[0].color, Some(Color::Blue));
+    assert!((all[0].opacity - 0.3).abs() < 1e-9);
+    // 面積は，x - x^2を0から1で積分した1/6に，単位の面積(100cm^2)を掛けた値である．
+    assert!(
+        (polygon_area(&all[0].points) - 100.0 / 6.0).abs() < 0.2,
+        "{}",
+        polygon_area(&all[0].points)
+    );
+    // 塗りは，斜線より先に並ぶ．
+    let kinds: Vec<&str> = figure
+        .items
+        .iter()
+        .skip(2)
+        .map(|item| match item {
+            Item::Fill(_) => "fill",
+            Item::Path(_) => "path",
+            _ => "other",
+        })
+        .collect();
+    assert_eq!(kinds.first(), Some(&"fill"));
+    assert!(kinds.iter().filter(|kind| **kind == "path").count() >= 3);
+}
+
+#[test]
+fn 塗りだけの領域は_斜線を引かない() {
+    let figure = figure_of(
+        "10cm",
+        &format!(
+            r#"{PARABOLA_AND_LINE},
+               {{ "id": "r", "type": "region", "between": ["lower", "upper"], "domain": [0, 1],
+                  "hatch": false, "fill": {{}} }}"#
+        ),
+    )
+    .expect("描画できる");
+    assert_eq!(fills(&figure).len(), 1);
+    assert_eq!(paths(&figure).len(), 2);
+    // 色と不透明度の既定は，色なし(文字の色)と0.25である．
+    assert_eq!(fills(&figure)[0].color, None);
+    assert!((fills(&figure)[0].opacity - 0.25).abs() < 1e-9);
+}
+
+#[test]
+fn 斜線を省いても塗りもない領域は_何も描かない() {
+    let figure = figure_of(
+        "10cm",
+        &format!(
+            r#"{PARABOLA_AND_LINE},
+               {{ "id": "r", "type": "region", "between": ["lower", "upper"], "domain": [0, 1],
+                  "hatch": false }}"#
+        ),
+    )
+    .expect("描画できる");
+    assert_eq!(figure.items.len(), 2);
+}
+
+#[test]
+fn 塗りは_見える範囲で切り取る() {
+    let figure = figure_of(
+        "1cm",
+        r#"{ "id": "g", "type": "graph", "var": "x", "expr": "x", "domain": [-9, 9] },
+           { "id": "r", "type": "region", "between": ["g"], "domain": [-9, 9],
+             "hatch": false, "fill": {} }"#,
+    )
+    .expect("描画できる");
+    for point in &fills(&figure)[0].points {
+        assert!(
+            point[0].abs() <= 4.0 + 1e-9 && point[1].abs() <= 2.0 + 1e-9,
+            "{point:?}"
+        );
+    }
+}
+
+#[test]
+fn 不透明度は_0より大きく1以下でなければならない() {
+    for opacity in ["0", "1.5", "-0.1"] {
+        let error = error_of(&format!(
+            r#"{SINE}, {{ "id": "r", "type": "region", "between": ["sine"], "domain": [0, 1],
+                         "fill": {{ "opacity": {opacity} }} }}"#
+        ));
+        assert!(
+            matches!(error.kind, ErrorKind::Invalid(_)),
+            "{opacity}: {error}"
+        );
+        assert!(error.to_string().contains("opacity"), "{opacity}: {error}");
+    }
+}
+
+#[test]
+fn 塗りのある領域を書き出して読み直すと同じになる() {
+    let scene = scene_of(&format!(
+        r#"{SINE}, {{ "id": "r", "type": "region", "between": ["sine"], "domain": [0, 3],
+                     "hatch": false, "fill": {{ "color": "red", "opacity": 0.5 }} }}"#
+    ));
+    let written = serde_json::to_string_pretty(&scene).expect("書き出せる");
+    assert_eq!(parse_scene(&written).expect("読み直せる"), scene);
+    // 省いた項目は，書き出さない．
+    let plain = scene_of(&format!(
+        r#"{SINE}, {{ "id": "r", "type": "region", "between": ["sine"], "domain": [0, 3] }}"#
+    ));
+    let text = serde_json::to_string(&plain).expect("書き出せる");
+    assert!(!text.contains("hatch") && !text.contains("fill"), "{text}");
 }

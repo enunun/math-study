@@ -1,6 +1,14 @@
 import type { Element, ElementContent, Properties } from 'hast';
 
-import type { ArrowHead, ColorName, DotItem, Figure, LabelItem, PathItem } from '@/wasm/figure';
+import type {
+  ArrowHead,
+  ColorName,
+  DotItem,
+  FillItem,
+  Figure,
+  LabelItem,
+  PathItem,
+} from '@/wasm/figure';
 
 import { anchorShift, labelToMath } from './label';
 
@@ -103,6 +111,20 @@ function pathElements(item: PathItem): Element[] {
   ];
 }
 
+/** 塗った多角形．線は引かず，色の変数と不透明度で塗る． */
+function fillElement(item: FillItem): Element {
+  const commands = item.points
+    .map((point) => svgPoint(point))
+    .map(([x, y], index) => `${index === 0 ? 'M' : 'L'}${format(x)} ${format(y)}`)
+    .join('');
+  return element('path', {
+    d: `${commands}Z`,
+    fill: strokeColor(item.color),
+    fillOpacity: format(item.opacity),
+    stroke: 'none',
+  });
+}
+
 /** 点の印．塗った丸である． */
 function dotElement(item: DotItem): Element {
   const [x, y] = svgPoint(item.at);
@@ -143,6 +165,9 @@ function figureToHast(figure: Figure): Element {
   const drawn = figure.items.flatMap((item) => {
     if (item.type === 'path') {
       return pathElements(item);
+    }
+    if (item.type === 'fill') {
+      return [fillElement(item)];
     }
     return item.type === 'dot' ? [dotElement(item)] : [];
   });

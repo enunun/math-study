@@ -6,7 +6,7 @@
 use std::fmt::Write as _;
 
 use crate::error::Error;
-use crate::figure::{DotItem, Figure, Item, LabelItem, Path};
+use crate::figure::{DotItem, Figure, FillItem, Item, LabelItem, Path};
 use crate::parse::parse_scene;
 use crate::render::render;
 use crate::scene::{Anchor, Arrow, Color, Line};
@@ -65,6 +65,7 @@ pub fn to_tikz(figure: &Figure, scene_json: &str) -> String {
             Item::Path(path) => write_path(&mut out, path),
             Item::Label(label) => write_label(&mut out, label),
             Item::Dot(dot) => write_dot(&mut out, dot),
+            Item::Fill(fill) => write_fill(&mut out, fill),
         }
     }
     out.push_str("\\end{tikzpicture}\n");
@@ -96,6 +97,18 @@ fn write_dot(out: &mut String, dot: &DotItem) {
     );
 }
 
+/// 塗った多角形．
+fn write_fill(out: &mut String, fill: &FillItem) {
+    let mut options = Vec::new();
+    if let Some(color) = fill.color {
+        options.push(color_name(color).to_owned());
+    }
+    options.push(format!("opacity={}", number(fill.opacity)));
+    let _ = write!(out, "\\fill[{}]", options.join(", "));
+    write_points(out, &fill.points);
+    out.push_str(" -- cycle;\n");
+}
+
 fn write_path(out: &mut String, path: &Path) {
     let mut options = vec![format!("line width={}pt", number(path.stroke.width))];
     if let Some(color) = path.stroke.color {
@@ -113,8 +126,13 @@ fn write_path(out: &mut String, path: &Path) {
         }
     }
     let _ = write!(out, "\\draw[{}]", options.join(", "));
+    write_points(out, &path.points);
+    out.push_str(";\n");
+}
 
-    let points: Vec<String> = path.points.iter().copied().map(coordinate).collect();
+/// 点を，`--`でつないで，行ごとに折り返して書く．
+fn write_points(out: &mut String, points: &[[f64; 2]]) {
+    let points: Vec<String> = points.iter().copied().map(coordinate).collect();
     let mut rest = points.as_slice();
     let mut size = FIRST_LINE_POINTS;
     let mut first = true;
@@ -130,7 +148,6 @@ fn write_path(out: &mut String, path: &Path) {
         rest = tail;
         size = LINE_POINTS;
     }
-    out.push_str(";\n");
 }
 
 fn write_label(out: &mut String, label: &LabelItem) {

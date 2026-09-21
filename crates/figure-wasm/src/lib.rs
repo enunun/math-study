@@ -90,6 +90,14 @@ export type DotItem = {
   color: ColorName | null;
 };
 
+/** 塗った多角形．座標はcmで，始めと終わりの点は，つながっている．opacityは，0より大きく1以下である． */
+export type FillItem = {
+  type: "fill";
+  points: [number, number][];
+  color: ColorName | null;
+  opacity: number;
+};
+
 /** ラベル．texは，$…$で数式を含められるTeXの文字列である． */
 export type LabelItem = {
   type: "label";
@@ -102,7 +110,7 @@ export type LabelItem = {
 export type Figure = {
   description: string;
   bounds: { min: [number, number]; max: [number, number] };
-  items: (PathItem | LabelItem | DotItem)[];
+  items: (PathItem | LabelItem | DotItem | FillItem)[];
 };
 
 /** 描画の結果．tikzは，元のシーンを先頭のコメントに埋め込んだTikZである． */

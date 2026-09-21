@@ -4,7 +4,8 @@
     clippy::float_cmp,
     clippy::indexing_slicing,
     clippy::unwrap_used,
-    clippy::expect_used
+    clippy::expect_used,
+    clippy::arithmetic_side_effects
 )]
 
 use figure::clip::clip_polyline;
@@ -111,4 +112,64 @@ fn 辺に沿う線は_残る() {
     assert_eq!(paths.len(), 1);
     assert!(close(paths[0][0], [0.0, 2.0]));
     assert!(close(paths[0][1], [4.0, 2.0]));
+}
+
+// ---- 多角形の切り取り ----
+
+use figure::clip::clip_polygon;
+
+fn area(points: &[[f64; 2]]) -> f64 {
+    let mut sum = 0.0;
+    for (index, point) in points.iter().enumerate() {
+        let next = points[(index + 1) % points.len()];
+        sum += point[0] * next[1] - next[0] * point[1];
+    }
+    sum.abs() / 2.0
+}
+
+#[test]
+fn 全体が中にある多角形は_そのまま残る() {
+    let square = [[1.0, 0.5], [3.0, 0.5], [3.0, 1.5], [1.0, 1.5]];
+    assert_eq!(clip_polygon(&square, MIN, MAX), square.to_vec());
+}
+
+#[test]
+fn 全体が外にある多角形は_捨てる() {
+    let far = [[5.0, 3.0], [6.0, 3.0], [6.0, 4.0]];
+    assert!(clip_polygon(&far, MIN, MAX).is_empty());
+}
+
+#[test]
+fn はみ出す多角形は_長方形との共通部分になる() {
+    // 長方形(0, 0)から(4, 2)を，x: 2から6，y: -1から1のはみ出す正方形で切る．共通部分は，x: 2から4，y: 0から1．
+    let box_ = [[2.0, -1.0], [6.0, -1.0], [6.0, 1.0], [2.0, 1.0]];
+    let clipped = clip_polygon(&box_, MIN, MAX);
+    assert!((area(&clipped) - 2.0).abs() < 1e-9, "{clipped:?}");
+    for point in &clipped {
+        assert!(point[0] >= 2.0 - 1e-9 && point[0] <= 4.0 + 1e-9);
+        assert!(point[1] >= -1e-9 && point[1] <= 1.0 + 1e-9);
+    }
+}
+
+#[test]
+fn 長方形を覆う多角形は_長方形になる() {
+    let big = [[-1.0, -1.0], [9.0, -1.0], [9.0, 5.0], [-1.0, 5.0]];
+    let clipped = clip_polygon(&big, MIN, MAX);
+    assert!((area(&clipped) - 8.0).abs() < 1e-9, "{clipped:?}");
+}
+
+#[test]
+fn 三角形の切り取りは_面積で確かめる() {
+    // 頂点(0, 0)，(8, 0)，(0, 4)の三角形を，x <= 4，y <= 2の長方形で切る．
+    // 三角形は，斜辺が(8, 0)から(0, 4)で，長方形の中は，面積 8 - 0 = 8 のうち…直接求める．
+    let triangle = [[0.0, 0.0], [8.0, 0.0], [0.0, 4.0]];
+    let clipped = clip_polygon(&triangle, MIN, MAX);
+    // 長方形は4 x 2で，斜辺 y = 4 - x/2 は，x = 4で y = 2，x = 0で y = 4．長方形の中はすべて三角形の内側である．
+    assert!((area(&clipped) - 8.0).abs() < 1e-9, "{clipped:?}");
+}
+
+#[test]
+fn 頂点が3つに満たない多角形は_何も残さない() {
+    assert!(clip_polygon(&[], MIN, MAX).is_empty());
+    assert!(clip_polygon(&[[1.0, 1.0], [2.0, 1.0]], MIN, MAX).is_empty());
 }

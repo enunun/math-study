@@ -72,6 +72,17 @@ pub struct DotItem {
     pub color: Option<Color>,
 }
 
+/// 塗った多角形．
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct FillItem {
+    /// 頂点(cm)．始めの点と終わりの点は，つながっている．
+    pub points: Vec<[f64; 2]>,
+    /// 色．なければ，文字の色である．
+    pub color: Option<Color>,
+    /// 不透明度(0より大きく1以下)．
+    pub opacity: f64,
+}
+
 /// 描く要素．
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -82,6 +93,8 @@ pub enum Item {
     Label(LabelItem),
     /// 点の印．
     Dot(DotItem),
+    /// 塗った多角形．
+    Fill(FillItem),
 }
 
 /// 描画の中間表現．

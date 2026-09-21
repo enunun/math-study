@@ -90,3 +90,77 @@ fn clip_segment(from: Point, to: Point, min: Point, max: Point) -> Option<(f64, 
     }
     (range.0 < range.1).then_some(range)
 }
+
+/// 多角形を，`min`と`max`を対角とする長方形で切り取る(Sutherland-Hodgmanの方法)．
+/// 長方形の外は捨て，境目には，長方形の辺の上の点を置く．共通部分がなければ，空である．
+/// 凹んだ多角形で，共通部分が離れた2つになるときは，辺の上の線でつながった，1つの多角形になる．
+#[must_use]
+pub fn clip_polygon(points: &[Point], min: Point, max: Point) -> Vec<Point> {
+    if points.len() < 3 {
+        return Vec::new();
+    }
+    // (横の座標を見るか，長方形の内側は，境界より大きい側か，境界の値)．
+    let edges = [
+        (true, true, min[0]),
+        (true, false, max[0]),
+        (false, true, min[1]),
+        (false, false, max[1]),
+    ];
+    let mut current = points.to_vec();
+    for (horizontal, keep_greater, bound) in edges {
+        current = clip_polygon_at(&current, horizontal, keep_greater, bound);
+        if current.is_empty() {
+            return current;
+        }
+    }
+    if current.len() < 3 {
+        Vec::new()
+    } else {
+        current
+    }
+}
+
+/// 多角形を，1本の辺で切る．
+fn clip_polygon_at(
+    points: &[Point],
+    horizontal: bool,
+    keep_greater: bool,
+    bound: f64,
+) -> Vec<Point> {
+    let coordinate = |point: Point| if horizontal { point[0] } else { point[1] };
+    let inside = |point: Point| {
+        if keep_greater {
+            coordinate(point) >= bound
+        } else {
+            coordinate(point) <= bound
+        }
+    };
+    let crossing = |from: Point, to: Point| -> Point {
+        let ratio = (bound - coordinate(from)) / (coordinate(to) - coordinate(from));
+        let x = from[0] + (to[0] - from[0]) * ratio;
+        let y = from[1] + (to[1] - from[1]) * ratio;
+        // 辺の上の点は，辺の値にそろえる．
+        if horizontal { [bound, y] } else { [x, bound] }
+    };
+    let mut result = Vec::new();
+    for (index, current) in points.iter().enumerate() {
+        let previous = points
+            .get(
+                index
+                    .checked_sub(1)
+                    .unwrap_or(points.len().saturating_sub(1)),
+            )
+            .copied()
+            .unwrap_or(*current);
+        match (inside(previous), inside(*current)) {
+            (true, true) => result.push(*current),
+            (false, true) => {
+                result.push(crossing(previous, *current));
+                result.push(*current);
+            }
+            (true, false) => result.push(crossing(previous, *current)),
+            (false, false) => {}
+        }
+    }
+    result
+}
