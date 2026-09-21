@@ -86,7 +86,7 @@ Known limits:
 
 ## Open items
 
-- The plotting library (a custom SVG, Mafs, or JSXGraph). The graph is not built for now.
+- The figure and graph feature (requirements, reference figures, candidate architecture): see `docs/graph-design.md`. Nothing is built yet.
 - A cache for speech generation, if build time becomes a problem.
 - Cache the Cargo build in CI if the build time becomes a problem.
 - Speech strings for the calculator results (the browser MathJax does not generate them; the label is the plain text).
