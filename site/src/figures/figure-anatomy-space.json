@@ -1,0 +1,106 @@
+{
+  "version": "0.1.0",
+  "description": "球と円柱と座標軸．座標軸，球に隠れた軸の点線，2つの曲面の輪郭，交線に，番号を付ける．",
+  "view": {
+    "azimuth": 60,
+    "elevation": 25,
+    "unit": "1.5cm"
+  },
+  "objects": [
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "range": [-3, 3.5],
+      "label": "x"
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y",
+      "range": [-3, 3.5],
+      "label": "y"
+    },
+    {
+      "id": "z_axis",
+      "type": "axis",
+      "direction": "z",
+      "range": [-3, 3],
+      "label": "z"
+    },
+    {
+      "id": "origin_label",
+      "type": "label",
+      "at": [0, 0, 0],
+      "anchor": "north east",
+      "tex": "$O$"
+    },
+    {
+      "id": "ball",
+      "type": "surface",
+      "vars": ["u", "v"],
+      "expr": ["2*sin(u)*cos(v)", "2*sin(u)*sin(v)", "2*cos(u)"],
+      "domain": [
+        [0, "pi"],
+        [0, "2*pi"]
+      ]
+    },
+    {
+      "id": "cylinder",
+      "type": "surface",
+      "vars": ["t", "z"],
+      "expr": ["1 + cos(t)", "sin(t)", "z"],
+      "domain": [
+        [0, "2*pi"],
+        [-2.2, 2.2]
+      ],
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "common",
+      "type": "intersection",
+      "surfaces": ["ball", "cylinder"],
+      "style": {
+        "color": "red",
+        "width": "1.2pt"
+      }
+    },
+    {
+      "id": "mark_axis",
+      "type": "label",
+      "at": [2.9634, 0.1098, -0.2719],
+      "anchor": "north",
+      "tex": "①"
+    },
+    {
+      "id": "mark_hidden",
+      "type": "label",
+      "at": [0.0634, 1.7098, -0.2719],
+      "anchor": "north",
+      "tex": "②"
+    },
+    {
+      "id": "mark_outline",
+      "type": "label",
+      "at": [-1.9919, 1.15, 0],
+      "anchor": "west",
+      "tex": "③"
+    },
+    {
+      "id": "mark_common",
+      "type": "label",
+      "at": [-0.3242, 0.1384, 2.0906],
+      "anchor": "west",
+      "tex": "④"
+    },
+    {
+      "id": "mark_polyline",
+      "type": "label",
+      "at": [0.926, -1.1281, 1.7314],
+      "anchor": "south",
+      "tex": "⑤"
+    }
+  ]
+}

@@ -16,6 +16,7 @@ Rules and notation for the site content (`site/src/content/**`) and `README.md`,
 - Use a full-width colon "：" after Japanese text, with no space after it ("公開先：`/x`"). Colons after Latin text stay half-width.
 - Avoid AI-sounding writing: bold-prefix bullet lists ("**Item**：description"), hype, and emphasis in ordinary sentences.
 - Write headings as names (noun phrases), not as sentences, clauses, questions, or verb phrases: "隠れる部分と見える部分の分割", not "曲線を隠れる部分と見える部分に分ける". Read the list of headings alone; every entry should read as a name. When a heading is renamed, check the links and tests that use its anchor.
+- Use the comma only at a break between semantic units: between two long clauses, or where a missing comma would make the sentence ambiguous. Do not put one after a short topic phrase ("Xは，"), after a short subordinate clause, or after a single-word conjunction at the start of a sentence ("したがって", "また", "そこで", "たとえば"). Keep the commas between the items of a list of nouns. Split a sentence that needs many commas. The limit of three commas below is a ceiling; aim for one or two, and none in a short sentence.
 - Keep each sentence within 100 characters and within three commas. Do not repeat the same particle within a sentence.
 - A lone Latin letter outside math (a variable such as x written as plain text) is flagged as an "unnatural alphabet". Write variables inside `$…$`.
 
