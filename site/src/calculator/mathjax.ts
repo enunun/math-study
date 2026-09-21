@@ -64,14 +64,16 @@ function loadMathJax(): Promise<BrowserMathJax> {
   return state.loading;
 }
 
-async function convert(tex: string): Promise<HTMLElement> {
+async function convert(tex: string, display: boolean): Promise<HTMLElement> {
   const mathJax = await loadMathJax();
   const node = await mathJax.tex2chtmlPromise(tex, {
-    display: true,
+    display,
     em: EM,
     ex: EX,
     containerWidth: CONTAINER_WIDTH,
   });
+  // Starlightは，本文の中で隣り合う要素に上の余白を付ける．ビルド時の描画と同じく，数式の内側には及ばないようにする．
+  node.classList.add('not-content');
   // 描画した文字の分のCSSを，ページに反映する．
   const stylesheet = mathJax.chtmlStylesheet();
   if (!stylesheet.isConnected) {
@@ -86,11 +88,11 @@ async function runAfter<T>(previous: Promise<unknown>, task: () => Promise<T>): 
 }
 
 /**
- * TeXの式を，別行立ての数式の要素にする．失敗したときは，例外を投げる．
+ * TeXの式を，数式の要素にする．`display`が真なら別行立て，偽なら行内の式である．失敗したときは，例外を投げる．
  * MathJaxは，複数の式を同時に描画する使い方を想定していないため，1つずつ処理する．
  */
-function renderMath(tex: string): Promise<HTMLElement> {
-  const run = runAfter(state.queue, () => convert(tex));
+function renderMath(tex: string, display = true): Promise<HTMLElement> {
+  const run = runAfter(state.queue, () => convert(tex, display));
   state.queue = Promise.allSettled([run]);
   return run;
 }

@@ -95,6 +95,17 @@ test.describe('多項式の計算機', () => {
     });
   }
 
+  test('Starlightの本文の余白が，ブラウザで描いた数式の内側に及ばない', async ({ page }) => {
+    // 隣り合う要素に付く1rem(16px)の上の余白が，上付き文字などを離すと，文字が切り取られて崩れる．
+    await page.locator('.math-view mjx-container').first().waitFor();
+    const spaced = await page.$$eval('.math-view mjx-container *', (elements) =>
+      elements
+        .filter((element) => getComputedStyle(element).marginTop === '16px')
+        .map((element) => element.tagName),
+    );
+    expect(spaced).toEqual([]);
+  });
+
   test('読み込みでエラーが出ない', async ({ page }) => {
     const problems: string[] = [];
     page.on('console', (message) => {
