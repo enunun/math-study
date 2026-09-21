@@ -1,6 +1,6 @@
 ---
 title: 図を描く数学
-description: 空間の図を平面に描くときの数学の解説である．投影，隠れ方，輪郭，交線，Newton法，点の配置，斜線の原理を，実装に立ち入らずに説明する．
+description: 空間の図を平面に描くときの数学の解説である．投影，隠れ方，輪郭，交線，Newton法，点の取り方，斜線の原理を，実装に立ち入らずに説明する．
 pageId: figalg
 sidebar:
   hidden: true
@@ -17,132 +17,261 @@ import { Proposition } from '@/components/statement';
 
 このサイトの図は，式で書いた曲線や曲面を，平面の上に描いたものである．紙に描くときには自然にしている作業を，計算で行うには，いくつかの数学が要る．このページでは，その原理を順に説明する．
 
-扱う問いは，次の6つである．
+扱う問いは，次の7つである．
 
 - 空間の点は，画面のどこに写るか．
 - 手前の面に隠れる点と，隠れない点は，どう区別するか．
 - 曲面の輪郭は，どこにあるか．
 - 平面による切り口や，2つの曲面の交わりは，どんな曲線か．
 - 近似で求めた曲線を，本物の曲線へ近づけるには，どうするか．
+- 曲線を折れ線で描くとき，点をどこに置くか．
 - 領域を斜線で埋めるとき，どの範囲に線を引くか．
+
+## 記法
+
+ベクトルは，斜体かつ太字の小文字で書く．成分を並べるときは，角カッコで囲んだ列ベクトルにする．行ベクトルは，成分を空白で区切り，カンマは入れない．
+
+$$
+\boldsymbol{p} = \begin{bmatrix} x \\ y \\ z \end{bmatrix}, \qquad \boldsymbol{p}^{\mathsf{T}} = \begin{bmatrix} x & y & z \end{bmatrix}
+$$
+
+行列$A$の転置は$A^{\mathsf{T}}$と書く．内積，外積，長さの記号は，次のとおりである．
+
+$$
+\boldsymbol{a} \cdot \boldsymbol{b}, \qquad \boldsymbol{a} \times \boldsymbol{b}, \qquad \abs{\boldsymbol{a}}
+$$
+
+空間の点は，原点から測った位置ベクトルと同じに扱う．
 
 ## 平行投影
 
-空間の点を画面に写す方法は，カメラを無限に遠くに置いた，平行投影である．カメラの向きは，方位角$a$と仰角$e$で決める．原点からカメラへ向かう単位ベクトルを$\mathbf{d}$とする．
+### 画面の基底
+
+空間の点を画面に写す方法は，カメラを無限に遠くに置いた，平行投影である．カメラの向きは，方位角$a$と仰角$e$で決める．方位角は，$xy$平面の上で$x$軸から測った角であり，仰角は，$xy$平面から測った角である．原点からカメラへ向かう単位ベクトルを$\boldsymbol{d}$とする．
 
 $$
-\mathbf{d} = (\cos e \cos a,\ \cos e \sin a,\ \sin e)
+\boldsymbol{d} = \begin{bmatrix} \cos e \cos a \\ \cos e \sin a \\ \sin e \end{bmatrix}
 $$
 
-画面の右向きの単位ベクトル$\mathbf{r}$と，上向きの単位ベクトル$\mathbf{u}$を，次のように定める．
+画面の右向きの単位ベクトル$\boldsymbol{r}$と，上向きの単位ベクトル$\boldsymbol{u}$を，次のように定める．
 
 $$
-\mathbf{r} = (-\sin a,\ \cos a,\ 0), \qquad \mathbf{u} = \mathbf{d} \times \mathbf{r} = (-\sin e \cos a,\ -\sin e \sin a,\ \cos e)
+\boldsymbol{r} = \begin{bmatrix} -\sin a \\ \cos a \\ 0 \end{bmatrix}, \qquad \boldsymbol{u} = \boldsymbol{d} \times \boldsymbol{r} = \begin{bmatrix} -\sin e \cos a \\ -\sin e \sin a \\ \cos e \end{bmatrix}
 $$
 
 <Proposition id="orthonormal" name="画面の基底">
 
-$\mathbf{r}$，$\mathbf{u}$，$\mathbf{d}$は，互いに直交する単位ベクトルであり，この順で右手系をなす．
+$\boldsymbol{r}$，$\boldsymbol{u}$，$\boldsymbol{d}$は，互いに直交する単位ベクトルであり，この順で右手系をなす．
 
 </Proposition>
 
 <Proof of="orthonormal">
 
-$\mathbf{r}$と$\mathbf{d}$は，成分を計算すると，直交する単位ベクトルである．外積$\mathbf{u} = \mathbf{d} \times \mathbf{r}$は，$\mathbf{d}$と$\mathbf{r}$の両方に直交する．その長さは$\sin 90^\circ = 1$である．次に，ベクトル三重積の公式を使う．
+まず長さを確かめる．$\boldsymbol{d}$について，次の式が成り立つ．
 
 $$
-\mathbf{r} \times \mathbf{u} = \mathbf{r} \times (\mathbf{d} \times \mathbf{r}) = \mathbf{d}(\mathbf{r} \cdot \mathbf{r}) - \mathbf{r}(\mathbf{r} \cdot \mathbf{d}) = \mathbf{d}
+\abs{\boldsymbol{d}}^2 = \cos^2 e (\cos^2 a + \sin^2 a) + \sin^2 e = 1
 $$
 
-これは，$\mathbf{r}, \mathbf{u}, \mathbf{d}$が右手系であることを表す．
+$\abs{\boldsymbol{r}}^2 = \sin^2 a + \cos^2 a = 1$である．次に，外積を成分で計算すると，$\boldsymbol{d} \times \boldsymbol{r}$は上の$\boldsymbol{u}$になる．その長さは，$\abs{\boldsymbol{u}}^2 = \sin^2 e + \cos^2 e = 1$である．
+
+直交も，成分の計算で確かめられる．たとえば$\boldsymbol{r} \cdot \boldsymbol{d}$は，$-\sin a \cos e \cos a + \cos a \cos e \sin a = 0$である．$\boldsymbol{u}$は外積の性質から$\boldsymbol{d}$と$\boldsymbol{r}$に直交する．
+
+最後に，ベクトル三重積の公式を使う．
+
+$$
+\boldsymbol{r} \times \boldsymbol{u} = \boldsymbol{r} \times (\boldsymbol{d} \times \boldsymbol{r}) = \boldsymbol{d}(\boldsymbol{r} \cdot \boldsymbol{r}) - \boldsymbol{r}(\boldsymbol{r} \cdot \boldsymbol{d}) = \boldsymbol{d}
+$$
+
+これは，$\boldsymbol{r}$，$\boldsymbol{u}$，$\boldsymbol{d}$が右手系であることを表す．
 
 </Proof>
 
-点$\mathbf{p}$の画面の位置は，$\mathbf{r}$と$\mathbf{u}$の方向の成分である．$\mathbf{d}$の方向の成分は，カメラに近いほど大きい値で，奥行きと呼ぶ．
+3つのベクトルを行に並べた行列を$P$とする．
 
 $$
-\mathbf{p} \longmapsto \bigl(\mathbf{p} \cdot \mathbf{r},\ \mathbf{p} \cdot \mathbf{u}\bigr), \qquad \text{奥行き} = \mathbf{p} \cdot \mathbf{d}
+P = \begin{bmatrix} \boldsymbol{r}^{\mathsf{T}} \\ \boldsymbol{u}^{\mathsf{T}} \\ \boldsymbol{d}^{\mathsf{T}} \end{bmatrix}, \qquad P\boldsymbol{p} = \begin{bmatrix} \boldsymbol{p} \cdot \boldsymbol{r} \\ \boldsymbol{p} \cdot \boldsymbol{u} \\ \boldsymbol{p} \cdot \boldsymbol{d} \end{bmatrix}
 $$
 
-この対応は線形写像である．したがって，直線は直線に，平行線は平行線に写り，直線上の比も保たれる．一方，$\mathbf{d}$に平行な直線は，画面の1点に写る．この性質が，あとの節で何度も使われる．
+$P$の行は正規直交なので，$PP^{\mathsf{T}} = I$が成り立ち，$P$は回転を表す．点$\boldsymbol{p}$は，回転されたあと，最初の2成分が画面の位置になる．3番目の成分は，カメラに近いほど大きい値で，奥行きと呼ぶ．
+
+### 投影の性質
+
+投影は，$P$の最初の2行による線形写像である．したがって，直線は直線に，平行線は平行線に写り，直線上の比も保たれる．一方，$\boldsymbol{d}$に平行な直線は，画面の1点に写る．この性質が，あとの節で何度も使われる．
+
+座標軸の単位ベクトルの像は，2行の行列の列として読める．$a = 60^\circ$，$e = 20^\circ$のときの値を，次に示す．
+
+$$
+\begin{bmatrix} \boldsymbol{r}^{\mathsf{T}} \\ \boldsymbol{u}^{\mathsf{T}} \end{bmatrix} = \begin{bmatrix} -\sin a & \cos a & 0 \\ -\sin e \cos a & -\sin e \sin a & \cos e \end{bmatrix} \approx \begin{bmatrix} -0.87 & 0.50 & 0 \\ -0.17 & -0.30 & 0.94 \end{bmatrix}
+$$
+
+左の列から順に，$x$軸，$y$軸，$z$軸の単位ベクトルの像である．$x$軸は左下，$y$軸は右下，$z$軸は上に向かう．
 
 <Figure src="sphere-with-axes" />
 
-図は，$a = 60^\circ$，$e = 20^\circ$の例である．$x$軸は左下，$y$軸は右下，$z$軸は上に向かう．
+<Proposition id="axis-lengths" name="軸の像の長さ">
+
+3つの座標軸の単位ベクトルの像の長さの2乗の和は，カメラの向きによらず一定で，2である．
+
+</Proposition>
+
+<Proof of="axis-lengths">
+
+上の2行の行列の6個の成分を，すべて2乗して足す．行ごとに足すと，$\abs{\boldsymbol{r}}^2 + \abs{\boldsymbol{u}}^2 = 2$である．列ごとに足すと，3つの像の長さの2乗の和である．どちらも同じ和なので，命題が成り立つ．
+
+</Proof>
+
+上の数値では，$0.78 + 0.34 + 0.88 = 2$になり，命題と合う．
 
 ## 隠れる点
 
 ### 球に隠れる点
 
-中心$\mathbf{c}$，半径$r$の球が，不透明な殻として，点$\mathbf{p}$を隠す条件を考える．点からカメラへ向かう半直線$\mathbf{p} + t\mathbf{d}\ (t > 0)$が，球に当たれば，点は隠れている．
+中心$\boldsymbol{c}$，半径$r$の球が，不透明な殻として，点$\boldsymbol{p}$を隠す条件を考える．点からカメラへ向かう半直線$\boldsymbol{p} + t\boldsymbol{d}\ (t > 0)$が，球に当たれば，点は隠れている．
 
 <Proposition id="hidden-by-sphere" name="球に隠れる条件">
 
-$\mathbf{q} = \mathbf{p} - \mathbf{c}$，$b = \mathbf{q} \cdot \mathbf{d}$とする．$\Delta = b^2 - (\abs{\mathbf{q}}^2 - r^2)$とおく．点$\mathbf{p}$が球に隠れるための必要十分条件は，$\Delta > 0$かつ$\sqrt{\Delta} > b$である．
+$\boldsymbol{q} = \boldsymbol{p} - \boldsymbol{c}$，$b = \boldsymbol{q} \cdot \boldsymbol{d}$とする．$\Delta = b^2 - (\abs{\boldsymbol{q}}^2 - r^2)$とおく．点$\boldsymbol{p}$が球に隠れるための必要十分条件は，$\Delta > 0$かつ$\sqrt{\Delta} > b$である．
 
 </Proposition>
 
 <Proof of="hidden-by-sphere">
 
-半直線が球面に当たる条件は，$\abs{\mathbf{q} + t\mathbf{d}}^2 = r^2$である．$\abs{\mathbf{d}} = 1$なので，これは$t$の二次方程式$t^2 + 2bt + (\abs{\mathbf{q}}^2 - r^2) = 0$になる．判別式の$1/4$が$\Delta$であり，解は$t = -b \pm \sqrt{\Delta}$である．半直線が球に当たるのは，正の解があるとき，すなわち$\Delta > 0$で，大きいほうの解$-b + \sqrt{\Delta}$が正のときである．これは，$\sqrt{\Delta} > b$と同じである．
+半直線が球面に当たる条件は，$\abs{\boldsymbol{q} + t\boldsymbol{d}}^2 = r^2$である．$\abs{\boldsymbol{d}} = 1$なので，これは$t$の二次方程式$t^2 + 2bt + (\abs{\boldsymbol{q}}^2 - r^2) = 0$になる．判別式の$1/4$が$\Delta$であり，解は$t = -b \pm \sqrt{\Delta}$である．半直線が球に当たるのは，正の解があるとき，すなわち$\Delta > 0$で，大きいほうの解$-b + \sqrt{\Delta}$が正のときである．これは，$\sqrt{\Delta} > b$と同じである．
 
 </Proof>
 
-点が球の内側にあるときは，$\abs{\mathbf{q}}^2 < r^2$より$\Delta > b^2$となり，$\sqrt{\Delta} > \abs{b} \ge b$が成り立つ．内側の点は，いつも隠れている．点が球の手前にあれば，解は負になり，隠れない．
+2つの条件には，図形としての意味がある．まず，$\abs{\boldsymbol{q}}^2 - b^2$は，$\boldsymbol{q}$の$\boldsymbol{d}$に垂直な成分の長さの2乗である．これは，画面の上での，点と球の中心の像の距離の2乗にあたる．したがって，$\Delta$は，$r^2$からその距離の2乗を引いた値である．$\Delta > 0$は，点が，球の像の円の内側に写ることを表す．
+
+$-b + \sqrt{\Delta}$は，点から，視線が球のカメラ側の表面を貫く所までの距離である．これが正なら，点は，その表面より奥にある．
+
+点が球の内側にあるときは，$\abs{\boldsymbol{q}}^2 < r^2$より$\Delta > b^2$となり，$\sqrt{\Delta} > \abs{b} \ge b$が成り立つ．内側の点は，いつも隠れている．点が球の手前にあれば，解は負になり，隠れない．
 
 ### 三角形に隠れる点
 
 球のように式で決まる場合を除き，曲面は，小さな三角形の網で近似する．点が三角形に隠れる条件は，平行投影のおかげで，画面の上の問いになる．
 
+三角形の頂点$A_i$の像を$s_i$とする．ただし$i$は1から3である．画面の点$s$は，次の式を満たす$\lambda_i$で，$s = \sum \lambda_i s_i$と書ける．これを$s$の重心座標と呼ぶ．
+
+$$
+\begin{bmatrix} s_2 - s_1 & s_3 - s_1 \end{bmatrix} \begin{bmatrix} \lambda_2 \\ \lambda_3 \end{bmatrix} = s - s_1, \qquad \lambda_1 = 1 - \lambda_2 - \lambda_3
+$$
+
+左辺の行列は，2本の列ベクトルを並べた，2行2列の行列である．その行列式が0でなければ，Cramerの公式で$\lambda_2$と$\lambda_3$が決まる．行列式が0になるのは，三角形が視線に平行で，画面の上で面積を持たない場合である．そのような三角形は，何も隠さない．
+
 <Proposition id="hidden-by-triangle" name="三角形に隠れる条件">
 
-三角形の頂点$A_i$の，画面の位置を$s_i$，奥行きを$z_i$とする．ただし$i$は1から3である．画面の点$s$の重心座標を$\lambda_i$とする．すなわち，$s = \sum \lambda_i s_i$で，$\sum \lambda_i = 1$である．奥行き$z_0$の点が，この三角形に隠れるための必要十分条件は，すべての$\lambda_i \ge 0$であり，かつ$\sum \lambda_i z_i > z_0$である．
+三角形の頂点の奥行きを$z_1, z_2, z_3$とする．奥行き$z_0$の点が，この三角形に隠れるための必要十分条件は，すべての$\lambda_i \ge 0$であり，かつ$\sum \lambda_i z_i > z_0$である．
 
 </Proposition>
 
 <Proof of="hidden-by-triangle">
 
-視線は$\mathbf{d}$に平行なので，画面の1点$s$に写る空間の点は，$s$を通る$\mathbf{d}$方向の直線の上にある．三角形の空間の点$\sum \lambda_i A_i$を投影すると，投影が線形なので，画面の位置は$\sum \lambda_i s_i$，奥行きは$\sum \lambda_i z_i$になる．したがって，画面の点$s$が三角形の投影の内側にあることは，すべての$\lambda_i \ge 0$であることと同じである．そのとき三角形は，$s$の上に奥行き$\sum \lambda_i z_i$で存在する．これが$z_0$より大きければ，三角形は点より手前にある．
+視線は$\boldsymbol{d}$に平行なので，画面の1点$s$に写る空間の点は，$s$を通る$\boldsymbol{d}$方向の直線の上にある．三角形の空間の点$\sum \lambda_i A_i$を投影すると，投影が線形なので，画面の位置は$\sum \lambda_i s_i$，奥行きは$\sum \lambda_i z_i$になる．したがって，画面の点$s$が三角形の投影の内側にあることは，すべての$\lambda_i \ge 0$であることと同じである．そのとき三角形は，$s$の上に奥行き$\sum \lambda_i z_i$で存在する．これが$z_0$より大きければ，三角形は点より手前にある．
 
 </Proof>
 
 平行投影では，重心座標が保たれる．遠近法の投影では，この性質は成り立たない．そのため，判定が，画面の上の点の包含と，奥行きの補間に分かれる．
 
+### 格子で三角形を絞る
+
+網は数千の三角形からなり，調べる点も数千ある．すべての組を調べると，時間が組の数に比例して増える．そこで，画面を正方形の区画に区切り，各三角形を，その像の外接長方形と重なる区画に登録する．点を調べるときは，その点の区画に登録された三角形だけを見る．
+
+<Proposition id="grid-lookup" name="格子による絞り込み">
+
+区画に上のとおり登録すれば，格子を使った判定の結果は，すべての三角形を調べた結果と，いつも一致する．
+
+</Proposition>
+
+<Proof of="grid-lookup">
+
+点の像$s$を覆う三角形$T$があるとする．$s$は，$T$の像の中にあるので，その外接長方形の中にもある．したがって，$s$を含む区画は，$T$の登録先に含まれ，$T$は必ず調べられる．登録されていない三角形は，$s$を覆えないので，調べなくても結果は変わらない．
+
+</Proof>
+
+区画の大きさを，三角形の像の大きさに合わせる．網が一様なら，1つの区画に登録される三角形の数は，一定の数以下になる．1回の判定の時間は，網の大きさによらなくなり，全体の時間は，三角形の数と点の数の和に比例する．
+
 ### 網と曲面のずれ
 
-曲面の上の点は，網の三角形に，ぎりぎりで触れる．この場合は，点をカメラの側へわずかにずらして判定する．ずらす量は，網と曲面の隔たりより大きくする．半径$R$の円を，中心角$h$ごとの弦で近似すると，弦と円の隔たりは，次の値になる．
+曲面の上の点は，網の三角形に，ぎりぎりで触れる．この場合は，点をカメラの側へわずかにずらして判定する．ずらす量は，網と曲面の隔たりより大きくする．
+
+隔たりは，円で見積もれる．半径$R$の円を，中心角$h$ごとの弦で近似する．中心から弦までの距離は$R\cos(h/2)$なので，弦と円の隔たりは，次の値になる．
 
 $$
 R - R\cos\frac{h}{2} \approx \frac{Rh^2}{8}
 $$
 
-隔たりは，$h$の2乗で小さくなる．網の分割を2倍にすれば，隔たりは約4分の1になる．
+近似には，$1 - \cos x \approx x^2/2$を使った．隔たりは，$h$の2乗で小さくなる．円を$n$等分する網では$h = 2\pi/n$なので，隔たりは$\pi^2 R/(2n^2)$である．分割を2倍にすれば，隔たりは約4分の1になる．ずらす量は，この見積もりの2倍にする．
+
+曲面の輪郭の上の点は，視線が曲面をかすめるので，別に扱う．表の層でも裏の層でも，網のわずかなずれで隠れると判定される恐れがある．そこで，曲面の法線の向きに両側へずらした2点が，どちらも隠れるときだけ，その点は隠れているとする．
 
 ### 曲線を隠れる部分と見える部分に分ける
 
 曲線を隠れる部分と見える部分に分けるには，まず曲線の上に点を細かく取る．各点で隠れているかを調べる．隣り合う2点で答えが変わる区間には，切り替わる点がある．その位置は，二分法で求める．区間の両端の答えが違えば，区間の中点で調べ，答えが違うほうの半分を選ぶ．これを繰り返す．
 
-60回繰り返すと，区間の幅は，もとの$2^{-60}$倍になる．したがって，切り替わる点は，実用上，正確に求まる．ただし，1つの区間の中で，答えが2回変わる細かい隠れは，見つからない．
+$k$回繰り返すと，区間の幅は，もとの$2^{-k}$倍になる．60回なら，$2^{-60}$倍である．したがって，切り替わる点は，実用上，正確に求まる．ただし，1つの区間の中で，答えが2回変わる細かい隠れは，見つからない．
 
 ## 曲面の輪郭
 
-曲面の輪郭は，視線が曲面に接する点の集まりである．曲面の点$\mathbf{p}$での法線を$\mathbf{n}$とすると，視線$\mathbf{d}$が接平面に含まれる条件は，次の式である．
+### 輪郭は，投影が折り返す所
+
+曲面$\boldsymbol{S}(u, v)$の点を画面に写す写像は，パラメータから画面の点への写像になる．
 
 $$
-\mathbf{n}(\mathbf{p}) \cdot \mathbf{d} = 0
+\begin{bmatrix} u \\ v \end{bmatrix} \longmapsto \begin{bmatrix} \boldsymbol{r} \cdot \boldsymbol{S}(u, v) \\ \boldsymbol{u} \cdot \boldsymbol{S}(u, v) \end{bmatrix}
 $$
 
-パラメータ$u, v$で表した曲面$\mathbf{S}$では，$\mathbf{n} = \mathbf{S}_u \times \mathbf{S}_v$とおく．そして$g = \mathbf{n} \cdot \mathbf{d}$の零点の集合が，輪郭になる．
+この写像のヤコビ行列$K$は，次のとおりである．
+
+$$
+K = \begin{bmatrix} \boldsymbol{r} \cdot \boldsymbol{S}_u & \boldsymbol{r} \cdot \boldsymbol{S}_v \\ \boldsymbol{u} \cdot \boldsymbol{S}_u & \boldsymbol{u} \cdot \boldsymbol{S}_v \end{bmatrix}
+$$
+
+$\det K \ne 0$の点では，写像は局所的に一対一で，曲面は画面の上で，一枚の面として見える．$\det K = 0$の点では，写像が折り返す．折り返しの線が，輪郭である．
+
+<Proposition id="fold" name="輪郭の条件">
+
+曲面の法線を$\boldsymbol{n} = \boldsymbol{S}_u \times \boldsymbol{S}_v$とする．このとき，次の式が成り立つ．
+
+$$
+\det K = \boldsymbol{n} \cdot \boldsymbol{d}
+$$
+
+したがって，輪郭は，$\boldsymbol{n} \cdot \boldsymbol{d} = 0$を満たす点の集まりである．
+
+</Proposition>
+
+<Proof of="fold">
+
+外積の内積について，任意のベクトル$\boldsymbol{a}, \boldsymbol{b}, \boldsymbol{c}, \boldsymbol{f}$で，次の恒等式が成り立つ．
+
+$$
+(\boldsymbol{a} \times \boldsymbol{b}) \cdot (\boldsymbol{c} \times \boldsymbol{f}) = (\boldsymbol{a} \cdot \boldsymbol{c})(\boldsymbol{b} \cdot \boldsymbol{f}) - (\boldsymbol{a} \cdot \boldsymbol{f})(\boldsymbol{b} \cdot \boldsymbol{c})
+$$
+
+恒等式で，次のようにおく．
+
+$$
+\boldsymbol{a} = \boldsymbol{r}, \quad \boldsymbol{b} = \boldsymbol{u}, \quad \boldsymbol{c} = \boldsymbol{S}_u, \quad \boldsymbol{f} = \boldsymbol{S}_v
+$$
+
+このとき，右辺は$\det K$になる．左辺は，$(\boldsymbol{r} \times \boldsymbol{u}) \cdot \boldsymbol{n}$である．$\boldsymbol{r} \times \boldsymbol{u} = \boldsymbol{d}$なので，これは$\boldsymbol{d} \cdot \boldsymbol{n}$に等しい．
+
+</Proof>
+
+$\boldsymbol{n} \cdot \boldsymbol{d} = 0$は，視線が，接平面に含まれることを意味する．曲面の接平面は，$\boldsymbol{S}_u$と$\boldsymbol{S}_v$の張る平面だからである．
+
+### 球の輪郭
 
 <Proposition id="sphere-outline" name="球の輪郭">
 
-中心$\mathbf{c}$，半径$r$の球の輪郭は，中心を通り$\mathbf{d}$に垂直な平面と，球面の交わりの大円である．その投影は，半径$r$の円になる．
+中心$\boldsymbol{c}$，半径$r$の球の輪郭は，中心を通り$\boldsymbol{d}$に垂直な平面と，球面の交わりの大円である．その投影は，半径$r$の円になる．
 
 </Proposition>
 
 <Proof of="sphere-outline">
 
-球面の点$\mathbf{p}$の法線は，$\mathbf{p} - \mathbf{c}$に平行である．したがって，輪郭の条件は，$(\mathbf{p} - \mathbf{c}) \cdot \mathbf{d} = 0$になる．これは，$\mathbf{c}$を通り$\mathbf{d}$に垂直な平面である．この平面と球面の交わりは，半径$r$の円である．円の点$\mathbf{p}$では，$\mathbf{p} - \mathbf{c}$が$\mathbf{d}$に垂直である．よって$\mathbf{r}$と$\mathbf{u}$の成分だけを持ち，画面の上でも長さ$r$が保たれる．この円の投影は，$\mathbf{c}$の投影を中心とする半径$r$の円である．
+球面の点$\boldsymbol{p}$の法線は，$\boldsymbol{p} - \boldsymbol{c}$に平行である．したがって，輪郭の条件は，$(\boldsymbol{p} - \boldsymbol{c}) \cdot \boldsymbol{d} = 0$になる．これは，$\boldsymbol{c}$を通り$\boldsymbol{d}$に垂直な平面である．この平面と球面の交わりは，半径$r$の円である．円の点$\boldsymbol{p}$では，$\boldsymbol{p} - \boldsymbol{c}$が$\boldsymbol{d}$に垂直である．よって$\boldsymbol{r}$と$\boldsymbol{u}$の成分だけを持ち，画面の上でも長さ$r$が保たれる．この円の投影は，$\boldsymbol{c}$の投影を中心とする半径$r$の円である．
 
 </Proof>
 
@@ -152,75 +281,149 @@ $$
 
 ### 三角形の網では
 
-三角形の網では，各頂点の法線を，そこに集まる三角形の面の法線の和で求める．面の法線は，2辺の外積で，長さが面積の2倍になる．したがって，面積で重みを付けた平均になる．
+三角形の網では，各頂点の法線を，そこに集まる三角形の面の法線の和で求める．面の法線は，2辺の外積で，長さが面積の2倍になる．したがって，面積で重みを付けた平均になる．パラメータの継ぎ目のように，同じ位置に頂点が2つある所では，位置が重なる頂点をまとめて，法線を求める．
 
-頂点ごとに$g = \mathbf{n} \cdot \mathbf{d}$の値が決まる．三角形の中では，$g$を，3頂点の値からの一次関数で補う．一次関数の零点の集合は，三角形の中の線分である．頂点の値の符号が揃わない三角形には，その線分がちょうど1本あり，両端は，符号が変わる2辺の上にある．辺の両端の値を$g_0, g_1$とすると，零点は，端から$g_0/(g_0 - g_1)$の位置にある．
+頂点ごとに，$g = \boldsymbol{n} \cdot \boldsymbol{d}$の値が決まる．三角形の中では，$g$を，3頂点の値からの一次関数で補う．
 
-この線分を，隣の三角形へつなぐと，輪郭の折れ線ができる．連続関数が符号を変える所には零点がある，という中間値の定理が，この方法の根拠である．
+<Proposition id="linear-zero" name="一次関数の零点">
+
+三角形の3頂点の値の符号が揃わないとき，一次関数の零点の集合は，三角形の中の線分である．その両端は，符号が変わる2つの辺の上にある．ただし，値が0の頂点は，正として扱う．
+
+</Proposition>
+
+<Proof of="linear-zero">
+
+3頂点の符号が揃わないなら，1つの頂点だけが，ほかの2つと符号が違う．符号が変わる辺は，その頂点を通る2辺である．一次関数は，各辺の上で単調なので，符号が変わる辺の上に，零点がちょうど1つずつある．残る1辺の両端は同じ符号なので，零点はない．一次関数の零点の集合は直線であり，三角形との交わりは，この2点を結ぶ線分になる．
+
+</Proof>
+
+辺の両端の値を$g_0, g_1$とすると，零点は，端から$g_0/(g_0 - g_1)$の位置にある．
+
+この線分を，隣の三角形へつなぐと，輪郭の折れ線ができる．1つの辺は，2つの三角形に共有されるので，辺の上の零点は，両方の三角形の線分の端になる．したがって，線分は端で次々につながり，閉じた線か，網の縁で終わる線になる．連続関数が符号を変える所には零点がある，という中間値の定理が，この方法の根拠である．
 
 ## 切り口と交線
 
 ### 平面による切り口
 
-平面$\mathbf{n} \cdot \mathbf{p} = c$で曲面を切る線は，曲面$\mathbf{S}(u, v)$を平面の式に代入した，次の関数の零点の集合である．
+平面$\boldsymbol{n} \cdot \boldsymbol{p} = c$で曲面を切る線は，曲面$\boldsymbol{S}(u, v)$を平面の式に代入した，次の関数の零点の集合である．
 
 $$
-\varphi(u, v) = \mathbf{n} \cdot \mathbf{S}(u, v) - c
+\varphi(u, v) = \boldsymbol{n} \cdot \boldsymbol{S}(u, v) - c
 $$
 
-$\varphi$の勾配が0でなければ，陰関数定理より，零点の集合は，滑らかな曲線になる．輪郭と同じく，網の頂点で$\varphi$の符号を調べ，符号が変わる辺の上の零点を結べばよい．
+$\varphi$の勾配は，次の行ベクトルである．
 
-円錐$z = \sqrt{x^2 + y^2}$を，平面$z = c + my$で切ると，次の式になる．
+$$
+\nabla\varphi = \begin{bmatrix} \boldsymbol{n} \cdot \boldsymbol{S}_u & \boldsymbol{n} \cdot \boldsymbol{S}_v \end{bmatrix}
+$$
+
+<Proposition id="cut-smooth" name="切り口が滑らかな曲線になる条件">
+
+零点で$\nabla\varphi \ne \boldsymbol{0}$なら，その近くで，切り口は滑らかな曲線である．$\nabla\varphi = \boldsymbol{0}$となるのは，平面が，その点で曲面に接するときである．
+
+</Proposition>
+
+<Proof of="cut-smooth">
+
+前半は，陰関数定理から従う．後半では，接平面が$\boldsymbol{S}_u$と$\boldsymbol{S}_v$で張られることを使う．$\nabla\varphi = \boldsymbol{0}$は，$\boldsymbol{n}$がその両方に直交することと同じである．これは，平面が曲面に接することを表す．
+
+</Proof>
+
+網の上では，$\varphi$が頂点で決まる．$\boldsymbol{n} \cdot \boldsymbol{x} - c$は，空間の点$\boldsymbol{x}$の一次関数なので，三角形の中でも一次関数である．したがって，輪郭と同じく，符号が変わる辺の上の零点を結べばよい．これは，三角形と平面の交わりそのものである．
+
+### 円錐曲線
+
+円錐$z = \sqrt{x^2 + y^2}$を，平面$z = c + my$で切る．両辺を2乗すると，次の式になる．
 
 $$
 x^2 + (1 - m^2)y^2 - 2cm\,y = c^2
 $$
 
-$\abs{m} < 1$のとき，$y^2$の係数が正なので，切り口は楕円である．$\abs{m} = 1$なら放物線，$\abs{m} > 1$なら双曲線になる．円錐曲線という名前は，この事実による．
+$\abs{m} < 1$のとき，$y$について平方完成すると，次の式になる．
+
+$$
+x^2 + (1 - m^2)\Bigl(y - \frac{cm}{1 - m^2}\Bigr)^2 = \frac{c^2}{1 - m^2}
+$$
+
+これは楕円である．$x$方向の半軸の長さは，$c/\sqrt{1 - m^2}$である．$y$方向の半軸の長さは，$c/(1 - m^2)$である．$m = 0$なら，半径$c$の円になる．$\abs{m} = 1$のとき，$y^2$の項が消えて，放物線になる．$\abs{m} > 1$のとき，$y^2$の係数が負になり，双曲線になる．円錐曲線という名前は，この事実による．
 
 <Figure src="cone-with-cuts" />
 
-図の青い円は，水平な平面$z = 1.2$による切り口である．赤い楕円は，傾いた平面$z = 0.8 + 0.4y$による切り口である．
+図の青い円は，水平な平面$z = 1.2$による切り口である．赤い楕円は，傾いた平面$z = 0.8 + 0.4y$による切り口で，半軸は，約$0.87$と約$0.95$である．
 
 ### 2つの曲面の交線
 
-曲面$\mathbf{S}_A$と$\mathbf{S}_B$の交わりは，4つの未知数$u, v, s, t$についての，次の3つの式の解の集合である．
+曲面$\boldsymbol{S}_A(u, v)$と$\boldsymbol{S}_B(s, t)$の交わりは，次のベクトルの式の解の集合である．
 
 $$
-\mathbf{F}(u, v, s, t) = \mathbf{S}_A(u, v) - \mathbf{S}_B(s, t) = \mathbf{0}
+\boldsymbol{F}(\boldsymbol{x}) = \boldsymbol{S}_A(u, v) - \boldsymbol{S}_B(s, t) = \boldsymbol{0}, \qquad \boldsymbol{x} = \begin{bmatrix} u \\ v \\ s \\ t \end{bmatrix}
 $$
 
-式は3つ，未知数は4つなので，解は一般に1次元の集合，すなわち曲線になる．
+$\boldsymbol{x}$は，4つの未知数を並べた列ベクトルである．式は3つ，未知数は4つなので，解は一般に1次元の集合，すなわち曲線になる．$\boldsymbol{F}$のヤコビ行列$J$は，3行4列である．
+
+$$
+J = \begin{bmatrix} \boldsymbol{S}_{A,u} & \boldsymbol{S}_{A,v} & -\boldsymbol{S}_{B,s} & -\boldsymbol{S}_{B,t} \end{bmatrix}
+$$
 
 <Proposition id="transversal" name="交わりが曲線になる条件">
 
-点$\mathbf{p}$で2つの曲面の接平面が異なれば，その近くで2つの曲面は滑らかな曲線で交わる．
+点$\boldsymbol{p}$で2つの曲面の接平面が異なれば，その近くで2つの曲面は滑らかな曲線で交わる．曲線の接線の向きは，2つの法線の外積$\boldsymbol{n}_A \times \boldsymbol{n}_B$である．
 
 </Proposition>
 
 <Proof of="transversal">
 
-$\mathbf{F}$のヤコビ行列は，曲面$A$の2本の接線ベクトルと，曲面$B$の2本の接線ベクトルの符号を変えたものからなる．最初の2本は曲面$A$の接平面を張り，あとの2本は曲面$B$の接平面を張る．2つの接平面が異なる2次元の平面なら，その和は3次元全体になるので，ヤコビ行列の階数は3である．階数が式の数に等しいので，陰関数定理より解の集合は，$4 - 3 = 1$次元の曲面，すなわち曲線になる．
+$J$の最初の2列は，曲面$A$の接平面を張り，あとの2列は，曲面$B$の接平面を張る．2つの接平面を$W_A, W_B$とすると，次の式が成り立つ．
+
+$$
+\dim(W_A + W_B) = \dim W_A + \dim W_B - \dim(W_A \cap W_B)
+$$
+
+2つの接平面が異なれば，交わりは直線で，$\dim(W_A \cap W_B) = 1$になる．したがって，$\dim(W_A + W_B) = 3$であり，$J$の階数は3である．階数が式の数に等しいので，陰関数定理より，解の集合は，$4 - 3 = 1$次元の曲線になる．
+
+曲線の接線は，両方の曲面の接平面に含まれる．したがって，接線は，2つの接平面の交わりの直線に沿い，その向きは$\boldsymbol{n}_A \times \boldsymbol{n}_B$である．
 
 </Proof>
 
-接平面が一致する点では階数が下がり，交わりは曲線とは限らなくなる．次の例が，その様子を示す．球$x^2 + y^2 + z^2 = 4$と，円柱$(x-1)^2 + y^2 = 1$の交わりである．円柱の式で$x = 1 + \cos t$，$y = \sin t$とおく．球の式から，次の式が得られる．
+接平面が一致する点では，階数が下がり，交わりは曲線とは限らなくなる．次の例が，その様子を示す．球$x^2 + y^2 + z^2 = 4$と，円柱$(x-1)^2 + y^2 = 1$の交わりである．円柱の式で$x = 1 + \cos t$，$y = \sin t$とおく．球の式から，次の式が得られる．
 
 $$
 z^2 = 4 - (1 + \cos t)^2 - \sin^2 t = 2 - 2\cos t = 4\sin^2\frac{t}{2}
 $$
 
-したがって交わりは，$(1 + \cos t,\ \sin t,\ \pm 2\sin\frac{t}{2})$と表せる．これは，Vivianiの曲線として知られている．$t = 0$の点$(2, 0, 0)$では，球の法線も円柱の法線も$x$軸の向きで，接平面が一致する．ここで，曲線は，自分自身と交わる．
+したがって，交わりは，次の2つの曲線である．
+
+$$
+\begin{bmatrix} 1 + \cos t \\ \sin t \\ 2\sin\frac{t}{2} \end{bmatrix}, \qquad \begin{bmatrix} 1 + \cos t \\ \sin t \\ -2\sin\frac{t}{2} \end{bmatrix} \qquad (0 \le t \le 2\pi)
+$$
+
+これは，Vivianiの曲線として知られている．2つの曲線は，$t = 0$と$t = 2\pi$で，次の点を通る．
+
+$$
+\boldsymbol{p}_0 = \begin{bmatrix} 2 \\ 0 \\ 0 \end{bmatrix}
+$$
+
+この点で，球の法線と円柱の法線は，次のように平行である．
+
+$$
+\begin{bmatrix} 4 \\ 0 \\ 0 \end{bmatrix} = 2\begin{bmatrix} 2 \\ 0 \\ 0 \end{bmatrix}
+$$
+
+左辺は，球の法線である．右辺の列ベクトルは，円柱の法線である．したがって，接平面が一致する．ここで，曲線は自分自身と交わる．
 
 <Figure src="sphere-and-cylinder" />
 
 ### 三角形どうしの交わり
 
-網から交線を求めるには，2つの網の三角形の交わりを調べる．
+網から交線を求めるには，2つの網の三角形の組を調べる．三角形$T_1$と$T_2$は，それぞれ次の平面の上にあるとする．
+
+$$
+\boldsymbol{n}_1 \cdot \boldsymbol{x} = c_1, \qquad \boldsymbol{n}_2 \cdot \boldsymbol{x} = c_2
+$$
 
 <Proposition id="triangle-meeting" name="三角形どうしの交わり">
 
-平行でない2つの平面は，方向$\mathbf{n}_1 \times \mathbf{n}_2$の直線$L$で交わる．2つの三角形$T_1, T_2$の交わりは，$(T_1 \cap L) \cap (T_2 \cap L)$に等しい．
+平行でない2つの平面は，方向$\boldsymbol{e} = \boldsymbol{n}_1 \times \boldsymbol{n}_2$の直線$L$で交わる．2つの三角形の交わりは，$(T_1 \cap L) \cap (T_2 \cap L)$に等しい．
 
 </Proposition>
 
@@ -230,51 +433,141 @@ $T_1$は平面1に，$T_2$は平面2に含まれるので，$T_1 \cap T_2$は，
 
 </Proof>
 
-$T_1 \cap L$は，$T_1$を平面2で切った線分である．$L$の上の座標を$\mathbf{n}_1 \times \mathbf{n}_2$との内積で測れば，$T_1 \cap L$と$T_2 \cap L$は，数直線の上の区間になる．2つの区間の重なりが，三角形どうしの交わりである．すべての三角形の組で求めた線分を，端でつなげば，交線の折れ線になる．
+$T_1 \cap L$は，$T_1$が平面1に含まれるので，$T_1$を平面2で切った線分に等しい．この線分は，次の手順で求める．
 
-## 本物の曲線へ近づける
+- $T_1$の頂点$\boldsymbol{a}_i$について，平面2からの符号付き距離$d_i = \boldsymbol{n}_2 \cdot \boldsymbol{a}_i - c_2$を求める．3つの符号が揃えば，$T_1$は平面2と交わらず，組は捨てる．
+- 符号が変わる2辺の上で，$d = 0$になる点を求める．
+- この2点の$L$上の座標を，$\boldsymbol{e}$との内積で測り，区間$[\alpha_1, \alpha_2]$を得る．
+
+辺の両端を$\boldsymbol{a}_i, \boldsymbol{a}_j$とすると，$d$が一次関数なので，零点は次の点である．
+
+$$
+\boldsymbol{a}_i + \frac{d_i}{d_i - d_j}(\boldsymbol{a}_j - \boldsymbol{a}_i)
+$$
+
+$T_2$についても，平面1を使って，同じ手順で区間$[\beta_1, \beta_2]$を得る．$T_1 \cap L$と$T_2 \cap L$は，数直線の上の区間なので，2つの区間の重なりが，三角形どうしの交わりである．重なりが空でなければ，その両端を空間の点へ戻して，交線の線分にする．2つの平面が平行なら，$\boldsymbol{e} = \boldsymbol{0}$であり，この組は調べない．
+
+三角形の組を，すべて調べると，輪郭のときと同じように，時間がかかる．そこで，空間を立方体の区画に区切り，各三角形を，外接する直方体と重なる区画へ登録する．同じ区画に登録された三角形の組だけを調べれば，結果は変わらない．理由は，格子で三角形を絞る節と同じである．
+
+網の辺の上にある線分の端は，その辺を共有する2つの三角形から，同じ点として得られる．位置が近い端をまとめて，線分を端でつなぐと，交線の折れ線ができる．
+
+## 曲線を本物へ近づける
 
 網から求めた交線や切り口は，網の辺の上の点を結んだものである．網は曲面から外れているので，点は，本物の曲線から少しずれる．そこで，各点を，本物の曲線の上へ動かす．
 
+各点には，パラメータの値$\boldsymbol{x}$を持たせておく．辺の上の点のパラメータは，辺の両端の頂点のパラメータを，同じ割合で補間して得る．
+
 ### 最小の動きのNewton法
 
-曲線が，$\mathbf{F}(\mathbf{x}) = \mathbf{0}$の解の集合だとする．$\mathbf{x}$は$n$個の未知数，$\mathbf{F}$は$m$個の式で，$m < n$である．切り口は$n = 2, m = 1$，交線は$n = 4, m = 3$である．解の近くの点$\mathbf{x}$から，$\mathbf{F}$を一次近似する．
+曲線が，$\boldsymbol{F}(\boldsymbol{x}) = \boldsymbol{0}$の解の集合だとする．$\boldsymbol{x}$は$n$個の未知数，$\boldsymbol{F}$は$m$個の式で，$m < n$である．切り口は$n = 2, m = 1$，交線は$n = 4, m = 3$である．解の近くの点$\boldsymbol{x}$から，$\boldsymbol{F}$を一次近似する．
 
 $$
-\mathbf{F}(\mathbf{x} + \boldsymbol{\delta}) \approx \mathbf{F}(\mathbf{x}) + J\boldsymbol{\delta} = \mathbf{0}
+\boldsymbol{F}(\boldsymbol{x} + \boldsymbol{\delta}) \approx \boldsymbol{F}(\boldsymbol{x}) + J\boldsymbol{\delta} = \boldsymbol{0}
 $$
 
 ここで，$J$は，$m \times n$のヤコビ行列である．式が未知数より少ないので，$\boldsymbol{\delta}$は，1つに決まらない．そこで，動きの大きさが最小のものを選ぶ．
 
 <Proposition id="minimal-step" name="最小の動き">
 
-$J$の階数が$m$のとき，$J\boldsymbol{\delta} = -\mathbf{F}$を満たす最小の$\boldsymbol{\delta}$は，次の式で与えられる．
+$J$の階数が$m$のとき，$J\boldsymbol{\delta} = -\boldsymbol{F}$を満たす最小の$\boldsymbol{\delta}$は，次の式で与えられる．
 
 $$
-\boldsymbol{\delta} = -J^{\mathsf{T}}\bigl(JJ^{\mathsf{T}}\bigr)^{-1}\mathbf{F}
+\boldsymbol{\delta} = -J^{\mathsf{T}}\bigl(JJ^{\mathsf{T}}\bigr)^{-1}\boldsymbol{F}
 $$
 
 </Proposition>
 
 <Proof of="minimal-step">
 
-命題の式の右辺を$\boldsymbol{\delta}_0$とおくと，$J\boldsymbol{\delta}_0 = -\mathbf{F}$を満たす．任意の解は，$\boldsymbol{\delta}_0 + \mathbf{w}$（$J\mathbf{w} = \mathbf{0}$）と書ける．$\boldsymbol{\delta}_0$は$J^{\mathsf{T}}$の像に含まれ，この像は$J$の零空間と直交する．したがって$\boldsymbol{\delta}_0 \cdot \mathbf{w} = 0$となり，次の式が成り立つ．
+まず，$JJ^{\mathsf{T}}$が正則であることを示す．任意の$\boldsymbol{y}$について，次の式が成り立つ．
 
 $$
-\abs{\boldsymbol{\delta}_0 + \mathbf{w}}^2 = \abs{\boldsymbol{\delta}_0}^2 + \abs{\mathbf{w}}^2 \ge \abs{\boldsymbol{\delta}_0}^2
+\boldsymbol{y}^{\mathsf{T}} JJ^{\mathsf{T}} \boldsymbol{y} = \abs{J^{\mathsf{T}}\boldsymbol{y}}^2
 $$
 
-等号は$\mathbf{w} = \mathbf{0}$のときに成り立つ．
+右辺は，$J^{\mathsf{T}}\boldsymbol{y} = \boldsymbol{0}$のときだけ0になる．$J$の階数が$m$なら，$J^{\mathsf{T}}$の列は独立である．したがって，$J^{\mathsf{T}}\boldsymbol{y} = \boldsymbol{0}$なら$\boldsymbol{y} = \boldsymbol{0}$である．よって$JJ^{\mathsf{T}}$は正定値で，逆行列を持つ．
+
+命題の式の右辺を$\boldsymbol{\delta}_0$とおくと，$J\boldsymbol{\delta}_0 = -\boldsymbol{F}$を満たす．任意の解は，$\boldsymbol{\delta}_0 + \boldsymbol{w}$（$J\boldsymbol{w} = \boldsymbol{0}$）と書ける．$\boldsymbol{\delta}_0$は$J^{\mathsf{T}}$の像に含まれ，この像は$J$の零空間と直交する．したがって$\boldsymbol{\delta}_0 \cdot \boldsymbol{w} = 0$となり，次の式が成り立つ．
+
+$$
+\abs{\boldsymbol{\delta}_0 + \boldsymbol{w}}^2 = \abs{\boldsymbol{\delta}_0}^2 + \abs{\boldsymbol{w}}^2 \ge \abs{\boldsymbol{\delta}_0}^2
+$$
+
+等号は$\boldsymbol{w} = \boldsymbol{0}$のときに成り立つ．
 
 </Proof>
 
-幾何学的には，$\boldsymbol{\delta}$は，$\mathbf{x}$から一次近似の解の集合へ下ろした垂線の足に向かう動きである．これを繰り返す．$J$の階数が$m$の解の近くでは，誤差が，反復ごとに2乗で小さくなる（2次収束）．実際，数回の反復で，機械の精度に届く．
+幾何学的には，$\boldsymbol{\delta}$は，$\boldsymbol{x}$から一次近似の解の集合へ下ろした垂線の足に向かう動きである．切り口では$J$が行ベクトル$\nabla\varphi$になり，$JJ^{\mathsf{T}}$は数$\abs{\nabla\varphi}^2$なので，次の式になる．
 
-$J$の階数が下がる点，すなわち交わりが接する点では，$JJ^{\mathsf{T}}$が特異になり，動きがいくらでも大きくなる．そこで，$JJ^{\mathsf{T}}$の代わりに，小さな$\lambda > 0$を加えた$JJ^{\mathsf{T}} + \lambda I$を使う．また，動いた先が元の点から遠ければ，別の枝へ飛んだとみなして，その点は磨かない．
+$$
+\boldsymbol{\delta} = -\frac{\varphi}{\abs{\nabla\varphi}^2}\nabla\varphi^{\mathsf{T}}
+$$
 
-### 曲がりに合わせた点の配置
+勾配の向きに，$\abs{\varphi}/\abs{\nabla\varphi}$だけ動く．等高線への距離の見積もりとして，自然な動きである．
 
-曲線を折れ線で近似するとき，点をどこに置くかで，精度と点の数が決まる．曲率$\kappa$の曲線を長さ$\ell$の弦で近似すると，弦と曲線の隔たり（矢高）は，円の場合と同じく次のとおりになる．
+導関数は，中心差分で求める．$J$の$j$行$i$列の成分は，次の値で近似する．
+
+$$
+J_{ji} \approx \frac{F_j(\boldsymbol{x} + h\boldsymbol{e}_i) - F_j(\boldsymbol{x} - h\boldsymbol{e}_i)}{2h}
+$$
+
+ここで$\boldsymbol{e}_i$は，$i$番目の単位ベクトルである．Taylor展開では，$h$の1次の誤差が打ち消し合い，誤差は$h$の2乗のオーダーになる．
+
+### 収束の速さ
+
+これを繰り返すと，どれだけ速く解に近づくか．
+
+<Proposition id="quadratic" name="2次収束">
+
+$J$は，定数$L$でLipschitz連続であるとする．また，$J$の最小特異値は，$\sigma > 0$以上であるとする．このとき，1回の動きのあとの残差は，次の不等式を満たす．
+
+$$
+\abs{\boldsymbol{F}(\boldsymbol{x} + \boldsymbol{\delta})} \le \frac{L}{2\sigma^2}\abs{\boldsymbol{F}(\boldsymbol{x})}^2
+$$
+
+</Proposition>
+
+<Proof of="quadratic">
+
+Taylorの公式の剰余の形で，次の式が成り立つ．
+
+$$
+\boldsymbol{F}(\boldsymbol{x} + \boldsymbol{\delta}) = \boldsymbol{F}(\boldsymbol{x}) + J\boldsymbol{\delta} + \int_0^1 \bigl(J(\boldsymbol{x} + t\boldsymbol{\delta}) - J(\boldsymbol{x})\bigr)\boldsymbol{\delta}\,dt
+$$
+
+右辺の最初の2項は，$J\boldsymbol{\delta} = -\boldsymbol{F}$より打ち消し合う．積分の中身の大きさは，Lipschitz連続性より$Lt\abs{\boldsymbol{\delta}}^2$以下である．したがって，積分は$L\abs{\boldsymbol{\delta}}^2/2$以下である．
+
+$\boldsymbol{\delta}$は，行列$-J^{\mathsf{T}}(JJ^{\mathsf{T}})^{-1}$を$\boldsymbol{F}$に掛けたものである．この行列の特異値は，$J$の特異値の逆数なので，$1/\sigma$以下である．よって$\abs{\boldsymbol{\delta}} \le \abs{\boldsymbol{F}}/\sigma$となり，命題が成り立つ．
+
+</Proof>
+
+残差が$10^{-3}$なら，1回の動きのあとは$10^{-6}$のオーダー，その次は$10^{-12}$のオーダーになる．実際，数回の動きで，機械の精度に届く．
+
+### 接する点では
+
+$J$の階数が下がる点，すなわち交わりが接する点では，$JJ^{\mathsf{T}}$が特異になり，動きがいくらでも大きくなる．そこで，$JJ^{\mathsf{T}}$の代わりに，小さな$\lambda > 0$を加えた$JJ^{\mathsf{T}} + \lambda I$を使う．
+
+$$
+\boldsymbol{\delta}_\lambda = -J^{\mathsf{T}}\bigl(JJ^{\mathsf{T}} + \lambda I\bigr)^{-1}\boldsymbol{F}
+$$
+
+$J$の特異値分解で見ると，特異値$\sigma_i$の方向の動きは，$\sigma_i/(\sigma_i^2 + \lambda)$倍になる．相加相乗平均の不等式より，$\sigma_i^2 + \lambda \ge 2\sigma_i\sqrt{\lambda}$が成り立つ．したがって，この倍率は$1/(2\sqrt{\lambda})$以下である．これより，次の不等式が成り立つ．
+
+$$
+\abs{\boldsymbol{\delta}_\lambda} \le \frac{\abs{\boldsymbol{F}}}{2\sqrt{\lambda}}
+$$
+
+階数が下がる点でも，動きは有限に収まる．
+
+動いた先が元の点から遠ければ，別の枝へ飛んだとみなして，その点は磨かない．残差が小さくならない点も磨かない．
+
+## 曲がりに合わせた点の取り方
+
+### 矢高
+
+曲線を折れ線で近似するとき，点をどこに置くかで，精度と点の数が決まる．弦と曲線の最大の隔たりを，矢高と呼ぶ．
+
+曲率$\kappa$の曲線を，弦の中点の近くで，放物線$y = \kappa x^2/2$で近似する．弦の両端は，$x = \pm\ell/2$の点である．両端の高さは，どちらも$\kappa\ell^2/8$で，弦は，この高さの水平な線になる．曲線の頂点は，$y = 0$にあるので，矢高は次の値になる．
 
 $$
 \text{矢高} \approx \frac{\kappa \ell^2}{8}
@@ -282,22 +575,69 @@ $$
 
 許す隔たりを$\varepsilon$とすると，弦の長さは，$\ell \approx \sqrt{8\varepsilon/\kappa}$で足りる．したがって，点の間隔は，曲率の平方根に反比例する．曲がりの強い所では，点が密になり，まっすぐな所では，粗くてよい．
 
-この配置は，次の2つの操作で作る．
+曲線全体の点の数は，弧長$s$で積分した次の値になる．
 
-- 隣り合う点の，パラメータの中点を，Newton法で曲線の上へ動かす．その点が，弦から$\varepsilon$より離れていれば，点として足し，2つの半分について繰り返す．$\ell$が半分になると矢高は4分の1になるので，繰り返しは，少ない回数で止まる．
-- 直線とみなせる点は，Douglas–Peuckerの方法で間引く．両端を結ぶ線分から，$\varepsilon$以内にある点をすべて捨て，残りの最も遠い点で，区間を2つに分けて繰り返す．
+$$
+N \approx \int \frac{ds}{\ell(s)} = \int \sqrt{\frac{\kappa(s)}{8\varepsilon}}\,ds
+$$
 
-間引きの結果は，もとの折れ線から$\varepsilon$以内にある．足す操作と間引く操作を合わせると，点の数は，網の粗さに関わらず，曲線の曲がり方だけで決まる．関数のグラフを折れ線にするときも，同じ考え方で点を取る．
+この値は，曲線の形と$\varepsilon$だけで決まり，網の粗さによらない．許す隔たりを4分の1にすると，点の数は2倍になる．
+
+### 関数のグラフ
+
+関数のグラフも，同じ考え方で点を取る．区間の端と中点だけで判定すると，見落としが起きる．たとえば$\sin x$を区間$[0, 2\pi]$で見ると，両端と中点の値が，すべて0で，弦の上に乗る．曲線は，まっすぐだと誤って判定される．
+
+そこで，4分の1の点，中点，4分の3の点を，弦と比べる．どれかが許容より離れていれば，区間を2つに割り，同じことを繰り返す．また，最初に定義域を16等分して，区間の幅より短い周期の波を，見落としにくくする．どれだけ検査しても，有限個の点では，さらに細かい波を見落とす可能性は残る．
+
+$\tan x$や$1/x$のように，値が発散する所や，定義されない所では，線を切る．隣り合う点で，値があるかないかが変わる区間は，二分法で切れ目を追い込む．
+
+### 中点を足す
+
+切り口と交線では，隣り合う点のパラメータの中点を，Newton法で曲線の上へ動かす．その点が弦から$\varepsilon$より離れていれば，点として足し，2つの半分について繰り返す．$\ell$が半分になると矢高は4分の1になるので，繰り返しは，少ない回数で止まる．
+
+### 間引き
+
+直線とみなせる点は，Douglas–Peuckerの方法で間引く．両端を結ぶ線分から$\varepsilon'$以内にある点をすべて捨て，そうでなければ，最も遠い点で区間を2つに分けて繰り返す．
+
+<Proposition id="douglas-peucker" name="間引きの誤差">
+
+間引いた折れ線は，もとの折れ線から，$\varepsilon'$以内にある．
+
+</Proposition>
+
+<Proof of="douglas-peucker">
+
+繰り返しが止まった区間では，捨てた点はすべて，残した2点を結ぶ線分から$\varepsilon'$以内にある．もとの折れ線の辺の両端は，同じ区間に入るか，区間の端の残した点である．どちらの場合も，辺の両端は，同じ線分から$\varepsilon'$以内にある．線分への距離は，点を辺の上で動かすと，凸関数になる．したがって，辺の上のすべての点で，距離は両端での値の大きいほう以下であり，$\varepsilon'$を超えない．
+
+</Proof>
+
+足す操作の許容を$\varepsilon$，間引く操作の許容を$\varepsilon'$とする．三角不等式より，本物の曲線からの隔たりは，$\varepsilon + \varepsilon'$以下である．
 
 ## 領域を斜線で埋める
+
+### 斜線
 
 2つのグラフの間の領域は，グラフの折れ線と，両端の縦の線をつないだ，閉じた多角形で表す．この多角形の内側を，平行な線で埋める．
 
 <Figure src="sine-cosine-region" />
 
-斜線は，向きに垂直なベクトル$\mathbf{n}$を使って，$\mathbf{n} \cdot \mathbf{p} = c$と書ける直線である．間隔を$g$とすると，$c$は$g$の整数倍を取る．直線を1本決めると，多角形との交点が，直線の上の座標$\tau_1 \le \tau_2 \le \cdots$で決まる．内側にあるのは，$\tau_1$から$\tau_2$の間，$\tau_3$から$\tau_4$の間，というように，奇数番目から次の偶数番目の間である．この規則は，偶奇規則と呼ばれる．直線の上の点から，どちらかの向きに進んで，境界をまたいだ回数が奇数なら内側，偶数なら外側である．
+斜線の向きを角$\theta$で決める．向きの単位ベクトルと，それに垂直な単位ベクトルは，次のとおりである．
 
-多角形の頂点が，ちょうど直線の上に乗ると，またいだ回数の数え方が難しくなる．そこで，各頂点に$\sigma_i$を割り当てる．$\mathbf{n} \cdot \mathbf{p}_i > c$なら$\sigma_i = 1$，そうでなければ$\sigma_i = 0$とする．そして，$\sigma$が変わる辺だけを数える．
+$$
+\boldsymbol{e} = \begin{bmatrix} \cos\theta \\ \sin\theta \end{bmatrix}, \qquad \boldsymbol{n} = \begin{bmatrix} -\sin\theta \\ \cos\theta \end{bmatrix}
+$$
+
+線は，$\boldsymbol{n} \cdot \boldsymbol{p} = kg$（$k$は整数，$g$は間隔）を満たす直線に引く．原点から数えるので，多角形の位置や，頂点の並べ方に，線の位置は左右されない．隣り合う領域の線は，切れ目なく続く．
+
+### 偶奇規則
+
+直線を1本決めると，多角形との交点が，直線の上の座標$\tau_1 \le \tau_2 \le \cdots$で決まる．内側にあるのは，$\tau_1$から$\tau_2$の間，$\tau_3$から$\tau_4$の間，というように，奇数番目から次の偶数番目の間である．この規則は，偶奇規則と呼ばれる．
+
+直線の上の点から，どちらかの向きに進んで，境界をまたいだ回数が奇数なら内側，偶数なら外側である．自分自身と交わらない多角形では，これは，Jordanの曲線定理から従う．自分自身と交わる多角形でも，規則は，そのまま使える．
+
+### 頂点が線に乗るとき
+
+多角形の頂点が，ちょうど直線の上に乗ると，またいだ回数の数え方が難しくなる．そこで，各頂点に$\sigma_i$を割り当てる．$\boldsymbol{n} \cdot \boldsymbol{p}_i > c$なら$\sigma_i = 1$，そうでなければ$\sigma_i = 0$とする．そして，$\sigma$が変わる辺だけを数える．
 
 <Proposition id="even-crossings" name="またぐ回数は偶数">
 
@@ -311,12 +651,27 @@ $\sigma_i$は，$0$と$1$の値を取る．$\sigma$が変わるたびに，値�
 
 </Proof>
 
+この数え方には，別の見方がある．頂点が線に乗る場合は，線をわずかに上へずらして，頂点が線の下にあるとみなした数え方と，一致する．どの頂点も線に乗らない，一般の位置の線の数え方なので，偶奇規則が，そのまま成り立つ．ずらした線は，もとの線と，見た目では区別できない．
+
 この数え方では，頂点が直線に触れるだけの場合，数えた回数が0か2になり，長さのない区間になる．そのような区間は，捨てる．また，多角形が自分自身と交わっていても，交点の数が偶数になるので，区間の組が必ず決まる．2つのグラフが交わる範囲でも，挟まれた部分が，すべて埋まる．
+
+### 図の枠で切る
+
+線や多角形は，図の長方形の枠で切り取る．線分$\boldsymbol{p} + t\boldsymbol{v}\ (0 \le t \le 1)$が，枠の4つの辺の内側に入る条件は，それぞれ$t$の一次不等式になる．
+
+$$
+x_{\min} \le p_x + t v_x \le x_{\max}, \qquad y_{\min} \le p_y + t v_y \le y_{\max}
+$$
+
+各不等式の解は，$t$の区間である．4つの区間と$[0, 1]$の共通部分は，やはり区間になる．したがって，1本の線分は，切ると，高々1本の線分になる．折れ線は，辺ごとに切る．この方法は，Liang–Barskyの方法と呼ばれる．
+
+多角形の内側を塗るときは，枠の辺を1本ずつ順に使う．各辺について，多角形の頂点のうち，辺の内側の点を残し，辺をまたぐ線分には，辺の上の交点を加える．長方形は凸なので，4本の辺で順に切った結果は，多角形と枠の交わりになる．この方法は，Sutherland–Hodgmanの方法と呼ばれる．
 
 ## まとめ
 
-- 平行投影は，線形写像である．重心座標が保たれるので，隠れ方の判定は，画面の上の三角形の包含と，奥行きの補間になる．
+- 平行投影は，回転の最初の2成分を取る線形写像である．重心座標が保たれるので，隠れ方の判定は，画面の上の三角形の包含と，奥行きの補間になる．画面を格子に区切ると，判定の結果を変えずに，速くなる．
+- 輪郭は，投影が折り返す所であり，$\boldsymbol{n} \cdot \boldsymbol{d} = 0$で表せる．
 - 輪郭，切り口，交線は，いずれも，連続関数の零点の集合である．三角形の網の上では，一次関数の零点を結んで求める．
-- 網から求めた曲線は，Newton法で，厳密な式の上へ動かす．解の集合への最短の動きは，$-J^{\mathsf{T}}(JJ^{\mathsf{T}})^{-1}\mathbf{F}$である．
+- 網から求めた曲線は，Newton法で，厳密な式の上へ動かす．解の集合への最短の動きは，$-J^{\mathsf{T}}(JJ^{\mathsf{T}})^{-1}\boldsymbol{F}$であり，残差は2乗のオーダーで小さくなる．
 - 点の配置は，矢高が$\kappa \ell^2/8$で決まるので，曲がりの強い所だけ密にすればよい．
 - 領域の斜線は，直線と多角形の交点を並べ，2つずつ組にして引く．頂点の数え方を決めておくと，交点の数が偶数になる．

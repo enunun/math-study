@@ -7,12 +7,23 @@ const DEV_PAGES = [
   ['図のシーンの確認', 'dev/figure-scene/'],
   ['最初の図', 'dev/figure-first/'],
   ['空間の図', 'dev/figure-space/'],
-  ['図を描く数学', 'dev/figure-algorithms/'],
   ['記事の見本', 'dev/continuity/'],
   ['参照先の見本', 'dev/abs/'],
 ] as const;
 
+const ARTICLES = [['図を描く数学', 'dev/figure-algorithms/']] as const;
+
 test.describe('トップページ', () => {
+  for (const [title, path] of ARTICLES) {
+    test(`解説「${title}」へのリンクから，${path}を開ける`, async ({ page }) => {
+      await page.goto('');
+      await expect(page.getByRole('heading', { name: '解説' })).toBeVisible();
+      await page.getByRole('link', { name: new RegExp(title, 'u') }).click();
+      await expect(page).toHaveURL(new RegExp(`/${path}$`, 'u'));
+      await expect(page.locator('h1')).toBeVisible();
+    });
+  }
+
   for (const [title, path] of DEV_PAGES) {
     test(`「${title}」へのリンクから，${path}を開ける`, async ({ page }) => {
       await page.goto('');
