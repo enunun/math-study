@@ -19,6 +19,8 @@ use figure::{Scene, parse_scene};
 const SINE_AND_SHIFTED_SINE: &str =
     include_str!("../../../site/src/figures/sine-and-shifted-sine.json");
 const GOLDEN: &str = "tests/golden/sine-and-shifted-sine.tikz";
+const SPHERE_WITH_AXES: &str = include_str!("../../../site/src/figures/sphere-with-axes.json");
+const SPHERE_GOLDEN: &str = "tests/golden/sphere-with-axes.tikz";
 
 fn scene(json: &str) -> Scene {
     parse_scene(json).expect("シーンを読める")
@@ -36,10 +38,9 @@ fn scene_with(objects: &str) -> String {
     )
 }
 
-#[test]
-fn 最初の図は期待する出力と一致する() {
-    let actual = tikz_of(SINE_AND_SHIFTED_SINE);
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(GOLDEN);
+fn assert_golden(json: &str, golden: &str) {
+    let actual = tikz_of(json);
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(golden);
     if std::env::var_os("UPDATE_GOLDEN").is_some() {
         fs::write(&path, &actual).expect("期待する出力を書ける");
     }
@@ -48,6 +49,23 @@ fn 最初の図は期待する出力と一致する() {
         actual, expected,
         "出力が変わった．意図した変更なら，UPDATE_GOLDEN=1で作り直す"
     );
+}
+
+#[test]
+fn 最初の図は期待する出力と一致する() {
+    assert_golden(SINE_AND_SHIFTED_SINE, GOLDEN);
+}
+
+#[test]
+fn 空間の図は期待する出力と一致する() {
+    assert_golden(SPHERE_WITH_AXES, SPHERE_GOLDEN);
+}
+
+#[test]
+fn 空間の図の隠れた線は_点線になる() {
+    let output = tikz_of(SPHERE_WITH_AXES);
+    assert_eq!(output.matches("dotted").count(), 3, "{output}");
+    assert!(output.contains("-{Stealth}"));
 }
 
 #[test]

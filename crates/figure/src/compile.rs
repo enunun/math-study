@@ -3,9 +3,7 @@
 use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, is_reserved_name};
 use crate::scene::{Bound, Curve, Graph, Object, Scene};
-
-/// 曲線の式の数．平面の曲線は，2個である．
-const CURVE_EXPRESSIONS: usize = 2;
+use crate::validate::curve_expressions;
 
 /// 式を読んだ後の，グラフ．
 pub struct GraphPlot {
@@ -17,8 +15,8 @@ pub struct GraphPlot {
 
 /// 式を読んだ後の，媒介変数表示の曲線．
 pub struct CurvePlot {
-    /// x座標とy座標の式．名前の順は，変数，媒介変数である．
-    pub exprs: [Expr; 2],
+    /// 各座標の式(平面では2個，空間では3個)．名前の順は，変数，媒介変数である．
+    pub exprs: Vec<Expr>,
     /// 評価した媒介変数の範囲．
     pub domain: [f64; 2],
 }
@@ -64,20 +62,27 @@ pub fn compile(scene: &Scene) -> Result<Compiled, Error> {
     let plots = scene
         .objects
         .iter()
-        .map(|object| compile_object(object, &names, &parameters))
+        .map(|object| compile_object(object, &names, &parameters, curve_expressions(&scene.view)))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(Compiled { parameters, plots })
 }
 
-fn compile_object(object: &Object, names: &[&str], parameters: &[f64]) -> Result<Plot, Error> {
+fn compile_object(
+    object: &Object,
+    names: &[&str],
+    parameters: &[f64],
+    curve_size: usize,
+) -> Result<Plot, Error> {
     match object {
         Object::Graph(graph) => compile_graph(graph, names, parameters)
             .map(Plot::Graph)
             .map_err(|kind| Error::in_object(&graph.id, kind)),
-        Object::Curve(curve) => compile_curve(curve, names, parameters)
+        Object::Curve(curve) => compile_curve(curve, names, parameters, curve_size)
             .map(Plot::Curve)
             .map_err(|kind| Error::in_object(&curve.id, kind)),
-        Object::Axis(_) | Object::Label(_) | Object::Parameter(_) => Ok(Plot::None),
+        Object::Axis(_) | Object::Label(_) | Object::Parameter(_) | Object::Sphere(_) => {
+            Ok(Plot::None)
+        }
     }
 }
 
@@ -120,6 +125,7 @@ fn compile_curve(
     curve: &Curve,
     names: &[&str],
     parameters: &[f64],
+    size: usize,
 ) -> Result<CurvePlot, ErrorKind> {
     let with_var = expression_names(&curve.var, names)?;
     let exprs = curve
@@ -128,12 +134,12 @@ fn compile_curve(
         .enumerate()
         .map(|(index, source)| compile_expr("expr", index, source, &with_var))
         .collect::<Result<Vec<_>, _>>()?;
-    let found = exprs.len();
-    let exprs =
-        <[Expr; CURVE_EXPRESSIONS]>::try_from(exprs).map_err(|_| ErrorKind::ExpressionCount {
-            expected: CURVE_EXPRESSIONS,
-            found,
-        })?;
+    if exprs.len() != size {
+        return Err(ErrorKind::ExpressionCount {
+            expected: size,
+            found: exprs.len(),
+        });
+    }
     let domain = evaluate_domain(&curve.domain, names, parameters)?;
     Ok(CurvePlot { exprs, domain })
 }

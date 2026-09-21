@@ -76,6 +76,21 @@ Known limits, the first things to extend:
 - The label font is the MathJax font, not the document font of the TikZ output.
 - Colours and line widths are not yet settable in the scene.
 
+## Minimal 3D figure (in progress)
+
+The 3D design is tried on one small figure before the 2D extensions continue: `s0905sphere`, a sphere of radius 2 with the three axes through it. The sample shows the parts of the 3D requirements at once: the silhouette circle, axes that are dotted where the sphere hides them, and axes that break where they meet the surface. The sphere is an exact shape (`type: "sphere"`), so visibility is a closed-form ray test. General parametric surfaces (a mesh, and outlines from the normal) come later, with the sphere as the reference to check them against.
+
+Measured from the sample image (`s0905spherefig.jpg`): the projection is parallel (a radius-2 sphere is a circle of the same radius as 2 units on the axes), and the view matches an azimuth of about 64° and an elevation of about 22°, in the convention below. The `x` axis leaves to the lower left, `y` to the lower right, `z` up. Labels sit beyond the positive ends. Each axis is one line through the origin, from -5 to 5.
+
+Decisions for the minimal figure (the feedback on the drawn figure may change them):
+
+- The engine version stays 0.1.0. The new fields are additive, and no scene has been published.
+- `view` is either a plane view (`x`, `y`, `unit` with two lengths, as before) or a space view: `azimuth` and `elevation` in degrees and `unit`, one length for all three axes. The camera is in the direction `(cos e cos a, cos e sin a, sin e)` from the origin, looking at it. The screen's right is `(-sin a, cos a, 0)` and its up is `(-sin e cos a, -sin e sin a, cos e)`, so `x` comes toward the viewer at azimuth 0 and elevation 0, with `y` to the right and `z` up. A space figure has no visible range: the bounds are those of the drawn items.
+- An object type belongs to one kind of view. `graph` and `label` are plane objects (a space label needs a 3D position, which comes later), `sphere` is a space object, `axis` and `curve` are both, and `parameter` is both. A space `axis` needs `range`; `direction` may be `z` only in a space view. A space `curve` has three expressions.
+- `style` gets `hidden`: `dotted` (default), `dashed`, or `none` (not drawn), the style of the parts an opaque surface hides. An `axis` gets `style` for it.
+- A point is hidden when the ray from it toward the camera meets a sphere at a positive distance; a point inside a sphere is hidden. The switch points between visible and hidden pieces are refined by bisection.
+- The IR does not change: it is still 2D paths and labels, so SVG and TikZ need no change.
+
 ## Scene rules
 
 - The scene holds inputs only: points, parameters, expressions, and styles. Nothing computed is stored.

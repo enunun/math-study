@@ -41,10 +41,11 @@ fn 最初の図のファイルを読める() {
         scene.description,
         "y=sin x のグラフと，x軸の方向に平行移動した点線のグラフ"
     );
-    assert_eq!(scene.view.x, [-7.0, 7.0]);
-    assert_eq!(scene.view.y, [-1.6, 1.8]);
+    let view = scene.view.as_plane().expect("平面の図");
+    assert_eq!(view.x, [-7.0, 7.0]);
+    assert_eq!(view.y, [-1.6, 1.8]);
     assert_eq!(
-        scene.view.unit.y,
+        view.unit.y,
         Length {
             value: 2.0,
             unit: LengthUnit::Cm
@@ -153,15 +154,16 @@ fn 長さは数と単位から読む() {
              "objects": [] }"#,
     )
     .expect("読める");
+    let view = scene.view.as_plane().expect("平面の図");
     assert_eq!(
-        scene.view.unit.x,
+        view.unit.x,
         Length {
             value: 2.5,
             unit: LengthUnit::Mm
         }
     );
     assert_eq!(
-        scene.view.unit.y,
+        view.unit.y,
         Length {
             value: 10.0,
             unit: LengthUnit::Pt

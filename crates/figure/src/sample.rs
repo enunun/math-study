@@ -8,6 +8,9 @@
 /// 標本の点．座標の単位は，cmである．
 pub type Point = [f64; 2];
 
+/// パラメータの値と，その点．
+pub type Sample = (f64, Point);
+
 /// 最初に必ず割る深さ(2の累乗で，16等分)．
 const MIN_DEPTH: u32 = 4;
 /// 割る深さの上限．
@@ -19,8 +22,20 @@ const MAX_COORDINATE: f64 = 300.0;
 
 /// 曲線を標本化する．`f`は，パラメータの値から点を返し，定義域の外や有限でない値では`None`を返す．
 /// `None`のところで，線を切る．点が2つに満たない線は捨てる．
-pub fn sample(mut f: impl FnMut(f64) -> Option<Point>, start: f64, end: f64) -> Vec<Vec<Point>> {
-    let mut eval = |t: f64| f(t).filter(usable);
+pub fn sample(f: impl FnMut(f64) -> Option<Point>, start: f64, end: f64) -> Vec<Vec<Point>> {
+    sample_with_parameters(f, start, end)
+        .into_iter()
+        .map(|path| path.into_iter().map(|(_, point)| point).collect())
+        .collect()
+}
+
+/// `sample`と同じ点を，パラメータの値つきで返す．空間の曲線で，隠れる部分の切り替わりを探すために使う．
+pub fn sample_with_parameters(
+    mut f: impl FnMut(f64) -> Option<Point>,
+    start: f64,
+    end: f64,
+) -> Vec<Vec<Sample>> {
+    let mut eval = |t: f64| f(t).filter(usable).map(|point| (t, point));
     let ends = [eval(start), eval(end)];
     let mut paths = Paths::default();
     paths.push(ends[0]);
@@ -37,13 +52,13 @@ fn usable(point: &Point) -> bool {
 /// 切れ目で分かれる，点の列の集まり．
 #[derive(Default)]
 struct Paths {
-    finished: Vec<Vec<Point>>,
-    current: Vec<Point>,
+    finished: Vec<Vec<Sample>>,
+    current: Vec<Sample>,
 }
 
 impl Paths {
     /// 点を続ける．`None`は，線の切れ目である．
-    fn push(&mut self, point: Option<Point>) {
+    fn push(&mut self, point: Option<Sample>) {
         match point {
             Some(point) => self.current.push(point),
             None => self.flush(),
@@ -57,17 +72,17 @@ impl Paths {
         }
     }
 
-    fn finish(mut self) -> Vec<Vec<Point>> {
+    fn finish(mut self) -> Vec<Vec<Sample>> {
         self.flush();
         self.finished
     }
 }
 
 /// 区間の始まりの点は出力済みとして，区間の内側の点と，終わりの点を出力する．
-fn segment<F: FnMut(f64) -> Option<Point>>(
+fn segment<F: FnMut(f64) -> Option<Sample>>(
     eval: &mut F,
     [start, end]: [f64; 2],
-    [first, last]: [Option<Point>; 2],
+    [first, last]: [Option<Sample>; 2],
     depth: u32,
     paths: &mut Paths,
 ) {
@@ -91,11 +106,11 @@ fn segment<F: FnMut(f64) -> Option<Point>>(
 }
 
 /// 区間の端，中点，4分の1の点，4分の3の点が，弦から許容の距離に収まっているか．
-fn is_flat<F: FnMut(f64) -> Option<Point>>(
+fn is_flat<F: FnMut(f64) -> Option<Sample>>(
     eval: &mut F,
     [start, end]: [f64; 2],
-    [first, last]: [Option<Point>; 2],
-    middle: Option<Point>,
+    [first, last]: [Option<Sample>; 2],
+    middle: Option<Sample>,
 ) -> bool {
     let (Some(first), Some(last), Some(middle)) = (first, last, middle) else {
         return false;
@@ -105,7 +120,9 @@ fn is_flat<F: FnMut(f64) -> Option<Point>>(
     let three_quarters = eval(f64::midpoint(middle_t, end));
     [quarter, Some(middle), three_quarters]
         .into_iter()
-        .all(|point| point.is_some_and(|point| distance_to_chord(point, first, last) <= TOLERANCE))
+        .all(|sample| {
+            sample.is_some_and(|(_, point)| distance_to_chord(point, first.1, last.1) <= TOLERANCE)
+        })
 }
 
 /// 点から，弦(2点を結ぶ線分を延ばした直線)までの距離．弦が点に縮んでいるときは，その点までの距離．

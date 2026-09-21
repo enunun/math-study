@@ -4,10 +4,12 @@ use std::collections::HashSet;
 
 use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
-use crate::scene::{Axis, Bound, Curve, Graph, Label, Object, Scene};
+use crate::scene::{
+    Axis, Bound, Curve, Direction, Graph, Label, Object, Scene, SpaceView, Sphere, View,
+};
 
-/// 曲線の式の数．平面の曲線は，2個である．
-const CURVE_EXPRESSIONS: usize = 2;
+/// 仰角の絶対値の上限(度)．
+const MAX_ELEVATION: f64 = 90.0;
 
 /// シーンを検査する．
 ///
@@ -19,8 +21,7 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
     if is_blank(&scene.description) {
         return Err(Error::new(ErrorKind::EmptyText("description")));
     }
-    check_view_range("view.x", scene.view.x)?;
-    check_view_range("view.y", scene.view.y)?;
+    check_view(&scene.view)?;
     let mut seen = HashSet::new();
     for object in &scene.objects {
         let id = object.id();
@@ -30,25 +31,53 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
         if !seen.insert(id) {
             return Err(Error::in_object(id, ErrorKind::DuplicateId(id.to_owned())));
         }
-        validate_object(object).map_err(|kind| Error::in_object(id, kind))?;
+        validate_object(object, &scene.view).map_err(|kind| Error::in_object(id, kind))?;
     }
     // 式の構文，名前，定義域は，型では確かめられないので，式を読んで確かめる．
     compile(scene).map(drop)
 }
 
-fn validate_object(object: &Object) -> Result<(), ErrorKind> {
+fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
     match object {
-        Object::Axis(axis) => validate_axis(axis),
-        Object::Label(label) => validate_label(label),
-        Object::Graph(graph) => validate_graph(graph),
-        Object::Curve(curve) => validate_curve(curve),
+        Object::Axis(axis) => validate_axis(axis, view),
+        Object::Label(label) => plane_only("label", view).and_then(|()| validate_label(label)),
+        Object::Graph(graph) => plane_only("graph", view).and_then(|()| validate_graph(graph)),
+        Object::Curve(curve) => validate_curve(curve, view),
+        Object::Sphere(sphere) => space_only("sphere", view).and_then(|()| validate_sphere(sphere)),
         Object::Parameter(_) => Ok(()),
     }
 }
 
-fn validate_axis(axis: &Axis) -> Result<(), ErrorKind> {
-    match axis.range {
-        Some(range) if !is_increasing(range) => Err(ErrorKind::InvalidRange("range")),
+/// 平面の図でだけ使えるオブジェクトを，空間の図に置いていないか．
+fn plane_only(type_name: &str, view: &View) -> Result<(), ErrorKind> {
+    match view {
+        View::Plane(_) => Ok(()),
+        View::Space(_) => Err(ErrorKind::Invalid(format!(
+            "「{type_name}」は，空間の図では使えない．平面の図(`view`に`x`，`y`)で使う．"
+        ))),
+    }
+}
+
+/// 空間の図でだけ使えるオブジェクトを，平面の図に置いていないか．
+fn space_only(type_name: &str, view: &View) -> Result<(), ErrorKind> {
+    match view {
+        View::Space(_) => Ok(()),
+        View::Plane(_) => Err(ErrorKind::Invalid(format!(
+            "「{type_name}」は，平面の図では使えない．空間の図(`view`に`azimuth`，`elevation`)で使う．"
+        ))),
+    }
+}
+
+fn validate_axis(axis: &Axis, view: &View) -> Result<(), ErrorKind> {
+    match (view, axis.direction, axis.range) {
+        (View::Plane(_), Direction::Z, _) => Err(ErrorKind::Invalid(
+            "z軸は，空間の図でだけ使える．平面の図(`view`に`x`，`y`)では，x軸とy軸を使う．"
+                .to_owned(),
+        )),
+        (View::Space(_), _, None) => Err(ErrorKind::Invalid(
+            "空間の図の軸には，`range`が必要である．".to_owned(),
+        )),
+        (_, _, Some(range)) if !is_increasing(range) => Err(ErrorKind::InvalidRange("range")),
         _ => Ok(()),
     }
 }
@@ -63,11 +92,22 @@ fn validate_graph(graph: &Graph) -> Result<(), ErrorKind> {
     check_domain(&graph.domain)
 }
 
-fn validate_curve(curve: &Curve) -> Result<(), ErrorKind> {
+fn validate_sphere(sphere: &Sphere) -> Result<(), ErrorKind> {
+    if sphere.radius.is_finite() && sphere.radius > 0.0 {
+        Ok(())
+    } else {
+        Err(ErrorKind::Invalid(
+            "`radius`は，正の有限の数にする．".to_owned(),
+        ))
+    }
+}
+
+fn validate_curve(curve: &Curve, view: &View) -> Result<(), ErrorKind> {
     check_variable(&curve.var)?;
-    if curve.expr.len() != CURVE_EXPRESSIONS {
+    let expected = curve_expressions(view);
+    if curve.expr.len() != expected {
         return Err(ErrorKind::ExpressionCount {
-            expected: CURVE_EXPRESSIONS,
+            expected,
             found: curve.expr.len(),
         });
     }
@@ -75,6 +115,39 @@ fn validate_curve(curve: &Curve) -> Result<(), ErrorKind> {
         non_empty("expr", expr)?;
     }
     check_domain(&curve.domain)
+}
+
+/// 曲線の式の数．平面の曲線は2個，空間の曲線は3個である．
+pub const fn curve_expressions(view: &View) -> usize {
+    match view {
+        View::Plane(_) => 2,
+        View::Space(_) => 3,
+    }
+}
+
+fn check_view(view: &View) -> Result<(), Error> {
+    match view {
+        View::Plane(plane) => {
+            check_view_range("view.x", plane.x)?;
+            check_view_range("view.y", plane.y)
+        }
+        View::Space(space) => check_space_view(space),
+    }
+}
+
+fn check_space_view(view: &SpaceView) -> Result<(), Error> {
+    let elevation_ok = view.elevation.is_finite() && view.elevation.abs() <= MAX_ELEVATION;
+    if !elevation_ok {
+        return Err(Error::new(ErrorKind::Invalid(
+            "`elevation`は，-90以上90以下の度数で書く．".to_owned(),
+        )));
+    }
+    if !view.azimuth.is_finite() {
+        return Err(Error::new(ErrorKind::Invalid(
+            "`azimuth`は，有限の度数で書く．".to_owned(),
+        )));
+    }
+    Ok(())
 }
 
 fn check_view_range(field: &'static str, range: [f64; 2]) -> Result<(), Error> {

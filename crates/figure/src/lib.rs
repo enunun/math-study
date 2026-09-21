@@ -22,6 +22,7 @@ mod parse;
 mod render;
 pub mod sample;
 pub mod scene;
+mod space;
 pub mod tikz;
 mod validate;
 pub mod version;

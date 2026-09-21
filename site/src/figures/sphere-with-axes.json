@@ -1,0 +1,11 @@
+{
+  "version": "0.1.0",
+  "description": "半径2の球と，球を通る3本の座標軸．球に隠れた軸の部分は点線で描く．",
+  "view": { "azimuth": 60, "elevation": 20, "unit": "0.5cm" },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "range": [-5, 5], "label": "x" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "range": [-5, 5], "label": "y" },
+    { "id": "z_axis", "type": "axis", "direction": "z", "range": [-5, 5], "label": "z" },
+    { "id": "ball", "type": "sphere", "center": [0, 0, 0], "radius": 2 }
+  ]
+}

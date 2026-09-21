@@ -7,7 +7,7 @@
     clippy::expect_used
 )]
 
-use figure::sample::sample;
+use figure::sample::{sample, sample_with_parameters};
 
 const SY: f64 = 2.0;
 const TOLERANCE_WITH_SLACK: f64 = 0.004;
@@ -131,4 +131,30 @@ fn 同じ入力は同じ結果になる() {
 fn 一点だけの線は捨てる() {
     let paths = sample(|x| (x == 0.0).then_some([x, 0.0]), 0.0, 1.0);
     assert!(paths.is_empty());
+}
+
+#[test]
+fn 点にパラメータの値を添えて返し_点は関数の値と一致する() {
+    let curve = |t: f64| [t.cos() * 3.0, t.sin() * 3.0];
+    let paths = sample_with_parameters(|t| Some(curve(t)), 0.0, std::f64::consts::TAU);
+    assert_eq!(paths.len(), 1);
+    let path = &paths[0];
+    assert_eq!(path[0].0, 0.0);
+    assert_eq!(path.last().unwrap().0, std::f64::consts::TAU);
+    for (t, point) in path {
+        assert_eq!(*point, curve(*t));
+    }
+    // パラメータは，増える．
+    assert!(path.windows(2).all(|pair| pair[0].0 < pair[1].0));
+}
+
+#[test]
+fn パラメータつきの標本化は_点だけの標本化と同じ点を返す() {
+    let with = sample_with_parameters(sine, -7.0, 7.0);
+    let without = sample(sine, -7.0, 7.0);
+    let stripped: Vec<Vec<[f64; 2]>> = with
+        .iter()
+        .map(|path| path.iter().map(|(_, point)| *point).collect())
+        .collect();
+    assert_eq!(stripped, without);
 }

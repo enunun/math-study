@@ -4,7 +4,9 @@ use std::fmt;
 use std::str::FromStr;
 
 use semver::Version;
-use serde::{Deserialize, Serialize};
+use serde::de::Error as _;
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_json::Value;
 
 /// 図のシーン．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -20,16 +22,58 @@ pub struct Scene {
     pub objects: Vec<Object>,
 }
 
-/// 見える範囲と，1単位の実寸．
+/// 図の見え方．平面の図は，見える範囲と1単位の実寸で，空間の図は，見る向きと1単位の実寸で決める．
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(untagged)]
+pub enum View {
+    /// 平面の図．
+    Plane(PlaneView),
+    /// 空間の図．
+    Space(SpaceView),
+}
+
+/// 平面の図の，見える範囲と，1単位の実寸．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct View {
+pub struct PlaneView {
     /// x方向の範囲．
     pub x: [f64; 2],
     /// y方向の範囲．
     pub y: [f64; 2],
     /// 1単位の実寸．
     pub unit: Unit,
+}
+
+/// 空間の図の，見る向きと，1単位の実寸．平行投影で，見える範囲は，描いたものから決まる．
+///
+/// カメラは，原点から`(cos e cos a, cos e sin a, sin e)`の向き(`a`は方位角，`e`は仰角)にあり，原点を見る．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpaceView {
+    /// 方位角(度)．z軸のまわりに，x軸からy軸の向きに測る．
+    pub azimuth: f64,
+    /// 仰角(度)．xy平面から上向きに測る．
+    pub elevation: f64,
+    /// 3方向共通の，1単位の実寸．
+    pub unit: Length,
+}
+
+impl<'de> Deserialize<'de> for View {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = Value::deserialize(deserializer)?;
+        let has = |names: [&str; 2]| names.iter().any(|name| value.get(name).is_some());
+        match (has(["x", "y"]), has(["azimuth", "elevation"])) {
+            (true, false) => serde_json::from_value(value)
+                .map(Self::Plane)
+                .map_err(D::Error::custom),
+            (false, true) => serde_json::from_value(value)
+                .map(Self::Space)
+                .map_err(D::Error::custom),
+            _ => Err(D::Error::custom(
+                "`view`は，平面の図(`x`，`y`，`unit`)か，空間の図(`azimuth`，`elevation`，`unit`)のどちらかの形で書く．",
+            )),
+        }
+    }
 }
 
 /// 各方向の，1単位の実寸．
@@ -80,6 +124,8 @@ pub enum Object {
     Graph(Graph),
     /// 媒介変数表示の曲線．
     Curve(Curve),
+    /// 球．空間の図でだけ使える．
+    Sphere(Sphere),
 }
 
 /// 軸の向き．
@@ -90,6 +136,8 @@ pub enum Direction {
     X,
     /// y軸．
     Y,
+    /// z軸．空間の図でだけ使える．
+    Z,
 }
 
 /// 矢じりの形．
@@ -117,9 +165,12 @@ pub struct Axis {
     /// 軸の名前の式．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
-    /// 軸を引く範囲．なければ，見える範囲．
+    /// 軸を引く範囲．平面の図では，なければ見える範囲．空間の図では，必要である．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub range: Option<[f64; 2]>,
+    /// スタイル．空間の図で，隠れた部分の線に使う．
+    #[serde(default)]
+    pub style: Style,
 }
 
 /// ラベルの位置の基準．TikZのアンカーと同じ名前を使う．
@@ -203,12 +254,42 @@ pub enum Line {
     Dashed,
 }
 
+/// 不透明な面に隠れた部分の線．
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Hidden {
+    /// 点線．
+    #[default]
+    Dotted,
+    /// 破線．
+    Dashed,
+    /// 描かない．
+    None,
+}
+
 /// 線のスタイル．
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, default)]
 pub struct Style {
     /// 線の種類．
     pub line: Line,
+    /// 隠れた部分の線．
+    pub hidden: Hidden,
+}
+
+/// 球．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Sphere {
+    /// 識別子．
+    pub id: String,
+    /// 中心の座標．
+    pub center: [f64; 3],
+    /// 半径．
+    pub radius: f64,
+    /// スタイル．輪郭線の種類に使う．
+    #[serde(default)]
+    pub style: Style,
 }
 
 /// 関数のグラフ．
@@ -255,6 +336,7 @@ impl Object {
             Self::Parameter(o) => &o.id,
             Self::Graph(o) => &o.id,
             Self::Curve(o) => &o.id,
+            Self::Sphere(o) => &o.id,
         }
     }
 
@@ -267,6 +349,18 @@ impl Object {
             Self::Parameter(_) => "parameter",
             Self::Graph(_) => "graph",
             Self::Curve(_) => "curve",
+            Self::Sphere(_) => "sphere",
+        }
+    }
+}
+
+impl View {
+    /// 平面の図の見え方．空間の図なら`None`．
+    #[must_use]
+    pub const fn as_plane(&self) -> Option<&PlaneView> {
+        match self {
+            Self::Plane(view) => Some(view),
+            Self::Space(_) => None,
         }
     }
 }

@@ -5,14 +5,17 @@ use crate::compile::{Compiled, Plot, compile};
 use crate::error::Error;
 use crate::figure::{ArrowHead, Bounds, Figure, Item, LabelItem, Path, Stroke};
 use crate::sample::sample;
-use crate::scene::{Anchor, Arrow, Axis, CM_PER_PT, Direction, Label, Line, Object, Scene, Style};
+use crate::scene::{
+    Anchor, Arrow, Axis, CM_PER_PT, Direction, Label, Line, Object, PlaneView, Scene, Style, View,
+};
+use crate::space::render_space;
 
 /// 軸の線幅(pt)．`TikZ`の`semithick`である．
-const AXIS_WIDTH: f64 = 0.6;
+pub const AXIS_WIDTH: f64 = 0.6;
 /// 曲線の線幅(pt)．`TikZ`の`thick`である．
-const CURVE_WIDTH: f64 = 0.8;
+pub const CURVE_WIDTH: f64 = 0.8;
 /// 見える範囲の外側に足す余白(cm)．軸の名前が，範囲の端の外に出る分である．
-const MARGIN: f64 = 0.6;
+pub const MARGIN: f64 = 0.6;
 
 /// 数学の座標から，cmの座標への倍率．
 #[derive(Clone, Copy)]
@@ -34,35 +37,42 @@ impl Scale {
 /// 式の誤りがあると，誤りを返す．
 pub fn render(scene: &Scene) -> Result<Figure, Error> {
     let compiled = compile(scene)?;
+    match &scene.view {
+        View::Plane(view) => Ok(render_plane(scene, view, &compiled)),
+        View::Space(view) => Ok(render_space(scene, view, &compiled)),
+    }
+}
+
+fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Figure {
     let scale = Scale {
-        x: scene.view.unit.x.to_cm(),
-        y: scene.view.unit.y.to_cm(),
+        x: view.unit.x.to_cm(),
+        y: view.unit.y.to_cm(),
     };
     let mut items = Vec::new();
     for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
         match object {
-            Object::Axis(axis) => items.extend(axis_items(axis, scene, scale)),
+            Object::Axis(axis) => items.extend(axis_items(axis, view, scale)),
             Object::Label(label) => items.push(Item::Label(label_item(label, scale))),
             Object::Graph(_) | Object::Curve(_) => {
-                items.extend(plot_items(object, plot, &compiled, scale));
+                items.extend(plot_items(object, plot, compiled, scale));
             }
-            Object::Parameter(_) => {}
+            Object::Parameter(_) | Object::Sphere(_) => {}
         }
     }
-    Ok(Figure {
+    Figure {
         description: scene.description.clone(),
         bounds: Bounds {
             min: {
-                let [x, y] = scale.point(scene.view.x[0], scene.view.y[0]);
+                let [x, y] = scale.point(view.x[0], view.y[0]);
                 [x - MARGIN, y - MARGIN]
             },
             max: {
-                let [x, y] = scale.point(scene.view.x[1], scene.view.y[1]);
+                let [x, y] = scale.point(view.x[1], view.y[1]);
                 [x + MARGIN, y + MARGIN]
             },
         },
         items,
-    })
+    }
 }
 
 fn label_item(label: &Label, scale: Scale) -> LabelItem {
@@ -74,10 +84,10 @@ fn label_item(label: &Label, scale: Scale) -> LabelItem {
 }
 
 /// 軸の線と，先端の矢じり，軸の名前．
-fn axis_items(axis: &Axis, scene: &Scene, scale: Scale) -> Vec<Item> {
+fn axis_items(axis: &Axis, view: &PlaneView, scale: Scale) -> Vec<Item> {
     let (start, end, direction, anchor) = match axis.direction {
         Direction::X => {
-            let [low, high] = axis.range.unwrap_or(scene.view.x);
+            let [low, high] = axis.range.unwrap_or(view.x);
             (
                 scale.point(low, 0.0),
                 scale.point(high, 0.0),
@@ -86,7 +96,7 @@ fn axis_items(axis: &Axis, scene: &Scene, scale: Scale) -> Vec<Item> {
             )
         }
         Direction::Y => {
-            let [low, high] = axis.range.unwrap_or(scene.view.y);
+            let [low, high] = axis.range.unwrap_or(view.y);
             (
                 scale.point(0.0, low),
                 scale.point(0.0, high),
@@ -94,8 +104,30 @@ fn axis_items(axis: &Axis, scene: &Scene, scale: Scale) -> Vec<Item> {
                 Anchor::South,
             )
         }
+        // z軸は，空間の図でだけ使える．検査で，平面の図から除かれている．
+        Direction::Z => return Vec::new(),
     };
-    let arrow = match axis.arrow {
+    let mut items = vec![Item::Path(Path {
+        points: vec![start, end],
+        stroke: Stroke {
+            line: Line::Solid,
+            width: AXIS_WIDTH,
+        },
+        arrow: arrow_head(axis.arrow, end, direction),
+    })];
+    if let Some(text) = &axis.label {
+        items.push(Item::Label(LabelItem {
+            at: end,
+            anchor,
+            tex: format!("${text}$"),
+        }));
+    }
+    items
+}
+
+/// 軸の端`end`に，向き`direction`(単位ベクトル)の矢じりを付ける．矢じりなしなら`None`．
+pub fn arrow_head(arrow: Arrow, end: [f64; 2], direction: [f64; 2]) -> Option<ArrowHead> {
+    match arrow {
         Arrow::Stealth => {
             let stealth = Stealth::new(AXIS_WIDTH);
             let placed = stealth.place(end, direction, CM_PER_PT);
@@ -107,23 +139,7 @@ fn axis_items(axis: &Axis, scene: &Scene, scale: Scale) -> Vec<Item> {
             })
         }
         Arrow::None => None,
-    };
-    let mut items = vec![Item::Path(Path {
-        points: vec![start, end],
-        stroke: Stroke {
-            line: Line::Solid,
-            width: AXIS_WIDTH,
-        },
-        arrow,
-    })];
-    if let Some(text) = &axis.label {
-        items.push(Item::Label(LabelItem {
-            at: end,
-            anchor,
-            tex: format!("${text}$"),
-        }));
     }
-    items
 }
 
 /// グラフや曲線を標本化した，折れ線．線が切れると，折れ線が分かれる．
@@ -146,7 +162,9 @@ fn plot_items(object: &Object, plot: &Plot, compiled: &Compiled, scale: Scale) -
             let paths = sample(
                 |t| {
                     let values = with_variable(t, &compiled.parameters);
-                    let [x_expr, y_expr] = &plot.exprs;
+                    let [x_expr, y_expr] = plot.exprs.as_slice() else {
+                        return None;
+                    };
                     Some(scale.point(x_expr.eval(&values), y_expr.eval(&values)))
                 },
                 start,
@@ -174,7 +192,7 @@ fn curve_path(points: Vec<[f64; 2]>, style: Style) -> Path {
 }
 
 /// 変数の値を先頭に，媒介変数の値を続けた，式に渡す値の並び．
-fn with_variable(value: f64, parameters: &[f64]) -> Vec<f64> {
+pub fn with_variable(value: f64, parameters: &[f64]) -> Vec<f64> {
     let mut values = Vec::with_capacity(parameters.len().saturating_add(1));
     values.push(value);
     values.extend_from_slice(parameters);
