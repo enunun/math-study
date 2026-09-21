@@ -1,0 +1,70 @@
+{
+  "version": "0.1.0",
+  "description": "16個の制御点で決まる，3次のベジエ曲面．軸と原点Oとともに，方位角60度，仰角20度で見る．",
+  "view": {
+    "azimuth": 60,
+    "elevation": 20,
+    "unit": "1.25cm"
+  },
+  "objects": [
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "range": [-1, 4.5],
+      "label": "x"
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y",
+      "range": [-1, 4.5],
+      "label": "y"
+    },
+    {
+      "id": "z_axis",
+      "type": "axis",
+      "direction": "z",
+      "range": [-1, 3.5],
+      "label": "z"
+    },
+    {
+      "id": "O",
+      "type": "point",
+      "at": [0, 0, 0],
+      "label": "O",
+      "anchor": "north east"
+    },
+    {
+      "id": "patch",
+      "type": "surface",
+      "boundary": true,
+      "bezier": [
+        [
+          [0, 0, 0.5],
+          [0, 1, 1.2],
+          [0, 2, 2.4],
+          [0, 3, 1]
+        ],
+        [
+          [1, 0, 1.4],
+          [1, 1, 2.2],
+          [1, 2, 0.6],
+          [1, 3, 0.2]
+        ],
+        [
+          [2, 0, 0.6],
+          [2, 1, 0.4],
+          [2, 2, 2.6],
+          [2, 3, 1.8]
+        ],
+        [
+          [3, 0, 0.8],
+          [3, 1, 1.6],
+          [3, 2, 1.4],
+          [3, 3, 0.4]
+        ]
+      ]
+    }
+  ]
+}

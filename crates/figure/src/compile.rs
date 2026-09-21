@@ -83,10 +83,12 @@ pub struct CutPlot {
 
 /// 式を読んだ後の，曲面．
 pub struct SurfacePlot {
-    /// x，y，z座標の式．名前の順は，2つの変数，媒介変数と点の座標である．
+    /// x，y，z座標の式．名前の順は，2つの変数，媒介変数と点の座標である．ベジエ曲面では空である．
     pub exprs: Vec<Expr>,
-    /// 評価した，各変数の範囲．
+    /// 評価した，各変数の範囲．ベジエ曲面では，どちらも0から1である．
     pub domain: [[f64; 2]; 2],
+    /// 評価した，ベジエ曲面の制御点の網．式で書く曲面では`None`である．
+    pub net: Option<Vec<Vec<[f64; 3]>>>,
 }
 
 /// 式を読んだ後の，領域．
@@ -345,6 +347,9 @@ fn compile_surface(
     names: &[&str],
     parameters: &[f64],
 ) -> Result<SurfacePlot, ErrorKind> {
+    if let Some(net) = &surface.bezier {
+        return compile_bezier(net, names, parameters);
+    }
     let [first, second] = surface.vars.as_slice() else {
         return Err(ErrorKind::Invalid(
             "曲面の変数(`vars`)は，2つの名前で書く．".to_owned(),
@@ -368,13 +373,53 @@ fn compile_surface(
         .enumerate()
         .map(|(index, source)| compile_expr("expr", index, source, &with_vars))
         .collect::<Result<Vec<_>, _>>()?;
-    let [u_domain, v_domain] = &surface.domain;
+    let Some([u_domain, v_domain]) = &surface.domain else {
+        return Err(ErrorKind::Invalid(
+            "式で書く曲面には，変数の範囲(`domain`)が要る．".to_owned(),
+        ));
+    };
     Ok(SurfacePlot {
         exprs,
         domain: [
             evaluate_domain(u_domain, names, parameters)?,
             evaluate_domain(v_domain, names, parameters)?,
         ],
+        net: None,
+    })
+}
+
+/// ベジエ曲面の制御点の座標を評価する．座標は，媒介変数と定数を使え，有限の数でなければならない．
+fn compile_bezier(
+    net: &[Vec<Vec<Bound>>],
+    names: &[&str],
+    parameters: &[f64],
+) -> Result<SurfacePlot, ErrorKind> {
+    let evaluated = net
+        .iter()
+        .map(|row| {
+            row.iter()
+                .map(|point| {
+                    let coordinates = point
+                        .iter()
+                        .enumerate()
+                        .map(|(index, bound)| {
+                            evaluate_bound("bezier", bound, index, names, parameters)
+                        })
+                        .collect::<Result<Vec<_>, _>>()?;
+                    match coordinates.as_slice() {
+                        [x, y, z] if coordinates.iter().all(|c| c.is_finite()) => Ok([*x, *y, *z]),
+                        _ => Err(ErrorKind::Invalid(
+                            "ベジエ曲面の制御点の座標は，有限の数にする．".to_owned(),
+                        )),
+                    }
+                })
+                .collect::<Result<Vec<_>, _>>()
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(SurfacePlot {
+        exprs: Vec::new(),
+        domain: [[0.0, 1.0], [0.0, 1.0]],
+        net: Some(evaluated),
     })
 }
 

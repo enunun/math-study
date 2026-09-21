@@ -468,20 +468,28 @@ pub struct Cut {
     pub style: Style,
 }
 
-/// 曲面．2つの変数の式で，空間の点を表す．輪郭と，曲面に隠れる線を，三角形の網から求める．
+/// 曲面．空間の点を，2つの変数の式か，ベジエ曲面の制御点の網で表す．輪郭と，曲面に隠れる線を，三角形の網から求める．
 ///
 /// 曲面は不透明な殻で，ほかのオブジェクトの線を隠す．輪郭は，視線が曲面に接する所である．
+/// 式で書くときは`vars`，`expr`，`domain`を，ベジエ曲面で書くときは`bezier`を使う．両方は書けない．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Surface {
     /// 識別子．
     pub id: String,
-    /// 2つの変数の名前．
+    /// 2つの変数の名前．式で書く曲面だけが持つ．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub vars: Vec<String>,
-    /// x，y，z座標の式．
+    /// x，y，z座標の式．式で書く曲面だけが持つ．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub expr: Vec<String>,
-    /// 各変数の範囲．数か式で書く．
-    pub domain: [[Bound; 2]; 2],
+    /// 各変数の範囲．数か式で書く．式で書く曲面だけが持つ．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domain: Option<[[Bound; 2]; 2]>,
+    /// ベジエ曲面の制御点の網．`bezier[i][j]`は，1つ目の変数の方向にi番目，2つ目の変数の方向にj番目の点で，
+    /// x，y，z座標を，数か式で書く．各方向に2点以上を並べ，行の長さを揃える．変数の範囲は，どちらも0から1である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bezier: Option<Vec<Vec<Vec<Bound>>>>,
     /// 網の細かさ(各変数の方向の分割数)．細かいほど滑らかで，重い．
     #[serde(default = "default_mesh", skip_serializing_if = "is_default_mesh")]
     pub mesh: [usize; 2],
@@ -500,6 +508,10 @@ impl Surface {
     pub const MIN_MESH: usize = 4;
     /// 網の細かさの上限．
     pub const MAX_MESH: usize = 200;
+    /// ベジエ曲面の制御点の数の下限(各方向)．
+    pub const MIN_CONTROL_POINTS: usize = 2;
+    /// ベジエ曲面の制御点の数の上限(各方向)．次数が高いと，制御点の動きが，形に効きにくくなる．
+    pub const MAX_CONTROL_POINTS: usize = 12;
 }
 
 const fn default_mesh() -> [usize; 2] {

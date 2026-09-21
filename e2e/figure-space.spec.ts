@@ -53,6 +53,10 @@ function sixth(page: Page): Locator {
   return page.locator('.figure').nth(5);
 }
 
+function seventh(page: Page): Locator {
+  return page.locator('.figure').nth(6);
+}
+
 function center({ x, y, width, height }: Box): [number, number] {
   return [x + width / 2, y + height / 2];
 }
@@ -61,7 +65,7 @@ test.describe('空間の図', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     // ラベルの数式が描画されるまで待つ．
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(28);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(32);
   });
 
   test('SVGは，画像として説明を持ち，隠れた部分で分かれた線と，輪郭がある', async ({ page }) => {
@@ -240,6 +244,18 @@ test.describe('空間の図', () => {
     }
   });
 
+  test('ベジエ曲面は，縁と輪郭を実線で描き，曲面が隠す軸を点線にする', async ({ page }) => {
+    const svg = seventh(page).locator('svg');
+    await expect(svg).toHaveAttribute('aria-label', /ベジエ曲面/u);
+    const dashed = await svg
+      .locator('path')
+      .evaluateAll((elements) =>
+        elements.map((element) => element.hasAttribute('stroke-dasharray')),
+      );
+    expect(dashed.some(Boolean)).toBe(true);
+    expect(dashed.some((isDashed) => !isDashed)).toBe(true);
+  });
+
   for (const scheme of ['light', 'dark'] as const) {
     test(`図の色は，文字の色に従う(${scheme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });
@@ -266,7 +282,7 @@ test.describe('空間の図', () => {
     page.on('pageerror', (error) => problems.push(String(error)));
     page.on('requestfailed', (request) => problems.push(request.url()));
     await page.reload();
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(28);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(32);
     expect(problems).toEqual([]);
   });
 });

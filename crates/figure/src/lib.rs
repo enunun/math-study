@@ -14,6 +14,7 @@
 )]
 
 pub mod arrow;
+pub mod bezier;
 pub mod clip;
 mod compile;
 pub mod error;

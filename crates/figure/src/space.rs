@@ -9,6 +9,7 @@
 use std::collections::HashMap;
 use std::f64::consts::TAU;
 
+use crate::bezier::bezier_point;
 use crate::compile::{
     Compiled, CurvePlot, CutPlot, LabelPlot, LinkPlot, Plot, PointPlot, SurfacePlot,
 };
@@ -136,8 +137,11 @@ impl Space<'_> {
     }
 }
 
-/// 曲面の式の関数．2つの変数から，点を返す．値が有限でなければ，`None`を返す．
+/// 曲面の式の関数．2つの変数から，点を返す．値が有限でなければ，`None`を返す．ベジエ曲面では，制御点の網から求める．
 fn surface_map<'a>(plot: &'a SurfacePlot, compiled: &'a Compiled) -> SurfaceMap<'a> {
+    if let Some(net) = &plot.net {
+        return Box::new(move |u: f64, v: f64| bezier_point(net, u, v));
+    }
     Box::new(move |u: f64, v: f64| {
         let mut values = vec![u, v];
         values.extend_from_slice(&compiled.parameters);

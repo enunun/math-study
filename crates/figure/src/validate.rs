@@ -151,6 +151,32 @@ fn check_endpoints(object: &Object, points: &HashSet<&str>) -> Result<(), ErrorK
 }
 
 fn validate_surface(surface: &Surface) -> Result<(), ErrorKind> {
+    match &surface.bezier {
+        Some(net) => validate_bezier(surface, net)?,
+        None => validate_formula(surface)?,
+    }
+    if surface
+        .mesh
+        .iter()
+        .any(|count| !(Surface::MIN_MESH..=Surface::MAX_MESH).contains(count))
+    {
+        return Err(ErrorKind::Invalid(format!(
+            "網の細かさ(`mesh`)は，各方向とも，{}以上{}以下にする．",
+            Surface::MIN_MESH,
+            Surface::MAX_MESH
+        )));
+    }
+    Ok(())
+}
+
+/// 式で書いた曲面．変数，式，定義域が要る．
+fn validate_formula(surface: &Surface) -> Result<(), ErrorKind> {
+    let Some(domain) = &surface.domain else {
+        return Err(ErrorKind::Invalid(
+            "曲面は，式(`vars`，`expr`，`domain`)か，ベジエ曲面の制御点の網(`bezier`)で書く．"
+                .to_owned(),
+        ));
+    };
     let [first, second] = surface.vars.as_slice() else {
         return Err(ErrorKind::Invalid(
             "曲面の変数(`vars`)は，2つの名前で書く．".to_owned(),
@@ -170,19 +196,45 @@ fn validate_surface(surface: &Surface) -> Result<(), ErrorKind> {
     for expr in &surface.expr {
         non_empty("expr", expr)?;
     }
-    for domain in &surface.domain {
+    for domain in domain {
         check_domain(domain)?;
     }
-    if surface
-        .mesh
-        .iter()
-        .any(|count| !(Surface::MIN_MESH..=Surface::MAX_MESH).contains(count))
-    {
+    Ok(())
+}
+
+/// ベジエ曲面．制御点の網は，各方向に2点以上を，行の長さを揃えて並べ，各点は3つの座標を持つ．
+fn validate_bezier(surface: &Surface, net: &[Vec<Vec<Bound>>]) -> Result<(), ErrorKind> {
+    if !surface.vars.is_empty() || !surface.expr.is_empty() || surface.domain.is_some() {
+        return Err(ErrorKind::Invalid(
+            "ベジエ曲面(`bezier`)は，式(`vars`，`expr`，`domain`)と同時に書けない．".to_owned(),
+        ));
+    }
+    let width = net.first().map_or(0, Vec::len);
+    if net.len() < Surface::MIN_CONTROL_POINTS || width < Surface::MIN_CONTROL_POINTS {
         return Err(ErrorKind::Invalid(format!(
-            "網の細かさ(`mesh`)は，各方向とも，{}以上{}以下にする．",
-            Surface::MIN_MESH,
-            Surface::MAX_MESH
+            "ベジエ曲面の制御点は，各方向に{}点以上を並べる．",
+            Surface::MIN_CONTROL_POINTS
         )));
+    }
+    if net.len() > Surface::MAX_CONTROL_POINTS || width > Surface::MAX_CONTROL_POINTS {
+        return Err(ErrorKind::Invalid(format!(
+            "ベジエ曲面の制御点は，各方向に{}点以下にする．",
+            Surface::MAX_CONTROL_POINTS
+        )));
+    }
+    for row in net {
+        if row.len() != width {
+            return Err(ErrorKind::Invalid(
+                "ベジエ曲面の制御点の行は，長さを揃える．".to_owned(),
+            ));
+        }
+        for point in row {
+            if point.len() != 3 {
+                return Err(ErrorKind::Invalid(
+                    "ベジエ曲面の制御点は，x，y，zの3つの座標で書く．".to_owned(),
+                ));
+            }
+        }
     }
     Ok(())
 }
