@@ -1,14 +1,8 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
-import remarkFrontmatter from 'remark-frontmatter';
-import remarkMdx from 'remark-mdx';
-import remarkParse from 'remark-parse';
-import { unified } from 'unified';
-import { parse as parseYaml } from 'yaml';
-
-import { findStatementNodes, numberStatements, resolvePageId, toInfo } from './collect';
-import type { StatementInfo } from './collect';
+import { scanSource } from './scan';
+import type { PageEntry } from './scan';
 import { DocumentError } from './tree';
 
 interface CatalogOptions {
@@ -16,14 +10,6 @@ interface CatalogOptions {
   contentDirectory: string;
   /** 公開するサイトのbaseパス(`/math-study`)． */
   base: string;
-}
-
-/** 定義や定理を持つ，1つのページ． */
-interface PageEntry {
-  pageId: string;
-  /** ファイルの絶対パス． */
-  file: string;
-  statements: StatementInfo[];
 }
 
 interface Catalog {
@@ -38,39 +24,6 @@ interface Catalog {
 interface CacheEntry {
   mtimeMs: number;
   page: PageEntry | undefined;
-}
-
-const processor = unified().use(remarkParse).use(remarkFrontmatter, ['yaml']).use(remarkMdx);
-
-/** YAMLのfrontmatterから，`pageId`を読む． */
-function readDeclaredPageId(yaml: string): unknown {
-  const data: unknown = parseYaml(yaml);
-  return typeof data === 'object' && data !== null && 'pageId' in data ? data.pageId : undefined;
-}
-
-/**
- * MDXのソースから，定義や定理を集める．
- * 定義や定理のないページ，読み込めないページは，undefinedにする．
- * 読み込めないページの誤りは，そのページのビルドで報告される．
- */
-function scanSource(source: string, file: string): PageEntry | undefined {
-  try {
-    const tree = processor.parse(source);
-    const nodes = findStatementNodes(tree);
-    if (nodes.length === 0) {
-      return undefined;
-    }
-    const [first] = tree.children;
-    const declared = first?.type === 'yaml' ? readDeclaredPageId(first.value) : undefined;
-    const pageId = resolvePageId(declared, file);
-    return {
-      pageId,
-      file,
-      statements: numberStatements(nodes, pageId).map((statement) => toInfo(statement)),
-    };
-  } catch {
-    return undefined;
-  }
 }
 
 /** ファイル名の各部分は，URLになる．Starlightが作るURLと一致するよう，小文字の英数字に限る． */
@@ -174,4 +127,4 @@ function createCatalog(options: CatalogOptions): Catalog {
 }
 
 export { createCatalog };
-export type { Catalog, CatalogOptions, PageEntry };
+export type { Catalog, CatalogOptions };

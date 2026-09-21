@@ -4,8 +4,12 @@ import type { VFile } from 'vfile';
 
 import { createCatalog } from './statements/catalog';
 import type { Catalog, CatalogOptions } from './statements/catalog';
-import { findStatementNodes, numberStatements, resolvePageId, toInfo } from './statements/collect';
+import { findStatementNodes, resolvePageId, toInfo } from './statements/collect';
 import type { Statement, StatementInfo } from './statements/collect';
+import { EQUATION_COMPONENT, findLabelledEquations, numberPageItems } from './statements/equations';
+import type { Equation, LabelledEquation } from './statements/equations';
+import { collectHastMathSites } from './statements/math-sites';
+import type { HastMathSite } from './statements/math-sites';
 import {
   collectJsxElements,
   DocumentError,
@@ -22,6 +26,8 @@ type Options = CatalogOptions;
 interface Target {
   label: string;
   href: string;
+  /** 定義や定理ではなく，式を指すときはtrue． */
+  equation: boolean;
 }
 
 /** 参照の要素の属性(`to`や`of`)が指す，定義や定理を探す関数． */
@@ -40,6 +46,7 @@ type OwnPage = Scope & { pageId: string };
 /** 変換の対象になる要素． */
 interface Targets {
   statementNodes: JsxElement[];
+  equations: LabelledEquation<HastMathSite>[];
   refs: JsxElement[];
   proofs: JsxElement[];
 }
@@ -82,7 +89,11 @@ function locate(scope: Scope, id: string, element: JsxElement): Target {
       element.position?.start,
     );
   }
-  return { label: target.label, href: `${scope.url}#${target.anchor}` };
+  return {
+    label: target.label,
+    href: `${scope.url}#${target.anchor}`,
+    equation: target.component === EQUATION_COMPONENT,
+  };
 }
 
 /** 同じページの定義や定理と，ほかのページの定義や定理から，参照の飛び先を探す． */
@@ -116,7 +127,13 @@ async function titleProof(proof: JsxElement, resolve: Resolve): Promise<void> {
       proof.position?.start,
     );
   }
-  const { label } = await resolve(proof, 'of');
+  const { label, equation } = await resolve(proof, 'of');
+  if (equation) {
+    throw new DocumentError(
+      `<Proof>のofには，定義や定理の識別子を書く．${label}は式である．`,
+      proof.position?.start,
+    );
+  }
   setStringAttribute(proof, 'title', label);
   removeAttribute(proof, 'of');
   removeAttribute(proof, 'page');
@@ -163,6 +180,7 @@ function findTargets(tree: Root): Targets {
   const elements = collectJsxElements(tree);
   return {
     statementNodes: findStatementNodes(tree),
+    equations: findLabelledEquations(collectHastMathSites(tree)),
     refs: elements.filter((element) => element.name === 'Ref'),
     proofs: elements.filter(
       (element) => element.name === 'Proof' && findAttribute(element, 'of') !== undefined,
@@ -170,9 +188,19 @@ function findTargets(tree: Root): Targets {
   };
 }
 
-/** ページの識別子を決め，定義や定理に番号を付ける． */
+/** 式のTeXを，`\label`を取り除き`\tag`を加えたものにし，式を包む要素に`id`を付ける． */
+function decorateEquations(equations: readonly Equation<HastMathSite>[]): void {
+  for (const { site, tex, info } of equations) {
+    site.code.children = [{ type: 'text', value: tex }];
+    if (site.pre !== undefined) {
+      site.pre.properties.id = info.anchor;
+    }
+  }
+}
+
+/** ページの識別子を決め，定義や定理と式に番号を付ける． */
 async function numberPage(
-  statementNodes: readonly JsxElement[],
+  { statementNodes, equations: labelled }: Targets,
   file: VFile,
   catalog: Catalog,
 ): Promise<OwnPage> {
@@ -180,14 +208,16 @@ async function numberPage(
     throw new DocumentError('文書のファイルの場所が分からない．', undefined);
   }
   const pageId = resolvePageId(readDeclaredPageId(file), file.path);
-  const statements = numberStatements(statementNodes, pageId);
-  if (statements.length > 0) {
-    await catalog.assertUnique(pageId, file.path);
-  }
+  const { statements, equations } = numberPageItems(statementNodes, labelled, pageId);
+  await catalog.assertUnique(pageId, file.path);
   decorate(statements);
+  decorateEquations(equations);
   return {
     pageId,
-    statements: statements.map((statement) => toInfo(statement)),
+    statements: [
+      ...statements.map((statement) => toInfo(statement)),
+      ...equations.map(({ info }) => info),
+    ],
     url: '',
     where: 'このページ',
   };
@@ -195,11 +225,12 @@ async function numberPage(
 
 /** 文書の1ページを変換する．番号を付け，参照を解決する． */
 async function transform(tree: Root, file: VFile, catalog: Catalog): Promise<void> {
-  const { statementNodes, refs, proofs } = findTargets(tree);
-  if (statementNodes.length + refs.length + proofs.length === 0) {
+  const targets = findTargets(tree);
+  const { statementNodes, equations, refs, proofs } = targets;
+  if (statementNodes.length + equations.length + refs.length + proofs.length === 0) {
     return;
   }
-  const resolve = createResolver(await numberPage(statementNodes, file, catalog), catalog);
+  const resolve = createResolver(await numberPage(targets, file, catalog), catalog);
   await Promise.all(proofs.map((proof) => titleProof(proof, resolve)));
   await linkRefs(tree, refs, resolve);
 }

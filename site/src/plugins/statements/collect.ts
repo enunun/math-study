@@ -130,6 +130,7 @@ function toInfo({ node: _node, ...info }: Statement): StatementInfo {
 export {
   findStatementNodes,
   IDENTIFIER_PATTERN,
+  isValidIdentifier,
   numberStatements,
   resolvePageId,
   STATEMENT_KINDS,

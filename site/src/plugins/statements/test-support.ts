@@ -3,13 +3,9 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import type { Root } from 'hast';
-import remarkMdx from 'remark-mdx';
-import remarkParse from 'remark-parse';
-import remarkRehype from 'remark-rehype';
-import { unified } from 'unified';
 import { VFile } from 'vfile';
 
-import { rehypeStatements } from '../rehype-statements';
+import { createTransformer } from './test-processor';
 
 const BASE = '/math-study';
 
@@ -33,11 +29,7 @@ async function createSite(files: Record<string, string> = {}): Promise<Site> {
       await writeFile(file, content);
     }),
   );
-  const processor = unified()
-    .use(remarkParse)
-    .use(remarkMdx)
-    .use(remarkRehype, { passThrough: ['mdxJsxFlowElement', 'mdxJsxTextElement'] })
-    .use(rehypeStatements, { contentDirectory: directory, base: BASE });
+  const run = createTransformer({ contentDirectory: directory, base: BASE });
   return {
     directory,
     transform: (name, source, frontmatter) => {
@@ -45,7 +37,7 @@ async function createSite(files: Record<string, string> = {}): Promise<Site> {
       if (frontmatter !== undefined) {
         Object.assign(file.data, { astro: { frontmatter } });
       }
-      return processor.run(processor.parse(file), file);
+      return run(file);
     },
   };
 }

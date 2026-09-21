@@ -39,4 +39,20 @@ function attributeNamesOf(tree: Root, name: string): string[] {
   );
 }
 
-export { attributeNamesOf, attributeOf, labelsOf, linksOf };
+/** 変換後の木にある，別行立ての式の(TeX，id)の組． */
+function mathOf(tree: Root): [string, string | undefined][] {
+  const math: [string, string | undefined][] = [];
+  walk(tree, (node) => {
+    if (node.type === 'element' && (node as Element).tagName === 'pre') {
+      const [code] = (node as Element).children;
+      if (code?.type === 'element' && code.tagName === 'code') {
+        const text = code.children.map((child) => (child.type === 'text' ? child.value : ''));
+        const { id } = (node as Element).properties;
+        math.push([text.join(''), typeof id === 'string' ? id : undefined]);
+      }
+    }
+  });
+  return math;
+}
+
+export { attributeNamesOf, attributeOf, labelsOf, linksOf, mathOf };

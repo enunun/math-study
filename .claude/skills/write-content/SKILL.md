@@ -62,6 +62,16 @@ Import the kinds you use, right after the frontmatter: `import { Definition, Lem
 
 Bad identifiers, duplicate identifiers, and references that point nowhere fail the build. The examples are on the test page (`site/src/content/docs/dev/notation.mdx`), and `dev/abs.mdx` is the page they refer to.
 
+## Equation numbers
+
+A display formula (`$$…$$`, on its own) that contains `\label{id}` gets a number. Formulas without `\label` are not numbered.
+
+- The number is shown to the right as `(pageId-n)` and is counted per page in document order, separately from the statement counter. `<Ref to="id" />` (or `<Ref page="pageId" to="id" />`) links to it with the text `式(pageId-n)`.
+- The identifier follows the same rules as a statement identifier and must not repeat a statement identifier on the same page.
+- Write one `\label` per formula. For several aligned lines, use `aligned` inside one `$$…$$`. `\label` in inline math fails the build.
+- Do not use `\ref` or `\eqref` inside math: MathJax renders an unknown reference as `(???)`, so the build rejects them. Reference equations from prose with `<Ref />`.
+- `<Proof of="…">` accepts only statement identifiers, not equation identifiers.
+
 ## Lint
 
 ```sh

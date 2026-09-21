@@ -61,9 +61,12 @@ const STARLIGHT_EXCLUDE_CLASS = 'not-content';
 /** 描画した要素で，文書の中の要素を置き換える． */
 function replace(target: Element, container: Element): void {
   const { className } = container.properties;
+  // 式番号を付けた式のidは，参照の飛び先になるため，引き継ぐ．
+  const { id } = target.properties;
   target.tagName = container.tagName;
   target.properties = {
     ...container.properties,
+    ...(id === undefined ? {} : { id }),
     className: [...(Array.isArray(className) ? className : []), STARLIGHT_EXCLUDE_CLASS],
   };
   target.children = container.children;

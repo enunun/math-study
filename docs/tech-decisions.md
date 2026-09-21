@@ -90,7 +90,6 @@ Known limits:
 - The range of expressions the polynomial calculator handles.
 - Automated accessibility checks (axe).
 - Running E2E tests in CI.
-- Equation numbers (`\tag`, `\label`) for math.
 - A cache for speech generation, if build time becomes a problem.
 - Rendering math in the browser for the calculator, with the same macros.
 
@@ -106,3 +105,14 @@ Flow: `site/src/plugins/rehype-statements.ts` runs on each MDX page before the M
 - Numbering follows document order in the tree. The scanner and the plugin share `findStatementNodes` and `numberStatements`, so both agree. Code blocks are not counted, because they are not JSX nodes.
 - `Ref` is replaced by a plain `<a>` in the tree, so it needs no component and no import. The statement components receive `label` and `anchor` as props from the plugin.
 - oxfmt formats MDX badly when a paragraph contains inline JSX: it splits the paragraph around `<Ref />` and breaks inline math at 100 columns. MDX is excluded from oxfmt (`.oxfmtrc.json`) and formatted by hand.
+
+## Equation numbers (implemented)
+
+A display formula with `\label{id}` is numbered by the same plugin (`rehype-statements.ts`); numbering is not left to MathJax.
+
+- MathJax's own `tags` support numbers formulas in the order it renders them and resolves `\ref` from a label table that lives in one MathJax document. Here each formula is rendered separately, forward references cannot resolve in a single pass, and an unknown reference is rendered as `(???)` without an error. So the plugin numbers formulas itself: it removes `\label{id}`, appends `\tag{pageId-n}`, and puts `id` on the wrapping `<pre>`, which `rehype-mathjax.ts` carries over to the `<mjx-container>`. `\tag` is plain MathJax and needs no package option.
+- `\tag` content is in text mode, so `_` in a page identifier is written `\_`. `\tag` after `\end{align}` also renders, but a labelled formula should be written with `aligned` inside `$$…$$`.
+- Only labelled formulas are numbered, and the counter is separate from the statement counter. The label is `pageId-n`, the same scheme as statements, so it is unique across the site without a chapter structure. The reference text is `式(pageId-n)`.
+- References go through the same `<Ref>`, so the catalog also lists equations (component `Equation` in `StatementInfo`), and cross-page references to equations work. The scanner in `catalog.ts` reads `math` nodes, so it needs `remark-math`; without it, `{…}` in a proof tree is read as an MDX expression and the whole page silently drops out of the catalog.
+- `\ref` and `\eqref` inside math, several `\label`s in one formula, and `\label` in inline math are build errors.
+- In the hast tree only the wrapping `<pre>` carries a source position, not the `<code>`. The error position of a failed display formula (in `rehype-mathjax.ts` and here) is taken from the `<pre>`.

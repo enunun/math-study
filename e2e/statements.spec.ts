@@ -25,7 +25,13 @@ test.describe('定義と定理', () => {
   test('参照が，定義や定理のラベルのリンクになる', async ({ page }) => {
     await page.goto(PAGE);
     const links = page.locator(REF);
-    await expect(links).toHaveText(['定義notation-1', '定理notation-2', '定理absolute-value-3']);
+    await expect(links).toHaveText([
+      '定義notation-1',
+      '定理notation-2',
+      '定理absolute-value-3',
+      '式(notation-1)',
+      '式(absolute-value-1)',
+    ]);
     await expect(links.nth(0)).toHaveAttribute('href', '#even-number');
     await expect(links.nth(1)).toHaveAttribute('href', '#even-square');
     await expect(links.nth(2)).toHaveAttribute('href', /\/dev\/abs\/#triangle-inequality$/u);
@@ -52,5 +58,60 @@ test.describe('定義と定理', () => {
     await proof.locator(REF).click();
     await expect(page).toHaveURL(/#abs-bounds$/u);
     await expect(page.locator('#abs-bounds')).toBeInViewport();
+  });
+});
+
+test.describe('式番号', () => {
+  test(
+    String.raw`\labelのある式の右に，ページの識別子と連番の番号が表示される`,
+    async ({ page }) => {
+      await page.goto(PAGE);
+      const equation = page.locator('#integral-square');
+      await expect(equation).toHaveJSProperty('tagName', 'MJX-CONTAINER');
+      await expect(equation).toContainText('(notation-1)');
+    },
+  );
+
+  test('番号のない式には，番号が付かない', async ({ page }) => {
+    await page.goto(PAGE);
+    const plain = page.locator('mjx-container[display]', { hasNotText: '(notation-1)' }).first();
+    await expect(plain).toBeVisible();
+    await expect(plain).not.toContainText(/\([a-z]+-\d+\)/u);
+  });
+
+  test('式への参照が，「式(識別子-連番)」のリンクになる', async ({ page }) => {
+    await page.goto(PAGE);
+    const links = page.locator(REF);
+    await expect(links.nth(3)).toHaveText('式(notation-1)');
+    await expect(links.nth(3)).toHaveAttribute('href', '#integral-square');
+    await expect(links.nth(4)).toHaveAttribute('href', /\/dev\/abs\/#abs-cases$/u);
+  });
+
+  test('ほかのページの式への参照を押すと，その式へ移る', async ({ page }) => {
+    await page.goto(PAGE);
+    await page.locator(REF).nth(4).click();
+    await expect(page).toHaveURL(/\/dev\/abs\/#abs-cases$/u);
+    await expect(page.locator('#abs-cases')).toBeInViewport();
+    await expect(page.locator('#abs-cases')).toContainText('(absolute-value-1)');
+  });
+
+  test('幅の狭い画面で，番号のある式が，ページを横にあふれさせない', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 800 });
+    await page.goto(TARGET_PAGE);
+    await expect(page.locator('#abs-cases')).toContainText('(absolute-value-1)');
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test('折り畳みの中の参照を押すと，同じページの式へ移る', async ({ page }) => {
+    await page.goto(TARGET_PAGE);
+    // 最初の証明は，補題の証明である．
+    const proof = page.locator('details.fold-proof').first();
+    await proof.locator('summary').click();
+    await proof.locator(REF).first().click();
+    await expect(page).toHaveURL(/#abs-cases$/u);
+    await expect(page.locator('#abs-cases')).toBeInViewport();
   });
 });

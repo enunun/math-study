@@ -8,7 +8,8 @@
 - 実装済み(開発基盤)：リントと整形，コミット時の検査，E2Eテスト，GitHub Pagesへの公開．
 - 実装済み(数式)：MathJax 4による数式の描画(自作マクロ，証明図，読み上げ用の`aria-label`)．未定義のマクロと構文の誤りは，ビルドの失敗にする．
 - 実装済み(定理)：定義，補題，命題，定理，系(`Definition`，`Lemma`，`Proposition`，`Theorem`，`Corollary`)の自動採番と，同じページやほかのページからの参照(`Ref`)．
-- 予定：Rustで書いた多項式電卓とグラフ(Wasm)，式番号．
+- 実装済み(式番号)：別行立ての式の`\label`による自動採番と，`Ref`による参照．
+- 予定：Rustで書いた多項式電卓とグラフ(Wasm)．
 
 技術選定の理由と，確認した事実は，[docs/tech-decisions.md](docs/tech-decisions.md)(英語)にまとめてある．
 

@@ -19,7 +19,11 @@ import { Definition, Lemma, Theorem } from '@/components/statement';
 
 <Definition id="absolute-value" name="絶対値">
 
-実数$x$に対して，$x$の絶対値$\abs{x}$を，$x \ge 0$のとき$x$，$x < 0$のとき$-x$と定める．
+実数$x$に対して，$x$の絶対値$\abs{x}$を，次の式で定める．
+
+$$
+\abs{x} = \begin{cases} x & (x \ge 0) \\ -x & (x < 0) \end{cases} \label{abs-cases}
+$$
 
 </Definition>
 
@@ -31,7 +35,7 @@ import { Definition, Lemma, Theorem } from '@/components/statement';
 
 <Proof of="abs-bounds">
 
-$x \ge 0$のとき，$\abs{x} = x$なので，$-\abs{x} \le 0 \le x = \abs{x}$である．$x < 0$のとき，$\abs{x} = -x$なので，$-\abs{x} = x < 0 < \abs{x}$である．
+$x \ge 0$のとき，<Ref to="abs-cases" />より$\abs{x} = x$なので，$-\abs{x} \le 0 \le x = \abs{x}$である．$x < 0$のとき，<Ref to="abs-cases" />より$\abs{x} = -x$なので，$-\abs{x} = x < 0 < \abs{x}$である．
 
 </Proof>
 
