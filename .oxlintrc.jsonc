@@ -76,6 +76,7 @@
     {
       // E2Eテストと，その設定，配信用のスクリプトは，Node.jsで実行する．
       // describeには多数のテストをまとめ，期待値には件数などの数値を書く．
+      // ブラウザの中で測る関数は，外の変数を使えないため，1つの関数にまとめる．文の数の上限は外す．
       // innerTextはPlaywrightのメソッドで，DOMのプロパティではない．
       // スクリプトは，ESMのまま直接実行するため，トップレベルのawaitを使える．
       "files": ["e2e/**", "playwright.config.ts"],
@@ -84,6 +85,7 @@
         "node/no-sync": "off",
         "node/no-top-level-await": "off",
         "max-lines-per-function": "off",
+        "max-statements": "off",
         "no-magic-numbers": "off",
         "unicorn/prefer-dom-node-text-content": "off",
       },

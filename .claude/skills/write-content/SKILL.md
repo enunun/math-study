@@ -12,6 +12,7 @@ Rules and notation for the site content (`site/src/content/**`) and `README.md`,
 - Use the plain form (である調). This covers body text and list items; headings are unconstrained.
 - Use the full-width comma "，" (U+FF0C) and the full-width period "．" (U+FF0E). Never use "、" or "。".
 - Put no space between Japanese and Latin text, digits, or inline code. Write "MDXの記法" and "`mise run dev`を実行". Do not write "MDX の記法".
+- Do not type spaces between Japanese and Latin text, digits, inline code, or math. The page adds a 1/8em gap when it is typeset (`text-autospace` and `rehype-autospace.ts`).
 - Use a full-width colon "：" after Japanese text, with no space after it ("公開先：`/x`"). Colons after Latin text stay half-width.
 - Avoid AI-sounding writing: bold-prefix bullet lists ("**Item**：description"), hype, and emphasis in ordinary sentences.
 - Keep each sentence within 100 characters and within three commas. Do not repeat the same particle within a sentence.

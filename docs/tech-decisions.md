@@ -125,3 +125,12 @@ What is automated, and what was decided not to be:
 - Visual regression is not automated. Screenshot comparison depends on fonts and rendering, needs images in the repository, and needs a pinned environment. Specific bugs are guarded with layout assertions instead.
 - Only Chromium is tested.
 - Speech quality of the `aria-label` strings, Japanese screen reader output, and real printing are manual (see the `verify-site` skill).
+
+## Spacing between Japanese and other text (implemented)
+
+The source has no spaces between Japanese and Latin letters, digits, inline code, or math. Typesetting inserts a gap, like TeX's `\xkanjiskip`, and it is 1/8em.
+
+- CSS `text-autospace: normal` inserts 1/8em between an ideograph and a Latin letter or digit, also across an inline element boundary such as `<code>`, and never next to punctuation. Measured in Chromium 153: 2.5px at 20px for text, 5px around inline code. MDN lists the property as Baseline 2025 (newly available). Only Chromium was checked here.
+- The gap does not appear next to inline math, because MathJax's inline `mjx-container` is an atomic box (measured gap 0 on the built page, with the property on and off). `rehype-autospace.ts` therefore looks at the neighboring characters at build time and adds classes, and the CSS turns them into a 0.125em margin. It looks through inline wrappers (links, emphasis) but stops at block boundaries and `<br>`, and only Han, Hiragana, Katakana, and `ー` count as Japanese, so punctuation and brackets never get a gap.
+- Nothing is added to the text, so copy and paste, search, and speech are unchanged. Inserting real spaces or thin-space characters at build time was rejected for that reason.
+- Code blocks and the inside of math (`\text{…}`) are `no-autospace`, to keep the monospace grid and the math typesetting.

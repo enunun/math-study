@@ -1,0 +1,23 @@
+/*
+ * 和文と，欧文，数字，数式の間の隙間．TeXのxkanjiskipに相当する．
+ * 原稿にはスペースを書かず，組版のときに，1/8emの隙間を入れる．文字は増えないため，コピー，検索，読み上げに影響しない．
+ */
+:root {
+  /* 和文と欧文，和文と数字の間．句読点の隣には入らない． */
+  text-autospace: normal;
+}
+
+/* コードの桁と，数式の内側(\text{…}の和文)の組版は，変えない． */
+pre,
+mjx-container {
+  text-autospace: no-autospace;
+}
+
+/* 数式は独立した箱で，text-autospaceの対象にならない．和文の隣の数式にだけ，同じ隙間を付ける． */
+mjx-container.autospace-before {
+  margin-inline-start: 0.125em;
+}
+
+mjx-container.autospace-after {
+  margin-inline-end: 0.125em;
+}
