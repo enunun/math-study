@@ -45,7 +45,7 @@ fn 空間の図を読める() {
     };
     assert_eq!(view.azimuth, 60.0);
     assert_eq!(view.elevation, 20.0);
-    assert_eq!(view.unit.to_cm(), 0.5);
+    assert_eq!(view.unit.to_cm(), 0.8);
     let kinds: Vec<&str> = scene.objects.iter().map(Object::type_name).collect();
     assert_eq!(kinds, ["axis", "axis", "axis", "sphere"]);
 }

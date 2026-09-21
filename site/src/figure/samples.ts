@@ -1,4 +1,5 @@
 import first from '@/figures/sine-and-shifted-sine.json?raw';
+import space from '@/figures/sphere-with-axes.json?raw';
 
 /** 確認のページに置く，シーンの見本． */
 interface SceneSample {
@@ -47,6 +48,12 @@ const SCENE_SAMPLES: SceneSample[] = [
     id: 'range',
     label: '範囲の誤り',
     json: replaceOnce(first, '"x": [-7, 7]', '"x": [7, -7]'),
+  },
+  { id: 'space', label: '球と軸', json: space },
+  {
+    id: 'missingRange',
+    label: '空間の軸の範囲がない',
+    json: replaceOnce(space, '"range": [-5, 5], "label": "x"', '"label": "x"'),
   },
 ];
 

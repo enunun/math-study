@@ -10,7 +10,7 @@
 - 実装済み(定理)：定義，補題，命題，定理，系(`Definition`，`Lemma`，`Proposition`，`Theorem`，`Corollary`)の自動採番と，同じページやほかのページからの参照(`Ref`)．
 - 実装済み(式番号)：別行立ての式の`\label`による自動採番と，`Ref`による参照．
 - 実装済み(計算機)：Rustで書いた多項式の計算機(式の展開と微分)を，Wasmにして，ブラウザで動かす．核は，`crates/`にある．
-- 開発中(図)：図のシーン(JSON)から，SVGの図とTikZの出力を作る．核は，Rustで書いてWasmにし，ビルド時と確認用のページで動かす．最初の図(正弦曲線と座標軸)は，描ける．設計は，`docs/graph-design.md`にある．
+- 開発中(図)：図のシーン(JSON)から，SVGの図とTikZの出力を作る．核は，Rustで書いてWasmにし，ビルド時と確認用のページで動かす．最初の図(正弦曲線と座標軸)は，描ける．空間の図(球と座標軸．球に隠れた線は点線)も，描ける．設計は，`docs/graph-design.md`にある．
 
 サイトの仕組み(どの部品が何をしているか，どこが自作か，どう使うか)は，[仕組みの解説](https://enunun.github.io/math-study/dev/internals/)にある．ソースは`site/src/content/docs/dev/internals.mdx`である．
 

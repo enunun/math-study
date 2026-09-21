@@ -36,6 +36,10 @@ const GOLDEN_TIKZ = new URL(
   '../../../crates/figure/tests/golden/sine-and-shifted-sine.tikz',
   import.meta.url,
 );
+const GOLDEN_SPACE_TIKZ = new URL(
+  '../../../crates/figure/tests/golden/sphere-with-axes.tikz',
+  import.meta.url,
+);
 
 describe('Wasmのシーンの読み込み', () => {
   it('最初の図を読み，版とオブジェクトの一覧を返す', () => {
@@ -91,6 +95,8 @@ describe('Wasmのシーンの読み込み', () => {
       syntax: 'json',
       range: 'invalid_range',
       expression: 'expression',
+      space: 'ok',
+      missingRange: 'invalid',
     });
   });
 
@@ -131,6 +137,47 @@ describe('Wasmのシーンの読み込み', () => {
         expect(outcome.line).toBeNull();
       }
     }
+  });
+});
+
+describe('Wasmの空間の図', () => {
+  it('球と軸の図を読み，オブジェクトの一覧を返す', () => {
+    const outcome = sample('space');
+    expect(outcome.status).toBe('ok');
+    if (outcome.status === 'ok') {
+      expect(outcome.objects.map(({ id, type }) => `${id}:${type}`)).toEqual([
+        'x_axis:axis',
+        'y_axis:axis',
+        'z_axis:axis',
+        'ball:sphere',
+      ]);
+    }
+  });
+
+  it('隠れた部分を点線にして描画し，球の輪郭は実線である', () => {
+    const outcome = render('space');
+    if (outcome.status !== 'ok') {
+      throw new Error('描画できる');
+    }
+    const paths = outcome.figure.items.filter((item) => item.type === 'path');
+    const dotted = paths.filter((item) => item.stroke.line === 'dotted');
+    // 3本の軸が，それぞれ球に隠れる．
+    expect(dotted).toHaveLength(3);
+    expect(paths.at(-1)?.stroke.line).toBe('solid');
+    expect(outcome.figure.items.filter((item) => item.type === 'label')).toHaveLength(3);
+  });
+
+  it('TikZは，ネイティブのRustで作った期待する出力と，一字も違わない', async () => {
+    const outcome = render('space');
+    const expected = await readFile(GOLDEN_SPACE_TIKZ, 'utf8');
+    expect(outcome.status === 'ok' && outcome.tikz).toBe(expected);
+  });
+
+  it('空間の軸に範囲がないと，オブジェクトのidつきの誤りになる', () => {
+    const outcome = sample('missingRange');
+    expect(outcome.status === 'error' && outcome.code).toBe('invalid');
+    expect(outcome.status === 'error' && outcome.object).toBe('x_axis');
+    expect(outcome.status === 'error' && outcome.message).toContain('range');
   });
 });
 

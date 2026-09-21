@@ -614,3 +614,37 @@ fn 式の誤りは_空間の曲線でも_項目と位置を示す() {
         "{error}"
     );
 }
+
+const SPHERE_WITH_CIRCLES: &str =
+    include_str!("../../../site/src/figures/sphere-with-circles.json");
+
+#[test]
+fn 球の面の上の2つの円は_どちらも遠い側が点線になる() {
+    let (a, e) = (60.0_f64, 20.0_f64);
+    let figure = figure_of(SPHERE_WITH_CIRCLES);
+    let all = paths(&figure);
+    // 軸3本が3つずつ，円2つが3つずつ(見える半分は，t=0で分かれる)，球の輪郭が1本．
+    assert_eq!(all.len(), 3 * 3 + 2 * 3 + 1);
+    let dotted = all
+        .iter()
+        .filter(|path| path.stroke.line == Line::Dotted)
+        .count();
+    assert_eq!(dotted, 3 + 2);
+    // 緯線(z=1.2)の点線は，視線に沿って刻んで確かめた隠れ方と合う．
+    let latitude = &all[9 + 3..9 + 6];
+    for path in latitude {
+        let middle = path.points[path.points.len() / 2];
+        let t = (0..20_000)
+            .map(|step| f64::from(step) / 20_000.0 * std::f64::consts::TAU)
+            .min_by(|s, t| {
+                let d = |u: &f64| {
+                    let q = project([1.6 * u.cos(), 1.6 * u.sin(), 1.2], a, e, 0.8);
+                    (q[0] - middle[0]).hypot(q[1] - middle[1])
+                };
+                d(s).total_cmp(&d(t))
+            })
+            .unwrap();
+        let hidden = ball_hides([1.6 * t.cos(), 1.6 * t.sin(), 1.2], a, e);
+        assert_eq!(path.stroke.line == Line::Dotted, hidden, "t={t}");
+    }
+}

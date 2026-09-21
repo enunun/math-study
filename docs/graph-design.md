@@ -46,7 +46,7 @@ scene (data) → geometry engine (projection, silhouette, visibility) → 2D vec
 - The default arrowhead is TikZ's `Stealth`. The tip is a setting of each axis and vector, so it can be changed.
 - Hidden lines are dotted by default. The style is a setting, so dashed can be chosen.
 - The first target figure is `s0202graph1`: a sine curve and a shifted copy drawn dotted, on axes with `O`, `x`, and `y`, and a text label containing math. The sample draws its axes without arrowheads; here they get the default arrowhead.
-- The order of work is 2D first (axes, arrowheads, ticks, labels, function graphs), then 3D on the same intermediate representation.
+- The order of work is 2D first (axes, arrowheads, ticks, labels, function graphs), then 3D on the same intermediate representation. One minimal 3D figure (see Minimal 3D figure) was built before the 2D extensions, to test that the intermediate representation carries 3D.
 - The engine core is written in Rust and runs as Wasm from the start, so the scene and the intermediate representation are fixed once and 3D does not force a rewrite.
 - Rust turns a scene into the intermediate representation (IR) and into the TikZ text. TypeScript builds the SVG from the IR and draws the label formulas with MathJax.
 - The scene is a JSON file, one per figure. A GUI that edits graphs (typing an expression, dragging a point) is planned, and the scene must stay easy for it to read and write. This gives the rules below.
@@ -56,7 +56,7 @@ scene (data) → geometry engine (projection, silhouette, visibility) → 2D vec
 
 The first figure (`s0202graph1`) is drawn end to end: scene JSON, Rust engine compiled to Wasm, SVG at build time, and TikZ text. The Rust side is `crates/figure/` (entry points `parse_scene`, `render`, `tikz::export_tikz`); every module has tests in `crates/figure/tests/`, written first.
 
-- Scene (`scene.rs`, `parse.rs`, `validate.rs`, `version.rs`): the types read and write JSON, so a scene that was written out can be read again. Omitted fields take defaults: `arrow` is `stealth`, `anchor` is `center`, and the line is solid. A length is written as a string such as `"2.5mm"` (`cm`, `mm`, `pt`). The engine reads a scene whose major version equals its own (its minor version too while the major version is 0) and that is not newer than itself; the version is checked before any other field. Checks: a non-empty `description`, increasing finite ranges, identifiers for `id` and `var`, unique `id`s, non-empty `tex`, two expressions per curve; unknown fields and object types are rejected.
+- Scene (`scene.rs`, `parse.rs`, `validate.rs`, `version.rs`): the types read and write JSON, so a scene that was written out can be read again. Omitted fields take defaults: `arrow` is `stealth`, `anchor` is `center`, and the line is solid. A length is written as a string such as `"2.5mm"` (`cm`, `mm`, `pt`). The engine reads a scene whose major version equals its own (its minor version too while the major version is 0) and that is not newer than itself; the version is checked before any other field. Checks: a non-empty `description`, increasing finite ranges, identifiers for `id` and `var`, unique `id`s, non-empty `tex`, two expressions per plane curve and three per space curve; unknown fields and object types are rejected.
 - Expressions (`expr/`): a lexer, a recursive-descent parser, and a floating-point evaluator, separate from the polynomial calculator (identifiers here have several letters, and coefficients are floats). Grammar: `+ - * /`, right-associative `^`, unary minus below `^` (`-x^2` is `-(x^2)`), parentheses. Implicit multiplication (`2x`) is an error. Functions: `sin cos tan asin acos atan sinh cosh tanh exp log ln sqrt abs` (`log` and `ln` are natural logarithms). Constants: `pi`, `e`. Errors carry a span counted in characters. Limits: 2000 characters, depth 128.
 - Compile pass (`compile.rs`): reads every expression with the names `[var, parameters…]`, evaluates the domain ends (which may use parameters and constants, not the variable), and rejects a domain that is not finite and increasing, function or constant names as ids or variables (`reserved_name`), and a variable named like a parameter (`name_conflict`). `parse_scene` runs it, so a scene that parses can be rendered.
 - Sampling (`sample.rs`): 16 fixed intervals, then adaptive halving (depth ≤ 12) until the points at 1/4, 1/2, and 3/4 are within 0.003 cm of the chord. Points that are not finite or exceed 300 cm cut the line (TikZ cannot handle larger); the cut is located by bisection. Accuracy is tested as the distance from the true curve to the polyline, not the vertical error, which overstates steep curves.
@@ -76,13 +76,13 @@ Known limits, the first things to extend:
 - The label font is the MathJax font, not the document font of the TikZ output.
 - Colours and line widths are not yet settable in the scene.
 
-## Minimal 3D figure (in progress)
+## Minimal 3D figure
 
-The 3D design is tried on one small figure before the 2D extensions continue: `s0905sphere`, a sphere of radius 2 with the three axes through it. The sample shows the parts of the 3D requirements at once: the silhouette circle, axes that are dotted where the sphere hides them, and axes that break where they meet the surface. The sphere is an exact shape (`type: "sphere"`), so visibility is a closed-form ray test. General parametric surfaces (a mesh, and outlines from the normal) come later, with the sphere as the reference to check them against.
+The first 3D figure is `s0905sphere`, a sphere of radius 2 with the three axes through it. The sample shows the parts of the 3D requirements at once: the silhouette circle, axes that are dotted where the sphere hides them, and axes that break where they meet the surface. The sphere is an exact shape (`type: "sphere"`), so visibility is a closed-form ray test. General parametric surfaces (a mesh, and outlines from the normal) come later, with the sphere as the reference to check them against.
 
 Measured from the sample image (`s0905spherefig.jpg`): the projection is parallel (a radius-2 sphere is a circle of the same radius as 2 units on the axes), and the view matches an azimuth of about 64° and an elevation of about 22°, in the convention below. The `x` axis leaves to the lower left, `y` to the lower right, `z` up. Labels sit beyond the positive ends. Each axis is one line through the origin, from -5 to 5.
 
-Decisions for the minimal figure (the feedback on the drawn figure may change them):
+Decisions for the minimal figure:
 
 - The engine version stays 0.1.0. The new fields are additive, and no scene has been published.
 - `view` is either a plane view (`x`, `y`, `unit` with two lengths, as before) or a space view: `azimuth` and `elevation` in degrees and `unit`, one length for all three axes. The camera is in the direction `(cos e cos a, cos e sin a, sin e)` from the origin, looking at it. The screen's right is `(-sin a, cos a, 0)` and its up is `(-sin e cos a, -sin e sin a, cos e)`, so `x` comes toward the viewer at azimuth 0 and elevation 0, with `y` to the right and `z` up. A space figure has no visible range: the bounds are those of the drawn items.
@@ -90,6 +90,17 @@ Decisions for the minimal figure (the feedback on the drawn figure may change th
 - `style` gets `hidden`: `dotted` (default), `dashed`, or `none` (not drawn), the style of the parts an opaque surface hides. An `axis` gets `style` for it.
 - A point is hidden when the ray from it toward the camera meets a sphere at a positive distance; a point inside a sphere is hidden. The switch points between visible and hidden pieces are refined by bisection.
 - The IR does not change: it is still 2D paths and labels, so SVG and TikZ need no change.
+
+Implemented (`space.rs`, tests in `tests/space_scene.rs` and `tests/space.rs`, pages `dev/figure-space.mdx`, fixtures `sphere-with-axes.json` and `sphere-with-circles.json`):
+
+- The visibility test is an independent oracle in the tests: march along the line of sight and look for a point inside the sphere. Points of pieces are checked against it, and the switch points against the closed-form values (the axis leaves the surface at `x=2`, and grazes it at `|t|·hypot(d_y, d_z)=r`).
+- Rounding error puts a point on the sphere itself (a curve on the surface) on either side of it, so it would be flagged hidden or visible at random. The hiding radius is 1e-12 smaller, which puts surface points outside; the price is a band of about 3e-6 around the outline where the switch is not exact.
+- A closed curve is split at the start of its parameter range, so a visible half that spans it becomes two solid paths. Merging them is a later refinement.
+- The sphere outline is a polyline of a circle with the same 0.003 cm tolerance as curves. TikZ `circle` or Bézier arcs would be smaller.
+- Only spheres hide. The outline of one sphere is not hidden by another, and a hiding sphere does not hide another sphere's outline.
+- Axes are cut at 64 sample points before bisection, so a hidden interval shorter than one step is missed.
+- A space axis with an arrow draws the head only when its last piece is visible, and a label is always drawn at the positive end. `anchor` for the label is chosen from the eight directions of the projected axis.
+- Not done: labels and points at 3D positions, surfaces given by expressions, plane cuts, hidden-line removal between curves and non-spherical surfaces, ticks, perspective.
 
 ## Scene rules
 
