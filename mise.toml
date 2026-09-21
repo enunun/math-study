@@ -121,6 +121,11 @@ description = "図のTikZの出力を，LuaLaTeXでコンパイルして，SVG�
 depends = ["build", "browsers"]
 run = "node e2e/tikz-compare.ts"
 
+[tasks."tikz:export"]
+description = "図のTikZの出力を，ファイルとPDFに書き出す(TeX Liveが要る．結果はtikz-out/export/．引数の一覧は--help)"
+depends = ["wasm"]
+run = "node e2e/tikz-export.ts"
+
 [tasks.setup]
 description = "開発環境を整える(依存パッケージ，型定義，Playwrightのブラウザ，Gitのフック)"
 depends = ["sync", "browsers", "hooks"]

@@ -40,19 +40,20 @@ devcontainerで開く．Dockerfileは，mise公式のDebianイメージを土台
 
 作業は，`mise run`のタスクで行う．一覧は`mise tasks`で表示する．
 
-| タスク                | 内容                                                                       |
-| --------------------- | -------------------------------------------------------------------------- |
-| `mise run dev`        | 開発サーバーを起動する(`http://localhost:4321/math-study/`)                |
-| `mise run build`      | サイトをビルドする                                                         |
-| `mise run preview`    | ビルドしたサイトを，公開時と同じbaseパスで確認する                         |
-| `mise run check`      | 整形，リント，型検査，単体テスト，ビルドを検査する．CIと同じ内容である     |
-| `mise run lint`       | oxlint，rustfmtとclippy，markdownlint，remark-lint，textlintを実行する     |
-| `mise run wasm`       | Rustの計算機と，図のシーンの窓口を，Wasmにして，`site/src/wasm/`へ出力する |
-| `mise run fmt`        | コードと文書を整形する                                                     |
-| `mise run test`       | 単体テストを実行する                                                       |
-| `mise run e2e`        | ブラウザで動作を確認する                                                   |
-| `mise run screenshot` | ページのスクリーンショットを撮る                                           |
-| `mise run tikz`       | 図のTikZの出力を，LuaLaTeXでコンパイルして，SVGの図と比べる(手元だけ)      |
+| タスク                 | 内容                                                                       |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `mise run dev`         | 開発サーバーを起動する(`http://localhost:4321/math-study/`)                |
+| `mise run build`       | サイトをビルドする                                                         |
+| `mise run preview`     | ビルドしたサイトを，公開時と同じbaseパスで確認する                         |
+| `mise run check`       | 整形，リント，型検査，単体テスト，ビルドを検査する．CIと同じ内容である     |
+| `mise run lint`        | oxlint，rustfmtとclippy，markdownlint，remark-lint，textlintを実行する     |
+| `mise run wasm`        | Rustの計算機と，図のシーンの窓口を，Wasmにして，`site/src/wasm/`へ出力する |
+| `mise run fmt`         | コードと文書を整形する                                                     |
+| `mise run test`        | 単体テストを実行する                                                       |
+| `mise run e2e`         | ブラウザで動作を確認する                                                   |
+| `mise run screenshot`  | ページのスクリーンショットを撮る                                           |
+| `mise run tikz`        | 図のTikZの出力を，LuaLaTeXでコンパイルして，SVGの図と比べる(手元だけ)      |
+| `mise run tikz:export` | 図のTikZの出力を，ファイルとPDFに書き出す(手元だけ)                        |
 
 変更したら，`mise run check`を通す．表示や動作に関わる変更は，`mise run e2e`も通す．手順の詳細は，`.claude/skills/verify-site/SKILL.md`にある．
 

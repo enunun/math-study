@@ -31,6 +31,10 @@ mise run screenshot -- dev/notation/ /tmp/math.png --scroll "h3#導出木"
 - `--click` performs interactions before the shot, in order. `--clip` captures only the given element. `--scroll` scrolls to an element first, which is the way to look at a section of a long page. `--full` captures the whole page (large; the image is downscaled when read).
 - Running `mise run screenshot` without arguments prints the usage.
 
+## Writing the TikZ output
+
+`mise run tikz:export` only writes the figures, with no comparison and no build of the site (it needs the Wasm, which the task builds, and TeX Live). `mise run tikz:export -- --png vector-addition` writes `tikz-out/export/vector-addition.tikz` (the engine's output, unchanged, for pasting into a document), `.tex` (a `standalone` document that holds it), `.pdf` (the picture plus a 2 pt border), and `.png` with `--png` (`--dpi`, default 200). Arguments are names of `site/src/figures/*.json` or paths of scene files; none means every figure. `--out` changes the directory and `--help` lists the options. A LaTeX error prints the tail of the log and keeps `.log`; on success the `.aux` and `.log` files are removed. Use it to look at a figure at high zoom (open the PDF or PNG with the Read tool), which shows flaws that the 96 dpi comparison hides.
+
 ## Checking the TikZ output
 
 `mise run tikz` (local only; CI does not run it) compiles the TikZ that the engine writes for every figure of `figure-first.mdx` and `figure-space.mdx` with LuaLaTeX (`standalone`, `luatexja-preset`), rasterizes the PDF with `pdftoppm`, and lays it over a screenshot of the same figure on the built site. It needs TeX Live and `poppler-utils` (see the pitfalls in `CLAUDE.md`). Pass figure names to check a few: `mise run tikz -- vector-addition`.
