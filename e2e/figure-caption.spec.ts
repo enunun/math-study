@@ -11,7 +11,7 @@ test.describe('図の番号と参照', () => {
   });
 
   test('説明文の数式が，描画される', async ({ page }) => {
-    await page.goto(PAGE);
+    await page.goto('dev/figure-fill/');
     await expect(page.locator('figure#fig-region figcaption mjx-container')).toHaveCount(2);
   });
 

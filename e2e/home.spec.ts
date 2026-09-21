@@ -11,7 +11,10 @@ const DEV_PAGES = [
   ['参照先の見本', 'dev/abs/'],
 ] as const;
 
-const ARTICLES = [['図を描く数学', 'dev/figure-algorithms/']] as const;
+const ARTICLES = [
+  ['図を描く数学', 'dev/figure-algorithms/'],
+  ['平面の図の塗りつぶし', 'dev/figure-fill/'],
+] as const;
 
 test.describe('トップページ', () => {
   for (const [title, path] of ARTICLES) {

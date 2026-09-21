@@ -11,13 +11,18 @@ import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 ## 解説
 
-空間の図を平面へ描く数学を，実装から離れて説明したページである．投影，隠れ方，輪郭，切り口と交線，Newton法，点の取り方，斜線を扱う．
+図を描くときの数学を，実装から離れて説明したページである．空間の図形の投影，隠れ方，輪郭，交線，近似の精度と，平面の図の塗りつぶしを扱う．
 
 <CardGrid>
   <LinkCard
     title="図を描く数学"
-    description="定理と証明つきで，図を描く原理を順に説明する．"
+    description="空間の図形を平面へ描く原理を，定理と証明つきで説明する．"
     href="dev/figure-algorithms/"
+  />
+  <LinkCard
+    title="平面の図の塗りつぶし"
+    description="斜線を引く範囲の決め方と，表示範囲での切り取りを説明する．"
+    href="dev/figure-fill/"
   />
 </CardGrid>
 
