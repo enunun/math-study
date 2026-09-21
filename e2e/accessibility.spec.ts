@@ -3,6 +3,9 @@ import { expect, test } from '@playwright/test';
 
 import { listRoutes, routeName } from './routes';
 
+// 数式と図の多いページは，axeの検査に20秒以上かかる．既定の30秒では，並列で走らせると足りない．
+const AXE_TIMEOUT_MS = 120_000;
+
 const SCHEMES = ['light', 'dark'] as const;
 const VIEWPORTS = {
   wide: { width: 1280, height: 800 },
@@ -15,6 +18,7 @@ for (const scheme of SCHEMES) {
   for (const [size, viewport] of Object.entries(VIEWPORTS)) {
     test.describe(`アクセシビリティ(${scheme}，${size})`, () => {
       test.use({ colorScheme: scheme, viewport });
+      test.setTimeout(AXE_TIMEOUT_MS);
 
       for (const route of listRoutes()) {
         test(`${routeName(route)}に，違反がない`, async ({ page }) => {
