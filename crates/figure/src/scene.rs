@@ -42,6 +42,9 @@ pub struct Unit {
     pub y: Length,
 }
 
+/// 1ptの長さ(cm)．`TeX`のptで，1インチの72.27分の1である．
+pub const CM_PER_PT: f64 = 2.54 / 72.27;
+
 /// 長さの単位．
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LengthUnit {
@@ -264,6 +267,18 @@ impl Object {
             Self::Parameter(_) => "parameter",
             Self::Graph(_) => "graph",
             Self::Curve(_) => "curve",
+        }
+    }
+}
+
+impl Length {
+    /// cmに直した長さ．
+    #[must_use]
+    pub fn to_cm(self) -> f64 {
+        match self.unit {
+            LengthUnit::Cm => self.value,
+            LengthUnit::Mm => self.value / 10.0,
+            LengthUnit::Pt => self.value * CM_PER_PT,
         }
     }
 }

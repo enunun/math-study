@@ -4,6 +4,8 @@ use std::fmt;
 
 use semver::Version;
 
+use crate::expr::{ExprError, ExprErrorKind};
+
 /// 誤りの種類．
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ErrorKind {
@@ -39,6 +41,19 @@ pub enum ErrorKind {
     EmptyText(&'static str),
     /// 範囲が，有限の数で，下端が上端より小さくなっていない．中身は，項目の名前．
     InvalidRange(&'static str),
+    /// 式の誤り．
+    Expression {
+        /// 式のある項目の名前(`expr`か`domain`)．
+        field: &'static str,
+        /// 項目の中の何番目の式か．曲線の`expr`と，`domain`の端の番号である．
+        index: usize,
+        /// 式の中の位置を持つ誤り．
+        error: ExprError,
+    },
+    /// 媒介変数の`id`か，変数の名前が，関数や定数の名前である．
+    ReservedName(String),
+    /// 変数の名前が，媒介変数の`id`と同じである．
+    NameConflict(String),
     /// 曲線の式の数が合わない．
     ExpressionCount {
         /// 必要な数．
@@ -64,6 +79,9 @@ impl ErrorKind {
             Self::EmptyText(_) => "empty_text",
             Self::InvalidRange(_) => "invalid_range",
             Self::ExpressionCount { .. } => "expression_count",
+            Self::Expression { .. } => "expression",
+            Self::ReservedName(_) => "reserved_name",
+            Self::NameConflict(_) => "name_conflict",
         }
     }
 }
@@ -128,6 +146,24 @@ impl fmt::Display for Error {
                 f,
                 "`{field}`は，有限の数で，下端が上端より小さい範囲にする．"
             ),
+            ErrorKind::Expression {
+                field,
+                index,
+                error,
+            } => write!(
+                f,
+                "`{field}`の{}番目の式の{}文字目：{}",
+                index.saturating_add(1),
+                error.span.start.saturating_add(1),
+                describe(&error.kind)
+            ),
+            ErrorKind::ReservedName(name) => write!(
+                f,
+                "「{name}」は，関数か定数の名前なので，媒介変数の`id`や変数の名前には使えない．"
+            ),
+            ErrorKind::NameConflict(name) => {
+                write!(f, "変数の名前「{name}」が，媒介変数の`id`と同じである．")
+            }
             ErrorKind::ExpressionCount { expected, found } => {
                 write!(f, "式は{expected}個必要だが，{found}個書かれている．")
             }
@@ -136,3 +172,24 @@ impl fmt::Display for Error {
 }
 
 impl std::error::Error for Error {}
+
+/// 式の誤りの説明．
+fn describe(kind: &ExprErrorKind) -> String {
+    match kind {
+        ExprErrorKind::UnexpectedCharacter(c) => format!("使えない文字「{c}」がある．"),
+        ExprErrorKind::UnexpectedToken(token) => {
+            format!("ここに「{token}」は置けない．掛け算の記号(*)を省いていないか確かめる．")
+        }
+        ExprErrorKind::UnexpectedEnd => "式が途中で終わっている．".to_owned(),
+        ExprErrorKind::MissingClosingParenthesis => "開き括弧に対応する閉じ括弧がない．".to_owned(),
+        ExprErrorKind::UnknownName(name) => {
+            format!("「{name}」は，変数，媒介変数，定数(pi，e)のどれでもない．")
+        }
+        ExprErrorKind::UnknownFunction(name) => format!("「{name}」という関数はない．"),
+        ExprErrorKind::FunctionNeedsArgument(name) => {
+            format!("関数「{name}」には，括弧で引数を付ける．")
+        }
+        ExprErrorKind::TooLong => "式が長すぎる．".to_owned(),
+        ExprErrorKind::TooDeep => "括弧や記号の入れ子が深すぎる．".to_owned(),
+    }
+}

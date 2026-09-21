@@ -13,12 +13,20 @@
     )
 )]
 
+pub mod arrow;
+mod compile;
 pub mod error;
+pub mod expr;
+pub mod figure;
 mod parse;
+mod render;
+pub mod sample;
 pub mod scene;
+pub mod tikz;
 mod validate;
 pub mod version;
 
 pub use error::{Error, ErrorKind};
 pub use parse::parse_scene;
+pub use render::render;
 pub use scene::Scene;

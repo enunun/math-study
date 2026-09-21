@@ -2,6 +2,7 @@
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::indexing_slicing)]
 
+use figure::expr::{ExprError, ExprErrorKind};
 use figure::scene::Object;
 use figure::{ErrorKind, parse_scene};
 use semver::Version;
@@ -83,6 +84,28 @@ fn 誤りの種類ごとに名前を返す() {
     assert_eq!(code_of(&scene_with("", " ")), "empty_text");
     assert_eq!(
         code_of(&scene_with(
+            r#"{ "id": "f", "type": "graph", "var": "x", "expr": "1 +", "domain": [0, 1] }"#,
+            "a"
+        )),
+        "expression"
+    );
+    assert_eq!(
+        code_of(&scene_with(
+            r#"{ "id": "pi", "type": "parameter", "value": 1 }"#,
+            "a"
+        )),
+        "reserved_name"
+    );
+    assert_eq!(
+        code_of(&scene_with(
+            r#"{ "id": "a", "type": "parameter", "value": 1 },
+               { "id": "f", "type": "graph", "var": "a", "expr": "1", "domain": [0, 1] }"#,
+            "a"
+        )),
+        "name_conflict"
+    );
+    assert_eq!(
+        code_of(&scene_with(
             r#"{ "id": "x", "type": "axis", "direction": "x", "range": [1, 0] }"#,
             "a"
         )),
@@ -117,9 +140,19 @@ fn 誤りの名前は重ならない() {
         ErrorKind::InvalidVariable(String::new()),
         ErrorKind::EmptyText("x"),
         ErrorKind::InvalidRange("x"),
+        ErrorKind::ReservedName(String::new()),
+        ErrorKind::NameConflict(String::new()),
         ErrorKind::ExpressionCount {
             expected: 2,
             found: 1,
+        },
+        ErrorKind::Expression {
+            field: "expr",
+            index: 0,
+            error: ExprError {
+                kind: ExprErrorKind::UnexpectedEnd,
+                span: 0..0,
+            },
         },
     ];
     let mut codes: Vec<&str> = kinds.iter().map(ErrorKind::code).collect();

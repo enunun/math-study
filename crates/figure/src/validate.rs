@@ -2,6 +2,7 @@
 
 use std::collections::HashSet;
 
+use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::scene::{Axis, Bound, Curve, Graph, Label, Object, Scene};
 
@@ -31,7 +32,8 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
         }
         validate_object(object).map_err(|kind| Error::in_object(id, kind))?;
     }
-    Ok(())
+    // 式の構文，名前，定義域は，型では確かめられないので，式を読んで確かめる．
+    compile(scene).map(drop)
 }
 
 fn validate_object(object: &Object) -> Result<(), ErrorKind> {

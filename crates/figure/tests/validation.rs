@@ -152,16 +152,6 @@ fn 数の定義域は下端が上端より小さくする() {
 }
 
 #[test]
-fn 式で書いた定義域の順序は読み込みでは確かめない() {
-    let scene = parse_scene(&scene(
-        r#"{ "id": "c", "type": "curve", "var": "t", "expr": ["t", "t"], "domain": ["2*pi", 0] }"#,
-        "\"a\"",
-        "[-1, 1]",
-    ));
-    assert!(scene.is_ok(), "{scene:?}");
-}
-
-#[test]
 fn 曲線の式は2個にする() {
     for (exprs, found) in [(r#"["t"]"#, 1), (r#"["t", "t", "t"]"#, 3), ("[]", 0)] {
         let error = error_of_objects(&format!(
