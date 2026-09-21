@@ -4,3 +4,4 @@
 *
 !mise.toml
 !mise.lock
+!.devcontainer/install-texlive.sh
