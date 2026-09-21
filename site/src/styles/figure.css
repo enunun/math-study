@@ -1,6 +1,23 @@
 /* 図(<Figure>)．線と矢じりはSVG，ラベルは，その上に重ねる．色は，文字の色に従う． */
 .figure {
   margin-block: 1.5rem;
+  /* 線の色の名前(`style.color`)．明るい背景で見やすい色である． */
+  --figure-gray: #8a8f98;
+  --figure-red: #c62828;
+  --figure-blue: #1565c0;
+  --figure-green: #2e7d32;
+  --figure-orange: #e65100;
+  --figure-purple: #6a1b9a;
+}
+
+/* 暗い背景では，同じ名前を，明るい色にする． */
+:root[data-theme='dark'] .figure {
+  --figure-gray: #9aa0a6;
+  --figure-red: #ff8a80;
+  --figure-blue: #82b1ff;
+  --figure-green: #81c784;
+  --figure-orange: #ffb74d;
+  --figure-purple: #ce93d8;
 }
 
 .figure-frame {

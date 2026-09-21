@@ -3,7 +3,7 @@
 
 use serde::Serialize;
 
-use crate::scene::{Anchor, Arrow, Line};
+use crate::scene::{Anchor, Arrow, Color, Line};
 
 /// 描く範囲(cm)．ラベルの余白を含む．
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -21,6 +21,8 @@ pub struct Stroke {
     pub line: Line,
     /// 線幅(pt)．
     pub width: f64,
+    /// 線の色．なければ，文字の色である．
+    pub color: Option<Color>,
 }
 
 /// 線の端の矢じり．`TikZ`は，`kind`だけを使い，形を自分で決める．`SVG`は，`polygon`を塗り，

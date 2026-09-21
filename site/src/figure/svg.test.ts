@@ -15,7 +15,7 @@ const FIGURE: Figure = {
         [0, 0],
         [1, 1],
       ],
-      stroke: { line: 'solid', width: 0.8 },
+      stroke: { line: 'solid', width: 0.8, color: null },
       arrow: null,
     },
     {
@@ -25,7 +25,7 @@ const FIGURE: Figure = {
         [1, 0],
         [2, 1],
       ],
-      stroke: { line: 'dotted', width: 0.8 },
+      stroke: { line: 'dotted', width: 0.8, color: null },
       arrow: null,
     },
     {
@@ -34,7 +34,7 @@ const FIGURE: Figure = {
         [0, 0],
         [2, 0],
       ],
-      stroke: { line: 'dashed', width: 0.6 },
+      stroke: { line: 'dashed', width: 0.6, color: null },
       arrow: {
         kind: 'stealth',
         polygon: [
@@ -144,6 +144,41 @@ describe('figureToHast', () => {
     const [code] = all(root, 'code');
     expect(classes(code)).toEqual(['language-math', 'math-inline']);
     expect(textOf(code)).toBe(String.raw`\text{Graph of }y=\sin x`);
+  });
+
+  it('色の名前は，CSSの変数に置き換える．色がなければ，文字の色に従う', () => {
+    const colored = figureToHast({
+      ...FIGURE,
+      items: [
+        {
+          type: 'path',
+          points: [
+            [0, 0],
+            [2, 0],
+          ],
+          stroke: { line: 'solid', width: 0.6, color: 'red' },
+          arrow: {
+            kind: 'stealth',
+            polygon: [
+              [2, 0],
+              [1.8, 0.1],
+              [1.85, 0],
+              [1.8, -0.1],
+            ],
+            line_width: 0.4,
+            line_end: [1.85, 0],
+          },
+        },
+      ],
+    });
+    const [path] = all(colored, 'path');
+    const [polygon] = all(colored, 'polygon');
+    expect(path?.properties.stroke).toBe('var(--figure-red)');
+    // 矢じりは，線と同じ色で，塗って縁取る．
+    expect(polygon?.properties.fill).toBe('var(--figure-red)');
+    expect(polygon?.properties.stroke).toBe('var(--figure-red)');
+    const [plain] = all(root, 'path');
+    expect(plain?.properties.stroke).toBe('currentColor');
   });
 
   it('何も描かない図は，空のSVGになる', () => {

@@ -1,6 +1,6 @@
 import type { Element, ElementContent, Properties } from 'hast';
 
-import type { ArrowHead, Figure, LabelItem, PathItem } from '@/wasm/figure';
+import type { ArrowHead, ColorName, Figure, LabelItem, PathItem } from '@/wasm/figure';
 
 import { anchorShift, labelToMath } from './label';
 
@@ -45,6 +45,11 @@ function svgPoint([x, y]: [number, number]): [number, number] {
   return [x, -y];
 }
 
+/** 線の色．色の名前は，CSSの変数(`figure.css`)に置き換え，明るい背景と暗い背景で色を変える．色がなければ，文字の色に従う． */
+function strokeColor(color: ColorName | null): string {
+  return color === null ? 'currentColor' : `var(--figure-${color})`;
+}
+
 /** 線の種類ごとの，破線の指定．実線には，指定がない． */
 function dashArray({ line, width }: PathItem['stroke']): string | undefined {
   if (line === 'dotted') {
@@ -65,14 +70,15 @@ function pathData(item: PathItem): string {
 }
 
 /** 矢じりの輪郭．塗って縁取る．角は，TikZと同じく，とがらせる． */
-function arrowElement(arrow: ArrowHead): Element {
+function arrowElement(arrow: ArrowHead, color: ColorName | null): Element {
+  const paint = strokeColor(color);
   return element('polygon', {
     points: arrow.polygon
       .map((point) => svgPoint(point))
       .map(([x, y]) => `${format(x)},${format(y)}`)
       .join(' '),
-    fill: 'currentColor',
-    stroke: 'currentColor',
+    fill: paint,
+    stroke: paint,
     strokeWidth: cm(arrow.line_width),
     strokeLinejoin: 'miter',
     strokeMiterlimit: '10',
@@ -84,14 +90,17 @@ function pathElements(item: PathItem): Element[] {
   const properties: Properties = {
     d: pathData(item),
     fill: 'none',
-    stroke: 'currentColor',
+    stroke: strokeColor(item.stroke.color),
     strokeWidth: cm(item.stroke.width),
   };
   const dashes = dashArray(item.stroke);
   if (dashes !== undefined) {
     properties.strokeDasharray = dashes;
   }
-  return [element('path', properties), ...(item.arrow === null ? [] : [arrowElement(item.arrow)])];
+  return [
+    element('path', properties),
+    ...(item.arrow === null ? [] : [arrowElement(item.arrow, item.stroke.color)]),
+  ];
 }
 
 /** 位置を割合で置き，アンカーの分だけ箱をずらした，ラベル．数式は，後段のMathJaxが描画する． */

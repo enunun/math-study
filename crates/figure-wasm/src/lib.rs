@@ -51,6 +51,9 @@ export type SceneOutcome =
 /** 線の種類．`TikZ`のスタイルの名前と同じである． */
 export type LineKind = "solid" | "dotted" | "dashed";
 
+/** 線の色．nullは，文字の色である． */
+export type ColorName = "gray" | "red" | "blue" | "green" | "orange" | "purple";
+
 /** ラベルの箱の，位置に合わせる部分．`TikZ`のanchorと同じ名前である． */
 export type AnchorName =
   | "center"
@@ -75,7 +78,7 @@ export type ArrowHead = {
 export type PathItem = {
   type: "path";
   points: [number, number][];
-  stroke: { line: LineKind; width: number };
+  stroke: { line: LineKind; width: number; color: ColorName | null };
   arrow: ArrowHead | null;
 };
 
@@ -296,9 +299,10 @@ mod tests {
         let canonical = json["canonical"].as_str().expect("文字列である");
         let reread: serde_json::Value = serde_json::from_str(canonical).expect("JSONである");
         assert_eq!(reread["objects"][4]["expr"], "sin(x)");
-        // 省いた項目は，既定値で埋まる．
+        // 省いた項目は，既定値で埋まる．ただし，スタイルの項目は，省いたままである．
         assert_eq!(reread["objects"][0]["arrow"], "stealth");
-        assert_eq!(reread["objects"][4]["style"]["line"], "solid");
+        assert!(reread["objects"][4].get("style").is_none());
+        assert_eq!(reread["objects"][5]["style"]["line"], "dotted");
     }
 
     #[test]

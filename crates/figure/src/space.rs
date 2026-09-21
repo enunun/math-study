@@ -10,7 +10,7 @@ use std::f64::consts::TAU;
 
 use crate::compile::{Compiled, CurvePlot, Plot};
 use crate::figure::{Bounds, Figure, Item, LabelItem, Path, Stroke};
-use crate::render::{AXIS_WIDTH, CURVE_WIDTH, MARGIN, arrow_head, with_variable};
+use crate::render::{AXIS_WIDTH, CURVE_WIDTH, MARGIN, arrow_head, stroke_of, with_variable};
 use crate::sample::{sample, sample_with_parameters};
 use crate::scene::{
     Anchor, Axis, Direction, Hidden, Label, Line, Object, Scene, SpaceView, Sphere, Style,
@@ -174,10 +174,7 @@ fn outline(sphere: &Sphere, camera: &Camera) -> Item {
     }
     Item::Path(Path {
         points,
-        stroke: Stroke {
-            line: sphere.style.line,
-            width: CURVE_WIDTH,
-        },
+        stroke: stroke_of(&sphere.style, Line::Solid, CURVE_WIDTH),
         arrow: None,
     })
 }
@@ -202,9 +199,10 @@ fn axis_items(axis: &Axis, space: &Space) -> Vec<Item> {
     let direction = normalized(space.camera.project(unit_vector));
     let end = space.camera.project(at(high));
     let last = pieces.len().saturating_sub(1);
+    let stroke = stroke_of(&axis.style, Line::Solid, AXIS_WIDTH);
     let mut items = Vec::new();
     for (index, piece) in pieces.iter().enumerate() {
-        let Some(line) = piece_line(piece.hidden, Line::Solid, axis.style.hidden) else {
+        let Some(line) = piece_line(piece.hidden, stroke.line, axis.style.hidden) else {
             continue;
         };
         // 軸はまっすぐなので，各部分は，両端だけで描く．
@@ -213,7 +211,7 @@ fn axis_items(axis: &Axis, space: &Space) -> Vec<Item> {
         };
         let arrow = match direction {
             Some(direction) if index == last && !piece.hidden => {
-                arrow_head(axis.arrow, end, direction)
+                arrow_head(axis.arrow, end, direction, stroke.width)
             }
             _ => None,
         };
@@ -222,10 +220,7 @@ fn axis_items(axis: &Axis, space: &Space) -> Vec<Item> {
                 space.camera.project(*first),
                 space.camera.project(*final_point),
             ],
-            stroke: Stroke {
-                line,
-                width: AXIS_WIDTH,
-            },
+            stroke: Stroke { line, ..stroke },
             arrow,
         }));
     }
@@ -286,6 +281,7 @@ fn anchor_beyond([x, y]: [f64; 2]) -> Anchor {
 
 /// 曲線の線と，隠れた部分の線．
 fn curve_items(style: Style, plot: &CurvePlot, compiled: &Compiled, space: &Space) -> Vec<Item> {
+    let stroke = stroke_of(&style, Line::Solid, CURVE_WIDTH);
     let at = |t: f64| -> Option<Point3> {
         let values = with_variable(t, &compiled.parameters);
         let [x, y, z] = plot.exprs.as_slice() else {
@@ -304,7 +300,7 @@ fn curve_items(style: Style, plot: &CurvePlot, compiled: &Compiled, space: &Spac
     for line in lines {
         let steps: Vec<f64> = line.iter().map(|(t, _)| *t).collect();
         for piece in split_by_visibility(&steps, &|t| at(t).unwrap_or([f64::NAN; 3]), space) {
-            let Some(kind) = piece_line(piece.hidden, style.line, style.hidden) else {
+            let Some(kind) = piece_line(piece.hidden, stroke.line, style.hidden) else {
                 continue;
             };
             items.push(Item::Path(Path {
@@ -315,7 +311,7 @@ fn curve_items(style: Style, plot: &CurvePlot, compiled: &Compiled, space: &Spac
                     .collect(),
                 stroke: Stroke {
                     line: kind,
-                    width: CURVE_WIDTH,
+                    ..stroke
                 },
                 arrow: None,
             }));

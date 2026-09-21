@@ -76,7 +76,7 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Figure 
             }
             Object::Grid(grid) => {
                 if let Plot::Grid(grid_plot) = plot {
-                    items.extend(grid_items(grid.line, grid_plot, view, scale));
+                    items.extend(grid_items(&grid.style, grid_plot, view, scale));
                 }
             }
             Object::Parameter(_) | Object::Sphere(_) => {}
@@ -134,16 +134,19 @@ fn axis_items(axis: &Axis, ticks: &[TickPlot], view: &PlaneView, scale: Scale) -
         // z軸は，空間の図でだけ使える．検査で，平面の図から除かれている．
         Direction::Z => return Vec::new(),
     };
+    let stroke = stroke_of(&axis.style, Line::Solid, AXIS_WIDTH);
     let mut items = vec![Item::Path(Path {
         points: vec![start, end],
-        stroke: Stroke {
-            line: Line::Solid,
-            width: AXIS_WIDTH,
-        },
-        arrow: arrow_head(axis.arrow, end, direction),
+        stroke,
+        arrow: arrow_head(axis.arrow, end, direction, stroke.width),
     })];
+    // 目盛は，軸の色と太さで，実線に引く．
+    let tick_stroke = Stroke {
+        line: Line::Solid,
+        ..stroke
+    };
     for tick in ticks {
-        items.extend(tick_items(tick, axis.direction, scale));
+        items.extend(tick_items(tick, axis.direction, tick_stroke, scale));
     }
     if let Some(text) = &axis.label {
         items.push(Item::Label(LabelItem {
@@ -156,11 +159,8 @@ fn axis_items(axis: &Axis, ticks: &[TickPlot], view: &PlaneView, scale: Scale) -
 }
 
 /// 格子の線．見える範囲を，原点から数えた刻みの倍数の位置で区切る．縦の線，横の線の順に並ぶ．
-fn grid_items(line: Line, grid: &GridPlot, view: &PlaneView, scale: Scale) -> Vec<Item> {
-    let stroke = Stroke {
-        line,
-        width: GRID_WIDTH,
-    };
+fn grid_items(style: &Style, grid: &GridPlot, view: &PlaneView, scale: Scale) -> Vec<Item> {
+    let stroke = stroke_of(style, Line::Dotted, GRID_WIDTH);
     let make = |points: [[f64; 2]; 2]| {
         Item::Path(Path {
             points: points.to_vec(),
@@ -189,7 +189,7 @@ fn multiples(step: f64, [low, high]: [f64; 2]) -> impl Iterator<Item = f64> {
 }
 
 /// 目盛の線と，名前．線は，軸に直角で，軸をまたぐ．名前は，x軸では線の下，y軸では線の左に置く．
-fn tick_items(tick: &TickPlot, direction: Direction, scale: Scale) -> Vec<Item> {
+fn tick_items(tick: &TickPlot, direction: Direction, stroke: Stroke, scale: Scale) -> Vec<Item> {
     let half = TICK_HALF_LENGTH * CM_PER_PT;
     let ([start, end], name_at, default_anchor) = match direction {
         Direction::X => {
@@ -205,10 +205,7 @@ fn tick_items(tick: &TickPlot, direction: Direction, scale: Scale) -> Vec<Item> 
     };
     let mut items = vec![Item::Path(Path {
         points: vec![start, end],
-        stroke: Stroke {
-            line: Line::Solid,
-            width: AXIS_WIDTH,
-        },
+        stroke,
         arrow: None,
     })];
     if let Some(text) = &tick.label {
@@ -221,11 +218,26 @@ fn tick_items(tick: &TickPlot, direction: Direction, scale: Scale) -> Vec<Item> 
     items
 }
 
+/// スタイルから，線の種類，太さ(pt)，色を決める．省いた項目は，既定である．
+pub fn stroke_of(style: &Style, default_line: Line, default_width: f64) -> Stroke {
+    Stroke {
+        line: style.line.unwrap_or(default_line),
+        width: style.width_pt().unwrap_or(default_width),
+        color: style.color,
+    }
+}
+
 /// 軸の端`end`に，向き`direction`(単位ベクトル)の矢じりを付ける．矢じりなしなら`None`．
-pub fn arrow_head(arrow: Arrow, end: [f64; 2], direction: [f64; 2]) -> Option<ArrowHead> {
+/// 矢じりの大きさは，線幅`width`(pt)で決まる．
+pub fn arrow_head(
+    arrow: Arrow,
+    end: [f64; 2],
+    direction: [f64; 2],
+    width: f64,
+) -> Option<ArrowHead> {
     match arrow {
         Arrow::Stealth => {
-            let stealth = Stealth::new(AXIS_WIDTH);
+            let stealth = Stealth::new(width);
             let placed = stealth.place(end, direction, CM_PER_PT);
             Some(ArrowHead {
                 kind: Arrow::Stealth,
@@ -287,10 +299,7 @@ fn plot_items(
 fn curve_path(points: Vec<[f64; 2]>, style: Style) -> Path {
     Path {
         points,
-        stroke: Stroke {
-            line: style.line,
-            width: CURVE_WIDTH,
-        },
+        stroke: stroke_of(&style, Line::Solid, CURVE_WIDTH),
         arrow: None,
     }
 }

@@ -9,7 +9,7 @@ use crate::error::Error;
 use crate::figure::{Figure, Item, LabelItem, Path};
 use crate::parse::parse_scene;
 use crate::render::render;
-use crate::scene::{Anchor, Arrow, Line};
+use crate::scene::{Anchor, Arrow, Color, Line};
 use crate::version::engine_version;
 
 /// 埋め込んだシーンの，始まりを示す行．
@@ -70,8 +70,23 @@ pub fn to_tikz(figure: &Figure, scene_json: &str) -> String {
     out
 }
 
+/// 色の名前を，`xcolor`の名前にする．どれも，`xcolor`の基本の色で，追加の指定なしに使える．
+const fn color_name(color: Color) -> &'static str {
+    match color {
+        Color::Gray => "gray",
+        Color::Red => "red",
+        Color::Blue => "blue",
+        Color::Green => "green!50!black",
+        Color::Orange => "orange",
+        Color::Purple => "violet",
+    }
+}
+
 fn write_path(out: &mut String, path: &Path) {
     let mut options = vec![format!("line width={}pt", number(path.stroke.width))];
+    if let Some(color) = path.stroke.color {
+        options.push(color_name(color).to_owned());
+    }
     match path.stroke.line {
         Line::Solid => {}
         Line::Dotted => options.push("dotted".to_owned()),

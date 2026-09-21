@@ -9,7 +9,7 @@
 )]
 
 use figure::figure::{Figure, Item, Path};
-use figure::scene::{Bound, Line, Object};
+use figure::scene::{Bound, Color, Line, Object};
 use figure::{Error, ErrorKind, Scene, parse_scene, render};
 
 fn plane_scene(unit: &str, objects: &str) -> String {
@@ -60,14 +60,15 @@ fn 格子は_x方向とy方向の刻みを数か式で持つ() {
     };
     assert_eq!(grid.x_step, Some(Bound::Number(1.0)));
     assert_eq!(grid.y_step, Some(Bound::Expression("a/4".to_owned())));
-    // 線の種類の既定は，点線である．
-    assert_eq!(grid.line, Line::Dotted);
+    // 線の種類を省くと，描くときに，点線になる．
+    assert_eq!(grid.style.line, None);
     assert_eq!(scene.objects[1].type_name(), "grid");
 }
 
 #[test]
 fn 格子は_書き出して読み直すと同じになる() {
-    let scene = scene_of(r#"{ "id": "grid", "type": "grid", "x_step": 1, "line": "solid" }"#);
+    let scene =
+        scene_of(r#"{ "id": "grid", "type": "grid", "x_step": 1, "style": { "line": "solid" } }"#);
     let written = serde_json::to_string_pretty(&scene).expect("書き出せる");
     assert_eq!(parse_scene(&written).expect("読み直せる"), scene);
     // 省いた刻みは，書き出さない．
@@ -183,7 +184,7 @@ fn 刻みは_原点から数えた倍数の位置に線を引く() {
 fn 線の位置は_単位の実寸に従い_両方の刻みを続けて引く() {
     let figure = figure_of(
         r#"{ "x": "2cm", "y": "0.5cm" }"#,
-        r#"{ "id": "grid", "type": "grid", "x_step": 1, "y_step": 1, "line": "solid" }"#,
+        r#"{ "id": "grid", "type": "grid", "x_step": 1, "y_step": 1, "style": { "line": "solid" } }"#,
     );
     let lines = paths(&figure);
     // 縦の線6本の後に，横の線4本．
@@ -224,18 +225,30 @@ fn 格子は_描く範囲を変えず_軸より先に置けば軸が上に描か
 const PARABOLA_ON_GRID: &str = include_str!("../../../site/src/figures/parabola-on-grid.json");
 
 #[test]
-fn 格子の上の放物線の図は_格子14本の点線と_軸と曲線からできる() {
+fn 格子の上の放物線の図は_格子14本の点線と_軸と2本の曲線からできる() {
     let figure = render(&parse_scene(PARABOLA_ON_GRID).expect("読める")).expect("描画できる");
     let lines = paths(&figure);
-    // x: -3から3の縦7本，y: -1から5の横7本，軸2本，曲線1本．
-    assert_eq!(lines.len(), 7 + 7 + 2 + 1);
+    // x: -3から3の縦7本，y: -1から5の横7本，軸2本，放物線と接線．
+    assert_eq!(lines.len(), 7 + 7 + 2 + 2);
     let dotted = lines
         .iter()
         .filter(|line| line.stroke.line == Line::Dotted)
         .count();
     assert_eq!(dotted, 14);
-    // 曲線は，範囲(y = 5)で切れている．
-    let curve = lines.last().expect("曲線がある");
-    assert!(curve.points.iter().all(|point| point[1] <= 5.0));
-    assert!(close(curve.points[0][1], 5.0));
+    assert!(
+        lines[..14]
+            .iter()
+            .all(|line| line.stroke.color == Some(Color::Gray))
+    );
+    // 放物線は，範囲(y = 5)で切れている．
+    let parabola = lines[16];
+    assert!(parabola.points.iter().all(|point| point[1] <= 5.0));
+    assert!(close(parabola.points[0][1], 5.0));
+    assert_eq!(parabola.stroke.color, Some(Color::Blue));
+    assert!(close(parabola.stroke.width, 1.2));
+    let tangent = lines[17];
+    assert_eq!(
+        (tangent.stroke.line, tangent.stroke.color),
+        (Line::Dashed, Some(Color::Red))
+    );
 }

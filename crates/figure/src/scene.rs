@@ -171,7 +171,7 @@ pub struct Axis {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub range: Option<[f64; 2]>,
     /// スタイル．空間の図で，隠れた部分の線に使う．
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
     /// 目盛．軸に直角な短い線と，任意の名前を，位置ごとに置く．
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -286,14 +286,67 @@ pub enum Hidden {
     None,
 }
 
-/// 線のスタイル．
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+/// 線の色．決まった名前から選ぶ．色を省くと，文字の色になる．
+///
+/// 名前は，明るい背景と暗い背景の両方で見やすい色に，`SVG`で置き換える．`TikZ`では，`xcolor`の名前にする．
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Color {
+    /// 灰色．
+    Gray,
+    /// 赤．
+    Red,
+    /// 青．
+    Blue,
+    /// 緑．
+    Green,
+    /// 橙．
+    Orange,
+    /// 紫．
+    Purple,
+}
+
+/// 線の太さの上限(pt)．
+pub const MAX_WIDTH_PT: f64 = 10.0;
+
+/// 線のスタイル．省いた項目は，オブジェクトの種類ごとの既定になる(線の種類は，格子が点線，ほかは実線)．
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, default)]
 pub struct Style {
     /// 線の種類．
-    pub line: Line,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub line: Option<Line>,
     /// 隠れた部分の線．
+    #[serde(skip_serializing_if = "Hidden::is_default")]
     pub hidden: Hidden,
+    /// 線の色．
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<Color>,
+    /// 線の太さ．なければ，オブジェクトの種類ごとの既定である．
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub width: Option<Length>,
+}
+
+impl Style {
+    /// すべて省いた，既定のスタイルか．書き出しで省くために使う．
+    #[must_use]
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+
+    /// 線の太さ(pt)．なければ`None`．
+    #[must_use]
+    pub fn width_pt(&self) -> Option<f64> {
+        self.width.map(|width| width.to_cm() / CM_PER_PT)
+    }
+}
+
+impl Hidden {
+    /// 既定の(点線の)ままか．
+    #[must_use]
+    pub const fn is_default(&self) -> bool {
+        matches!(self, Self::Dotted)
+    }
 }
 
 /// 格子．見える範囲を，原点から数えた刻みの倍数の位置の線で区切る．
@@ -308,13 +361,9 @@ pub struct Grid {
     /// y方向の刻み．なければ，横の線を引かない．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub y_step: Option<Bound>,
-    /// 線の種類．既定は点線である．
-    #[serde(default = "dotted")]
-    pub line: Line,
-}
-
-const fn dotted() -> Line {
-    Line::Dotted
+    /// スタイル．線の種類の既定は点線で，線は，目盛と軸より細い．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
 }
 
 /// 球．
@@ -328,7 +377,7 @@ pub struct Sphere {
     /// 半径．
     pub radius: f64,
     /// スタイル．輪郭線の種類に使う．
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
 }
 
@@ -345,7 +394,7 @@ pub struct Graph {
     /// 定義域．
     pub domain: [Bound; 2],
     /// スタイル．
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
 }
 
@@ -362,7 +411,7 @@ pub struct Curve {
     /// 媒介変数の範囲．
     pub domain: [Bound; 2],
     /// スタイル．
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
 }
 

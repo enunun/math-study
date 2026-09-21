@@ -56,7 +56,9 @@ test.describe('図のシーンの確認', () => {
     await page.locator('summary', { hasText: '読み直したJSON' }).click();
     const canonical = page.getByRole('region', { name: '読み直したJSON' });
     await expect(canonical).toContainText('"arrow": "stealth"');
-    await expect(canonical).toContainText('"line": "solid"');
+    // スタイルは，省いた項目を書き出さず，指定した項目だけを書き出す．
+    await expect(canonical).toContainText('"line": "dotted"');
+    await expect(canonical).not.toContainText('"line": "solid"');
   });
 
   test('新しい版は，版の誤りとして，両方の版を示す', async ({ page }) => {

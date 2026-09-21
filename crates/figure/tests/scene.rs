@@ -116,7 +116,7 @@ fn グラフの線の種類を省くと実線になる() {
     ) else {
         panic!("グラフである");
     };
-    assert_eq!(graph.style.line, Line::Solid);
+    assert_eq!(graph.style.line, None);
     assert_eq!(graph.domain, [Bound::Number(-7.0), Bound::Number(7.0)]);
 }
 
@@ -133,7 +133,7 @@ fn 媒介変数表示の曲線を読める() {
         curve.domain,
         [Bound::Number(0.0), Bound::Expression("2*pi".to_owned())]
     );
-    assert_eq!(curve.style.line, Line::Dashed);
+    assert_eq!(curve.style.line, Some(Line::Dashed));
 }
 
 #[test]

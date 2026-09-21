@@ -1,12 +1,33 @@
 {
   "version": "0.1.0",
-  "description": "y=x^2 のグラフと，格子．定義域が見える範囲より広く，範囲の外へ出る部分は描かない．",
+  "description": "y=x^2 のグラフと，点(1, 1)での接線，格子．色と線の太さを指定する．定義域が見える範囲より広く，範囲の外へ出る部分は描かない．",
   "view": { "x": [-3, 3], "y": [-1, 5], "unit": { "x": "1cm", "y": "1cm" } },
   "objects": [
-    { "id": "grid", "type": "grid", "x_step": 1, "y_step": 1 },
+    {
+      "id": "grid",
+      "type": "grid",
+      "x_step": 1,
+      "y_step": 1,
+      "style": { "color": "gray" }
+    },
     { "id": "x_axis", "type": "axis", "direction": "x", "arrow": "stealth", "label": "x" },
     { "id": "y_axis", "type": "axis", "direction": "y", "arrow": "stealth", "label": "y" },
     { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "O" },
-    { "id": "parabola", "type": "graph", "var": "x", "expr": "x^2", "domain": [-4, 4] }
+    {
+      "id": "parabola",
+      "type": "graph",
+      "var": "x",
+      "expr": "x^2",
+      "domain": [-4, 4],
+      "style": { "color": "blue", "width": "1.2pt" }
+    },
+    {
+      "id": "tangent",
+      "type": "graph",
+      "var": "x",
+      "expr": "2*x - 1",
+      "domain": [-4, 4],
+      "style": { "color": "red", "line": "dashed" }
+    }
   ]
 }

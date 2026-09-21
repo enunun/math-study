@@ -5,7 +5,8 @@ use std::collections::HashSet;
 use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::scene::{
-    Axis, Bound, Curve, Direction, Graph, Grid, Label, Object, Scene, SpaceView, Sphere, View,
+    Axis, Bound, CM_PER_PT, Curve, Direction, Graph, Grid, Label, MAX_WIDTH_PT, Object, Scene,
+    SpaceView, Sphere, Style, View,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -38,6 +39,9 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
 }
 
 fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
+    if let Some(style) = style_of(object) {
+        check_style(style)?;
+    }
     match object {
         Object::Axis(axis) => validate_axis(axis, view),
         Object::Label(label) => validate_label(label, view),
@@ -46,6 +50,27 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Sphere(sphere) => space_only("sphere", view).and_then(|()| validate_sphere(sphere)),
         Object::Grid(grid) => plane_only("grid", view).and_then(|()| validate_grid(grid)),
         Object::Parameter(_) => Ok(()),
+    }
+}
+
+fn style_of(object: &Object) -> Option<&Style> {
+    match object {
+        Object::Axis(o) => Some(&o.style),
+        Object::Graph(o) => Some(&o.style),
+        Object::Curve(o) => Some(&o.style),
+        Object::Sphere(o) => Some(&o.style),
+        Object::Grid(o) => Some(&o.style),
+        Object::Label(_) | Object::Parameter(_) => None,
+    }
+}
+
+/// 線の太さは，0より大きく，上限以下である(0以下の長さは，読み込みで断られる)．
+fn check_style(style: &Style) -> Result<(), ErrorKind> {
+    match style.width {
+        Some(width) if width.to_cm() / CM_PER_PT > MAX_WIDTH_PT + 1e-9 => Err(ErrorKind::Invalid(
+            format!("`width`は，0より大きく，{MAX_WIDTH_PT}pt以下にする．"),
+        )),
+        _ => Ok(()),
     }
 }
 

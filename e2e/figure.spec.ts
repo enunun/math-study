@@ -152,12 +152,13 @@ test.describe('シーンから描いた図', () => {
 
   test('格子は，細い点線で，見える範囲を区切り，曲線は，格子の外へ出ない', async ({ page }) => {
     const paths = third(page).locator('svg path');
-    // 縦7本，横7本，軸2本，曲線1本．
-    await expect(paths).toHaveCount(17);
+    // 縦7本，横7本，軸2本，曲線2本．
+    await expect(paths).toHaveCount(18);
     const dashed = await paths.evaluateAll((elements) =>
       elements.map((element) => element.hasAttribute('stroke-dasharray')),
     );
-    expect(dashed.filter(Boolean)).toHaveLength(14);
+    // 格子の点線14本と，破線の接線．
+    expect(dashed.filter(Boolean)).toHaveLength(15);
     const firstLine = await geometry(paths.nth(0));
     const top = await geometry(paths.nth(13));
     const curve = await geometry(paths.nth(16));
@@ -169,6 +170,38 @@ test.describe('シーンから描いた図', () => {
     expect(curve.y).toBeGreaterThanOrEqual(top.y - 1);
     expect(curve.y).toBeLessThan(top.y + 2);
   });
+
+  test('線の太さは，指定した長さで描かれる', async ({ page }) => {
+    const paths = third(page).locator('svg path');
+    // SVGの座標の単位はcmで，線の太さも，cmで書かれる．放物線は1.2pt，格子は0.3ptである．
+    const widths = await paths.evaluateAll((elements) =>
+      elements.map((element) => Number(/[\d.]+/u.exec(getComputedStyle(element).strokeWidth)?.[0])),
+    );
+    const cmPerPt = 2.54 / 72.27;
+    expect(Math.abs((widths[16] ?? 0) - 1.2 * cmPerPt)).toBeLessThan(1e-4);
+    expect(Math.abs((widths[0] ?? 0) - 0.3 * cmPerPt)).toBeLessThan(1e-4);
+  });
+
+  for (const scheme of ['light', 'dark'] as const) {
+    test(`色の名前は，背景に合わせた色になる(${scheme})`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      const paths = third(page).locator('svg path');
+      const stroke = (index: number): Promise<string> =>
+        paths.nth(index).evaluate((element) => getComputedStyle(element).stroke);
+      const expected =
+        scheme === 'light'
+          ? { blue: 'rgb(21, 101, 192)', red: 'rgb(198, 40, 40)', gray: 'rgb(138, 143, 152)' }
+          : { blue: 'rgb(130, 177, 255)', red: 'rgb(255, 138, 128)', gray: 'rgb(154, 160, 166)' };
+      // 放物線は青，接線は赤，格子は灰色である．
+      await expect.poll(() => stroke(16)).toBe(expected.blue);
+      expect(await stroke(17)).toBe(expected.red);
+      expect(await stroke(0)).toBe(expected.gray);
+      // 矢じりのない軸は，文字の色のままである．
+      const axis = await stroke(14);
+      const text = await third(page).evaluate((element) => getComputedStyle(element).color);
+      expect(axis).toBe(text);
+    });
+  }
 
   for (const scheme of ['light', 'dark'] as const) {
     test(`図の色は，文字の色に従う(${scheme})`, async ({ page }) => {
