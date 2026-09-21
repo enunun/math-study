@@ -44,7 +44,8 @@ function collectSites(tree: Root): MathSite[] {
       target,
       tex,
       display,
-      place: node.position?.start,
+      // 別行立ての式の位置は，包む<pre>にだけ付く．
+      place: (target.position ?? node.position)?.start,
     });
   });
   return sites;

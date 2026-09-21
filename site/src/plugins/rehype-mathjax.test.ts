@@ -138,6 +138,11 @@ $$`,
     await expect(render(markdown)).rejects.toThrow(/TeX: \\undefinedmacro/u);
   });
 
+  it('別行立ての式の失敗も，式の位置を示す', async () => {
+    const markdown = '1行目である．\n\n$$\n\\undefinedmacro\n$$';
+    await expect(render(markdown)).rejects.toMatchObject({ line: 3, ruleId: 'rehype-mathjax' });
+  });
+
   it('複数の文書を同時に処理しても，順に処理した結果と同じになる', async () => {
     const documents = [
       '$a + b$',
