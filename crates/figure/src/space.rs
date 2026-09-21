@@ -98,17 +98,22 @@ impl Ball {
     }
 }
 
+/// 2つの変数から，曲面の点を返す，式の関数．
+type SurfaceMap<'a> = Box<dyn Fn(f64, f64) -> Option<Point3> + 'a>;
+
 /// 図の全体．投影と，点を隠す球と曲面．
-struct Space {
+struct Space<'a> {
     camera: Camera,
     balls: Vec<Ball>,
     /// 曲面の網．シーンの中の曲面の順に並ぶ．
     meshes: Vec<Mesh>,
+    /// 曲面の式の関数．`meshes`と同じ順に並び，交線と切り口を，厳密な式の上へ磨くために使う．
+    surfaces: Vec<SurfaceMap<'a>>,
     /// 曲面の`id`から，`meshes`の中の番号．
     mesh_of: HashMap<String, usize>,
 }
 
-impl Space {
+impl Space<'_> {
     /// 曲面自身の輪郭の点が隠れているか．自身の網には，輪郭用の判定を使い，ほかの網と球には，そのまま使う．
     fn rim_hidden(&self, rim: Rim, own: &Mesh) -> bool {
         self.balls
@@ -131,9 +136,9 @@ impl Space {
     }
 }
 
-/// 曲面の式から，三角形の網を作る．
-fn build_mesh(surface: &Surface, plot: &SurfacePlot, compiled: &Compiled, frame: Frame) -> Mesh {
-    let point_at = |u: f64, v: f64| -> Option<Point3> {
+/// 曲面の式の関数．2つの変数から，点を返す．値が有限でなければ，`None`を返す．
+fn surface_map<'a>(plot: &'a SurfacePlot, compiled: &'a Compiled) -> SurfaceMap<'a> {
+    Box::new(move |u: f64, v: f64| {
         let mut values = vec![u, v];
         values.extend_from_slice(&compiled.parameters);
         let [x, y, z] = plot.exprs.as_slice() else {
@@ -141,22 +146,30 @@ fn build_mesh(surface: &Surface, plot: &SurfacePlot, compiled: &Compiled, frame:
         };
         let point = [x.eval(&values), y.eval(&values), z.eval(&values)];
         point.iter().all(|c| c.is_finite()).then_some(point)
-    };
-    Mesh::build(&point_at, plot.domain, surface.mesh, frame)
+    })
 }
 
 /// 空間の図を，描画の中間表現にする．
 pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Figure {
     let camera = Camera::new(view);
-    let meshes = scene
+    let placed_surfaces: Vec<(&Surface, &SurfacePlot)> = scene
         .objects
         .iter()
         .zip(&compiled.plots)
         .filter_map(|(object, plot)| match (object, plot) {
-            (Object::Surface(surface), Plot::Surface(placed)) => {
-                Some(build_mesh(surface, placed, compiled, camera.frame()))
-            }
+            (Object::Surface(surface), Plot::Surface(placed)) => Some((surface, placed)),
             _ => None,
+        })
+        .collect();
+    let surfaces: Vec<SurfaceMap> = placed_surfaces
+        .iter()
+        .map(|(_, placed)| surface_map(placed, compiled))
+        .collect();
+    let meshes = placed_surfaces
+        .iter()
+        .zip(&surfaces)
+        .map(|((surface, placed), map)| {
+            Mesh::build(map.as_ref(), placed.domain, surface.mesh, camera.frame())
         })
         .collect();
     let mesh_of: HashMap<String, usize> = scene
@@ -172,6 +185,7 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
     let space = Space {
         camera,
         meshes,
+        surfaces,
         mesh_of,
         balls: scene
             .objects
@@ -528,21 +542,22 @@ fn link_items(style: &Style, arrow: Arrow, link: &LinkPlot, space: &Space) -> Ve
 
 /// 2つの曲面の交線．曲面の上にあるので，曲面に隠れる部分は，隠れた部分の線で描く．
 fn intersection_items(found: &Intersection, space: &Space) -> Vec<Item> {
-    let mesh_for = |name: &String| {
-        space
-            .mesh_of
-            .get(name)
-            .and_then(|index| space.meshes.get(*index))
+    // 曲面の名前から，網と，式の関数．
+    let surface_for = |name: &String| {
+        let index = *space.mesh_of.get(name)?;
+        Some((space.meshes.get(index)?, space.surfaces.get(index)?))
     };
     let [first, second] = found.surfaces.as_slice() else {
         return Vec::new();
     };
-    let (Some(first), Some(second)) = (mesh_for(first), mesh_for(second)) else {
+    let (Some((first, first_map)), Some((second, second_map))) =
+        (surface_for(first), surface_for(second))
+    else {
         return Vec::new();
     };
     let stroke = stroke_of(&found.style, Line::Solid, CURVE_WIDTH);
     let mut items = Vec::new();
-    for line in &first.intersection(second) {
+    for line in &first.intersection(second, first_map.as_ref(), second_map.as_ref()) {
         let steps: Vec<f64> = (0..line.len())
             .map(|k| f64::from(u32::try_from(k).unwrap_or(u32::MAX)))
             .collect();
@@ -560,16 +575,16 @@ fn intersection_items(found: &Intersection, space: &Space) -> Vec<Item> {
 
 /// 曲面の切り口の線．曲面の上にあるので，曲面に隠れる部分は，隠れた部分の線で描く．
 fn cut_items(cut: &Cut, placed: &CutPlot, space: &Space) -> Vec<Item> {
-    let Some(mesh) = space
+    let Some((mesh, map)) = space
         .mesh_of
         .get(&cut.surface)
-        .and_then(|index| space.meshes.get(*index))
+        .and_then(|index| Some((space.meshes.get(*index)?, space.surfaces.get(*index)?)))
     else {
         return Vec::new();
     };
     let stroke = stroke_of(&cut.style, Line::Solid, CURVE_WIDTH);
     let mut items = Vec::new();
-    for line in &mesh.cut(placed.normal, placed.offset) {
+    for line in &mesh.cut(placed.normal, placed.offset, map.as_ref()) {
         let steps: Vec<f64> = (0..line.len())
             .map(|k| f64::from(u32::try_from(k).unwrap_or(u32::MAX)))
             .collect();

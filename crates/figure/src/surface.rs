@@ -6,6 +6,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::refine::{Curve, Node};
+
 /// 空間の点．
 pub type Point3 = [f64; 3];
 
@@ -152,6 +154,16 @@ type Edge = (usize, usize);
 /// 輪郭の上の点と，その点での曲面の法線(長さ1)．
 pub type Rim = (Point3, Point3);
 
+/// 2つの変数から，曲面の点を返す関数．値がなければ`None`を返す．
+pub type SurfaceFn<'a> = &'a dyn Fn(f64, f64) -> Option<Point3>;
+
+/// 値が0になる線の上の点．`rim`は，点と法線で，`params`は，曲面のパラメータ(2つの変数の値)である．
+#[derive(Debug, Clone, Copy)]
+struct LevelPoint {
+    rim: Rim,
+    params: [f64; 2],
+}
+
 /// 曲面の三角形の網．
 pub struct Mesh {
     /// 頂点．値のない点は`None`である．行が第1変数，列が第2変数の方向に並ぶ．
@@ -169,6 +181,10 @@ pub struct Mesh {
     /// 座標の大きさ．合っているかを比べる誤差の基準にする．
     scale: f64,
     frame: Frame,
+    /// 各変数の範囲．
+    domain: [[f64; 2]; 2],
+    /// 各変数の方向の分割数．
+    divisions: [usize; 2],
 }
 
 fn fraction(index: usize, count: usize) -> f64 {
@@ -287,10 +303,23 @@ impl Mesh {
             offset: 2.0 * sag + 1e-9 * scale,
             scale,
             frame,
+            domain,
+            divisions: mesh,
         };
         result.triangles = result.project_triangles();
         result.grid = ScreenGrid::new(&result.triangles);
         result
+    }
+
+    /// 頂点の，曲面のパラメータ(2つの変数の値)．
+    fn vertex_params(&self, vertex: usize) -> [f64; 2] {
+        let row = vertex.checked_div(self.columns).unwrap_or(0);
+        let column = vertex.checked_rem(self.columns).unwrap_or(0);
+        let [[u0, u1], [v0, v1]] = self.domain;
+        [
+            lerp(u0, u1, fraction(row, self.divisions[0])),
+            lerp(v0, v1, fraction(column, self.divisions[1])),
+        ]
     }
 
     fn point(&self, index: usize) -> Option<Point3> {
@@ -418,24 +447,83 @@ impl Mesh {
             .iter()
             .map(|normal| dot(*normal, self.frame.toward))
             .collect();
-        self.level_curves(&facing, &normals)
+        let (chains, points) = self.level_chains(&facing, &normals);
+        let lines = chains
+            .iter()
+            .map(|ids| {
+                ids.iter()
+                    .filter_map(|edge| points.get(edge).map(|found| found.rim))
+                    .collect()
+            })
+            .collect();
+        self.tidy(lines)
     }
 
-    /// 平面`normal・p = offset`による，曲面の切り口の線．網の辺の上で，平面の式の値が0になる点を結んだ，
-    /// 空間の折れ線である．
+    /// 平面`normal・p = offset`による，曲面の切り口の線．網の辺の上で，平面の式の値が0になる点を結び，
+    /// 厳密な式`surface`の上へ磨き，曲がりに合わせて点を足した，空間の折れ線である．
     #[must_use]
-    pub fn cut(&self, normal: Point3, offset: f64) -> Vec<Vec<Rim>> {
+    pub fn cut(&self, normal: Point3, offset: f64, surface: SurfaceFn) -> Vec<Vec<Rim>> {
         let values: Vec<f64> = (0..self.points.len())
             .map(|k| self.point(k).map_or(0.0, |p| dot(normal, p) - offset))
             .collect();
-        self.level_curves(&values, &self.vertex_normals())
+        let (chains, points) = self.level_chains(&values, &self.vertex_normals());
+        let residual = |params: &[f64]| -> Option<Vec<f64>> {
+            let [u, v] = params else {
+                return None;
+            };
+            surface(*u, *v).map(|p| vec![dot(normal, p) - offset])
+        };
+        let position = |params: &[f64]| -> Option<Point3> {
+            let [u, v] = params else {
+                return None;
+            };
+            surface(*u, *v)
+        };
+        let curve = Curve {
+            residual: &residual,
+            position: &position,
+            bounds: self.domain.to_vec(),
+            scale: self.scale,
+        };
+        let lines = chains
+            .iter()
+            .map(|ids| {
+                let nodes: Vec<Node> = ids
+                    .iter()
+                    .filter_map(|edge| points.get(edge))
+                    .map(|found| Node {
+                        params: found.params.to_vec(),
+                        point: found.rim.0,
+                    })
+                    .collect();
+                curve
+                    .refine(&nodes)
+                    .into_iter()
+                    .map(|node| (node.point, [0.0; 3]))
+                    .collect()
+            })
+            .collect();
+        self.tidy(lines)
     }
 
-    /// 頂点ごとの値が0になる所を，網の辺の上で補間して結んだ線．閉じた線は，始めと終わりが同じ点になる．
-    fn level_curves(&self, values: &[f64], normals: &[Point3]) -> Vec<Vec<Rim>> {
+    /// 折れ線の端が重なるものをつなぎ，同じ点の続きを1つにする．
+    fn tidy(&self, lines: Vec<Vec<Rim>>) -> Vec<Vec<Rim>> {
+        join_chains(lines, 1e-7 * self.scale)
+            .into_iter()
+            .filter_map(|line| finish_line(line, 1e-7 * self.scale))
+            .collect()
+    }
+
+    /// 頂点ごとの値が0になる所を，網の辺の上で補間して結んだ線．辺ごとの点と，辺の並びを返す．
+    /// 閉じた線は，始めと終わりが同じ辺になる．
+    fn level_chains(
+        &self,
+        values: &[f64],
+        normals: &[Point3],
+    ) -> (Vec<Vec<Edge>>, BTreeMap<Edge, LevelPoint>) {
         let value = |k: usize| values.get(k).copied().unwrap_or(0.0);
         // 辺の上の，値が0の点と，同じ三角形の中で結ばれる，2つの辺．
-        let mut positions: BTreeMap<Edge, Rim> = BTreeMap::new();
+        let mut positions: BTreeMap<Edge, LevelPoint> = BTreeMap::new();
         let mut links: BTreeMap<Edge, Vec<Edge>> = BTreeMap::new();
         for corners in &self.indices {
             if corners.iter().any(|k| self.point(*k).is_none()) {
@@ -457,7 +545,18 @@ impl Mesh {
                         }
                         _ => [0.0; 3],
                     };
-                    positions.insert((low, high), (point, normal));
+                    let (low_params, high_params) =
+                        (self.vertex_params(low), self.vertex_params(high));
+                    positions.insert(
+                        (low, high),
+                        LevelPoint {
+                            rim: (point, normal),
+                            params: [
+                                lerp(low_params[0], high_params[0], ratio),
+                                lerp(low_params[1], high_params[1], ratio),
+                            ],
+                        },
+                    );
                     crossing.push((low, high));
                 }
             }
@@ -466,11 +565,7 @@ impl Mesh {
                 links.entry(*second).or_default().push(*first);
             }
         }
-        let chains = chain(&links, &positions);
-        join_chains(chains, 1e-7 * self.scale)
-            .into_iter()
-            .filter_map(|line| finish_line(line, 1e-7 * self.scale))
-            .collect()
+        (chain_ids(&links), positions)
     }
 
     /// 定義域の縁の線．4つの辺のうち，1点に縮んでいない辺の，空間の折れ線である．
@@ -507,14 +602,15 @@ impl Mesh {
     }
 }
 
-/// 辺の名前でつながった点を，折れ線にたどる．端(つながりが1つの点)から始め，残りは輪である．
-fn chain(links: &BTreeMap<Edge, Vec<Edge>>, positions: &BTreeMap<Edge, Rim>) -> Vec<Vec<Rim>> {
-    let mut visited: BTreeSet<Edge> = BTreeSet::new();
+/// 名前でつながった点を，名前の並びにたどる．端(つながりが1つの点)から始め，残りは輪である．
+/// 輪は，始めの名前に戻って，閉じる．
+fn chain_ids<K: Ord + Copy>(links: &BTreeMap<K, Vec<K>>) -> Vec<Vec<K>> {
+    let mut visited: BTreeSet<K> = BTreeSet::new();
     let mut chains = Vec::new();
     let ends = links
         .iter()
         .filter(|(_, next)| next.len() == 1)
-        .map(|(edge, _)| *edge);
+        .map(|(key, _)| *key);
     for start in ends.chain(links.keys().copied()) {
         if visited.contains(&start) {
             continue;
@@ -522,26 +618,22 @@ fn chain(links: &BTreeMap<Edge, Vec<Edge>>, positions: &BTreeMap<Edge, Rim>) -> 
         let mut line = Vec::new();
         let mut current = Some(start);
         let mut last = start;
-        while let Some(edge) = current {
-            last = edge;
-            visited.insert(edge);
-            if let Some(point) = positions.get(&edge) {
-                line.push(*point);
-            }
+        while let Some(key) = current {
+            last = key;
+            visited.insert(key);
+            line.push(key);
             current = links
-                .get(&edge)
+                .get(&key)
                 .into_iter()
                 .flatten()
                 .copied()
                 .find(|candidate| !visited.contains(candidate));
         }
-        // 輪は，始めの点に戻って，閉じる．
         if line.len() >= 3
             && last != start
             && links.get(&last).is_some_and(|next| next.contains(&start))
-            && let Some(first) = line.first().copied()
         {
-            line.push(first);
+            line.push(start);
         }
         chains.push(line);
     }
@@ -799,6 +891,8 @@ struct NodeIndex {
     cell: f64,
     tolerance: f64,
     nodes: Vec<Point3>,
+    /// 各節の，2つの曲面のパラメータ(4つの値)．はじめに見つかった値である．
+    params: Vec<[f64; 4]>,
     lookup: std::collections::HashMap<[i64; 3], Vec<usize>>,
 }
 
@@ -814,6 +908,7 @@ impl NodeIndex {
             cell: tolerance * 4.0,
             tolerance,
             nodes: Vec::new(),
+            params: Vec::new(),
             lookup: std::collections::HashMap::new(),
         }
     }
@@ -823,7 +918,7 @@ impl NodeIndex {
     }
 
     /// 点の節の番号．近くに節がなければ，新しく作る．
-    fn node(&mut self, point: Point3) -> usize {
+    fn node(&mut self, point: Point3, params: [f64; 4]) -> usize {
         let [cx, cy, cz] = self.key(point);
         for dx in -1..=1_i64 {
             for dy in -1..=1_i64 {
@@ -848,30 +943,73 @@ impl NodeIndex {
         }
         let index = self.nodes.len();
         self.nodes.push(point);
+        self.params.push(params);
         self.lookup.entry([cx, cy, cz]).or_default().push(index);
         index
     }
 }
 
+/// 三角形の中の点の，曲面のパラメータ．頂点のパラメータを，重心座標で混ぜる．
+fn triangle_params(solid: &Solid, vertex_params: [[f64; 2]; 3], point: Point3) -> [f64; 2] {
+    let (first_edge, second_edge) = (minus(solid[1], solid[0]), minus(solid[2], solid[0]));
+    let offset = minus(point, solid[0]);
+    let (d00, d01, d11) = (
+        dot(first_edge, first_edge),
+        dot(first_edge, second_edge),
+        dot(second_edge, second_edge),
+    );
+    let (d20, d21) = (dot(offset, first_edge), dot(offset, second_edge));
+    let denominator = d00 * d11 - d01 * d01;
+    let (weight_one, weight_two) = if denominator.abs() > f64::MIN_POSITIVE {
+        (
+            (d11 * d20 - d01 * d21) / denominator,
+            (d00 * d21 - d01 * d20) / denominator,
+        )
+    } else {
+        (0.0, 0.0)
+    };
+    let weight_zero = 1.0 - weight_one - weight_two;
+    let mix = |axis: usize| {
+        let [zero, one, two] = vertex_params.map(|params| params.get(axis).copied().unwrap_or(0.0));
+        weight_zero * zero + weight_one * one + weight_two * two
+    };
+    [mix(0), mix(1)]
+}
+
+/// 2つの網の三角形が交わる線分と，端の，2つの曲面のパラメータ．
+struct Meeting {
+    ends: [Point3; 2],
+    params: [[f64; 4]; 2],
+}
+
 impl Mesh {
-    /// 別の網との交線．2つの網の三角形が交わる線分を求め，端が重なるものをつないだ，空間の折れ線である．
+    /// 網の三角形と，頂点の番号(順に，`indices`のうち，すべての頂点に値がある三角形)．
+    fn solids(&self) -> Vec<(Solid, [usize; 3])> {
+        self.indices
+            .iter()
+            .filter_map(|corners| {
+                let [a, b, c] = corners.map(|k| self.point(k));
+                Some(([a?, b?, c?], *corners))
+            })
+            .collect()
+    }
+
+    fn triangle_params(&self, solid: &Solid, corners: [usize; 3], point: Point3) -> [f64; 2] {
+        triangle_params(solid, corners.map(|k| self.vertex_params(k)), point)
+    }
+
+    /// 別の網との交線．2つの網の三角形が交わる線分を求め，端が重なるものをつなぎ，2つの厳密な式
+    /// (`own`は，この網の曲面，`theirs`は，相手の曲面)の上へ磨き，曲がりに合わせて点を足した，
+    /// 空間の折れ線である．
     #[must_use]
-    pub fn intersection(&self, other: &Mesh) -> Vec<Vec<Rim>> {
-        let solids = |mesh: &Mesh| -> Vec<Solid> {
-            mesh.indices
-                .iter()
-                .filter_map(|corners| {
-                    let [a, b, c] = corners.map(|k| mesh.point(k));
-                    Some([a?, b?, c?])
-                })
-                .collect()
-        };
-        let (mine, theirs) = (solids(self), solids(other));
+    pub fn intersection(&self, other: &Mesh, own: SurfaceFn, theirs: SurfaceFn) -> Vec<Vec<Rim>> {
+        let (mine, others) = (self.solids(), other.solids());
         let scale = self.scale.max(other.scale);
-        let grid = SpaceGrid::new(&theirs);
-        let mut seen = vec![usize::MAX; theirs.len()];
-        let mut segments: Vec<[Point3; 2]> = Vec::new();
-        for (index, triangle) in mine.iter().enumerate() {
+        let solid_list: Vec<Solid> = others.iter().map(|(solid, _)| *solid).collect();
+        let grid = SpaceGrid::new(&solid_list);
+        let mut seen = vec![usize::MAX; others.len()];
+        let mut meetings: Vec<Meeting> = Vec::new();
+        for (index, (triangle, corners)) in mine.iter().enumerate() {
             for candidate in grid.candidates(triangle) {
                 if seen.get(candidate) == Some(&index) {
                     continue;
@@ -879,68 +1017,73 @@ impl Mesh {
                 if let Some(slot) = seen.get_mut(candidate) {
                     *slot = index;
                 }
-                if let Some(other_triangle) = theirs.get(candidate)
-                    && let Some(segment) = triangle_intersection(triangle, other_triangle, scale)
-                {
-                    segments.push(segment);
+                let Some((other_triangle, other_corners)) = others.get(candidate) else {
+                    continue;
+                };
+                if let Some(ends) = triangle_intersection(triangle, other_triangle, scale) {
+                    let params = ends.map(|end| {
+                        let [u, v] = self.triangle_params(triangle, *corners, end);
+                        let [s, t] = other.triangle_params(other_triangle, *other_corners, end);
+                        [u, v, s, t]
+                    });
+                    meetings.push(Meeting { ends, params });
                 }
             }
         }
         let tolerance = 1e-7 * scale;
         let mut nodes = NodeIndex::new(tolerance);
         let mut links: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
-        for [start, end] in segments {
-            let (from, to) = (nodes.node(start), nodes.node(end));
+        for meeting in meetings {
+            let [start, end] = meeting.ends;
+            let [start_params, end_params] = meeting.params;
+            let (from, to) = (nodes.node(start, start_params), nodes.node(end, end_params));
             if from != to {
                 links.entry(from).or_default().push(to);
                 links.entry(to).or_default().push(from);
             }
         }
-        let chains = chain_nodes(&links, &nodes.nodes);
-        join_chains(chains, tolerance)
-            .into_iter()
-            .filter_map(|line| finish_line(line, tolerance))
-            .collect()
-    }
-}
-
-/// 節のつながりから，折れ線をたどる．端(つながりが1つの節)から始め，残りは輪である．
-fn chain_nodes(links: &BTreeMap<usize, Vec<usize>>, positions: &[Point3]) -> Vec<Vec<Rim>> {
-    let mut visited: BTreeSet<usize> = BTreeSet::new();
-    let mut chains = Vec::new();
-    let ends = links
-        .iter()
-        .filter(|(_, next)| next.len() == 1)
-        .map(|(node, _)| *node);
-    for start in ends.chain(links.keys().copied()) {
-        if visited.contains(&start) {
-            continue;
-        }
-        let mut line: Vec<Rim> = Vec::new();
-        let mut current = Some(start);
-        let mut last = start;
-        while let Some(node) = current {
-            last = node;
-            visited.insert(node);
-            if let Some(point) = positions.get(node) {
-                line.push((*point, [0.0; 3]));
-            }
-            current = links
-                .get(&node)
-                .into_iter()
-                .flatten()
+        let residual = |params: &[f64]| -> Option<Vec<f64>> {
+            let [u, v, s, t] = params else {
+                return None;
+            };
+            let (first, second) = (own(*u, *v)?, theirs(*s, *t)?);
+            Some(minus(first, second).to_vec())
+        };
+        let position = |params: &[f64]| -> Option<Point3> {
+            let [u, v, _, _] = params else {
+                return None;
+            };
+            own(*u, *v)
+        };
+        let curve = Curve {
+            residual: &residual,
+            position: &position,
+            bounds: self
+                .domain
+                .iter()
+                .chain(other.domain.iter())
                 .copied()
-                .find(|candidate| !visited.contains(candidate));
-        }
-        // 輪は，始めの点に戻って，閉じる．
-        if line.len() >= 3
-            && last != start
-            && links.get(&last).is_some_and(|next| next.contains(&start))
-            && let Some(first) = line.first().copied()
-        {
-            line.push(first);
-        }
-        chains.push(line);
+                .collect(),
+            scale,
+        };
+        let joined = chain_ids(&links)
+            .iter()
+            .map(|ids| {
+                let chain: Vec<Node> = ids
+                    .iter()
+                    .filter_map(|id| Some((nodes.nodes.get(*id)?, nodes.params.get(*id)?)))
+                    .map(|(point, params)| Node {
+                        params: params.to_vec(),
+                        point: *point,
+                    })
+                    .collect();
+                curve
+                    .refine(&chain)
+                    .into_iter()
+                    .map(|node| (node.point, [0.0; 3]))
+                    .collect()
+            })
+            .collect();
+        self.tidy(joined)
     }
-    chains
 }

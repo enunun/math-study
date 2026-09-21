@@ -21,6 +21,7 @@ pub mod expr;
 pub mod figure;
 pub mod hatch;
 mod parse;
+mod refine;
 mod region;
 mod render;
 pub mod sample;

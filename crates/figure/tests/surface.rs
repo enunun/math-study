@@ -507,3 +507,154 @@ fn 網が大きくても_隠れ方の判定は速い() {
         started.elapsed()
     );
 }
+
+// ---- 交線と切り口の精度 ----
+
+#[allow(clippy::unnecessary_wraps)]
+fn sphere_point(u: f64, v: f64) -> Option<[f64; 3]> {
+    Some([
+        2.0 * u.sin() * v.cos(),
+        2.0 * u.sin() * v.sin(),
+        2.0 * u.cos(),
+    ])
+}
+
+/// 軸がz軸に平行で，半径1の円柱 (x - 1)^2 + y^2 = 1．
+#[allow(clippy::unnecessary_wraps)]
+fn cylinder_point(t: f64, z: f64) -> Option<[f64; 3]> {
+    Some([1.0 + t.cos(), t.sin(), z])
+}
+
+const SPHERE_DOMAIN: [[f64; 2]; 2] = [[0.0, std::f64::consts::PI], [0.0, std::f64::consts::TAU]];
+const CYLINDER_DOMAIN: [[f64; 2]; 2] = [[0.0, std::f64::consts::TAU], [-3.0, 3.0]];
+
+fn build(point_at: SurfaceFn, domain: [[f64; 2]; 2], mesh: usize) -> Mesh {
+    Mesh::build(point_at, domain, [mesh, mesh], frame_of(60.0, 20.0))
+}
+
+/// 曲線の点の，球と円柱の式からの残差．どちらも，0になる．
+fn viviani_residual(p: [f64; 3]) -> f64 {
+    let on_sphere = p[0] * p[0] + p[1] * p[1] + p[2] * p[2] - 4.0;
+    let on_cylinder = (p[0] - 1.0).powi(2) + p[1] * p[1] - 1.0;
+    on_sphere.abs().max(on_cylinder.abs())
+}
+
+#[test]
+fn 球と円柱の交線の点は_2つの面の式の上にあり_線分の中点も面から離れない() {
+    let (sphere, cylinder) = (
+        build(&sphere_point, SPHERE_DOMAIN, 48),
+        build(&cylinder_point, CYLINDER_DOMAIN, 48),
+    );
+    let lines = sphere.intersection(&cylinder, &sphere_point, &cylinder_point);
+    assert!(!lines.is_empty());
+    let mut worst_vertex = 0.0_f64;
+    let mut worst_middle = 0.0_f64;
+    let mut count = 0;
+    for line in &lines {
+        for pair in line.windows(2) {
+            let middle = [
+                f64::midpoint(pair[0].0[0], pair[1].0[0]),
+                f64::midpoint(pair[0].0[1], pair[1].0[1]),
+                f64::midpoint(pair[0].0[2], pair[1].0[2]),
+            ];
+            worst_middle = worst_middle.max(viviani_residual(middle));
+        }
+        for (point, _) in line {
+            worst_vertex = worst_vertex.max(viviani_residual(*point));
+            count += 1;
+        }
+    }
+    // 磨いた点は，式の上にあり，線分の中点は，弦の許容(座標の大きさ×1e-3)で，面から離れる．節の近くの
+    // 点は，磨けないことがあるので，外れた点は，ごく一部に限る．
+    assert!(worst_vertex < 0.05, "{worst_vertex}");
+    assert!(worst_middle < 0.02, "{worst_middle}");
+    assert!(count < 3000, "{count}");
+}
+
+#[test]
+fn 球と円柱の交線の点の大半は_式の上に厳密にある() {
+    let (sphere, cylinder) = (
+        build(&sphere_point, SPHERE_DOMAIN, 48),
+        build(&cylinder_point, CYLINDER_DOMAIN, 48),
+    );
+    let lines = sphere.intersection(&cylinder, &sphere_point, &cylinder_point);
+    let points: Vec<[f64; 3]> = lines.iter().flatten().map(|(point, _)| *point).collect();
+    let exact = points
+        .iter()
+        .filter(|p| viviani_residual(**p) < 1e-7)
+        .count();
+    // 節(2, 0, 0)の近くを除き，点は，磨かれて，式の上にある．
+    assert!(exact * 10 >= points.len() * 9, "{exact} / {}", points.len());
+}
+
+#[test]
+fn 交線の点は_曲がりの強い所で密になる() {
+    let (sphere, cylinder) = (
+        build(&sphere_point, SPHERE_DOMAIN, 24),
+        build(&cylinder_point, CYLINDER_DOMAIN, 24),
+    );
+    let coarse = sphere.intersection(&cylinder, &sphere_point, &cylinder_point);
+    let (fine_sphere, fine_cylinder) = (
+        build(&sphere_point, SPHERE_DOMAIN, 96),
+        build(&cylinder_point, CYLINDER_DOMAIN, 96),
+    );
+    let fine = fine_sphere.intersection(&fine_cylinder, &sphere_point, &cylinder_point);
+    let count = |lines: &[Vec<([f64; 3], [f64; 3])>]| lines.iter().map(Vec::len).sum::<usize>();
+    // 網が4倍細かくても，弦の許容で点を足すので，点の数は，4倍にならない．
+    assert!(
+        count(&fine) < 3 * count(&coarse),
+        "{} {}",
+        count(&fine),
+        count(&coarse)
+    );
+    // 粗い網でも，中点の誤差は，細かい網と同程度に小さい．
+    let worst = |lines: &[Vec<([f64; 3], [f64; 3])>]| {
+        lines
+            .iter()
+            .flat_map(|line| line.windows(2))
+            .map(|pair| {
+                let middle = [0, 1, 2].map(|k| f64::midpoint(pair[0].0[k], pair[1].0[k]));
+                viviani_residual(middle)
+            })
+            .fold(0.0_f64, f64::max)
+    };
+    assert!(worst(&coarse) < 0.03, "{}", worst(&coarse));
+}
+
+#[test]
+fn 球の水平な切り口の点は_厳密に球と平面の上にあり_中点も離れない() {
+    let sphere = build(&sphere_point, SPHERE_DOMAIN, 48);
+    let lines = sphere.cut([0.0, 0.0, 1.0], 1.0, &sphere_point);
+    assert!(!lines.is_empty());
+    let mut worst_vertex = 0.0_f64;
+    let mut worst_middle = 0.0_f64;
+    let residual = |p: [f64; 3]| {
+        (p[0] * p[0] + p[1] * p[1] + p[2] * p[2] - 4.0)
+            .abs()
+            .max((p[2] - 1.0).abs())
+    };
+    for line in &lines {
+        for pair in line.windows(2) {
+            let middle = [0, 1, 2].map(|k| f64::midpoint(pair[0].0[k], pair[1].0[k]));
+            worst_middle = worst_middle.max(residual(middle));
+        }
+        for (point, _) in line {
+            worst_vertex = worst_vertex.max(residual(*point));
+        }
+    }
+    assert!(worst_vertex < 1e-9, "{worst_vertex}");
+    assert!(worst_middle < 0.01, "{worst_middle}");
+}
+
+#[test]
+fn 磨いても_閉じた切り口は閉じたまま_始めと終わりが同じ点になる() {
+    let sphere = build(&sphere_point, SPHERE_DOMAIN, 48);
+    let lines = sphere.cut([0.0, 0.0, 1.0], 1.0, &sphere_point);
+    assert_eq!(lines.len(), 1, "{}", lines.len());
+    let line = &lines[0];
+    let (first, last) = (line[0].0, line.last().unwrap().0);
+    let gap = (first[0] - last[0])
+        .hypot(first[1] - last[1])
+        .hypot(first[2] - last[2]);
+    assert!(gap < 1e-6, "{gap}");
+}
