@@ -16,7 +16,7 @@ Confirm that a change builds, works under the same base path as production, and 
 
 ## Checking appearance
 
-Take screenshots with `mise run screenshot`, then open the PNG with the Read tool.
+Take screenshots with `mise run screenshot`, then open the PNG with the Read tool. If it fails with `EADDRINUSE` on port 4322, a leftover `e2e/serve.ts` process holds the port. The container has no `lsof`, `ss`, or `fuser`: find the socket inode of port 4322 in `/proc/net/tcp` and the process that owns it by scanning `/proc/*/fd`, then `kill` that PID (never `pkill -f`, which can kill your own shell).
 
 ```sh
 mise run screenshot -- dev/notation/ /tmp/notation.png --full

@@ -1,0 +1,111 @@
+.scene-checker {
+  display: grid;
+  gap: 1rem;
+  margin-block: 1.5rem;
+  padding: 1rem 1.2rem 1.2rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.4rem;
+}
+
+.scene-input {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.scene-input label {
+  font-weight: 600;
+}
+
+.scene-input textarea {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--sl-color-gray-4);
+  border-radius: 0.3rem;
+  background: var(--sl-color-bg-nav);
+  color: var(--sl-color-text);
+  font-family: var(--sl-font-mono);
+  font-size: var(--sl-text-sm);
+  resize: vertical;
+}
+
+.scene-input textarea:focus-visible,
+.scene-samples button:focus-visible,
+.scene-summary pre:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 2px;
+}
+
+.scene-input textarea[aria-invalid='true'] {
+  border-color: var(--sl-color-red);
+}
+
+.scene-samples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.scene-samples button {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--sl-color-gray-4);
+  border-radius: 0.3rem;
+  background: none;
+  color: var(--sl-color-text);
+  font-size: var(--sl-text-sm);
+  cursor: pointer;
+}
+
+.scene-samples button:hover {
+  border-color: var(--sl-color-accent);
+}
+
+.scene-output p {
+  margin: 0.3rem 0;
+}
+
+.scene-error {
+  padding: 0.6rem 0.9rem;
+  border-inline-start: 0.3rem solid var(--sl-color-red);
+  background: var(--sl-color-red-low);
+}
+
+.scene-summary dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.2rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.scene-summary dt {
+  font-weight: 600;
+}
+
+.scene-summary dd {
+  margin: 0;
+}
+
+.scene-summary table {
+  display: table;
+  width: auto;
+}
+
+.scene-summary caption {
+  padding-block-end: 0.3rem;
+  font-weight: 600;
+  text-align: start;
+}
+
+.scene-summary summary {
+  cursor: pointer;
+}
+
+.scene-summary pre {
+  max-height: 24rem;
+  overflow: auto;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.3rem;
+  font-size: var(--sl-text-sm);
+  white-space: pre-wrap;
+}

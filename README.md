@@ -9,7 +9,8 @@
 - 実装済み(数式)：MathJax 4による数式の描画(自作マクロ，証明図，読み上げ用の`aria-label`)．未定義のマクロと構文の誤りは，ビルドの失敗にする．
 - 実装済み(定理)：定義，補題，命題，定理，系(`Definition`，`Lemma`，`Proposition`，`Theorem`，`Corollary`)の自動採番と，同じページやほかのページからの参照(`Ref`)．
 - 実装済み(式番号)：別行立ての式の`\label`による自動採番と，`Ref`による参照．
-- 実装済み(計算機)：Rustで書いた多項式の計算機(式の展開と微分)を，Wasmにして，ブラウザで動かす．核は，`crates/`にある．グラフは，作っていない．
+- 実装済み(計算機)：Rustで書いた多項式の計算機(式の展開と微分)を，Wasmにして，ブラウザで動かす．核は，`crates/`にある．
+- 開発中(図)：図のシーン(JSON)を読み，検査する部分を，Rustで書いた．確認用のページはあるが，図の描画は，まだできない．設計は，`docs/graph-design.md`にある．
 
 サイトの仕組み(どの部品が何をしているか，どこが自作か，どう使うか)は，[仕組みの解説](https://enunun.github.io/math-study/dev/internals/)にある．ソースは`site/src/content/docs/dev/internals.mdx`である．
 
@@ -38,18 +39,18 @@ devcontainerで開く．Dockerfileは，mise公式のDebianイメージを土台
 
 作業は，`mise run`のタスクで行う．一覧は`mise tasks`で表示する．
 
-| タスク                | 内容                                                                   |
-| --------------------- | ---------------------------------------------------------------------- |
-| `mise run dev`        | 開発サーバーを起動する(`http://localhost:4321/math-study/`)            |
-| `mise run build`      | サイトをビルドする                                                     |
-| `mise run preview`    | ビルドしたサイトを，公開時と同じbaseパスで確認する                     |
-| `mise run check`      | 整形，リント，型検査，単体テスト，ビルドを検査する．CIと同じ内容である |
-| `mise run lint`       | oxlint，rustfmtとclippy，markdownlint，remark-lint，textlintを実行する |
-| `mise run wasm`       | Rustの計算機を，Wasmにして，`site/src/wasm/`へ出力する                 |
-| `mise run fmt`        | コードと文書を整形する                                                 |
-| `mise run test`       | 単体テストを実行する                                                   |
-| `mise run e2e`        | ブラウザで動作を確認する                                               |
-| `mise run screenshot` | ページのスクリーンショットを撮る                                       |
+| タスク                | 内容                                                                       |
+| --------------------- | -------------------------------------------------------------------------- |
+| `mise run dev`        | 開発サーバーを起動する(`http://localhost:4321/math-study/`)                |
+| `mise run build`      | サイトをビルドする                                                         |
+| `mise run preview`    | ビルドしたサイトを，公開時と同じbaseパスで確認する                         |
+| `mise run check`      | 整形，リント，型検査，単体テスト，ビルドを検査する．CIと同じ内容である     |
+| `mise run lint`       | oxlint，rustfmtとclippy，markdownlint，remark-lint，textlintを実行する     |
+| `mise run wasm`       | Rustの計算機と，図のシーンの窓口を，Wasmにして，`site/src/wasm/`へ出力する |
+| `mise run fmt`        | コードと文書を整形する                                                     |
+| `mise run test`       | 単体テストを実行する                                                       |
+| `mise run e2e`        | ブラウザで動作を確認する                                                   |
+| `mise run screenshot` | ページのスクリーンショットを撮る                                           |
 
 変更したら，`mise run check`を通す．表示や動作に関わる変更は，`mise run e2e`も通す．手順の詳細は，`.claude/skills/verify-site/SKILL.md`にある．
 
@@ -57,7 +58,7 @@ devcontainerで開く．Dockerfileは，mise公式のDebianイメージを土台
 
 | パス             | 内容                                                                              |
 | ---------------- | --------------------------------------------------------------------------------- |
-| `crates/`        | Rustのクレート．多項式の計算機の核と，Wasmの窓口                                  |
+| `crates/`        | Rustのクレート．多項式の計算機と，図のシーンの，核とWasmの窓口                    |
 | `site/`          | Astroのサイト．`src/content/docs/`に文書，`src/components/`にコンポーネントを置く |
 | `e2e/`           | E2Eテスト，配信サーバー，スクリーンショットの道具                                 |
 | `docs/`          | 技術選定の記録などの開発者向けの文書                                              |

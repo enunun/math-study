@@ -61,6 +61,7 @@ Step 1, the scene, in `crates/figure/` (`parse_scene` is the entry point; the te
 - The version (`version.rs`): the engine version is the workspace version. The engine reads a scene whose major version equals its own (its minor version too while the major version is 0) and that is not newer than itself. The version is checked before any other field, so a newer scene with new fields reports the version, not an unknown field.
 - The checks (`validate.rs`): a non-empty `description`, increasing finite ranges (`view`, `range`, numeric `domain`), identifiers for `id` and `var`, unique `id`s, non-empty expressions and `tex`, two expressions per curve. Unknown fields and unknown object types are rejected.
 - An error carries the `id` of the object it came from (`Error::object`). JSON syntax errors carry the line and the column.
+- The Wasm wrapper `crates/figure-wasm/` exposes `parseScene` and a typed `SceneOutcome` (`status` is `ok` or `error`; an error has `code`, `message`, `object`, `line`, `column`). `ErrorKind::code` and `Object::type_name` give the machine-readable names. A hidden page, `dev/figure-scene.mdx`, lets one edit a scene and see the result; its samples (`site/src/figure/samples.ts`) are checked against the built Wasm by Vitest. The Wasm file is about 350 KB and is loaded only on that page.
 - Expressions are still plain strings. Their syntax, the names they use, and the order of an expression domain are checked in step 2.
 
 ## Scene rules
