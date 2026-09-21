@@ -5,8 +5,8 @@ use std::collections::HashSet;
 use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::scene::{
-    Axis, Bound, CM_PER_PT, Curve, Cut, Direction, Graph, Grid, Label, MAX_WIDTH_PT, Object, Point,
-    Position, Region, Scene, SpaceView, Sphere, Style, Surface, View,
+    Axis, Bound, CM_PER_PT, Curve, Cut, Direction, Graph, Grid, Intersection, Label, MAX_WIDTH_PT,
+    Object, Point, Position, Region, Scene, SpaceView, Sphere, Style, Surface, View,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -82,6 +82,9 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
             space_only("surface", view).and_then(|()| validate_surface(surface))
         }
         Object::Cut(cut) => space_only("cut", view).and_then(|()| validate_cut(cut)),
+        Object::Intersection(found) => {
+            space_only("intersection", view).and_then(|()| validate_intersection(found))
+        }
         Object::Vector(_) | Object::Segment(_) | Object::Parameter(_) => Ok(()),
     }
 }
@@ -99,6 +102,7 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::Region(o) => Some(&o.style),
         Object::Surface(o) => Some(&o.style),
         Object::Cut(o) => Some(&o.style),
+        Object::Intersection(o) => Some(&o.style),
         Object::Label(_) | Object::Parameter(_) => None,
     }
 }
@@ -195,13 +199,25 @@ fn validate_cut(cut: &Cut) -> Result<(), ErrorKind> {
 
 /// 切り口が切る曲面は，`surface`オブジェクトの`id`でなければならない．
 fn check_surface(object: &Object, surfaces: &HashSet<&str>) -> Result<(), ErrorKind> {
-    let Object::Cut(cut) = object else {
-        return Ok(());
+    let names: Vec<&String> = match object {
+        Object::Cut(cut) => vec![&cut.surface],
+        Object::Intersection(found) => found.surfaces.iter().collect(),
+        _ => return Ok(()),
     };
-    if surfaces.contains(cut.surface.as_str()) {
-        Ok(())
-    } else {
-        Err(ErrorKind::UnknownSurface(cut.surface.clone()))
+    for name in names {
+        if !surfaces.contains(name.as_str()) {
+            return Err(ErrorKind::UnknownSurface(name.clone()));
+        }
+    }
+    Ok(())
+}
+
+fn validate_intersection(found: &Intersection) -> Result<(), ErrorKind> {
+    match found.surfaces.as_slice() {
+        [first, second] if first != second => Ok(()),
+        _ => Err(ErrorKind::Invalid(
+            "交線の曲面(`surfaces`)は，違う2つの曲面の`id`で書く．".to_owned(),
+        )),
     }
 }
 

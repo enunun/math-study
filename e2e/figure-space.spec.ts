@@ -49,6 +49,10 @@ function fifth(page: Page): Locator {
   return page.locator('.figure').nth(4);
 }
 
+function sixth(page: Page): Locator {
+  return page.locator('.figure').nth(5);
+}
+
 function center({ x, y, width, height }: Box): [number, number] {
   return [x + width / 2, y + height / 2];
 }
@@ -57,7 +61,7 @@ test.describe('空間の図', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     // ラベルの数式が描画されるまで待つ．
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(24);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(28);
   });
 
   test('SVGは，画像として説明を持ち，隠れた部分で分かれた線と，輪郭がある', async ({ page }) => {
@@ -217,6 +221,25 @@ test.describe('空間の図', () => {
     expect(Math.hypot((tipX ?? Number.NaN) - cx, (tipY ?? Number.NaN) - cy)).toBeLessThan(0.05);
   });
 
+  test('曲面どうしの交線は，赤い太い線で，隠れる部分が点線になる', async ({ page }) => {
+    const paths = sixth(page).locator('svg path');
+    const strokes = await paths.evaluateAll((elements) =>
+      elements.map((element) => ({
+        stroke: element.getAttribute('stroke'),
+        dashed: element.hasAttribute('stroke-dasharray'),
+        width: Number(/[\d.]+/u.exec(getComputedStyle(element).strokeWidth)?.[0]),
+      })),
+    );
+    const red = strokes.filter(({ stroke }) => stroke === 'var(--figure-red)');
+    expect(red.length).toBeGreaterThanOrEqual(2);
+    expect(red.some(({ dashed }) => dashed)).toBe(true);
+    expect(red.some(({ dashed }) => !dashed)).toBe(true);
+    // 太さは，1.2ptである．
+    for (const { width } of red) {
+      expect(Math.abs(width - (1.2 * 2.54) / 72.27)).toBeLessThan(1e-4);
+    }
+  });
+
   for (const scheme of ['light', 'dark'] as const) {
     test(`図の色は，文字の色に従う(${scheme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });
@@ -243,7 +266,7 @@ test.describe('空間の図', () => {
     page.on('pageerror', (error) => problems.push(String(error)));
     page.on('requestfailed', (request) => problems.push(request.url()));
     await page.reload();
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(24);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(28);
     expect(problems).toEqual([]);
   });
 });

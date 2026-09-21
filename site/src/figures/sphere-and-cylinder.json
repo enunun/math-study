@@ -1,0 +1,38 @@
+{
+  "version": "0.1.0",
+  "description": "球と円柱と，2つの曲面の交線．球 x²+y²+z²=4 と，円柱 (x-1)²+y²=1 が交わる曲線を，赤で描く．",
+  "view": { "azimuth": 60, "elevation": 25, "unit": "0.8cm" },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "range": [-3, 3.5], "label": "x" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "range": [-3, 3.5], "label": "y" },
+    { "id": "z_axis", "type": "axis", "direction": "z", "range": [-3, 3], "label": "z" },
+    { "id": "origin_label", "type": "label", "at": [0, 0, 0], "anchor": "north east", "tex": "O" },
+    {
+      "id": "ball",
+      "type": "surface",
+      "vars": ["u", "v"],
+      "expr": ["2*sin(u)*cos(v)", "2*sin(u)*sin(v)", "2*cos(u)"],
+      "domain": [
+        [0, "pi"],
+        [0, "2*pi"]
+      ]
+    },
+    {
+      "id": "cylinder",
+      "type": "surface",
+      "vars": ["t", "z"],
+      "expr": ["1 + cos(t)", "sin(t)", "z"],
+      "domain": [
+        [0, "2*pi"],
+        [-2.2, 2.2]
+      ],
+      "style": { "color": "blue" }
+    },
+    {
+      "id": "common",
+      "type": "intersection",
+      "surfaces": ["ball", "cylinder"],
+      "style": { "color": "red", "width": "1.2pt" }
+    }
+  ]
+}

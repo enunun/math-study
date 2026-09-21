@@ -18,8 +18,8 @@ use crate::render::{
 };
 use crate::sample::{sample, sample_with_parameters};
 use crate::scene::{
-    Anchor, Arrow, Axis, Cut, Direction, Hidden, Label, Line, Object, Point, Scene, SpaceView,
-    Sphere, Style, Surface,
+    Anchor, Arrow, Axis, Cut, Direction, Hidden, Intersection, Label, Line, Object, Point, Scene,
+    SpaceView, Sphere, Style, Surface,
 };
 use crate::surface::{Frame, Mesh, Rim};
 
@@ -202,6 +202,9 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
             }
             (Object::Segment(segment), Plot::Link(link)) => {
                 items.extend(link_items(&segment.style, Arrow::None, link, &space));
+            }
+            (Object::Intersection(found), _) => {
+                items.extend(intersection_items(found, &space));
             }
             (Object::Cut(cut), Plot::Cut(placed)) => {
                 items.extend(cut_items(cut, placed, &space));
@@ -519,6 +522,38 @@ fn link_items(style: &Style, arrow: Arrow, link: &LinkPlot, space: &Space) -> Ve
             },
             arrow: head,
         }));
+    }
+    items
+}
+
+/// 2つの曲面の交線．曲面の上にあるので，曲面に隠れる部分は，隠れた部分の線で描く．
+fn intersection_items(found: &Intersection, space: &Space) -> Vec<Item> {
+    let mesh_for = |name: &String| {
+        space
+            .mesh_of
+            .get(name)
+            .and_then(|index| space.meshes.get(*index))
+    };
+    let [first, second] = found.surfaces.as_slice() else {
+        return Vec::new();
+    };
+    let (Some(first), Some(second)) = (mesh_for(first), mesh_for(second)) else {
+        return Vec::new();
+    };
+    let stroke = stroke_of(&found.style, Line::Solid, CURVE_WIDTH);
+    let mut items = Vec::new();
+    for line in &first.intersection(second) {
+        let steps: Vec<f64> = (0..line.len())
+            .map(|k| f64::from(u32::try_from(k).unwrap_or(u32::MAX)))
+            .collect();
+        let at = |t: f64| polyline_at(line, t).0;
+        let pieces = split_by_visibility(&steps, &at, &|t| space.hidden(at(t)));
+        items.extend(piece_items(
+            &pieces,
+            stroke,
+            found.style.hidden,
+            &space.camera,
+        ));
     }
     items
 }

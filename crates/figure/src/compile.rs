@@ -253,9 +253,11 @@ fn compile_object(
         Object::Region(region) => compile_region(region, names, parameters)
             .map(Plot::Region)
             .map_err(|kind| Error::in_object(&region.id, kind)),
-        Object::Parameter(_) | Object::Sphere(_) | Object::Vector(_) | Object::Segment(_) => {
-            Ok(Plot::None)
-        }
+        Object::Parameter(_)
+        | Object::Sphere(_)
+        | Object::Vector(_)
+        | Object::Segment(_)
+        | Object::Intersection(_) => Ok(Plot::None),
     }
 }
 

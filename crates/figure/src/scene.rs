@@ -140,6 +140,8 @@ pub enum Object {
     Surface(Surface),
     /// 曲面の，平面による切り口．空間の図でだけ使える．
     Cut(Cut),
+    /// 2つの曲面の交線．空間の図でだけ使える．
+    Intersection(Intersection),
 }
 
 /// 軸の向き．
@@ -436,6 +438,19 @@ pub struct Segment {
     pub style: Style,
 }
 
+/// 2つの曲面の交線．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Intersection {
+    /// 識別子．
+    pub id: String,
+    /// 交わる2つの曲面の`id`．
+    pub surfaces: Vec<String>,
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
 /// 曲面の，平面による切り口．平面は，法線と定数で`normal・p = offset`と書く．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -625,6 +640,7 @@ impl Object {
             Self::Region(o) => &o.id,
             Self::Surface(o) => &o.id,
             Self::Cut(o) => &o.id,
+            Self::Intersection(o) => &o.id,
         }
     }
 
@@ -645,6 +661,7 @@ impl Object {
             Self::Region(_) => "region",
             Self::Surface(_) => "surface",
             Self::Cut(_) => "cut",
+            Self::Intersection(_) => "intersection",
         }
     }
 }

@@ -604,3 +604,343 @@ fn finish_line(line: Vec<Rim>, tolerance: f64) -> Option<Vec<Rim>> {
     }
     (points.len() >= 2).then_some(points)
 }
+
+// ---- 2つの網の交線 ----
+
+/// 空間の三角形．
+type Solid = [Point3; 3];
+
+/// 三角形を，空間の一様な格子の升目に振り分けた表．
+struct SpaceGrid {
+    origin: Point3,
+    cell: f64,
+    side: usize,
+    buckets: Vec<Vec<usize>>,
+}
+
+impl SpaceGrid {
+    /// 1辺の升目の数の上限．
+    const MAX_CELLS: usize = 64;
+
+    fn new(triangles: &[Solid]) -> Self {
+        let mut low = [f64::INFINITY; 3];
+        let mut high = [f64::NEG_INFINITY; 3];
+        for corner in triangles.iter().flatten() {
+            low = zip(low, *corner, f64::min);
+            high = zip(high, *corner, f64::max);
+        }
+        // 三角形の数の立方根を，1辺の升目の数にする．
+        let side = (1..=Self::MAX_CELLS)
+            .find(|n| n.saturating_mul(*n).saturating_mul(*n) >= triangles.len())
+            .unwrap_or(Self::MAX_CELLS);
+        let extent = high
+            .iter()
+            .zip(&low)
+            .map(|(top, bottom)| top - bottom)
+            .fold(0.0_f64, f64::max);
+        let cell = if extent.is_finite() && extent > 0.0 {
+            extent / f64::from(u32::try_from(side).unwrap_or(1))
+        } else {
+            1.0
+        };
+        let origin = if low.iter().all(|c| c.is_finite()) {
+            low
+        } else {
+            [0.0; 3]
+        };
+        let mut buckets = vec![Vec::new(); side.saturating_pow(3)];
+        for (index, triangle) in triangles.iter().enumerate() {
+            let (first, last) = Self::cells_of(origin, cell, side, triangle);
+            for x in first[0]..=last[0] {
+                for y in first[1]..=last[1] {
+                    for z in first[2]..=last[2] {
+                        if let Some(bucket) = buckets.get_mut(Self::slot(side, [x, y, z])) {
+                            bucket.push(index);
+                        }
+                    }
+                }
+            }
+        }
+        Self {
+            origin,
+            cell,
+            side,
+            buckets,
+        }
+    }
+
+    fn slot(side: usize, [x, y, z]: [usize; 3]) -> usize {
+        x.saturating_add(side.saturating_mul(y.saturating_add(side.saturating_mul(z))))
+    }
+
+    /// 三角形の外枠が重なる，升目の範囲(両端を含む)．
+    fn cells_of(
+        origin: Point3,
+        cell: f64,
+        side: usize,
+        triangle: &Solid,
+    ) -> ([usize; 3], [usize; 3]) {
+        let mut low = [f64::INFINITY; 3];
+        let mut high = [f64::NEG_INFINITY; 3];
+        for corner in triangle {
+            low = zip(low, *corner, f64::min);
+            high = zip(high, *corner, f64::max);
+        }
+        let locate = |at: Point3| {
+            [
+                cell_of(at[0], origin[0], cell, side),
+                cell_of(at[1], origin[1], cell, side),
+                cell_of(at[2], origin[2], cell, side),
+            ]
+        };
+        (locate(low), locate(high))
+    }
+
+    /// 三角形の外枠と重なる升目にある，三角形の番号(重複を含む)．
+    fn candidates(&self, triangle: &Solid) -> impl Iterator<Item = usize> + '_ {
+        let (first, last) = Self::cells_of(self.origin, self.cell, self.side, triangle);
+        let side = self.side;
+        (first[0]..=last[0]).flat_map(move |x| {
+            (first[1]..=last[1]).flat_map(move |y| {
+                (first[2]..=last[2]).flat_map(move |z| {
+                    self.buckets
+                        .get(Self::slot(side, [x, y, z]))
+                        .into_iter()
+                        .flatten()
+                        .copied()
+                })
+            })
+        })
+    }
+}
+
+/// 三角形が平面`normal・(p - origin) = 0`と交わる線分の端(2点)．平面の上の辺は，その辺である．
+fn plane_segment(triangle: &Solid, distances: [f64; 3]) -> Option<[Point3; 2]> {
+    let mut points: Vec<Point3> = Vec::new();
+    for (corner, distance_to_plane) in triangle.iter().zip(distances) {
+        if distance_to_plane == 0.0 {
+            points.push(*corner);
+        }
+    }
+    for (from, to) in [(0, 1), (1, 2), (2, 0)] {
+        let (Some(start), Some(end)) = (triangle.get(from), triangle.get(to)) else {
+            continue;
+        };
+        let (Some(before), Some(after)) = (distances.get(from), distances.get(to)) else {
+            continue;
+        };
+        if before * after < 0.0 {
+            let ratio = before / (before - after);
+            points.push(zip(*start, *end, |s, e| lerp(s, e, ratio)));
+        }
+    }
+    match points.as_slice() {
+        [first, .., last] => Some([*first, *last]),
+        _ => None,
+    }
+}
+
+/// 2つの三角形が交わる線分．平面が平行か，同じ平面の上にあるか，交わらなければ`None`である．
+fn triangle_intersection(first: &Solid, second: &Solid, scale: f64) -> Option<[Point3; 2]> {
+    let normal = |t: &Solid| cross(minus(t[1], t[0]), minus(t[2], t[0]));
+    let (first_normal, second_normal) = (normal(first), normal(second));
+    let lengths = [
+        dot(first_normal, first_normal).sqrt(),
+        dot(second_normal, second_normal).sqrt(),
+    ];
+    if lengths.iter().any(|length| *length < 1e-14 * scale * scale) {
+        return None;
+    }
+    // 頂点から，もう一方の平面までの符号つきの距離(の定数倍)．平面の上の頂点は，0にそろえる．
+    let signed = |triangle: &Solid, origin: Point3, plane_normal: Point3, length: f64| {
+        triangle.map(|corner| {
+            let value = dot(plane_normal, minus(corner, origin));
+            if value.abs() < 1e-12 * length * scale {
+                0.0
+            } else {
+                value
+            }
+        })
+    };
+    let to_second = signed(first, second[0], second_normal, lengths[1]);
+    let to_first = signed(second, first[0], first_normal, lengths[0]);
+    let same_side = |d: &[f64; 3]| d.iter().all(|v| *v > 0.0) || d.iter().all(|v| *v < 0.0);
+    let coplanar = |d: &[f64; 3]| d.iter().all(|v| *v == 0.0);
+    if same_side(&to_second) || same_side(&to_first) || coplanar(&to_second) || coplanar(&to_first)
+    {
+        return None;
+    }
+    let along = cross(first_normal, second_normal);
+    let along_length = dot(along, along).sqrt();
+    if along_length < 1e-14 * lengths[0] * lengths[1] {
+        return None;
+    }
+    let direction = along.map(|c| c / along_length);
+    let mine = plane_segment(first, to_second)?;
+    let theirs = plane_segment(second, to_first)?;
+    let range = |segment: &[Point3; 2]| {
+        let (a, b) = (dot(direction, segment[0]), dot(direction, segment[1]));
+        (a.min(b), a.max(b))
+    };
+    let ((mine_low, mine_high), (theirs_low, theirs_high)) = (range(&mine), range(&theirs));
+    let (low, high) = (mine_low.max(theirs_low), mine_high.min(theirs_high));
+    if high - low <= 1e-12 * scale {
+        return None;
+    }
+    // 交わりの線の上の点を，線分の1つの端から，向きに沿って求める．
+    let base = mine[0];
+    let base_position = dot(direction, base);
+    let at = |position: f64| zip(base, direction, |b, d| b + d * (position - base_position));
+    Some([at(low), at(high)])
+}
+
+/// 端が(誤差の中で)同じ点を，1つの点にまとめる表．
+struct NodeIndex {
+    cell: f64,
+    tolerance: f64,
+    nodes: Vec<Point3>,
+    lookup: std::collections::HashMap<[i64; 3], Vec<usize>>,
+}
+
+/// 値が入る升目の番号．
+#[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
+fn quantize(value: f64, cell: f64) -> i64 {
+    (value / cell).floor().clamp(-1e15, 1e15) as i64
+}
+
+impl NodeIndex {
+    fn new(tolerance: f64) -> Self {
+        Self {
+            cell: tolerance * 4.0,
+            tolerance,
+            nodes: Vec::new(),
+            lookup: std::collections::HashMap::new(),
+        }
+    }
+
+    fn key(&self, point: Point3) -> [i64; 3] {
+        point.map(|c| quantize(c, self.cell))
+    }
+
+    /// 点の節の番号．近くに節がなければ，新しく作る．
+    fn node(&mut self, point: Point3) -> usize {
+        let [cx, cy, cz] = self.key(point);
+        for dx in -1..=1_i64 {
+            for dy in -1..=1_i64 {
+                for dz in -1..=1_i64 {
+                    let neighbor = [
+                        cx.saturating_add(dx),
+                        cy.saturating_add(dy),
+                        cz.saturating_add(dz),
+                    ];
+                    let found = self.lookup.get(&neighbor).and_then(|indices| {
+                        indices.iter().copied().find(|index| {
+                            self.nodes
+                                .get(*index)
+                                .is_some_and(|node| distance(*node, point) < self.tolerance)
+                        })
+                    });
+                    if let Some(index) = found {
+                        return index;
+                    }
+                }
+            }
+        }
+        let index = self.nodes.len();
+        self.nodes.push(point);
+        self.lookup.entry([cx, cy, cz]).or_default().push(index);
+        index
+    }
+}
+
+impl Mesh {
+    /// 別の網との交線．2つの網の三角形が交わる線分を求め，端が重なるものをつないだ，空間の折れ線である．
+    #[must_use]
+    pub fn intersection(&self, other: &Mesh) -> Vec<Vec<Rim>> {
+        let solids = |mesh: &Mesh| -> Vec<Solid> {
+            mesh.indices
+                .iter()
+                .filter_map(|corners| {
+                    let [a, b, c] = corners.map(|k| mesh.point(k));
+                    Some([a?, b?, c?])
+                })
+                .collect()
+        };
+        let (mine, theirs) = (solids(self), solids(other));
+        let scale = self.scale.max(other.scale);
+        let grid = SpaceGrid::new(&theirs);
+        let mut seen = vec![usize::MAX; theirs.len()];
+        let mut segments: Vec<[Point3; 2]> = Vec::new();
+        for (index, triangle) in mine.iter().enumerate() {
+            for candidate in grid.candidates(triangle) {
+                if seen.get(candidate) == Some(&index) {
+                    continue;
+                }
+                if let Some(slot) = seen.get_mut(candidate) {
+                    *slot = index;
+                }
+                if let Some(other_triangle) = theirs.get(candidate)
+                    && let Some(segment) = triangle_intersection(triangle, other_triangle, scale)
+                {
+                    segments.push(segment);
+                }
+            }
+        }
+        let tolerance = 1e-7 * scale;
+        let mut nodes = NodeIndex::new(tolerance);
+        let mut links: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
+        for [start, end] in segments {
+            let (from, to) = (nodes.node(start), nodes.node(end));
+            if from != to {
+                links.entry(from).or_default().push(to);
+                links.entry(to).or_default().push(from);
+            }
+        }
+        let chains = chain_nodes(&links, &nodes.nodes);
+        join_chains(chains, tolerance)
+            .into_iter()
+            .filter_map(|line| finish_line(line, tolerance))
+            .collect()
+    }
+}
+
+/// 節のつながりから，折れ線をたどる．端(つながりが1つの節)から始め，残りは輪である．
+fn chain_nodes(links: &BTreeMap<usize, Vec<usize>>, positions: &[Point3]) -> Vec<Vec<Rim>> {
+    let mut visited: BTreeSet<usize> = BTreeSet::new();
+    let mut chains = Vec::new();
+    let ends = links
+        .iter()
+        .filter(|(_, next)| next.len() == 1)
+        .map(|(node, _)| *node);
+    for start in ends.chain(links.keys().copied()) {
+        if visited.contains(&start) {
+            continue;
+        }
+        let mut line: Vec<Rim> = Vec::new();
+        let mut current = Some(start);
+        let mut last = start;
+        while let Some(node) = current {
+            last = node;
+            visited.insert(node);
+            if let Some(point) = positions.get(node) {
+                line.push((*point, [0.0; 3]));
+            }
+            current = links
+                .get(&node)
+                .into_iter()
+                .flatten()
+                .copied()
+                .find(|candidate| !visited.contains(candidate));
+        }
+        // 輪は，始めの点に戻って，閉じる．
+        if line.len() >= 3
+            && last != start
+            && links.get(&last).is_some_and(|next| next.contains(&start))
+            && let Some(first) = line.first().copied()
+        {
+            line.push(first);
+        }
+        chains.push(line);
+    }
+    chains
+}
