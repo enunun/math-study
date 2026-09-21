@@ -32,10 +32,11 @@ description = "依存パッケージをインストールする"
 run = "pnpm install --frozen-lockfile"
 
 [tasks.wasm]
-description = "Rustの多項式の計算機を，Wasmにして，site/src/wasm/に出力する"
+description = "Rustの多項式の計算機と，図のシーンの窓口を，Wasmにして，site/src/wasm/に出力する"
 run = [
-  "cargo build --release --target wasm32-unknown-unknown -p polynomial-wasm",
+  "cargo build --release --target wasm32-unknown-unknown -p polynomial-wasm -p figure-wasm",
   "wasm-bindgen --target web --out-dir site/src/wasm --out-name polynomial target/wasm32-unknown-unknown/release/polynomial_wasm.wasm",
+  "wasm-bindgen --target web --out-dir site/src/wasm --out-name figure target/wasm32-unknown-unknown/release/figure_wasm.wasm",
 ]
 
 [tasks.dev]

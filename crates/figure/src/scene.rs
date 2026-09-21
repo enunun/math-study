@@ -254,6 +254,18 @@ impl Object {
             Self::Curve(o) => &o.id,
         }
     }
+
+    /// オブジェクトの種類の名前．JSONの`type`と同じである．
+    #[must_use]
+    pub const fn type_name(&self) -> &'static str {
+        match self {
+            Self::Axis(_) => "axis",
+            Self::Label(_) => "label",
+            Self::Parameter(_) => "parameter",
+            Self::Graph(_) => "graph",
+            Self::Curve(_) => "curve",
+        }
+    }
 }
 
 impl LengthUnit {

@@ -48,6 +48,26 @@ pub enum ErrorKind {
     },
 }
 
+impl ErrorKind {
+    /// 種類の名前．GUIやページが，誤りの種類で分岐するために使う．重ならない．
+    #[must_use]
+    pub const fn code(&self) -> &'static str {
+        match self {
+            Self::Json { .. } => "json",
+            Self::MissingVersion => "missing_version",
+            Self::InvalidVersion(_) => "invalid_version",
+            Self::IncompatibleVersion { .. } => "incompatible_version",
+            Self::Invalid(_) => "invalid",
+            Self::InvalidId(_) => "invalid_id",
+            Self::DuplicateId(_) => "duplicate_id",
+            Self::InvalidVariable(_) => "invalid_variable",
+            Self::EmptyText(_) => "empty_text",
+            Self::InvalidRange(_) => "invalid_range",
+            Self::ExpressionCount { .. } => "expression_count",
+        }
+    }
+}
+
 /// 誤り．
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Error {
