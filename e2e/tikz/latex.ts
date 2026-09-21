@@ -29,6 +29,8 @@ function wrap(picture: string, border: string): string {
   return [
     String.raw`\documentclass[tikz,border=${border}]{standalone}`,
     String.raw`\usepackage[haranoaji]{luatexja-preset}`,
+    // ラベルは，MathJaxが読むTeXである．`\boldsymbol`など，ams系のマクロを使えるようにする．
+    String.raw`\usepackage{amsmath}`,
     String.raw`\usetikzlibrary{arrows.meta}`,
     String.raw`\begin{document}`,
     picture,
