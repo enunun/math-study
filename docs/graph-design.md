@@ -41,19 +41,26 @@ scene (data) → geometry engine (projection, silhouette, visibility) → 2D vec
 - Only vector output is possible: pixel renderers such as WebGL cannot produce TikZ.
 - Existing tools do not cover the combination. KeTCindy depends on Cinderella 2 (CindyJS has open compatibility issues). Asymptote has strong 3D vector output, but no TikZ output was found. Not verified: TikZ and pgfplots do not compute hidden lines, and Three.js and JSXGraph are pixel or interactive tools.
 
+## Decided
+
+- The default arrowhead is TikZ's `Stealth`. The tip is a setting of each axis and vector, so it can be changed.
+- Hidden lines are dotted by default. The style is a setting, so dashed can be chosen.
+- The first target figure is `s0202graph1`: a sine curve and a shifted copy drawn dotted, on axes with `O`, `x`, and `y`, and a text label containing math. The sample draws its axes without arrowheads; here they get the default arrowhead.
+- The order of work is 2D first (axes, arrowheads, ticks, labels, function graphs), then 3D on the same intermediate representation.
+
 ## Proposed, not confirmed
 
 - Write the engine in Rust and run it as Wasm, like the calculator: the toolchain, the strict lint setup, and the parser are reused; floating-point results are deterministic across build, browser, and a later desktop or CLI build.
 - Support parallel projections only (oblique and orthographic, from a view direction). Perspective is out of scope.
 - Decide visibility by sampling curves and meshing surfaces, then refine the switch points by bisection. Extract outlines as the curve where the surface normal is perpendicular to the view direction. Add exact shapes for spheres, cylinders, and cones later.
 - Fit smooth curves with Bézier segments in the export.
-- Define arrowheads with the dimensions of TikZ's `arrows.meta` tips (`Latex`, `Stealth`, `To`) and draw the same geometry in SVG.
+- Define each arrowhead (`Stealth`, and later `Latex` and `To`) with the dimensions of the TikZ `arrows.meta` tip, and draw the same geometry in SVG. The dimensions are taken from the pgf source, not from memory.
 - Treat readability of the TikZ output as a non-goal: fidelity to the figure and a compact size matter. Until TeX Live is available, check the output against golden files instead of compiling it.
 - Keep the scene as a JSON file, and write the engine version and the scene into a header comment of the TikZ file, so an export can be traced back and reproduced.
 - Render figures to static SVG at build time. A rotating view can be added later with the same Wasm.
 
 ## Open
 
-- The arrowhead shapes wanted for axes and vectors, and whether hidden lines default to dotted or dashed.
 - How a figure is written in MDX (props, a small language, or TypeScript).
-- The set of figures that are required first, from the reference figures above.
+- The split of work between Rust and TypeScript, and where the SVG serializer lives (labels need MathJax, which runs in TypeScript).
+- The figures required after `s0202graph1`.
