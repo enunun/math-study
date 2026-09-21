@@ -104,7 +104,7 @@
       },
     },
     {
-      // ビルド時にNode.jsで動く処理(MathJaxのWorker，Astroの統合，rehypeプラグイン)．
+      // ビルド時にNode.jsで動く処理(Astroの設定，MathJaxのWorker，Astroの統合，rehypeプラグイン)．
       // Node.jsの組み込みモジュールを使う．親ディレクトリのモジュールは，設定ファイルからも読み込まれるため，
       // tsconfigの別名ではなく相対パスで読み込む．
       // Workerとのメッセージのやり取りは，new Promiseで待ち受ける．Workerは，トップレベルのawaitでMathJaxを起動する．
@@ -112,7 +112,12 @@
       // グローバルなMathJaxオブジェクトと，workerDataは，型を主張して読む．
       // メッセージのハンドラと，開発サーバーのミドルウェアには，async関数を渡す．
       // ミドルウェアは，中で例外を処理する．
-      "files": ["site/src/math/**", "site/src/integrations/**", "site/src/plugins/**"],
+      "files": [
+        "site/astro.config.ts",
+        "site/src/math/**",
+        "site/src/integrations/**",
+        "site/src/plugins/**",
+      ],
       "rules": {
         "import/no-nodejs-modules": "off",
         "import/no-relative-parent-imports": "off",

@@ -90,13 +90,19 @@ Known limits:
 - The range of expressions the polynomial calculator handles.
 - Automated accessibility checks (axe).
 - Running E2E tests in CI.
-- Automatic theorem numbering (below), and equation numbers (`\tag`, `\label`) for math.
+- Equation numbers (`\tag`, `\label`) for math.
 - A cache for speech generation, if build time becomes a problem.
 - Rendering math in the browser for the calculator, with the same macros.
 
-## Theorem numbering design
+## Theorem numbering (implemented)
 
-- A label is built from the kind, the page identifier, and the sequence number within the page. Definitions, lemmas, and theorems share one counter.
-- A page identifier uses only ASCII letters, digits, and a few symbols such as hyphens. It comes from a frontmatter field or the URL slug.
-- References are written by identifier and resolved to a number and a link at build time. Numbering is done by a build-time plugin.
-- A page identifier is unique across the site, so labels are unique without deciding a chapter structure.
+Flow: `site/src/plugins/rehype-statements.ts` runs on each MDX page before the MathJax plugin. It reads the JSX nodes that MDX passes through to the rehype tree, numbers the statement elements, and rewrites `<Ref>` and `<Proof of>`.
+
+- A label is built from the kind, the page identifier, and the sequence number within the page (`定理abs-3`). Definitions, lemmas, propositions, theorems, and corollaries share one counter. There is no space between the Japanese kind and the Latin identifier, following the writing rules for Japanese text.
+- A page identifier uses letters, digits, hyphens, and underscores. It comes from the frontmatter `pageId` (also validated by the content schema in `content.config.ts`) or the file name, and is unique across the site. Labels are therefore unique without a chapter structure.
+- References are written by identifier. An identifier is optional on a statement; without one, the anchor is the label and the statement cannot be referenced. With one, the anchor stays stable when statements are inserted or reordered.
+- A reference to another page needs that page's numbering while a different page is being rendered. Astro renders pages concurrently and a plugin sees one page at a time, so `plugins/statements/catalog.ts` scans `content/docs/**/*.mdx` with remark-parse, remark-mdx, and remark-frontmatter, and caches the result by file modification time, so the dev server picks up edits. Pages that fail to parse are skipped there; their own build reports the error. Pages without statements are not registered, so their identifiers need not be unique.
+- The page URL is derived from the file path. Starlight lowercases and slugifies file names, so a cross-page reference requires file names made of lowercase letters, digits, hyphens, and underscores, and fails the build otherwise.
+- Numbering follows document order in the tree. The scanner and the plugin share `findStatementNodes` and `numberStatements`, so both agree. Code blocks are not counted, because they are not JSX nodes.
+- `Ref` is replaced by a plain `<a>` in the tree, so it needs no component and no import. The statement components receive `label` and `anchor` as props from the plugin.
+- oxfmt formats MDX badly when a paragraph contains inline JSX: it splits the paragraph around `<Ref />` and breaks inline math at 100 columns. MDX is excluded from oxfmt (`.oxfmtrc.json`) and formatted by hand.

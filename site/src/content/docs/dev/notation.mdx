@@ -12,6 +12,7 @@ head:
 ---
 
 import { Detail, Proof, Remark } from '@/components/fold';
+import { Definition, Theorem } from '@/components/statement';
 
 記法の参照と動作確認のためのページである．サイドバーと検索には表示せず，検索エンジンにも登録しないよう指定している．
 
@@ -253,6 +254,89 @@ $$
 - 行内の式は，本文の行の高さを大きく乱さない．
 - 幅の狭い画面では，導出木や長い式を，横にスクロールして読める．
 - 式のあるページだけが，`mathjax.css`を読み込む．
+
+## 定義と定理
+
+定義と定理には，ビルド時に番号が付く．番号を使って，同じページや，ほかのページから参照できる．
+
+### 定理の読み込み
+
+定義，補題，命題，定理，系は，それぞれ`Definition`，`Lemma`，`Proposition`，`Theorem`，`Corollary`である．使うものを，フロントマターの直後に読み込む．参照の`Ref`は，読み込まずに使える．
+
+```mdx
+import { Definition, Lemma, Proposition, Theorem, Corollary } from '@/components/statement';
+```
+
+### 番号と参照
+
+番号は，種類とページの識別子と連番をつなげた「定理abs-3」の形である．連番は，ページの中で，種類をまたいで1から数える．
+
+```mdx
+<Definition id="even-number" name="偶数">
+
+整数$n$が偶数であるとは，ある整数$k$が存在して$n = 2k$と書けることをいう．
+
+</Definition>
+
+<Theorem id="even-square">
+
+偶数の二乗は偶数である．
+
+</Theorem>
+
+<Proof of="even-square">
+
+偶数$n = 2k$に対して，$n^2 = 2 \cdot 2k^2$である．
+
+</Proof>
+
+<Ref to="even-number" />を使った<Ref to="even-square" />は，<Ref page="absolute-value" to="triangle-inequality" />と同じように参照できる．
+```
+
+<Definition id="even-number" name="偶数">
+
+整数$n$が偶数であるとは，ある整数$k$が存在して$n = 2k$と書けることをいう．
+
+</Definition>
+
+<Theorem id="even-square">
+
+偶数の二乗は偶数である．
+
+</Theorem>
+
+<Proof of="even-square">
+
+偶数$n = 2k$に対して，$n^2 = 2 \cdot 2k^2$である．
+
+</Proof>
+
+<Ref to="even-number" />を使った<Ref to="even-square" />は，<Ref page="absolute-value" to="triangle-inequality" />と同じように参照できる．
+
+### 定理と参照の属性
+
+| 要素                    | 属性   | 説明                                                                                             |
+| ----------------------- | ------ | ------------------------------------------------------------------------------------------------ |
+| `Definition`などの5種類 | `name` | 見出しに添える語句．括弧に入れて表示する．                                                       |
+| `Definition`などの5種類 | `id`   | 参照とアンカーに使う識別子．省略すると，アンカーは連番のラベルになる．                           |
+| `Ref`                   | `to`   | 参照する定義や定理の`id`．                                                                       |
+| `Ref`，`Proof`          | `page` | ほかのページを指すときの，ページの識別子．省略すると，同じページを指す．                         |
+| `Proof`                 | `of`   | 証明する定理の`id`．指定すると，証明の題名が「定理abs-3」になる．`title`とは同時に指定できない． |
+
+識別子は，英数字で始め，英数字，ハイフン，アンダースコアだけを使う．`id`は，ページの中で一意にする．連番は，定理の挿入や並べ替えで変わる．外部からのリンクや参照を固定したい定理には，`id`を付ける．`id`を付けた定理のアンカーは，連番が変わっても変わらない．
+
+### ページの識別子
+
+ページの識別子は，frontmatterの`pageId`で指定する．指定がなければ，ファイル名を使う(`index.mdx`は，ディレクトリの名前)．サイト全体で一意にする．重なると，ビルドが失敗する．
+
+このページの識別子は，ファイル名の`notation`である．参照先の`absolute-value`は，`dev/abs.mdx`のfrontmatterで指定している．ページをまたぐ参照は，参照先のファイル名を，小文字の英数字，ハイフン，アンダースコアにする．Starlightが作るURLと一致させるためである．
+
+### 定義と定理の動作確認
+
+- 上の例が，「定義notation-1」「定理notation-2」の順に番号を付けて表示される．
+- 例の中の3つの参照が，リンクになる．ページをまたぐ参照は，`/math-study/dev/abs/`の「定理absolute-value-3」へ移る．
+- 証明の題名が，「定理notation-2」になる．
+- 存在しない識別子の参照，重なる識別子，使えない文字の識別子は，ビルドの失敗になる．失敗した箇所は，ファイルの行と列とともに表示される．
 
 ## 文章の規則と検査
 

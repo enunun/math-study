@@ -9,6 +9,7 @@
     ".claude/**",
     ".rtk/**",
     "CLAUDE.md",
+    "site/src/content/**/*.mdx",
     "LICENSE"
   ]
 }

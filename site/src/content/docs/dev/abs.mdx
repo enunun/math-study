@@ -1,0 +1,48 @@
+---
+title: 絶対値
+description: 定義と定理の番号，ほかのページからの参照を確認するための，開発用のページである．
+pageId: absolute-value
+sidebar:
+  hidden: true
+pagefind: false
+head:
+  - tag: meta
+    attrs:
+      name: robots
+      content: noindex
+---
+
+import { Proof } from '@/components/fold';
+import { Definition, Lemma, Theorem } from '@/components/statement';
+
+`notation`のページから参照される定義と定理を置く，開発用のページである．ページの識別子は，frontmatterの`pageId`で，ファイル名とは別に`absolute-value`と指定している．
+
+<Definition id="absolute-value" name="絶対値">
+
+実数$x$に対して，$x$の絶対値$\abs{x}$を，$x \ge 0$のとき$x$，$x < 0$のとき$-x$と定める．
+
+</Definition>
+
+<Lemma id="abs-bounds">
+
+任意の$x \in \RealNumbers$について，$-\abs{x} \le x \le \abs{x}$が成り立つ．
+
+</Lemma>
+
+<Proof of="abs-bounds">
+
+$x \ge 0$のとき，$\abs{x} = x$なので，$-\abs{x} \le 0 \le x = \abs{x}$である．$x < 0$のとき，$\abs{x} = -x$なので，$-\abs{x} = x < 0 < \abs{x}$である．
+
+</Proof>
+
+<Theorem id="triangle-inequality" name="三角不等式">
+
+任意の$x, y \in \RealNumbers$について，$\abs{x + y} \le \abs{x} + \abs{y}$が成り立つ．
+
+</Theorem>
+
+<Proof of="triangle-inequality">
+
+<Ref to="abs-bounds" />より，$-\abs{x} \le x \le \abs{x}$と$-\abs{y} \le y \le \abs{y}$が成り立つ．辺々を加えると，$-(\abs{x} + \abs{y}) \le x + y \le \abs{x} + \abs{y}$を得る．これは，$\abs{x + y} \le \abs{x} + \abs{y}$を意味する．
+
+</Proof>

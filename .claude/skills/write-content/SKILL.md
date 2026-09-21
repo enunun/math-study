@@ -49,6 +49,19 @@ Math is rendered at build time by MathJax 4. Write inline math as `$…$` and di
 - Each formula gets an English speech string in `aria-label`. Japanese inside `\text{…}` is read one character at a time, and `\norm` is read as "metric". These are limits of MathJax's speech engine.
 - Text inside math is not checked by textlint, so a lone Latin letter as a variable is fine inside `$…$`.
 
+## Definitions and theorems
+
+Import the kinds you use, right after the frontmatter: `import { Definition, Lemma, Proposition, Theorem, Corollary } from '@/components/statement';`. Put blank lines before and after the tags so that the content is parsed as Markdown.
+
+- Each element gets a label at build time: kind + page identifier + sequence number (`定理abs-3`). The counter is per page and shared by all kinds.
+- `name="…"` adds a phrase to the heading. `id="…"` gives a stable identifier for references and the anchor. Without `id`, the anchor is the label, which changes when a statement is inserted before it.
+- `<Ref to="id" />` links to a statement on the same page, and `<Ref page="pageId" to="id" />` to one on another page. Do not import `Ref`. Only statements with an `id` can be referenced.
+- `<Proof of="id">` sets the proof title to the label of that statement. Do not combine it with `title`.
+- The page identifier is the frontmatter `pageId`, or the file name (`index.mdx` uses the directory name). Use letters, digits, hyphens, and underscores, and keep it unique across the site. Pages referenced from other pages need lowercase ASCII file names.
+- Format MDX by hand: oxfmt does not touch it, because it breaks paragraphs that contain inline JSX. Keep each paragraph on one line.
+
+Bad identifiers, duplicate identifiers, and references that point nowhere fail the build. The examples are on the test page (`site/src/content/docs/dev/notation.mdx`), and `dev/abs.mdx` is the page they refer to.
+
 ## Lint
 
 ```sh
@@ -61,6 +74,7 @@ pnpm exec textlint --fix site/src/content README.md
 - `textlint --fix` only repairs what can be fixed automatically (spaces, colons, punctuation). Review the diff afterwards; a fix can change the meaning, for example a space inside a quoted string.
 - In MDX, `textlint-disable` comments do not work. Rewrite the text to avoid a false positive.
 - When using a new component in MDX, add it to `allowed_elements` in `.markdownlint-cli2.jsonc`.
+- Headings must be unique within a page (`no-duplicate-heading`), so give repeated section names a distinguishing word.
 - To change the writing rules, edit `.textlintrc.yml` and `.textlint-prh.yml`. Give each `prh` rule `specs` with before and after examples.
 
 ## Writing examples

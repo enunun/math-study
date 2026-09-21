@@ -10,7 +10,17 @@
 
     // MDXで使うコンポーネントは，インラインHTMLとして許可する．
     "no-inline-html": {
-      "allowed_elements": ["Detail", "Proof", "Remark"],
+      "allowed_elements": [
+        "Corollary",
+        "Definition",
+        "Detail",
+        "Lemma",
+        "Proof",
+        "Proposition",
+        "Ref",
+        "Remark",
+        "Theorem",
+      ],
     },
 
     // Starlightは，frontmatterのtitleを1つ目の見出しとして扱う．

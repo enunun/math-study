@@ -1,0 +1,11 @@
+---
+import Statement from './Statement.astro';
+
+interface Props {
+  label: string;
+  anchor: string;
+  name?: string;
+}
+---
+
+<Statement kind="lemma" {...Astro.props}><slot /></Statement>

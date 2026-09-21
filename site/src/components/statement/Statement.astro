@@ -1,0 +1,54 @@
+---
+interface Props {
+  kind: 'definition' | 'lemma' | 'proposition' | 'theorem' | 'corollary';
+  /** 「定理abs-3」のようなラベル．ビルド時のプラグインが付ける． */
+  label: string;
+  /** 要素のidとリンクの飛び先．ビルド時のプラグインが付ける． */
+  anchor: string;
+  /** 見出しに添える語句． */
+  name?: string;
+}
+
+const { kind, label, anchor, name } = Astro.props;
+const headingId = `${anchor}-heading`;
+---
+
+<div class:list={['statement', `statement-${kind}`]} id={anchor} role="group" aria-labelledby={headingId}>
+  <p class="statement-heading" id={headingId}>
+    <span class="statement-label">{label}</span>
+    {name && <span class="statement-name">（{name}）</span>}
+  </p>
+  <div class="statement-body"><slot /></div>
+</div>
+
+<style>
+  .statement {
+    margin-block: 1.5rem;
+    padding: 0.7rem 1.1rem 0.9rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-inline-start-width: 0.3rem;
+    border-radius: 0.4rem;
+    scroll-margin-block-start: calc(var(--sl-nav-height) + 1rem);
+  }
+
+  .statement-definition {
+    border-inline-start-color: var(--sl-color-gray-3);
+  }
+
+  .statement-heading {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .statement-label {
+    color: var(--sl-color-text-accent);
+  }
+
+  .statement-body {
+    margin-top: 0.4rem;
+  }
+
+  .statement-body > :global(:first-child) {
+    margin-top: 0;
+  }
+</style>
