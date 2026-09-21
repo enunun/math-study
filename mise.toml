@@ -4,6 +4,25 @@ pnpm = "12"
 gh = "2"
 rtk = "0.45.0"
 lefthook = "2"
+# 多項式の計算機の核は，Rustで書き，Wasmにして動かす．wasm-bindgenのCLIの版は，Cargo.tomlのwasm-bindgenの版と，同じにする．
+rust = { version = "1.98.1", profile = "minimal", components = "rustfmt,clippy", targets = "wasm32-unknown-unknown" }
+
+# wasm-bindgenのCLI．GitHubのAPIを使わず，配布のURLから直接入れる(APIには，未認証だと，1時間に60回の制限がある)．
+[tools."http:wasm-bindgen"]
+version = "0.2.128"
+strip_components = 1
+
+[tools."http:wasm-bindgen".platforms.linux-x64]
+url = "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/{{version}}/wasm-bindgen-{{version}}-x86_64-unknown-linux-musl.tar.gz"
+
+[tools."http:wasm-bindgen".platforms.linux-arm64]
+url = "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/{{version}}/wasm-bindgen-{{version}}-aarch64-unknown-linux-musl.tar.gz"
+
+[tools."http:wasm-bindgen".platforms.macos-x64]
+url = "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/{{version}}/wasm-bindgen-{{version}}-x86_64-apple-darwin.tar.gz"
+
+[tools."http:wasm-bindgen".platforms.macos-arm64]
+url = "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/{{version}}/wasm-bindgen-{{version}}-aarch64-apple-darwin.tar.gz"
 
 [settings]
 lockfile = true
@@ -12,13 +31,21 @@ lockfile = true
 description = "依存パッケージをインストールする"
 run = "pnpm install --frozen-lockfile"
 
+[tasks.wasm]
+description = "Rustの多項式の計算機を，Wasmにして，site/src/wasm/に出力する"
+run = [
+  "cargo build --release --target wasm32-unknown-unknown -p polynomial-wasm",
+  "wasm-bindgen --target web --out-dir site/src/wasm --out-name polynomial target/wasm32-unknown-unknown/release/polynomial_wasm.wasm",
+]
+
 [tasks.dev]
 description = "開発サーバーを起動する"
+depends = ["wasm"]
 run = "pnpm --filter site dev --host"
 
 [tasks.build]
 description = "サイトをビルドする"
-depends = ["install"]
+depends = ["install", "wasm"]
 run = "pnpm --filter site build"
 
 [tasks.preview]
@@ -27,8 +54,8 @@ depends = ["build"]
 run = "pnpm --filter site preview --host"
 
 [tasks.sync]
-description = "Astroの型定義を生成する(型を使うリントが参照する)"
-depends = ["install"]
+description = "Astroの型定義を生成する(型を使うリントが参照する．Wasmの型定義も，先に生成する)"
+depends = ["install", "wasm"]
 run = "pnpm --filter site exec astro sync"
 
 [tasks.fmt]
@@ -40,6 +67,10 @@ run = "pnpm exec oxfmt"
 description = "oxlintで厳格にリントする"
 depends = ["sync"]
 run = "pnpm exec oxlint --deny-warnings"
+
+[tasks."lint:rust"]
+description = "rustfmtとclippyで，Rustのコードを厳格に検査する"
+run = ["cargo fmt --all -- --check", "cargo clippy --workspace --all-targets -- -D warnings"]
 
 [tasks."lint:markdown"]
 description = "markdownlintでMarkdown(README，docs)を検査する"
@@ -58,12 +89,12 @@ run = "pnpm exec textlint site/src/content README.md"
 
 [tasks.lint]
 description = "すべてのリントを実行する"
-depends = ["lint:code", "lint:markdown", "lint:mdx", "lint:text"]
+depends = ["lint:code", "lint:rust", "lint:markdown", "lint:mdx", "lint:text"]
 
 [tasks.test]
-description = "単体テストを実行する"
-depends = ["install"]
-run = "pnpm --filter site test"
+description = "単体テストを実行する(TypeScriptのVitestと，Rustのcargo test)"
+depends = ["install", "wasm"]
+run = ["pnpm --filter site test", "cargo test --workspace"]
 
 [tasks.hooks]
 description = "Gitのフック(コミット時の検査)を設定する"
@@ -95,5 +126,6 @@ run = [
   "pnpm exec oxfmt --check",
   "pnpm --filter site check",
   "pnpm --filter site test",
+  "cargo test --workspace",
   "pnpm --filter site build",
 ]

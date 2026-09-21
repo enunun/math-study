@@ -17,6 +17,12 @@ pre-commit:
         - '*.{ts,tsx,js,mjs,cjs,astro}'
         - '**/*.{ts,tsx,js,mjs,cjs,astro}'
       run: mise run sync && pnpm exec oxlint --deny-warnings {staged_files}
+    rust:
+      glob:
+        - 'crates/**/*.rs'
+        - 'crates/**/Cargo.toml'
+        - 'Cargo.toml'
+      run: cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings
     markdown:
       glob:
         - 'site/src/content/**/*.md'

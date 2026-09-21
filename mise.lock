@@ -49,6 +49,33 @@ url = "https://github.com/cli/cli/releases/download/v2.101.0/gh_2.101.0_windows_
 url_api = "https://api.github.com/repos/cli/cli/releases/assets/565857681"
 provenance = "github-attestations"
 
+[[tools."http:wasm-bindgen"]]
+version = "0.2.128"
+backend = "http:wasm-bindgen"
+specifiers = ["0.2.128"]
+
+[tools."http:wasm-bindgen".options]
+strip_components = "1"
+
+[tools."http:wasm-bindgen"."platforms.linux-arm64"]
+url = "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-aarch64-unknown-linux-musl.tar.gz"
+
+[tools."http:wasm-bindgen"."platforms.linux-arm64-musl"]
+url = "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-aarch64-unknown-linux-musl.tar.gz"
+
+[tools."http:wasm-bindgen"."platforms.linux-x64"]
+checksum = "blake3:7239abc2d396c753a098616372c8231ddcdd44346767555910fd847bb7baed1d"
+url = "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-x86_64-unknown-linux-musl.tar.gz"
+
+[tools."http:wasm-bindgen"."platforms.linux-x64-musl"]
+url = "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-x86_64-unknown-linux-musl.tar.gz"
+
+[tools."http:wasm-bindgen"."platforms.macos-arm64"]
+url = "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-aarch64-apple-darwin.tar.gz"
+
+[tools."http:wasm-bindgen"."platforms.macos-x64"]
+url = "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-x86_64-apple-darwin.tar.gz"
+
 [[tools.lefthook]]
 version = "2.1.14"
 backend = "aqua:evilmartians/lefthook"
@@ -210,3 +237,13 @@ url_api = "https://api.github.com/repos/rtk-ai/rtk/releases/assets/504971569"
 checksum = "sha256:34cea9009a8099acdaf85147b971d95f65efabfa63fb3aea7d3e2b73e6f517c3"
 url = "https://github.com/rtk-ai/rtk/releases/download/v0.45.0/rtk-x86_64-pc-windows-msvc.zip"
 url_api = "https://api.github.com/repos/rtk-ai/rtk/releases/assets/504971578"
+
+[[tools.rust]]
+version = "1.98.1"
+backend = "core:rust"
+specifiers = ["1.98.1"]
+
+[tools.rust.options]
+components = "clippy,rustfmt"
+profile = "minimal"
+targets = "wasm32-unknown-unknown"

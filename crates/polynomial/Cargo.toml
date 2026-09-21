@@ -1,0 +1,10 @@
+[package]
+name = "polynomial"
+description = "多項式の式を解析し，展開と微分を計算する．"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

@@ -7,6 +7,9 @@ RUN apt-get update \
 	openssh-client \
 	procps \
 	jq \
+	# Rustのテストを，ネイティブで実行するためのリンカ．Wasmのビルドには要らない．
+	gcc \
+	libc6-dev \
 	&& rm -rf /var/lib/apt/lists/*
 
 # ツール(Node，pnpm，gh，rtkなど)はmise.tomlとmise.lockのとおりにイメージへ入れる．

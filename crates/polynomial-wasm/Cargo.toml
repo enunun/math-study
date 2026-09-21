@@ -1,0 +1,23 @@
+[package]
+name = "polynomial-wasm"
+description = "polynomialクレートを，ブラウザから呼ぶための，Wasmの窓口．"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[lints]
+workspace = true
+
+[dependencies]
+polynomial = { path = "../polynomial" }
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+# CLIの版(mise.toml)と，同じ版にそろえる．食い違うと，wasm-bindgenが実行時に誤りを返す．
+wasm-bindgen = "=0.2.128"
+
+[dev-dependencies]
+serde_json = "1"
