@@ -1,0 +1,83 @@
+{
+  "version": "0.1.0",
+  "description": "弦と曲線の最大の隔たりが，矢高である．",
+  "view": {
+    "x": [-3.6, 3.6],
+    "y": [2.6, 4.6],
+    "unit": {
+      "x": "1.4cm",
+      "y": "1.4cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "arc",
+      "type": "curve",
+      "var": "t",
+      "expr": ["4*cos(t)", "4*sin(t)"],
+      "domain": [0.7, 2.44]
+    },
+    {
+      "id": "A",
+      "type": "point",
+      "at": [2.2943, 3.2766],
+      "label": "A",
+      "anchor": "north west",
+      "dot": true
+    },
+    {
+      "id": "B",
+      "type": "point",
+      "at": [-2.2943, 3.2766],
+      "label": "B",
+      "anchor": "north east",
+      "dot": true
+    },
+    {
+      "id": "M",
+      "type": "point",
+      "at": [0, 3.2766],
+      "dot": true
+    },
+    {
+      "id": "T",
+      "type": "point",
+      "at": [0, 4],
+      "dot": true
+    },
+    {
+      "id": "chord",
+      "type": "segment",
+      "from": "A",
+      "to": "B",
+      "style": {
+        "color": "blue",
+        "width": "1.2pt"
+      }
+    },
+    {
+      "id": "sag",
+      "type": "segment",
+      "from": "M",
+      "to": "T",
+      "style": {
+        "color": "red",
+        "width": "1.5pt"
+      }
+    },
+    {
+      "id": "lab_l",
+      "type": "label",
+      "at": [0, 3.2266000000000004],
+      "anchor": "north",
+      "tex": "$\\ell$"
+    },
+    {
+      "id": "lab_s",
+      "type": "label",
+      "at": [0.12, 3.6383],
+      "anchor": "west",
+      "tex": "矢高"
+    }
+  ]
+}

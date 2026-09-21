@@ -1,0 +1,117 @@
+{
+  "version": "0.1.0",
+  "description": "画面の上の三角形と，内側の点sと外側の点s′．",
+  "view": {
+    "x": [-1, 6.5],
+    "y": [-1, 4.5],
+    "unit": {
+      "x": "1cm",
+      "y": "1cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "s1",
+      "type": "point",
+      "at": [0, 0],
+      "label": "s_1",
+      "anchor": "north east"
+    },
+    {
+      "id": "s2",
+      "type": "point",
+      "at": [4, 0],
+      "label": "s_2",
+      "anchor": "north west"
+    },
+    {
+      "id": "s3",
+      "type": "point",
+      "at": [0, 3],
+      "label": "s_3",
+      "anchor": "south east"
+    },
+    {
+      "id": "e12",
+      "type": "segment",
+      "from": "s1",
+      "to": "s2",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "e23",
+      "type": "segment",
+      "from": "s2",
+      "to": "s3",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "e31",
+      "type": "segment",
+      "from": "s3",
+      "to": "s1",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "s",
+      "type": "point",
+      "at": [1, 1],
+      "label": "s",
+      "anchor": "south west",
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "t1",
+      "type": "segment",
+      "from": "s",
+      "to": "s1",
+      "style": {
+        "line": "dashed",
+        "color": "gray",
+        "width": "0.5pt"
+      }
+    },
+    {
+      "id": "t2",
+      "type": "segment",
+      "from": "s",
+      "to": "s2",
+      "style": {
+        "line": "dashed",
+        "color": "gray",
+        "width": "0.5pt"
+      }
+    },
+    {
+      "id": "t3",
+      "type": "segment",
+      "from": "s",
+      "to": "s3",
+      "style": {
+        "line": "dashed",
+        "color": "gray",
+        "width": "0.5pt"
+      }
+    },
+    {
+      "id": "sp",
+      "type": "point",
+      "at": [3.6, 2.4],
+      "label": "s'",
+      "anchor": "south west",
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    }
+  ]
+}

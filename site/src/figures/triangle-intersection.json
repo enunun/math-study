@@ -1,0 +1,182 @@
+{
+  "version": "0.1.0",
+  "description": "平面z=0の三角形T1と，平面y=1の三角形T2．2つの平面の交わりLの上で，2つの三角形の切り口が重なる部分が，交わりである．",
+  "view": {
+    "azimuth": 25,
+    "elevation": 22,
+    "unit": "1.6cm"
+  },
+  "objects": [
+    {
+      "id": "A1",
+      "type": "point",
+      "at": [0, 0, 0]
+    },
+    {
+      "id": "A2",
+      "type": "point",
+      "at": [4, 0, 0]
+    },
+    {
+      "id": "A3",
+      "type": "point",
+      "at": [0, 4, 0]
+    },
+    {
+      "id": "a12",
+      "type": "segment",
+      "from": "A1",
+      "to": "A2",
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "a23",
+      "type": "segment",
+      "from": "A2",
+      "to": "A3",
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "a31",
+      "type": "segment",
+      "from": "A3",
+      "to": "A1",
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "B1",
+      "type": "point",
+      "at": [1, 1, -1]
+    },
+    {
+      "id": "B2",
+      "type": "point",
+      "at": [3, 1, -1]
+    },
+    {
+      "id": "B3",
+      "type": "point",
+      "at": [2, 1, 2]
+    },
+    {
+      "id": "b12",
+      "type": "segment",
+      "from": "B1",
+      "to": "B2",
+      "style": {
+        "color": "green"
+      }
+    },
+    {
+      "id": "b23",
+      "type": "segment",
+      "from": "B2",
+      "to": "B3",
+      "style": {
+        "color": "green"
+      }
+    },
+    {
+      "id": "b31",
+      "type": "segment",
+      "from": "B3",
+      "to": "B1",
+      "style": {
+        "color": "green"
+      }
+    },
+    {
+      "id": "L0",
+      "type": "point",
+      "at": [-1, 1, 0]
+    },
+    {
+      "id": "L1",
+      "type": "point",
+      "at": [5, 1, 0]
+    },
+    {
+      "id": "line",
+      "type": "segment",
+      "from": "L0",
+      "to": "L1",
+      "style": {
+        "line": "dashed",
+        "color": "gray"
+      }
+    },
+    {
+      "id": "C1",
+      "type": "point",
+      "at": [0, 1, 0],
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "C2",
+      "type": "point",
+      "at": [3, 1, 0],
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "D1",
+      "type": "point",
+      "at": [1.3333, 1, 0],
+      "dot": true,
+      "style": {
+        "color": "green"
+      }
+    },
+    {
+      "id": "D2",
+      "type": "point",
+      "at": [2.6667, 1, 0],
+      "dot": true,
+      "style": {
+        "color": "green"
+      }
+    },
+    {
+      "id": "overlap",
+      "type": "segment",
+      "from": "D1",
+      "to": "D2",
+      "style": {
+        "color": "red",
+        "width": "2pt"
+      }
+    },
+    {
+      "id": "lab_t1",
+      "type": "label",
+      "at": [0.3, 3.4, 0],
+      "anchor": "east",
+      "tex": "$T_1$"
+    },
+    {
+      "id": "lab_t2",
+      "type": "label",
+      "at": [2, 1, 2.1],
+      "anchor": "south",
+      "tex": "$T_2$"
+    },
+    {
+      "id": "lab_l",
+      "type": "label",
+      "at": [5, 1, 0],
+      "anchor": "west",
+      "tex": "$L$"
+    }
+  ]
+}

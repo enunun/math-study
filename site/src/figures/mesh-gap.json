@@ -1,0 +1,145 @@
+{
+  "version": "0.1.0",
+  "description": "円と，中心角hごとの弦．弦と円の隔たりは，R−R cos(h/2)である．",
+  "view": {
+    "x": [-3.6, 3.6],
+    "y": [-0.6, 4],
+    "unit": {
+      "x": "1cm",
+      "y": "1cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "circle",
+      "type": "curve",
+      "var": "t",
+      "expr": ["3*cos(t)", "3*sin(t)"],
+      "domain": [0.2, 2.94],
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "O",
+      "type": "point",
+      "at": [0, 0],
+      "label": "O",
+      "anchor": "north",
+      "dot": true
+    },
+    {
+      "id": "A",
+      "type": "point",
+      "at": [2.1213, 2.1213],
+      "label": "A",
+      "anchor": "south west",
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "B",
+      "type": "point",
+      "at": [-2.1213, 2.1213],
+      "label": "B",
+      "anchor": "south east",
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "M",
+      "type": "point",
+      "at": [0, 2.1213],
+      "dot": true
+    },
+    {
+      "id": "T",
+      "type": "point",
+      "at": [0, 3],
+      "dot": true
+    },
+    {
+      "id": "oa",
+      "type": "segment",
+      "from": "O",
+      "to": "A",
+      "style": {
+        "color": "gray",
+        "width": "0.5pt"
+      }
+    },
+    {
+      "id": "ob",
+      "type": "segment",
+      "from": "O",
+      "to": "B",
+      "style": {
+        "color": "gray",
+        "width": "0.5pt"
+      }
+    },
+    {
+      "id": "chord",
+      "type": "segment",
+      "from": "A",
+      "to": "B",
+      "style": {
+        "color": "blue",
+        "width": "1.2pt"
+      }
+    },
+    {
+      "id": "gap",
+      "type": "segment",
+      "from": "M",
+      "to": "T",
+      "style": {
+        "color": "red",
+        "width": "1.5pt"
+      }
+    },
+    {
+      "id": "om",
+      "type": "segment",
+      "from": "O",
+      "to": "M",
+      "style": {
+        "line": "dashed",
+        "color": "gray",
+        "width": "0.5pt"
+      }
+    },
+    {
+      "id": "lab_h",
+      "type": "label",
+      "at": [0, 0.85],
+      "anchor": "south",
+      "tex": "$h$"
+    },
+    {
+      "id": "lab_gap2",
+      "type": "label",
+      "at": [0.3, 3.05],
+      "anchor": "south west",
+      "tex": "$R - R\\cos\\frac{h}{2}$"
+    },
+    {
+      "id": "lab_r",
+      "type": "label",
+      "at": [-1.3, 1.5],
+      "anchor": "south east",
+      "tex": "$R$"
+    },
+    {
+      "id": "lab_cos",
+      "type": "label",
+      "at": [0.08, 1.1],
+      "anchor": "west",
+      "tex": "$R\\cos\\frac{h}{2}$"
+    }
+  ]
+}

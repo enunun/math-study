@@ -1,0 +1,90 @@
+{
+  "version": "0.1.0",
+  "description": "球と，2つの点の視線．点Pの視線は球と交わり，点Qの視線は交わらない．",
+  "view": {
+    "azimuth": 150,
+    "elevation": 18,
+    "unit": "1cm"
+  },
+  "objects": [
+    {
+      "id": "ball",
+      "type": "sphere",
+      "center": [0, 0, 0],
+      "radius": 1.6
+    },
+    {
+      "id": "P",
+      "type": "point",
+      "at": [-2.1998, -3.8102, -1.0692],
+      "label": "P",
+      "anchor": "south east",
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "P_end",
+      "type": "point",
+      "at": [1.7939, 3.1071, 1.8379]
+    },
+    {
+      "id": "Q",
+      "type": "point",
+      "at": [-2.5418, -4.4026, 0.8101],
+      "label": "Q",
+      "anchor": "south east",
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "Q_end",
+      "type": "point",
+      "at": [1.4519, 2.5147, 3.7173]
+    },
+    {
+      "id": "ray_p",
+      "type": "vector",
+      "from": "P",
+      "to": "P_end",
+      "style": {
+        "color": "red",
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "ray_q",
+      "type": "vector",
+      "from": "Q",
+      "to": "Q_end",
+      "style": {
+        "color": "blue",
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "name_s",
+      "type": "label",
+      "at": [0, 0, 1.75],
+      "anchor": "south",
+      "tex": "$S$"
+    },
+    {
+      "id": "name_dp",
+      "type": "label",
+      "at": [1.7939, 3.1071, 1.8379],
+      "anchor": "east",
+      "tex": "$\\boldsymbol{d}$"
+    },
+    {
+      "id": "name_dq",
+      "type": "label",
+      "at": [1.4519, 2.5147, 3.7173],
+      "anchor": "east",
+      "tex": "$\\boldsymbol{d}$"
+    }
+  ]
+}

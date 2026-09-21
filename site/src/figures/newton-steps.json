@@ -1,0 +1,102 @@
+{
+  "version": "0.1.0",
+  "description": "Newton法．点x0から，一次近似の解の集合(破線)へ最短の動きを繰り返すと，曲線の上へ収束する．",
+  "view": {
+    "x": [0.7, 1.7],
+    "y": [0.15, 0.62],
+    "unit": {
+      "x": "6cm",
+      "y": "6cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "curve",
+      "type": "curve",
+      "var": "t",
+      "expr": ["cos(t)", "sin(t)"],
+      "domain": [0.15, 0.9]
+    },
+    {
+      "id": "x0",
+      "type": "point",
+      "at": [1.5, 0.5],
+      "label": "\\boldsymbol{x}_0",
+      "anchor": "south west",
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "x1",
+      "type": "point",
+      "at": [1.05, 0.35],
+      "label": "\\boldsymbol{x}_1",
+      "anchor": "north west",
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "x2",
+      "type": "point",
+      "at": [0.9536, 0.3179],
+      "label": "\\boldsymbol{x}_2",
+      "anchor": "north east",
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "m0",
+      "type": "vector",
+      "from": "x0",
+      "to": "x1",
+      "style": {
+        "color": "gray",
+        "width": "0.8pt"
+      }
+    },
+    {
+      "id": "m1",
+      "type": "vector",
+      "from": "x1",
+      "to": "x2",
+      "style": {
+        "color": "gray",
+        "width": "0.8pt"
+      }
+    },
+    {
+      "id": "l0a",
+      "type": "point",
+      "at": [1.3979, -0.6936]
+    },
+    {
+      "id": "l0b",
+      "type": "point",
+      "at": [0.7021, 1.3936]
+    },
+    {
+      "id": "lin0",
+      "type": "segment",
+      "from": "l0a",
+      "to": "l0b",
+      "style": {
+        "line": "dashed",
+        "color": "gray",
+        "width": "0.6pt"
+      }
+    },
+    {
+      "id": "lab_curve",
+      "type": "label",
+      "at": [0.86, 0.5],
+      "anchor": "south east",
+      "tex": "$\\boldsymbol{F}(\\boldsymbol{x}) = \\boldsymbol{0}$"
+    }
+  ]
+}

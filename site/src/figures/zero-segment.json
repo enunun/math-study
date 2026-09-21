@@ -1,0 +1,96 @@
+{
+  "version": "0.1.0",
+  "description": "三角形の頂点の値の符号が揃わないとき，零点は2つの辺の上にあり，零点を結ぶ線分ができる．",
+  "view": {
+    "x": [-2.5, 7.5],
+    "y": [-1, 5.2],
+    "unit": {
+      "x": "1.1cm",
+      "y": "1.1cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "A",
+      "type": "point",
+      "at": [0, 0],
+      "label": "A\\ (g_A = 0.8)",
+      "anchor": "north east",
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "B",
+      "type": "point",
+      "at": [5, 0.3],
+      "label": "B\\ (g_B = -0.4)",
+      "anchor": "north west",
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "C",
+      "type": "point",
+      "at": [1.5, 4],
+      "label": "C\\ (g_C = -0.8)",
+      "anchor": "south",
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "ab",
+      "type": "segment",
+      "from": "A",
+      "to": "B",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "bc",
+      "type": "segment",
+      "from": "B",
+      "to": "C",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "ca",
+      "type": "segment",
+      "from": "C",
+      "to": "A",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "Z1",
+      "type": "point",
+      "at": [3.3333, 0.2],
+      "dot": true
+    },
+    {
+      "id": "Z2",
+      "type": "point",
+      "at": [0.75, 2],
+      "dot": true
+    },
+    {
+      "id": "zero",
+      "type": "segment",
+      "from": "Z1",
+      "to": "Z2",
+      "style": {
+        "color": "red",
+        "width": "1.5pt"
+      }
+    }
+  ]
+}

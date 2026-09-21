@@ -1,0 +1,301 @@
+{
+  "version": "0.1.0",
+  "description": "二分法で区間が狭まる様子．赤い点は隠れる点，青い点は見える点．",
+  "view": {
+    "x": [-2.2, 8.6],
+    "y": [-6.2, 2],
+    "unit": {
+      "x": "0.8cm",
+      "y": "0.8cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "top_a",
+      "type": "point",
+      "at": [0, 1]
+    },
+    {
+      "id": "top_b",
+      "type": "point",
+      "at": [3.3, 1]
+    },
+    {
+      "id": "top_c",
+      "type": "point",
+      "at": [8, 1]
+    },
+    {
+      "id": "truth_hidden",
+      "type": "segment",
+      "from": "top_a",
+      "to": "top_b",
+      "style": {
+        "color": "red",
+        "width": "3pt"
+      }
+    },
+    {
+      "id": "truth_visible",
+      "type": "segment",
+      "from": "top_b",
+      "to": "top_c",
+      "style": {
+        "color": "blue",
+        "width": "3pt"
+      }
+    },
+    {
+      "id": "truth_label",
+      "type": "label",
+      "at": [-0.3, 1],
+      "anchor": "east",
+      "tex": "実際"
+    },
+    {
+      "id": "cl",
+      "type": "point",
+      "at": [3.3, 1.3]
+    },
+    {
+      "id": "cb",
+      "type": "point",
+      "at": [3.3, -5.3]
+    },
+    {
+      "id": "boundary",
+      "type": "segment",
+      "from": "cl",
+      "to": "cb",
+      "style": {
+        "line": "dotted",
+        "color": "gray"
+      }
+    },
+    {
+      "id": "s0",
+      "type": "point",
+      "at": [0, 0],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "t0",
+      "type": "point",
+      "at": [8, 0],
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "row0",
+      "type": "segment",
+      "from": "s0",
+      "to": "t0",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "k0",
+      "type": "label",
+      "at": [-0.3, 0],
+      "anchor": "east",
+      "tex": "$k = 0$"
+    },
+    {
+      "id": "s1",
+      "type": "point",
+      "at": [0, -1],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "t1",
+      "type": "point",
+      "at": [4, -1],
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "row1",
+      "type": "segment",
+      "from": "s1",
+      "to": "t1",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "k1",
+      "type": "label",
+      "at": [-0.3, -1],
+      "anchor": "east",
+      "tex": "$k = 1$"
+    },
+    {
+      "id": "s2",
+      "type": "point",
+      "at": [2, -2],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "t2",
+      "type": "point",
+      "at": [4, -2],
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "row2",
+      "type": "segment",
+      "from": "s2",
+      "to": "t2",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "k2",
+      "type": "label",
+      "at": [-0.3, -2],
+      "anchor": "east",
+      "tex": "$k = 2$"
+    },
+    {
+      "id": "s3",
+      "type": "point",
+      "at": [3, -3],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "t3",
+      "type": "point",
+      "at": [4, -3],
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "row3",
+      "type": "segment",
+      "from": "s3",
+      "to": "t3",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "k3",
+      "type": "label",
+      "at": [-0.3, -3],
+      "anchor": "east",
+      "tex": "$k = 3$"
+    },
+    {
+      "id": "s4",
+      "type": "point",
+      "at": [3, -4],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "t4",
+      "type": "point",
+      "at": [3.5, -4],
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "row4",
+      "type": "segment",
+      "from": "s4",
+      "to": "t4",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "k4",
+      "type": "label",
+      "at": [-0.3, -4],
+      "anchor": "east",
+      "tex": "$k = 4$"
+    },
+    {
+      "id": "s5",
+      "type": "point",
+      "at": [3.25, -5],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "t5",
+      "type": "point",
+      "at": [3.5, -5],
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "row5",
+      "type": "segment",
+      "from": "s5",
+      "to": "t5",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "k5",
+      "type": "label",
+      "at": [-0.3, -5],
+      "anchor": "east",
+      "tex": "$k = 5$"
+    },
+    {
+      "id": "lab_s",
+      "type": "label",
+      "at": [0, -5.4],
+      "anchor": "north",
+      "tex": "$s_0$"
+    },
+    {
+      "id": "lab_t",
+      "type": "label",
+      "at": [8, -5.4],
+      "anchor": "north",
+      "tex": "$t_0$"
+    },
+    {
+      "id": "lab_c",
+      "type": "label",
+      "at": [3.3, -5.4],
+      "anchor": "north",
+      "tex": "$c$"
+    }
+  ]
+}

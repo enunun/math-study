@@ -1,0 +1,132 @@
+{
+  "version": "0.1.0",
+  "description": "曲面の断面(円)と，見る向きdの視線．接する2点が輪郭の点である．",
+  "view": {
+    "x": [-4.6, 4.6],
+    "y": [-3.2, 3.2],
+    "unit": {
+      "x": "0.9cm",
+      "y": "0.9cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "section",
+      "type": "curve",
+      "var": "t",
+      "expr": ["2*cos(t)", "2*sin(t)"],
+      "domain": [0, "2*pi"]
+    },
+    {
+      "id": "ray_t1_a",
+      "type": "point",
+      "at": [-4.6307, 0.4429]
+    },
+    {
+      "id": "ray_t1_b",
+      "type": "point",
+      "at": [3.2627, 3.3159]
+    },
+    {
+      "id": "ray_t1",
+      "type": "vector",
+      "from": "ray_t1_a",
+      "to": "ray_t1_b",
+      "style": {
+        "color": "red",
+        "width": "1.2pt"
+      }
+    },
+    {
+      "id": "ray_t2_a",
+      "type": "point",
+      "at": [-3.2627, -3.3159]
+    },
+    {
+      "id": "ray_t2_b",
+      "type": "point",
+      "at": [4.6307, -0.4429]
+    },
+    {
+      "id": "ray_t2",
+      "type": "vector",
+      "from": "ray_t2_a",
+      "to": "ray_t2_b",
+      "style": {
+        "color": "red",
+        "width": "1.2pt"
+      }
+    },
+    {
+      "id": "ray_in_a",
+      "type": "point",
+      "at": [-4.1006, -1.0136]
+    },
+    {
+      "id": "ray_in_b",
+      "type": "point",
+      "at": [3.7928, 1.8594]
+    },
+    {
+      "id": "ray_in",
+      "type": "vector",
+      "from": "ray_in_a",
+      "to": "ray_in_b",
+      "style": {
+        "color": "gray",
+        "width": "0.8pt"
+      }
+    },
+    {
+      "id": "T1",
+      "type": "point",
+      "at": [-0.684, 1.8794],
+      "label": "T_1",
+      "anchor": "south east",
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "T2",
+      "type": "point",
+      "at": [0.684, -1.8794],
+      "label": "T_2",
+      "anchor": "north west",
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "n1_end",
+      "type": "point",
+      "at": [-1.0603, 2.913]
+    },
+    {
+      "id": "n1",
+      "type": "vector",
+      "from": "T1",
+      "to": "n1_end",
+      "style": {
+        "color": "blue",
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "lab_n",
+      "type": "label",
+      "at": [-1.0603, 2.913],
+      "anchor": "south",
+      "tex": "$\\boldsymbol{n}$"
+    },
+    {
+      "id": "lab_d",
+      "type": "label",
+      "at": [-4.0407, -1.9707],
+      "anchor": "north west",
+      "tex": "$\\boldsymbol{d}$の向きの視線"
+    }
+  ]
+}

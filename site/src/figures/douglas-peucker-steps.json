@@ -1,0 +1,204 @@
+{
+  "version": "0.1.0",
+  "description": "Douglas–Peuckerの方法．両端を結ぶ線分から最も遠い点で列を分け，近い点を捨てる．",
+  "view": {
+    "x": [-0.8, 6.9],
+    "y": [-0.8, 3.1],
+    "unit": {
+      "x": "1.3cm",
+      "y": "1.3cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "p0",
+      "type": "point",
+      "at": [0, 0],
+      "label": "P_0",
+      "anchor": "north east",
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "p1",
+      "type": "point",
+      "at": [1, 0.6],
+      "label": "P_1",
+      "anchor": "north east",
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "p2",
+      "type": "point",
+      "at": [2, 1.35],
+      "label": "P_2",
+      "anchor": "north east",
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "p3",
+      "type": "point",
+      "at": [3, 2.2],
+      "label": "P_3",
+      "anchor": "south",
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "p4",
+      "type": "point",
+      "at": [4, 1.5],
+      "label": "P_4",
+      "anchor": "north east",
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "p5",
+      "type": "point",
+      "at": [5, 0.55],
+      "label": "P_5",
+      "anchor": "north east",
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "p6",
+      "type": "point",
+      "at": [6, 0],
+      "label": "P_6",
+      "anchor": "north east",
+      "dot": true,
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "e0",
+      "type": "segment",
+      "from": "p0",
+      "to": "p1",
+      "style": {
+        "color": "gray",
+        "width": "0.8pt"
+      }
+    },
+    {
+      "id": "e1",
+      "type": "segment",
+      "from": "p1",
+      "to": "p2",
+      "style": {
+        "color": "gray",
+        "width": "0.8pt"
+      }
+    },
+    {
+      "id": "e2",
+      "type": "segment",
+      "from": "p2",
+      "to": "p3",
+      "style": {
+        "color": "gray",
+        "width": "0.8pt"
+      }
+    },
+    {
+      "id": "e3",
+      "type": "segment",
+      "from": "p3",
+      "to": "p4",
+      "style": {
+        "color": "gray",
+        "width": "0.8pt"
+      }
+    },
+    {
+      "id": "e4",
+      "type": "segment",
+      "from": "p4",
+      "to": "p5",
+      "style": {
+        "color": "gray",
+        "width": "0.8pt"
+      }
+    },
+    {
+      "id": "e5",
+      "type": "segment",
+      "from": "p5",
+      "to": "p6",
+      "style": {
+        "color": "gray",
+        "width": "0.8pt"
+      }
+    },
+    {
+      "id": "chord",
+      "type": "segment",
+      "from": "p0",
+      "to": "p6",
+      "style": {
+        "color": "red",
+        "width": "1.2pt",
+        "line": "dashed"
+      }
+    },
+    {
+      "id": "foot",
+      "type": "point",
+      "at": [3, 0]
+    },
+    {
+      "id": "dist",
+      "type": "segment",
+      "from": "p3",
+      "to": "foot",
+      "style": {
+        "color": "red",
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "sub1",
+      "type": "segment",
+      "from": "p0",
+      "to": "p3",
+      "style": {
+        "color": "blue",
+        "width": "1.2pt"
+      }
+    },
+    {
+      "id": "sub2",
+      "type": "segment",
+      "from": "p3",
+      "to": "p6",
+      "style": {
+        "color": "blue",
+        "width": "1.2pt"
+      }
+    },
+    {
+      "id": "lab_d",
+      "type": "label",
+      "at": [2.9, 0.8],
+      "anchor": "east",
+      "tex": "最も遠い"
+    }
+  ]
+}
