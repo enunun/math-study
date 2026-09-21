@@ -358,7 +358,7 @@ import { Definition, Lemma, Proposition, Theorem, Corollary } from '@/components
 
 このページの識別子は，ファイル名の`notation`である．参照先の`abs`も，ファイル名である．ページをまたぐ参照は，参照先のファイル名を，小文字の英数字，ハイフン，アンダースコアにする．Starlightが作るURLと一致させるためである．
 
-### ラベルを短くする
+### ラベルの短縮
 
 ラベルには，ページの識別子が入るため，識別子が長いと，ラベルも長くなる．frontmatterの`pageId`に短縮名を書くと，ラベルと，`Ref`の`page`属性の両方で，その短縮名を使う．たとえば，`dev/continuity.mdx`は，`pageId: cont`と書き，ラベルは「定理cont-7」の形になる．短縮名は，サイト全体で一意にする．
 
