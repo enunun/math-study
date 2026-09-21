@@ -1,6 +1,6 @@
 # Figure and graph design
 
-Requirements, reference material, and decisions for the figure feature (2D graphs and 3D figures with TikZ export). The technology is not chosen yet; this file records the requirements and the open questions so the selection can proceed in small steps.
+Requirements, reference material, and decisions for the figure feature (2D graphs and 3D figures with TikZ export). The core technology is chosen (see Decided); the open questions are listed at the end, so the rest can be settled in small steps.
 
 ## Requirements
 
@@ -47,20 +47,29 @@ scene (data) → geometry engine (projection, silhouette, visibility) → 2D vec
 - Hidden lines are dotted by default. The style is a setting, so dashed can be chosen.
 - The first target figure is `s0202graph1`: a sine curve and a shifted copy drawn dotted, on axes with `O`, `x`, and `y`, and a text label containing math. The sample draws its axes without arrowheads; here they get the default arrowhead.
 - The order of work is 2D first (axes, arrowheads, ticks, labels, function graphs), then 3D on the same intermediate representation.
+- The engine core is written in Rust and runs as Wasm from the start, so the scene and the intermediate representation are fixed once and 3D does not force a rewrite.
+- Rust turns a scene into the intermediate representation (IR) and into the TikZ text. TypeScript builds the SVG from the IR and draws the label formulas with MathJax.
+- The scene is a JSON file, one per figure. A GUI that edits graphs (typing an expression, dragging a point) is planned, and the scene must stay easy for it to read and write. This gives the rules below.
+
+## Scene rules
+
+- The scene holds inputs only: points, parameters, expressions, and styles. Nothing computed is stored.
+- Every object has a stable `id`, and objects refer to each other by `id`. Dragging a point or a slider changes one value in the JSON, and the engine runs again.
+- The engine is a pure function of the scene. An error carries the `id` of the object and, for an expression, the position in it, so a GUI can point at the cause.
+- The scene has a `version`, and unknown fields are rejected.
 
 ## Proposed, not confirmed
 
-- Write the engine in Rust and run it as Wasm, like the calculator: the toolchain, the strict lint setup, and the parser are reused; floating-point results are deterministic across build, browser, and a later desktop or CLI build.
 - Support parallel projections only (oblique and orthographic, from a view direction). Perspective is out of scope.
 - Decide visibility by sampling curves and meshing surfaces, then refine the switch points by bisection. Extract outlines as the curve where the surface normal is perpendicular to the view direction. Add exact shapes for spheres, cylinders, and cones later.
 - Fit smooth curves with Bézier segments in the export.
 - Define each arrowhead (`Stealth`, and later `Latex` and `To`) with the dimensions of the TikZ `arrows.meta` tip, and draw the same geometry in SVG. The dimensions are taken from the pgf source, not from memory.
 - Treat readability of the TikZ output as a non-goal: fidelity to the figure and a compact size matter. Until TeX Live is available, check the output against golden files instead of compiling it.
-- Keep the scene as a JSON file, and write the engine version and the scene into a header comment of the TikZ file, so an export can be traced back and reproduced.
+- Write the engine version and the scene into a header comment of the TikZ file, so an export can be traced back and reproduced.
 - Render figures to static SVG at build time. A rotating view can be added later with the same Wasm.
 
 ## Open
 
-- How a figure is written in MDX (props, a small language, or TypeScript).
-- The split of work between Rust and TypeScript, and where the SVG serializer lives (labels need MathJax, which runs in TypeScript).
+- How a figure is referenced from MDX and where the JSON files live.
+- The exact fields of the scene and of the IR (a draft for `s0202graph1` is next).
 - The figures required after `s0202graph1`.
