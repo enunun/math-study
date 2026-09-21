@@ -221,6 +221,22 @@ $\RealNumbers$，$\RealNumbers[bfup]$，$\RealNumbers[bfit]$，$\NumberSet[bfup]
 
 定義のないマクロや，構文の誤りは，ビルドの失敗になる．失敗した式は，ファイルの行と列，元のTeXとともに表示される．
 
+### ベクトルの書き方
+
+ベクトルは，斜体かつ太字の小文字で書き，`\boldsymbol{d}`とする．成分は，角カッコの行列に並べる．列ベクトルを基本とし，行ベクトルは，成分を`&`で区切って，カンマは入れない．
+
+```mdx
+$$
+\boldsymbol{p} = \begin{bmatrix} x \\ y \\ z \end{bmatrix}, \qquad \boldsymbol{p}^{\mathsf{T}} = \begin{bmatrix} x & y & z \end{bmatrix}
+$$
+```
+
+$$
+\boldsymbol{p} = \begin{bmatrix} x \\ y \\ z \end{bmatrix}, \qquad \boldsymbol{p}^{\mathsf{T}} = \begin{bmatrix} x & y & z \end{bmatrix}
+$$
+
+点や座標も，同じ書き方にする．区間や関数の引数，パラメータの組は，丸カッコのままでよい．
+
 ### 導出木
 
 `bussproofs`の記法で書く．前提は`\AxiomC`，結論は`\UnaryInfC`，`\BinaryInfC`，`\TrinaryInfC`で書き，規則の名前は`\RightLabel`か`\LeftLabel`で付ける．

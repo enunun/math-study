@@ -42,6 +42,7 @@ import { Detail, Proof, Remark } from '@/components/fold';
 
 Math is rendered at build time by MathJax 4. Write inline math as `$…$` and display math as `$$…$$`. The details and the rendered examples are on the test page (`site/src/content/docs/dev/notation.mdx`).
 
+- Write a vector as a bold italic letter (`\boldsymbol{d}`, not the upright `\mathbf{d}`). Write its components as a square-bracket matrix, `\begin{bmatrix} … \end{bmatrix}`, a column vector by default. A row vector separates its entries with `&` and has no commas. Points and coordinates follow the same rule; keep round brackets for intervals, function arguments, and pairs of parameters.
 - Custom macros are defined as modules in `site/src/math/macros/modules/`, one file per area. After changing them, update the list on the test page.
   - Number sets use the names of the LaTeX `numbersets` package: `\NaturalNumbers`, `\Integers`, `\RationalNumbers`, `\RealNumbers`, `\ComplexNumbers`. They take an optional style, `\RealNumbers[bfup]`, with `bb` (blackboard bold, the default), `bfup` (upright bold), and `bfit` (italic bold). `\NumberSet[style]{X}` sets any letter the same way.
   - The others are `\abs{x}`, `\norm{v}`, `\set{…}`, and `\rank`.
