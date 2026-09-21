@@ -88,8 +88,6 @@ Known limits:
 
 - The plotting library (a custom SVG, Mafs, or JSXGraph).
 - The range of expressions the polynomial calculator handles.
-- Automated accessibility checks (axe).
-- Running E2E tests in CI.
 - A cache for speech generation, if build time becomes a problem.
 - Rendering math in the browser for the calculator, with the same macros.
 
@@ -116,3 +114,14 @@ A display formula with `\label{id}` is numbered by the same plugin (`rehype-stat
 - References go through the same `<Ref>`, so the catalog also lists equations (component `Equation` in `StatementInfo`), and cross-page references to equations work. The scanner in `catalog.ts` reads `math` nodes, so it needs `remark-math`; without it, `{…}` in a proof tree is read as an MDX expression and the whole page silently drops out of the catalog.
 - `\ref` and `\eqref` inside math, several `\label`s in one formula, and `\label` in inline math are build errors.
 - In the hast tree only the wrapping `<pre>` carries a source position, not the `<code>`. The error position of a failed display formula (in `rehype-mathjax.ts` and here) is taken from the `<pre>`.
+
+## Quality checks (implemented)
+
+What is automated, and what was decided not to be:
+
+- axe runs on every page (`e2e/accessibility.spec.ts`) in the light and dark themes at 1280px and 390px with all folds opened, and any violation fails. A first measurement found no color-contrast, label, heading, or landmark violations, and one kind of violation: `scrollable-region-focusable`. It came from code blocks, wide tables, and the display math that `displayOverflow: 'scroll'` makes scrollable. The fixes are `tabindex="0"` on display math, a plugin that gives tables `tabindex="0"`, and wrapping in code blocks. The focusable elements are static rather than measured, so every display formula and table is a tab stop; MathJax's own explorer does the same for formulas.
+- `e2e/site.spec.ts` opens every page and fails on console errors, page errors, failed requests, and 4xx/5xx responses, and checks that every internal link and `#hash` target exists. Pages come from `site/dist`, so new pages are covered automatically. External links are not checked, because that needs the network and fails for reasons unrelated to the change.
+- E2E, axe, and the link check run in CI's `build` job before `deploy`. The cost is a Chromium download and about a minute.
+- Visual regression is not automated. Screenshot comparison depends on fonts and rendering, needs images in the repository, and needs a pinned environment. Specific bugs are guarded with layout assertions instead.
+- Only Chromium is tested.
+- Speech quality of the `aria-label` strings, Japanese screen reader output, and real printing are manual (see the `verify-site` skill).

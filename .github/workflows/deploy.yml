@@ -24,6 +24,11 @@ jobs:
 
       - run: mise run check
 
+      # ビルドしたサイトを，ブラウザで検査する(E2Eテスト，axe，リンク切れ)．
+      # 失敗すると，このjobが失敗し，deployは実行されない．
+      - run: mise exec -- pnpm exec playwright install-deps chromium
+      - run: mise run e2e
+
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         if: github.event_name != 'pull_request'
         with:

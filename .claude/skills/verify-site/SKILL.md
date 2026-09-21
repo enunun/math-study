@@ -31,9 +31,23 @@ mise run screenshot -- dev/notation/ /tmp/math.png --scroll "h3#導出木"
 - `--click` performs interactions before the shot, in order. `--clip` captures only the given element. `--scroll` scrolls to an element first, which is the way to look at a section of a long page. `--full` captures the whole page (large; the image is downscaled when read).
 - Running `mise run screenshot` without arguments prints the usage.
 
+## Automated browser checks
+
+`mise run e2e` runs three kinds of tests, and CI runs them in the `build` job before `deploy`, so a failure blocks publishing.
+
+- Behavior specs (`fold`, `detail`, `math`, `statements`): what each feature does.
+- `accessibility.spec.ts`: axe on every page, in the light and dark themes, at 1280px and 390px, with all folds opened. Any violation fails.
+- `site.spec.ts`: every page opens without console errors, page errors, failed requests, or 4xx/5xx responses, and every internal link (including `#hash` targets) resolves.
+
+Pages are enumerated from `site/dist` (`e2e/routes.ts`), so a new page is covered without editing the tests. Only Chromium is used.
+
+When axe reports a violation, fix the cause. If it is in third-party markup you cannot change, exclude that one element or rule in `accessibility.spec.ts` (`AxeBuilder#exclude`, `#disableRules`) with a comment that says why. Do not loosen the check for every page.
+
+Scrollable regions must be keyboard-focusable (axe rule `scrollable-region-focusable`). This site handles it in three places: display math gets `tabindex="0"` in `rehype-mathjax.ts`, tables get it in `rehype-focusable-tables.ts`, and code blocks wrap (`expressiveCode.defaultProps.wrap`) so they do not scroll. A new component that scrolls horizontally needs the same treatment.
+
 ## Checking CI
 
-A push triggers GitHub Actions, which runs `build` and `deploy`. Check the result through the public API.
+A push triggers GitHub Actions, which runs `build` (`mise run check`, then `mise run e2e`) and `deploy`. Check the result through the public API.
 
 ```sh
 git rev-parse HEAD
@@ -44,7 +58,7 @@ Find the run whose `head_sha` matches the local commit and read its `status` and
 
 ## Adding E2E tests
 
-- Put tests in `e2e/*.spec.ts`. Open pages by a path relative to the base path (`page.goto('dev/notation/')`).
+- Put tests in `e2e/*.spec.ts`. Helpers that are not specs (such as `routes.ts`) must not end in `.spec.ts`. Open pages by a path relative to the base path (`page.goto('dev/notation/')`).
 - Find elements by what the user sees (`getByRole`, and so on). Compare visible text with `toHaveText(…, { useInnerText: true })`, which excludes text in hidden elements.
 - Check the JavaScript-disabled rendering with `test.use({ javaScriptEnabled: false })`.
 - For print behavior, dispatch the `beforeprint` and `afterprint` events, and check print styles with `page.emulateMedia({ media: 'print' })`.
@@ -59,6 +73,8 @@ Check these by hand, in a local browser or with assistive technology.
 - Whether browser find-in-page (Ctrl+F) opens a closed fold. It differs between browsers.
 - Real printing and print preview.
 - Real highlighting when opening a page from the site search (Pagefind).
+- Visual regressions such as a shifted fraction or a proof-tree label. Screenshot comparison is deliberately not automated (fonts and rendering differ between environments, and the images would live in the repository). Look at `mise run screenshot` output after changing math, styles, or components, and add a layout assertion to a spec when a specific bug is worth guarding, as `math.spec.ts` does for the Starlight margin.
+- Firefox and Safari. Only Chromium is installed in the container and CI.
 - Speech quality of formulas. The `aria-label` strings are generated in English; listen to them with a screen reader if it matters.
 
 ## Troubleshooting
