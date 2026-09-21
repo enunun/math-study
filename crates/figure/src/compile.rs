@@ -2,7 +2,7 @@
 
 use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, is_reserved_name};
-use crate::scene::{Axis, Bound, Curve, Direction, Graph, Object, Scene, View};
+use crate::scene::{Anchor, Axis, Bound, Curve, Direction, Graph, Grid, Object, Scene, View};
 use crate::validate::curve_expressions;
 
 /// 式を読んだ後の，グラフ．
@@ -27,6 +27,8 @@ pub struct TickPlot {
     pub at: f64,
     /// 名前の式．
     pub label: Option<String>,
+    /// 指定された名前の向き．
+    pub anchor: Option<Anchor>,
 }
 
 /// 式を読んだ後の，軸．
@@ -35,8 +37,21 @@ pub struct AxisPlot {
     pub ticks: Vec<TickPlot>,
 }
 
+/// 式を読んだ後の，格子．
+pub struct GridPlot {
+    /// 評価したx方向の刻み．
+    pub x_step: Option<f64>,
+    /// 評価したy方向の刻み．
+    pub y_step: Option<f64>,
+}
+
+/// 格子の，方向ごとの線の数の上限．
+const MAX_GRID_LINES: f64 = 200.0;
+
 /// 式を読んだ後の，描く対象．
 pub enum Plot {
+    /// 格子．
+    Grid(GridPlot),
     /// 座標軸．
     Axis(AxisPlot),
     /// 関数のグラフ．
@@ -99,6 +114,9 @@ fn compile_object(
         Object::Curve(curve) => compile_curve(curve, names, parameters, curve_expressions(view))
             .map(Plot::Curve)
             .map_err(|kind| Error::in_object(&curve.id, kind)),
+        Object::Grid(grid) => compile_grid(grid, names, parameters, view)
+            .map(Plot::Grid)
+            .map_err(|kind| Error::in_object(&grid.id, kind)),
         Object::Label(_) | Object::Parameter(_) | Object::Sphere(_) => Ok(Plot::None),
     }
 }
@@ -161,6 +179,41 @@ fn compile_curve(
     Ok(CurvePlot { exprs, domain })
 }
 
+/// 格子の刻みを評価し，正の有限の数で，線が多すぎないことを確かめる．
+fn compile_grid(
+    grid: &Grid,
+    names: &[&str],
+    parameters: &[f64],
+    view: &View,
+) -> Result<GridPlot, ErrorKind> {
+    let (x_range, y_range) = match view {
+        View::Plane(plane) => (plane.x, plane.y),
+        View::Space(_) => ([0.0, 0.0], [0.0, 0.0]),
+    };
+    let step = |field: &'static str, bound: &Option<Bound>, range: [f64; 2]| {
+        let Some(bound) = bound else {
+            return Ok(None);
+        };
+        let value = evaluate_bound(field, bound, 0, names, parameters)?;
+        if !(value.is_finite() && value > 0.0) {
+            return Err(ErrorKind::Invalid(format!(
+                "`{field}`は，正の有限の数にする．"
+            )));
+        }
+        let lines = ((range[1] - range[0]) / value).floor() + 1.0;
+        if lines > MAX_GRID_LINES {
+            return Err(ErrorKind::Invalid(format!(
+                "刻み`{field}`が細かすぎる．線が{lines}本になる(上限は{MAX_GRID_LINES}本)．"
+            )));
+        }
+        Ok(Some(value))
+    };
+    Ok(GridPlot {
+        x_step: step("x_step", &grid.x_step, x_range)?,
+        y_step: step("y_step", &grid.y_step, y_range)?,
+    })
+}
+
 /// 目盛の位置を評価し，軸の範囲の中にあることを確かめる．範囲を省いた平面の軸は，見える範囲である．
 fn compile_axis(
     axis: &Axis,
@@ -186,6 +239,7 @@ fn compile_axis(
                 _ => Ok(TickPlot {
                     at,
                     label: tick.label.clone(),
+                    anchor: tick.anchor,
                 }),
             }
         })

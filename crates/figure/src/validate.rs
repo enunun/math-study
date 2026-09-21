@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::scene::{
-    Axis, Bound, Curve, Direction, Graph, Label, Object, Scene, SpaceView, Sphere, View,
+    Axis, Bound, Curve, Direction, Graph, Grid, Label, Object, Scene, SpaceView, Sphere, View,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -44,8 +44,27 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Graph(graph) => plane_only("graph", view).and_then(|()| validate_graph(graph)),
         Object::Curve(curve) => validate_curve(curve, view),
         Object::Sphere(sphere) => space_only("sphere", view).and_then(|()| validate_sphere(sphere)),
+        Object::Grid(grid) => plane_only("grid", view).and_then(|()| validate_grid(grid)),
         Object::Parameter(_) => Ok(()),
     }
+}
+
+fn validate_grid(grid: &Grid) -> Result<(), ErrorKind> {
+    if grid.x_step.is_none() && grid.y_step.is_none() {
+        return Err(ErrorKind::Invalid(
+            "格子には，`x_step`か`y_step`の，少なくとも一方が必要である．".to_owned(),
+        ));
+    }
+    for (field, step) in [("x_step", &grid.x_step), ("y_step", &grid.y_step)] {
+        if let Some(Bound::Number(value)) = step
+            && !(value.is_finite() && *value > 0.0)
+        {
+            return Err(ErrorKind::Invalid(format!(
+                "`{field}`は，正の有限の数にする．"
+            )));
+        }
+    }
+    Ok(())
 }
 
 /// 平面の図でだけ使えるオブジェクトを，空間の図に置いていないか．

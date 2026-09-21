@@ -434,3 +434,27 @@ fn 目盛つきの図は_軸ごとに目盛の線と名前を持つ() {
         ]
     );
 }
+
+#[test]
+fn 目盛の名前は_anchorを指定すると_線の端のその向きに置く() {
+    let figure = figure_of(&axes_with_ticks(
+        r#", "ticks": [ { "at": 1, "label": "1", "anchor": "north west" },
+                        { "at": 2, "label": "2", "anchor": "south" } ]"#,
+        r#", "ticks": [ { "at": 1, "label": "1", "anchor": "west" } ]"#,
+    ));
+    let names: Vec<&LabelItem> = figure
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            Item::Label(name) => Some(name),
+            Item::Path(_) => None,
+        })
+        .collect();
+    assert_eq!(names.len(), 3);
+    // 位置は，anchorに関わらず，線の端(軸から3pt離れた所)である．
+    assert!(close(names[0].at[0], 1.0) && close(names[0].at[1], -TICK_HALF));
+    assert_eq!(names[0].anchor, Anchor::NorthWest);
+    assert_eq!(names[1].anchor, Anchor::South);
+    assert!(close(names[2].at[0], -TICK_HALF) && close(names[2].at[1], 2.0));
+    assert_eq!(names[2].anchor, Anchor::West);
+}

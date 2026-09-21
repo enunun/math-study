@@ -10,10 +10,10 @@
       "arrow": "stealth",
       "label": "x",
       "ticks": [
-        { "at": "-2*pi", "label": "-2\\pi" },
-        { "at": "-pi", "label": "-\\pi" },
-        { "at": "pi", "label": "\\pi" },
-        { "at": "2*pi", "label": "2\\pi" }
+        { "at": "-2*pi", "label": "-2\\pi", "anchor": "north west" },
+        { "at": "-pi", "label": "-\\pi", "anchor": "north east" },
+        { "at": "pi", "label": "\\pi", "anchor": "north east" },
+        { "at": "2*pi", "label": "2\\pi", "anchor": "north west" }
       ]
     },
     {

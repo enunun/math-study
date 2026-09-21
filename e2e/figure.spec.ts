@@ -4,13 +4,17 @@ import type { Locator, Page } from '@playwright/test';
 const PAGE = 'dev/figure-first/';
 const TOLERANCE = 3;
 
-/** ページの，最初の図と，2つ目の図(目盛つき)． */
+/** ページの，最初の図と，2つ目の図(目盛つき)と，3つ目の図(格子つき)． */
 function first(page: Page): Locator {
   return page.locator('.figure').first();
 }
 
 function second(page: Page): Locator {
   return page.locator('.figure').nth(1);
+}
+
+function third(page: Page): Locator {
+  return page.locator('.figure').nth(2);
 }
 
 /** 線幅を含まない，図形の寸法．Playwrightのboundingboxは，線幅と，とがりの分を足す． */
@@ -42,7 +46,7 @@ test.describe('シーンから描いた図', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     // ラベルの数式が描画されるまで待つ．
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(13);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(16);
   });
 
   test('SVGは，画像として説明を持ち，線と矢じりがある', async ({ page }) => {
@@ -123,7 +127,7 @@ test.describe('シーンから描いた図', () => {
     expect(Math.abs(yTick.width - 2 * 3 * 1.333)).toBeLessThan(1);
   });
 
-  test('x軸の目盛の名前は，目盛の真下にあり，y軸の目盛の名前は，目盛の左にある', async ({
+  test('目盛の名前は，anchorに従い，曲線を避けて置かれ，y軸の名前は，目盛の左にある', async ({
     page,
   }) => {
     const paths = second(page).locator('svg path');
@@ -131,8 +135,12 @@ test.describe('シーンから描いた図', () => {
     const xAxis = await geometry(paths.nth(0));
     const yAxis = await geometry(paths.nth(5));
     const piTick = await geometry(paths.nth(3));
+    const twoPiTick = await geometry(paths.nth(4));
+    // `north east`の名前は，目盛の左下に延び，`north west`の名前は，右下に延びる．
     const pi = await box(labels.nth(2));
-    expect(Math.abs(pi.x + pi.width / 2 - (piTick.x + piTick.width / 2))).toBeLessThan(TOLERANCE);
+    const twoPi = await box(labels.nth(3));
+    expect(Math.abs(pi.x + pi.width - piTick.x)).toBeLessThan(TOLERANCE);
+    expect(Math.abs(twoPi.x - twoPiTick.x)).toBeLessThan(TOLERANCE);
     expect(pi.y).toBeGreaterThanOrEqual(xAxis.y + TOLERANCE);
     const oneTick = await geometry(paths.nth(6));
     const one = await box(labels.nth(5));
@@ -140,6 +148,26 @@ test.describe('シーンから描いた図', () => {
     expect(Math.abs(one.y + one.height / 2 - (oneTick.y + oneTick.height / 2))).toBeLessThan(
       TOLERANCE,
     );
+  });
+
+  test('格子は，細い点線で，見える範囲を区切り，曲線は，格子の外へ出ない', async ({ page }) => {
+    const paths = third(page).locator('svg path');
+    // 縦7本，横7本，軸2本，曲線1本．
+    await expect(paths).toHaveCount(17);
+    const dashed = await paths.evaluateAll((elements) =>
+      elements.map((element) => element.hasAttribute('stroke-dasharray')),
+    );
+    expect(dashed.filter(Boolean)).toHaveLength(14);
+    const firstLine = await geometry(paths.nth(0));
+    const top = await geometry(paths.nth(13));
+    const curve = await geometry(paths.nth(16));
+    // 縦の線は，1cm(約37.8px)おきで，見える範囲の上の辺から下の辺まで届く．
+    const secondLine = await geometry(paths.nth(1));
+    expect(Math.abs(secondLine.x - firstLine.x - 37.795)).toBeLessThan(1);
+    expect(firstLine.height).toBeGreaterThan(6 * 37.795 - 1);
+    // 曲線の頂は，格子の上の辺(y=5)に届き，それより上へ出ない．
+    expect(curve.y).toBeGreaterThanOrEqual(top.y - 1);
+    expect(curve.y).toBeLessThan(top.y + 2);
   });
 
   for (const scheme of ['light', 'dark'] as const) {
@@ -168,7 +196,7 @@ test.describe('シーンから描いた図', () => {
     page.on('pageerror', (error) => problems.push(String(error)));
     page.on('requestfailed', (request) => problems.push(request.url()));
     await page.reload();
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(13);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(16);
     expect(problems).toEqual([]);
   });
 });

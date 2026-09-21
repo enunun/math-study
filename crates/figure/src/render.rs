@@ -2,7 +2,7 @@
 
 use crate::arrow::Stealth;
 use crate::clip::clip_polyline;
-use crate::compile::{Compiled, Plot, TickPlot, compile};
+use crate::compile::{Compiled, GridPlot, Plot, TickPlot, compile};
 use crate::error::Error;
 use crate::figure::{ArrowHead, Bounds, Figure, Item, LabelItem, Path, Stroke};
 use crate::sample::sample;
@@ -15,6 +15,10 @@ use crate::space::render_space;
 pub const AXIS_WIDTH: f64 = 0.6;
 /// 曲線の線幅(pt)．`TikZ`の`thick`である．
 pub const CURVE_WIDTH: f64 = 0.8;
+/// 格子の線幅(pt)．目盛と軸より細い．
+const GRID_WIDTH: f64 = 0.3;
+/// 刻みの倍数の位置を，範囲の端に含めるための，割った値の許容．
+const GRID_EPSILON: f64 = 1e-9;
 /// 目盛の線の，軸から片側への長さ(pt)．
 const TICK_HALF_LENGTH: f64 = 3.0;
 /// 見える範囲の外側に足す余白(cm)．軸の名前が，範囲の端の外に出る分である．
@@ -69,6 +73,11 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Figure 
             Object::Label(label) => items.extend(label_item(label, scale).map(Item::Label)),
             Object::Graph(_) | Object::Curve(_) => {
                 items.extend(plot_items(object, plot, compiled, scale, window));
+            }
+            Object::Grid(grid) => {
+                if let Plot::Grid(grid_plot) = plot {
+                    items.extend(grid_items(grid.line, grid_plot, view, scale));
+                }
             }
             Object::Parameter(_) | Object::Sphere(_) => {}
         }
@@ -146,10 +155,43 @@ fn axis_items(axis: &Axis, ticks: &[TickPlot], view: &PlaneView, scale: Scale) -
     items
 }
 
+/// 格子の線．見える範囲を，原点から数えた刻みの倍数の位置で区切る．縦の線，横の線の順に並ぶ．
+fn grid_items(line: Line, grid: &GridPlot, view: &PlaneView, scale: Scale) -> Vec<Item> {
+    let stroke = Stroke {
+        line,
+        width: GRID_WIDTH,
+    };
+    let make = |points: [[f64; 2]; 2]| {
+        Item::Path(Path {
+            points: points.to_vec(),
+            stroke,
+            arrow: None,
+        })
+    };
+    let vertical = grid.x_step.into_iter().flat_map(|step| {
+        multiples(step, view.x)
+            .map(|x| make([scale.point(x, view.y[0]), scale.point(x, view.y[1])]))
+    });
+    let horizontal = grid.y_step.into_iter().flat_map(|step| {
+        multiples(step, view.y)
+            .map(|y| make([scale.point(view.x[0], y), scale.point(view.x[1], y)]))
+    });
+    vertical.chain(horizontal).collect()
+}
+
+/// 範囲の中にある，`step`の整数倍．範囲の端も含む．
+fn multiples(step: f64, [low, high]: [f64; 2]) -> impl Iterator<Item = f64> {
+    let first = (low / step - GRID_EPSILON).ceil();
+    let last = (high / step + GRID_EPSILON).floor();
+    std::iter::successors(Some(first), move |k| (k + 1.0 <= last).then_some(k + 1.0))
+        .take_while(move |k| *k <= last)
+        .map(move |k| (k * step).clamp(low, high))
+}
+
 /// 目盛の線と，名前．線は，軸に直角で，軸をまたぐ．名前は，x軸では線の下，y軸では線の左に置く．
 fn tick_items(tick: &TickPlot, direction: Direction, scale: Scale) -> Vec<Item> {
     let half = TICK_HALF_LENGTH * CM_PER_PT;
-    let ([start, end], name_at, anchor) = match direction {
+    let ([start, end], name_at, default_anchor) = match direction {
         Direction::X => {
             let [x, y] = scale.point(tick.at, 0.0);
             ([[x, y - half], [x, y + half]], [x, y - half], Anchor::North)
@@ -172,7 +214,7 @@ fn tick_items(tick: &TickPlot, direction: Direction, scale: Scale) -> Vec<Item> 
     if let Some(text) = &tick.label {
         items.push(Item::Label(LabelItem {
             at: name_at,
-            anchor,
+            anchor: tick.anchor.unwrap_or(default_anchor),
             tex: format!("${text}$"),
         }));
     }

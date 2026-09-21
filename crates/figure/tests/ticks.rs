@@ -145,3 +145,28 @@ fn 空間の図の軸には_目盛をまだ付けられない() {
     assert_eq!(error.object.as_deref(), Some("x_axis"));
     assert!(error.to_string().contains("空間"), "{error}");
 }
+
+#[test]
+fn 目盛の名前の位置は_anchorでずらせる() {
+    let scene = parse_scene(&plane_scene(&axis(
+        r#", "ticks": [ { "at": 1, "label": "1", "anchor": "north west" }, { "at": 2, "label": "2" } ]"#,
+    )))
+    .expect("読める");
+    let Object::Axis(axis) = &scene.objects[0] else {
+        panic!("軸である");
+    };
+    assert_eq!(axis.ticks[0].anchor, Some(figure::scene::Anchor::NorthWest));
+    // 省くと，軸ごとの既定の向きになる．
+    assert_eq!(axis.ticks[1].anchor, None);
+    let written = serde_json::to_string(&scene).expect("書き出せる");
+    assert_eq!(written.matches("anchor").count(), 1, "{written}");
+}
+
+#[test]
+fn 目盛の名前の位置に_未知の名前は使えない() {
+    let error = error_of(&plane_scene(&axis(
+        r#", "ticks": [ { "at": 1, "label": "1", "anchor": "upper left" } ]"#,
+    )));
+    assert!(matches!(error.kind, ErrorKind::Invalid(_)), "{error}");
+    assert_eq!(error.object.as_deref(), Some("x_axis"));
+}

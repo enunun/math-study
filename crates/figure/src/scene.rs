@@ -126,6 +126,8 @@ pub enum Object {
     Curve(Curve),
     /// 球．空間の図でだけ使える．
     Sphere(Sphere),
+    /// 格子．平面の図でだけ使える．
+    Grid(Grid),
 }
 
 /// 軸の向き．
@@ -185,6 +187,9 @@ pub struct Tick {
     /// 目盛の名前の式．なければ，線だけを引く．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    /// 名前の箱の，線の端に合わせる部分．なければ，x軸では`north`，y軸では`east`である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub anchor: Option<Anchor>,
 }
 
 /// ラベルの位置の基準．TikZのアンカーと同じ名前を使う．
@@ -291,6 +296,27 @@ pub struct Style {
     pub hidden: Hidden,
 }
 
+/// 格子．見える範囲を，原点から数えた刻みの倍数の位置の線で区切る．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Grid {
+    /// 識別子．
+    pub id: String,
+    /// x方向の刻み．数か，媒介変数と定数を使う式．なければ，縦の線を引かない．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub x_step: Option<Bound>,
+    /// y方向の刻み．なければ，横の線を引かない．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub y_step: Option<Bound>,
+    /// 線の種類．既定は点線である．
+    #[serde(default = "dotted")]
+    pub line: Line,
+}
+
+const fn dotted() -> Line {
+    Line::Dotted
+}
+
 /// 球．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -351,6 +377,7 @@ impl Object {
             Self::Graph(o) => &o.id,
             Self::Curve(o) => &o.id,
             Self::Sphere(o) => &o.id,
+            Self::Grid(o) => &o.id,
         }
     }
 
@@ -364,6 +391,7 @@ impl Object {
             Self::Graph(_) => "graph",
             Self::Curve(_) => "curve",
             Self::Sphere(_) => "sphere",
+            Self::Grid(_) => "grid",
         }
     }
 }
