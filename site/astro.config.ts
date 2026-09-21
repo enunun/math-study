@@ -17,6 +17,10 @@ const statements = {
   contentDirectory: fileURLToPath(new URL('src/content/docs', import.meta.url)),
   base,
 };
+const figures = {
+  figuresDirectory: fileURLToPath(new URL('src/figures', import.meta.url)),
+  wasmPath: fileURLToPath(new URL('src/wasm/figure_bg.wasm', import.meta.url)),
+};
 
 // https://astro.build/config
 export default defineConfig({
@@ -28,6 +32,7 @@ export default defineConfig({
       remarkPlugins: [remarkMath],
       rehypePlugins: buildRehypePlugins({
         statements,
+        figures,
         mathjax: { ...math, cssUrl: `${base}/${STYLESHEET_FILE}` },
       }),
     }),
@@ -39,8 +44,8 @@ export default defineConfig({
       title: '数学の学習サイト',
       // コードブロックは折り返す．横にスクロールする領域は，キーボードで操作できない．
       expressiveCode: { defaultProps: { wrap: true } },
-      // 和文と欧文，数式の間の隙間．
-      customCss: ['./src/styles/typesetting.css'],
+      // 和文と欧文，数式の間の隙間と，図．
+      customCss: ['./src/styles/typesetting.css', './src/styles/figure.css'],
       defaultLocale: 'root',
       locales: { root: { label: '日本語', lang: 'ja' } },
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/enunun/math-study' }],

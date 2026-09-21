@@ -1,0 +1,29 @@
+---
+title: 最初の図
+description: シーン(JSON)から，ビルド時に描画した，最初の図である．正弦曲線と，平行移動した点線の曲線を，矢じりのある座標軸の上に描く．
+sidebar:
+  hidden: true
+pagefind: false
+head:
+  - tag: meta
+    attrs:
+      name: robots
+      content: noindex
+---
+
+図のシーン(`site/src/figures/sine-and-shifted-sine.json`)を，ビルド時にRustのWasmで描画し，SVGとラベルにした図である．
+
+## 図
+
+<Figure src="sine-and-shifted-sine" />
+
+## 描いているもの
+
+- 座標軸は，`Stealth`の矢じりを持つ．原点の`O`と，軸の名前は，ラベルである．
+- 実線は$y=\sin x$，点線は，媒介変数`shift`の値だけ平行移動した曲線である．
+- 曲線は，曲がり方に合わせて点をとった折れ線で，滑らかに見える．
+- 表題は，文字と数式が混ざったラベルである．
+
+## 使い方
+
+MDXに`<Figure src="図の名前" />`と書く．図の名前は，`site/src/figures/`にあるJSONのファイル名(拡張子を除く)である．シーンの形式は，`docs/graph-design.md`にある．

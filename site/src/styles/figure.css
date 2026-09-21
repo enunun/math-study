@@ -1,0 +1,25 @@
+/* 図(<Figure>)．線と矢じりはSVG，ラベルは，その上に重ねる．色は，文字の色に従う． */
+.figure {
+  margin-block: 1.5rem;
+}
+
+.figure-frame {
+  position: relative;
+  /* 図の実寸(cm)まで広がり，画面が狭いときは，画面の幅に縮む． */
+  width: min(var(--figure-width), 100%);
+  margin-inline: auto;
+}
+
+.figure-frame svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 位置は，style属性で，割合で決める．箱の余白は，TikZの節点の内側の余白(1/3em)と同じである． */
+.figure-label {
+  position: absolute;
+  padding: 0.3333em;
+  line-height: 1;
+  white-space: nowrap;
+}

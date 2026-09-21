@@ -29,6 +29,11 @@ const SCENE_SAMPLES: SceneSample[] = [
     json: replaceOnce(first, '"direction": "x"', '"direction": "x", "colour": "red"'),
   },
   {
+    id: 'expression',
+    label: '式の誤り',
+    json: replaceOnce(first, '"sin(x - shift)"', '"sin(x - shift"'),
+  },
+  {
     id: 'duplicateId',
     label: 'idの重なり',
     json: replaceOnce(first, '"id": "shifted_sine"', '"id": "sine"'),

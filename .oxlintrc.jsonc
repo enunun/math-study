@@ -126,6 +126,13 @@
       },
     },
     {
+      // 図のWasmの窓口は，値のないところを，undefinedではなくnullで返す(型は`T | null`)．その値を扱う．
+      "files": ["site/src/figure/**", "site/src/components/figure/**"],
+      "rules": {
+        "unicorn/no-null": "off",
+      },
+    },
+    {
       // ブラウザで動くMathJaxは，グローバルなオブジェクトから，型を主張して読む．
       "files": ["site/src/calculator/**"],
       "rules": {

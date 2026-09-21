@@ -86,6 +86,24 @@ test.describe('図のシーンの確認', () => {
     await expect(page.getByRole('alert')).toContainText('invalid_range');
   });
 
+  test('式の誤りは，項目と式の中の位置を示す', async ({ page }) => {
+    await page.getByRole('button', { name: '式の誤り' }).click();
+    const alert = page.getByRole('alert');
+    await expect(alert).toContainText('expression');
+    await expect(alert).toContainText('shifted_sine');
+    await expect(alert).toContainText(/expr.*1番目の式/su);
+    await expect(alert).toContainText(/\d+文字目/u);
+  });
+
+  test('読み込めたシーンの，TikZの出力を表示する', async ({ page }) => {
+    await page.locator('summary', { hasText: 'TikZ' }).click();
+    const tikz = page.getByRole('region', { name: 'TikZ' });
+    await expect(tikz).toContainText(String.raw`\begin{tikzpicture}`);
+    await expect(tikz).toContainText('-{Stealth}');
+    // 元のシーンが，コメントとして埋め込まれている．
+    await expect(tikz).toContainText('"id": "shifted_sine"');
+  });
+
   test('JSONの構文の誤りは，行と列を示す', async ({ page }) => {
     await page.getByRole('button', { name: 'JSONの構文の誤り' }).click();
     await expect(page.getByRole('alert')).toContainText(/\d+行\d+列/u);

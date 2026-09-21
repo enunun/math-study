@@ -5,6 +5,7 @@ const DEV_PAGES = [
   ['仕組みの解説', 'dev/internals/'],
   ['記法とテスト', 'dev/notation/'],
   ['図のシーンの確認', 'dev/figure-scene/'],
+  ['最初の図', 'dev/figure-first/'],
   ['記事の見本', 'dev/continuity/'],
   ['参照先の見本', 'dev/abs/'],
 ] as const;
