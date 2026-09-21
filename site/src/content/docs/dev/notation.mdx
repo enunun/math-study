@@ -199,7 +199,7 @@ $$
 
 ### 自作マクロ
 
-マクロは，`site/src/math/macros.ts`に定義する．定義を変えたら，次の一覧も更新する．
+マクロは，`site/src/math/macros/modules/`の下に，分野ごとのファイルとして定義する．定義を変えたら，次の一覧も更新する．
 
 - `\NaturalNumbers`，`\Integers`，`\RationalNumbers`，`\RealNumbers`，`\ComplexNumbers`：自然数，整数，有理数，実数，複素数の全体の集合である．名前は，LaTeXのnumbersetsパッケージに合わせている．
 - `\NumberSet[スタイル]{N}`：任意の文字を，数の集合の書体で組む．
@@ -294,7 +294,7 @@ import { Definition, Lemma, Proposition, Theorem, Corollary } from '@/components
 
 </Proof>
 
-<Ref to="even-number" />を使った<Ref to="even-square" />は，<Ref page="absolute-value" to="triangle-inequality" />と同じように参照できる．
+<Ref to="even-number" />を使った<Ref to="even-square" />は，<Ref page="abs" to="triangle-inequality" />と同じように参照できる．
 ```
 
 <Definition id="even-number" name="偶数">
@@ -315,7 +315,7 @@ import { Definition, Lemma, Proposition, Theorem, Corollary } from '@/components
 
 </Proof>
 
-<Ref to="even-number" />を使った<Ref to="even-square" />は，<Ref page="absolute-value" to="triangle-inequality" />と同じように参照できる．
+<Ref to="even-number" />を使った<Ref to="even-square" />は，<Ref page="abs" to="triangle-inequality" />と同じように参照できる．
 
 ### 定理と参照の属性
 
@@ -333,12 +333,16 @@ import { Definition, Lemma, Proposition, Theorem, Corollary } from '@/components
 
 ページの識別子は，frontmatterの`pageId`で指定する．指定がなければ，ファイル名を使う(`index.mdx`は，ディレクトリの名前)．サイト全体で一意にする．重なると，ビルドが失敗する．
 
-このページの識別子は，ファイル名の`notation`である．参照先の`absolute-value`は，`dev/abs.mdx`のfrontmatterで指定している．ページをまたぐ参照は，参照先のファイル名を，小文字の英数字，ハイフン，アンダースコアにする．Starlightが作るURLと一致させるためである．
+このページの識別子は，ファイル名の`notation`である．参照先の`abs`も，ファイル名である．ページをまたぐ参照は，参照先のファイル名を，小文字の英数字，ハイフン，アンダースコアにする．Starlightが作るURLと一致させるためである．
+
+### ラベルを短くする
+
+ラベルには，ページの識別子が入るため，識別子が長いと，ラベルも長くなる．frontmatterの`pageId`に短縮名を書くと，ラベルと，`Ref`の`page`属性の両方で，その短縮名を使う．たとえば，`dev/continuity.mdx`は，`pageId: cont`と書き，ラベルは「定理cont-7」の形になる．短縮名は，サイト全体で一意にする．
 
 ### 定義と定理の動作確認
 
 - 上の例が，「定義notation-1」「定理notation-2」の順に番号を付けて表示される．
-- 例の中の3つの参照が，リンクになる．ページをまたぐ参照は，`/math-study/dev/abs/`の「定理absolute-value-3」へ移る．
+- 例の中の3つの参照が，リンクになる．ページをまたぐ参照は，`/math-study/dev/abs/`の「定理abs-3」へ移る．
 - 証明の題名が，「定理notation-2」になる．
 - 存在しない識別子の参照，重なる識別子，使えない文字の識別子は，ビルドの失敗になる．失敗した箇所は，ファイルの行と列とともに表示される．
 
@@ -351,14 +355,14 @@ $$
 \int_0^1 x^2 \, dx = \frac{1}{3} \label{integral-square}
 $$
 
-<Ref to="integral-square" />は，<Ref page="absolute-value" to="abs-cases" />と同じように参照できる．
+<Ref to="integral-square" />は，<Ref page="abs" to="abs-cases" />と同じように参照できる．
 ```
 
 $$
 \int_0^1 x^2 \, dx = \frac{1}{3} \label{integral-square}
 $$
 
-<Ref to="integral-square" />は，<Ref page="absolute-value" to="abs-cases" />と同じように参照できる．
+<Ref to="integral-square" />は，<Ref page="abs" to="abs-cases" />と同じように参照できる．
 
 ### 式番号の書き方
 
@@ -372,7 +376,7 @@ $$
 ### 式番号の動作確認
 
 - 上の例の式の右に，「(notation-1)」が表示される．
-- 例の中の2つの参照が，「式(notation-1)」と「式(absolute-value-1)」のリンクになる．後者は，`/math-study/dev/abs/`の定義の式へ移る．
+- 例の中の2つの参照が，「式(notation-1)」と「式(abs-1)」のリンクになる．後者は，`/math-study/dev/abs/`の定義の式へ移る．
 - 幅の狭い画面でも，番号のある式が，ページを横にあふれさせない．
 
 ## 文章の規則と検査

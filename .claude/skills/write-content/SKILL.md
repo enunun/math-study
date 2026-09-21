@@ -42,7 +42,7 @@ import { Detail, Proof, Remark } from '@/components/fold';
 
 Math is rendered at build time by MathJax 4. Write inline math as `$…$` and display math as `$$…$$`. The details and the rendered examples are on the test page (`site/src/content/docs/dev/notation.mdx`).
 
-- Custom macros are defined in `site/src/math/macros.ts`. After changing them, update the list on the test page.
+- Custom macros are defined as modules in `site/src/math/macros/modules/`, one file per area. After changing them, update the list on the test page.
   - Number sets use the names of the LaTeX `numbersets` package: `\NaturalNumbers`, `\Integers`, `\RationalNumbers`, `\RealNumbers`, `\ComplexNumbers`. They take an optional style, `\RealNumbers[bfup]`, with `bb` (blackboard bold, the default), `bfup` (upright bold), and `bfit` (italic bold). `\NumberSet[style]{X}` sets any letter the same way.
   - The others are `\abs{x}`, `\norm{v}`, `\set{…}`, and `\rank`.
 - An undefined macro or a TeX syntax error fails the build. The message shows the file line and the TeX source.
@@ -58,7 +58,7 @@ Import the kinds you use, right after the frontmatter: `import { Definition, Lem
 - `name="…"` adds a phrase to the heading. `id="…"` gives a stable identifier for references and the anchor. Without `id`, the anchor is the label, which changes when a statement is inserted before it.
 - `<Ref to="id" />` links to a statement on the same page, and `<Ref page="pageId" to="id" />` to one on another page. Do not import `Ref`. Only statements with an `id` can be referenced.
 - `<Proof of="id">` sets the proof title to the label of that statement. Do not combine it with `title`.
-- The page identifier is the frontmatter `pageId`, or the file name (`index.mdx` uses the directory name). Use letters, digits, hyphens, and underscores, and keep it unique across the site. Pages referenced from other pages need lowercase ASCII file names.
+- The page identifier is the frontmatter `pageId`, or the file name (`index.mdx` uses the directory name). Use letters, digits, hyphens, and underscores, and keep it unique across the site. Pages referenced from other pages need lowercase ASCII file names. When the identifier makes labels too long, give the page a short name in `pageId` (`pageId: cont` gives `定理cont-7`); labels and `<Ref page>` both use it.
 - Format MDX by hand: oxfmt does not touch it, because it breaks paragraphs that contain inline JSX. Keep each paragraph on one line.
 
 Bad identifiers, duplicate identifiers, and references that point nowhere fail the build. The examples are on the test page (`site/src/content/docs/dev/notation.mdx`), and `dev/abs.mdx` is the page they refer to.

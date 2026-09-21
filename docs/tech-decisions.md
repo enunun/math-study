@@ -64,7 +64,7 @@ The technical decisions for the mathematics study site, and the facts verified a
 
 ## Math pipeline (implemented)
 
-Flow: `remark-math` finds `$…$` and `$$…$$`, the rehype plugin (`site/src/plugins/rehype-mathjax.ts`) sends each formula to MathJax 4, and the result replaces the formula in the tree. MathJax runs in a native Worker thread (`site/src/math/worker.ts`) that the main thread talks to by messages (`site/src/math/renderer.ts`). The Astro integration (`site/src/integrations/mathjax.ts`) copies the fonts, provides the CSS, and stops the Worker. Macros live in `site/src/math/macros.ts`.
+Flow: `remark-math` finds `$…$` and `$$…$$`, the rehype plugin (`site/src/plugins/rehype-mathjax.ts`) sends each formula to MathJax 4, and the result replaces the formula in the tree. MathJax runs in a native Worker thread (`site/src/math/worker.ts`) that the main thread talks to by messages (`site/src/math/renderer.ts`). The Astro integration (`site/src/integrations/mathjax.ts`) copies the fonts, provides the CSS, and stops the Worker. Macros live in `site/src/math/macros/`: one module per area under `modules/`, collected with `import.meta.glob` and merged by `merge.ts`, which rejects duplicate names. Adding an area needs one new file and no registry change.
 
 What was verified while building it:
 
@@ -100,6 +100,7 @@ Flow: `site/src/plugins/rehype-statements.ts` runs on each MDX page before the M
 - References are written by identifier. An identifier is optional on a statement; without one, the anchor is the label and the statement cannot be referenced. With one, the anchor stays stable when statements are inserted or reordered.
 - A reference to another page needs that page's numbering while a different page is being rendered. Astro renders pages concurrently and a plugin sees one page at a time, so `plugins/statements/catalog.ts` scans `content/docs/**/*.mdx` with remark-parse, remark-mdx, and remark-frontmatter, and caches the result by file modification time, so the dev server picks up edits. Pages that fail to parse are skipped there; their own build reports the error. Pages without statements are not registered, so their identifiers need not be unique.
 - The page URL is derived from the file path. Starlight lowercases and slugifies file names, so a cross-page reference requires file names made of lowercase letters, digits, hyphens, and underscores, and fails the build otherwise.
+- The page identifier doubles as the short name of a page: labels and `<Ref page>` use it, so a long file name is shortened with the frontmatter `pageId` (`dev/continuity.mdx` uses `cont`, giving `定理cont-7`). A separate display-only short name was not added, to keep one name per page.
 - Numbering follows document order in the tree. The scanner and the plugin share `findStatementNodes` and `numberStatements`, so both agree. Code blocks are not counted, because they are not JSX nodes.
 - `Ref` is replaced by a plain `<a>` in the tree, so it needs no component and no import. The statement components receive `label` and `anchor` as props from the plugin.
 - oxfmt formats MDX badly when a paragraph contains inline JSX: it splits the paragraph around `<Ref />` and breaks inline math at 100 columns. MDX is excluded from oxfmt (`.oxfmtrc.json`) and formatted by hand.

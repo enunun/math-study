@@ -13,13 +13,18 @@ test.describe('定義と定理', () => {
 
   test('frontmatterのpageIdが，ページの識別子になる', async ({ page }) => {
     await page.goto(TARGET_PAGE);
+    await expect(page.getByRole('group', { name: /^定義abs-1（絶対値）$/u })).toBeVisible();
+    await expect(page.getByRole('group', { name: /^補題abs-2$/u })).toBeVisible();
+    await expect(page.getByRole('group', { name: /^定理abs-3（三角不等式）$/u })).toBeVisible();
+  });
+
+  test('pageIdに書いた短縮名が，ラベルと式番号に使われる', async ({ page }) => {
+    await page.goto('dev/continuity/');
+    await expect(page.getByRole('group', { name: /^定義cont-1（開球）$/u })).toBeVisible();
     await expect(
-      page.getByRole('group', { name: /^定義absolute-value-1（絶対値）$/u }),
+      page.getByRole('group', { name: /^定理cont-7（連続写像の特徴づけ）$/u }),
     ).toBeVisible();
-    await expect(page.getByRole('group', { name: /^補題absolute-value-2$/u })).toBeVisible();
-    await expect(
-      page.getByRole('group', { name: /^定理absolute-value-3（三角不等式）$/u }),
-    ).toBeVisible();
+    await expect(page.locator('#euclidean-norm')).toContainText('(cont-1)');
   });
 
   test('参照が，定義や定理のラベルのリンクになる', async ({ page }) => {
@@ -28,9 +33,9 @@ test.describe('定義と定理', () => {
     await expect(links).toHaveText([
       '定義notation-1',
       '定理notation-2',
-      '定理absolute-value-3',
+      '定理abs-3',
       '式(notation-1)',
-      '式(absolute-value-1)',
+      '式(abs-1)',
     ]);
     await expect(links.nth(0)).toHaveAttribute('href', '#even-number');
     await expect(links.nth(1)).toHaveAttribute('href', '#even-square');
@@ -53,7 +58,7 @@ test.describe('定義と定理', () => {
 
   test('折り畳みの中の参照を押すと，同じページの参照先へ移る', async ({ page }) => {
     await page.goto(TARGET_PAGE);
-    const proof = page.locator('details.fold-proof', { hasText: '定理absolute-value-3' });
+    const proof = page.locator('details.fold-proof', { hasText: '定理abs-3' });
     await proof.locator('summary').click();
     await proof.locator(REF).click();
     await expect(page).toHaveURL(/#abs-bounds$/u);
@@ -92,13 +97,13 @@ test.describe('式番号', () => {
     await page.locator(REF).nth(4).click();
     await expect(page).toHaveURL(/\/dev\/abs\/#abs-cases$/u);
     await expect(page.locator('#abs-cases')).toBeInViewport();
-    await expect(page.locator('#abs-cases')).toContainText('(absolute-value-1)');
+    await expect(page.locator('#abs-cases')).toContainText('(abs-1)');
   });
 
   test('幅の狭い画面で，番号のある式が，ページを横にあふれさせない', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 800 });
     await page.goto(TARGET_PAGE);
-    await expect(page.locator('#abs-cases')).toContainText('(absolute-value-1)');
+    await expect(page.locator('#abs-cases')).toContainText('(abs-1)');
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
