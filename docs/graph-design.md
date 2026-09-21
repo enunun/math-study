@@ -56,20 +56,75 @@ scene (data) → geometry engine (projection, silhouette, visibility) → 2D vec
 - The scene holds inputs only: points, parameters, expressions, and styles. Nothing computed is stored.
 - Every object has a stable `id`, and objects refer to each other by `id`. Dragging a point or a slider changes one value in the JSON, and the engine runs again.
 - The engine is a pure function of the scene. An error carries the `id` of the object and, for an expression, the position in it, so a GUI can point at the cause.
-- The scene has a `version`, and unknown fields are rejected.
+- The scene has a `version`, the semantic version of the application that wrote it, and unknown fields are rejected.
+
+## Scene format
+
+The fields below are those of the first figure, `site/src/figures/sine-and-shifted-sine.json` (the reference figure `s0202graph1`). Other object types are added together with the figures that need them. Figure files are named after their content, in lowercase with hyphens.
+
+```json
+{
+  "version": "0.1.0",
+  "description": "y=sin x のグラフと，x軸の方向に平行移動した点線のグラフ",
+  "view": { "x": [-7, 7], "y": [-1.6, 1.8], "unit": { "x": "1cm", "y": "2cm" } },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "arrow": "stealth", "label": "x" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "arrow": "stealth", "label": "y" },
+    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "south east", "tex": "O" },
+    { "id": "shift", "type": "parameter", "value": -1.2 },
+    { "id": "sine", "type": "graph", "var": "x", "expr": "sin(x)", "domain": [-7, 7] },
+    {
+      "id": "shifted_sine",
+      "type": "graph",
+      "var": "x",
+      "expr": "sin(x - shift)",
+      "domain": [-7, 7],
+      "style": { "line": "dotted" }
+    },
+    {
+      "id": "title",
+      "type": "label",
+      "at": [1, 2],
+      "anchor": "east",
+      "tex": "Graph of $y=\\sin x$"
+    }
+  ]
+}
+```
+
+- `description` becomes the alternative text of the SVG (the site requires zero axe violations, so a figure needs an accessible name). `view` gives the visible range in mathematical coordinates and the physical length of one unit on each axis, so the two scales can differ.
+- An `id` is made of letters, digits, and `_`, because expressions refer to a `parameter` by its `id`.
+- `axis`: one object per axis, so a single axis or a half axis (`range: [0, 5]`) is possible. `direction` is `x` or `y` (`z` in 3D). `arrow` is `stealth` by default and can be `none` or another tip. `range` defaults to the view.
+- `label`: a formula placed at a point with an anchor. The origin `O` is a label, not part of an axis.
+- `parameter`: a named number used in expressions. A GUI shows it as a slider.
+- `graph`: `y = f(x)`. `curve`: a parametric curve, whose `expr` is an array of two expressions (plane) or three (space), for example `["cos(t)", "sin(t)"]` with `"var": "t"`. Domain ends are numbers or expressions such as `"2*pi"`.
+- Later: implicit curves, polar curves, and surfaces (two variables, `expr` of three).
+- Sampling must adapt to curvature (cycloid cusps) and cut the line at breaks (`tan x`).
 
 ## Proposed, not confirmed
 
 - Support parallel projections only (oblique and orthographic, from a view direction). Perspective is out of scope.
 - Decide visibility by sampling curves and meshing surfaces, then refine the switch points by bisection. Extract outlines as the curve where the surface normal is perpendicular to the view direction. Add exact shapes for spheres, cylinders, and cones later.
 - Fit smooth curves with Bézier segments in the export.
-- Define each arrowhead (`Stealth`, and later `Latex` and `To`) with the dimensions of the TikZ `arrows.meta` tip, and draw the same geometry in SVG. The dimensions are taken from the pgf source, not from memory.
+- Define each arrowhead (`Stealth`, and later `Latex` and `To`) with the geometry of the TikZ `arrows.meta` tip (see Verified facts), and draw the same shape in SVG.
+- Take the application version from the Rust workspace (`[workspace.package]`) and expose it from Wasm, so the site, the TikZ header comment, and a GUI read one source. The engine reads a scene when its major version equals the engine's (its minor version too while the major version is 0) and it is not newer than the engine; otherwise it reports both versions. A breaking change to the format bumps the version and comes with a migration.
 - Treat readability of the TikZ output as a non-goal: fidelity to the figure and a compact size matter. Until TeX Live is available, check the output against golden files instead of compiling it.
 - Write the engine version and the scene into a header comment of the TikZ file, so an export can be traced back and reproduced.
 - Render figures to static SVG at build time. A rotating view can be added later with the same Wasm.
 
+## Verified facts
+
+### Stealth arrowhead
+
+Read on 2026-09-21 from the master branch of the pgf repository: the declaration of `Stealth` in `tex/generic/pgf/libraries/pgflibraryarrows.meta.code.tex`, and the dimension setup in `tex/generic/pgf/basiclayer/pgfcorearrows.code.tex`.
+
+- With `lw` the line width of the path, the defaults are length `L = 3pt + 4.5·lw`, width `W = 0.75·L`, and inset `I = 0.325·L`. The third number in `length = +3pt 4.5 .8` only applies to double lines. At the default line width of 0.4pt this gives L = 4.8pt, W = 3.6pt, and I = 1.56pt.
+- The tip is a closed path of four points (tip, upper back corner, inset point, lower back corner), filled and stroked with mitered joins. The stroke width is `lw' = min(lw, (L − I) / 4)`. The points are pulled inward by the miter lengths: at the tip `0.5·lw'·sqrt(4(L/W)² + 1)`, at the inset point `0.5·lw'·sqrt(4(I/W)² + 1)`, and at the back corners by an angle formula in the source.
+- The visual tip is at `x = L` from the back of the arrow. The line ends at `I + (inset miter) − 0.25·lw'` from the back, so it does not show through the tip.
+- Port the code from the source, not from this summary. Without TeX Live in the container, the port cannot be compared with real TikZ output yet.
+
 ## Open
 
-- How a figure is referenced from MDX and where the JSON files live.
-- The exact fields of the scene and of the IR (a draft for `s0202graph1` is next).
+- How a figure is referenced from MDX. The candidate is `<Figure src="sine-and-shifted-sine" />`.
+- The fields of the intermediate representation (IR).
 - The figures required after `s0202graph1`.
