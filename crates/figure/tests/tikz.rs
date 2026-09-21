@@ -94,7 +94,7 @@ fn 軸は矢じりつきの線と_名前の節点になる() {
 #[test]
 fn ラベルは節点になり_中央のアンカーは省く() {
     let tikz = tikz_of(SINE_AND_SHIFTED_SINE);
-    assert!(tikz.contains("\\node[anchor=north west] at (0,0) {O};\n"));
+    assert!(tikz.contains("\\node[anchor=north west] at (0,0) {$O$};\n"));
     assert!(tikz.contains("\\node[anchor=west] at (1,4) {Graph of $y=\\sin x$};\n"));
     let centered = tikz_of(&scene_with(
         r#"{ "id": "a", "type": "label", "at": [1, 1], "tex": "A" }"#,
@@ -235,4 +235,23 @@ fn 領域の塗りは_tikzの色と不透明度つきの塗りつぶしになる
     assert!(output.contains("-- cycle;"), "{output}");
     // 色がなければ，色の名前を省く．
     assert!(output.contains("\\fill[opacity=0.25] (0,0)"), "{output}");
+}
+
+#[test]
+fn ラベルは_文字のままなら立体で_数式にすれば斜体で_書き出される() {
+    // 原点Oのように，点の名前は，数式にして斜体にそろえる．文字のままの立体も，書き分けられる．
+    let plain = tikz_of(&scene_with(
+        r#"{ "id": "o", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "O" }"#,
+    ));
+    assert!(
+        plain.contains("{O};"),
+        "文字のままは，数式にならない：{plain}"
+    );
+    let italic = tikz_of(&scene_with(
+        r#"{ "id": "o", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "$O$" }"#,
+    ));
+    assert!(
+        italic.contains("{$O$};"),
+        "数式にすると，斜体になる：{italic}"
+    );
 }

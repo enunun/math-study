@@ -27,7 +27,7 @@
         { "at": -1, "label": "-1" }
       ]
     },
-    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "O" },
+    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "$O$" },
     { "id": "sine", "type": "graph", "var": "x", "expr": "sin(x)", "domain": [-7, 7] }
   ]
 }

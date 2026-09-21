@@ -6,7 +6,13 @@
     { "id": "x_axis", "type": "axis", "direction": "x", "range": [-5, 5], "label": "x" },
     { "id": "y_axis", "type": "axis", "direction": "y", "range": [-5, 5], "label": "y" },
     { "id": "z_axis", "type": "axis", "direction": "z", "range": [-5, 5], "label": "z" },
-    { "id": "origin_label", "type": "label", "at": [0, 0, 0], "anchor": "north east", "tex": "O" },
+    {
+      "id": "origin_label",
+      "type": "label",
+      "at": [0, 0, 0],
+      "anchor": "north east",
+      "tex": "$O$"
+    },
     {
       "id": "equator",
       "type": "curve",

@@ -138,7 +138,7 @@ The fields below are those of the first figure, `site/src/figures/sine-and-shift
   "objects": [
     { "id": "x_axis", "type": "axis", "direction": "x", "arrow": "stealth", "label": "x" },
     { "id": "y_axis", "type": "axis", "direction": "y", "arrow": "stealth", "label": "y" },
-    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "south east", "tex": "O" },
+    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "south east", "tex": "$O$" },
     { "id": "shift", "type": "parameter", "value": -1.2 },
     { "id": "sine", "type": "graph", "var": "x", "expr": "sin(x)", "domain": [-7, 7] },
     {

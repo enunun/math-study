@@ -12,7 +12,7 @@
     },
     { "id": "x_axis", "type": "axis", "direction": "x", "arrow": "stealth", "label": "x" },
     { "id": "y_axis", "type": "axis", "direction": "y", "arrow": "stealth", "label": "y" },
-    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "O" },
+    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "$O$" },
     {
       "id": "parabola",
       "type": "graph",

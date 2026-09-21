@@ -15,6 +15,7 @@ Rules and notation for the site content (`site/src/content/**`) and `README.md`,
 - Do not type spaces between Japanese and Latin text, digits, inline code, or math. The page adds a 1/8em gap when it is typeset (`text-autospace` and `rehype-autospace.ts`).
 - Use a full-width colon "：" after Japanese text, with no space after it ("公開先：`/x`"). Colons after Latin text stay half-width.
 - Avoid AI-sounding writing: bold-prefix bullet lists ("**Item**：description"), hype, and emphasis in ordinary sentences.
+- Write headings as names (noun phrases), not as sentences, clauses, questions, or verb phrases: "隠れる部分と見える部分の分割", not "曲線を隠れる部分と見える部分に分ける". Read the list of headings alone; every entry should read as a name. When a heading is renamed, check the links and tests that use its anchor.
 - Keep each sentence within 100 characters and within three commas. Do not repeat the same particle within a sentence.
 - A lone Latin letter outside math (a variable such as x written as plain text) is flagged as an "unnatural alphabet". Write variables inside `$…$`.
 
@@ -42,6 +43,7 @@ import { Detail, Proof, Remark } from '@/components/fold';
 
 Math is rendered at build time by MathJax 4. Write inline math as `$…$` and display math as `$$…$$`. The details and the rendered examples are on the test page (`site/src/content/docs/dev/notation.mdx`).
 
+- Set the names of points and variables in italic everywhere, in prose (`$O$`, not a bare `O`) and in figure labels (`"tex": "$O$"`). A plain-text label is set in roman as text, so use it only for words. Use roman (`\mathrm{…}`) only for things that are conventionally upright, such as operator names.
 - Write a vector as a bold italic letter (`\boldsymbol{d}`, not the upright `\mathbf{d}`). Write its components as a square-bracket matrix, `\begin{bmatrix} … \end{bmatrix}`, a column vector by default. A row vector separates its entries with `&` and has no commas. Points and coordinates follow the same rule; keep round brackets for intervals, function arguments, and pairs of parameters.
 - Custom macros are defined as modules in `site/src/math/macros/modules/`, one file per area. After changing them, update the list on the test page.
   - Number sets use the names of the LaTeX `numbersets` package: `\NaturalNumbers`, `\Integers`, `\RationalNumbers`, `\RealNumbers`, `\ComplexNumbers`. They take an optional style, `\RealNumbers[bfup]`, with `bb` (blackboard bold, the default), `bfup` (upright bold), and `bfit` (italic bold). `\NumberSet[style]{X}` sets any letter the same way.

@@ -517,7 +517,7 @@ fn 最初の空間の図は_3本の軸と球の輪郭と_軸の名前と原点�
         .iter()
         .map(|label| label.tex.as_str())
         .collect();
-    assert_eq!(names, ["$x$", "$y$", "$z$", "O"]);
+    assert_eq!(names, ["$x$", "$y$", "$z$", "$O$"]);
     // 各軸は，球に隠れる部分で3つに分かれ，球の輪郭が1本．
     let lines: Vec<Line> = paths(&figure).iter().map(|path| path.stroke.line).collect();
     let dotted = lines.iter().filter(|line| **line == Line::Dotted).count();

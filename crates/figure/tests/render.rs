@@ -122,7 +122,7 @@ fn ラベルは指定した位置と向きに置く() {
     let figure = figure_of(SINE_AND_SHIFTED_SINE);
     let origin = label(&figure.items[4]);
     assert_eq!((origin.at, origin.anchor), ([0.0, 0.0], Anchor::NorthWest));
-    assert_eq!(origin.tex, "O");
+    assert_eq!(origin.tex, "$O$");
     let title = label(&figure.items[7]);
     assert_eq!((title.at, title.anchor), ([1.0, 4.0], Anchor::West));
     assert_eq!(title.tex, r"Graph of $y=\sin x$");
@@ -434,7 +434,7 @@ fn 目盛つきの図は_軸ごとに目盛の線と名前を持つ() {
     assert_eq!(
         names,
         [
-            "$-2\\pi$", "$-\\pi$", "$\\pi$", "$2\\pi$", "$x$", "$1$", "$-1$", "$y$", "O"
+            "$-2\\pi$", "$-\\pi$", "$\\pi$", "$2\\pi$", "$x$", "$1$", "$-1$", "$y$", "$O$"
         ]
     );
 }

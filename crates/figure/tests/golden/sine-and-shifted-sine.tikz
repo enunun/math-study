@@ -8,7 +8,7 @@
 %   "objects": [
 %     { "id": "x_axis", "type": "axis", "direction": "x", "arrow": "stealth", "label": "x" },
 %     { "id": "y_axis", "type": "axis", "direction": "y", "arrow": "stealth", "label": "y" },
-%     { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north west", "tex": "O" },
+%     { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north west", "tex": "$O$" },
 %     { "id": "shift", "type": "parameter", "value": -1.2 },
 %     { "id": "sine", "type": "graph", "var": "x", "expr": "sin(x)", "domain": [-7, 7] },
 %     {
@@ -34,7 +34,7 @@
 \node[anchor=west] at (7,0) {$x$};
 \draw[line width=0.6pt, -{Stealth}] (0,-3.2) -- (0,3.6);
 \node[anchor=south] at (0,3.6) {$y$};
-\node[anchor=north west] at (0,0) {O};
+\node[anchor=north west] at (0,0) {$O$};
 \draw[line width=0.8pt] (-7,-1.314) -- (-6.8906,-1.1415) -- (-6.7812,-0.9555)
   -- (-6.5625,-0.5514) -- (-6.125,0.3151) -- (-5.9062,0.7361) -- (-5.6875,1.1222)
   -- (-5.5781,1.2962) -- (-5.4688,1.4547) -- (-5.3594,1.5958) -- (-5.25,1.7179)
