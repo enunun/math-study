@@ -61,6 +61,17 @@ pub struct LabelItem {
     pub tex: String,
 }
 
+/// 点の印．塗った丸である．
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct DotItem {
+    /// 中心(cm)．
+    pub at: [f64; 2],
+    /// 半径(pt)．
+    pub radius: f64,
+    /// 色．なければ，文字の色である．
+    pub color: Option<Color>,
+}
+
 /// 描く要素．
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -69,6 +80,8 @@ pub enum Item {
     Path(Path),
     /// ラベル．
     Label(LabelItem),
+    /// 点の印．
+    Dot(DotItem),
 }
 
 /// 描画の中間表現．

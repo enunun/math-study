@@ -36,14 +36,14 @@ const UNIT_1CM: &str = r#"{ "x": "1cm", "y": "1cm" }"#;
 fn path(item: &Item) -> &Path {
     match item {
         Item::Path(path) => path,
-        Item::Label(_) => panic!("折れ線ではない: {item:?}"),
+        Item::Label(_) | Item::Dot(_) => panic!("折れ線ではない: {item:?}"),
     }
 }
 
 fn label(item: &Item) -> &LabelItem {
     match item {
         Item::Label(label) => label,
-        Item::Path(_) => panic!("ラベルではない: {item:?}"),
+        Item::Path(_) | Item::Dot(_) => panic!("ラベルではない: {item:?}"),
     }
 }
 
@@ -60,6 +60,7 @@ fn 最初の図は_要素が描く順に並ぶ() {
         .map(|item| match item {
             Item::Path(_) => "path",
             Item::Label(_) => "label",
+            Item::Dot(_) => "dot",
         })
         .collect();
     // x軸，xのラベル，y軸，yのラベル，原点のラベル，sin x，平行移動したsin x，表題．
@@ -358,6 +359,7 @@ fn x軸の目盛は_軸に直角な短い線で_名前は下に置く() {
         .map(|item| match item {
             Item::Path(_) => "path",
             Item::Label(_) => "label",
+            Item::Dot(_) => "dot",
         })
         .collect();
     assert_eq!(kinds, ["path", "path", "label", "path", "label", "path"]);
@@ -422,7 +424,7 @@ fn 目盛つきの図は_軸ごとに目盛の線と名前を持つ() {
         .iter()
         .filter_map(|item| match item {
             Item::Label(name) => Some(name.tex.as_str()),
-            Item::Path(_) => None,
+            Item::Path(_) | Item::Dot(_) => None,
         })
         .collect();
     // x軸と目盛4本，y軸と目盛2本，sin x．
@@ -447,7 +449,7 @@ fn 目盛の名前は_anchorを指定すると_線の端のその向きに置く
         .iter()
         .filter_map(|item| match item {
             Item::Label(name) => Some(name),
-            Item::Path(_) => None,
+            Item::Path(_) | Item::Dot(_) => None,
         })
         .collect();
     assert_eq!(names.len(), 3);

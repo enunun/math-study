@@ -105,7 +105,7 @@ fn ラベルのアンカーを省くと中央になり指定した名前を読�
         panic!("ラベルである");
     };
     assert_eq!(placed.anchor, Anchor::SouthEast);
-    assert_eq!(placed.at, [0.0, 0.0]);
+    assert_eq!(placed.at, [Bound::Number(0.0), Bound::Number(0.0)]);
     assert_eq!(placed.tex, "O");
 }
 

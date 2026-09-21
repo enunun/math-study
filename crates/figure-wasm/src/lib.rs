@@ -82,6 +82,14 @@ export type PathItem = {
   arrow: ArrowHead | null;
 };
 
+/** 点の印．塗った丸である．座標はcm，半径はptである． */
+export type DotItem = {
+  type: "dot";
+  at: [number, number];
+  radius: number;
+  color: ColorName | null;
+};
+
 /** ラベル．texは，$…$で数式を含められるTeXの文字列である． */
 export type LabelItem = {
   type: "label";
@@ -94,7 +102,7 @@ export type LabelItem = {
 export type Figure = {
   description: string;
   bounds: { min: [number, number]; max: [number, number] };
-  items: (PathItem | LabelItem)[];
+  items: (PathItem | LabelItem | DotItem)[];
 };
 
 /** 描画の結果．tikzは，元のシーンを先頭のコメントに埋め込んだTikZである． */

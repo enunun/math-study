@@ -54,6 +54,8 @@ pub enum ErrorKind {
     ReservedName(String),
     /// 変数の名前が，媒介変数の`id`と同じである．
     NameConflict(String),
+    /// ベクトルか線分が，存在しない点(点でないオブジェクトを含む)を指している．中身は，指された`id`．
+    UnknownPoint(String),
     /// 曲線の式の数が合わない．
     ExpressionCount {
         /// 必要な数．
@@ -82,6 +84,7 @@ impl ErrorKind {
             Self::Expression { .. } => "expression",
             Self::ReservedName(_) => "reserved_name",
             Self::NameConflict(_) => "name_conflict",
+            Self::UnknownPoint(_) => "unknown_point",
         }
     }
 }
@@ -164,6 +167,10 @@ impl fmt::Display for Error {
             ErrorKind::NameConflict(name) => {
                 write!(f, "変数の名前「{name}」が，媒介変数の`id`と同じである．")
             }
+            ErrorKind::UnknownPoint(name) => write!(
+                f,
+                "点「{name}」がない．`from`と`to`には，`point`オブジェクトの`id`を書く．"
+            ),
             ErrorKind::ExpressionCount { expected, found } => {
                 write!(f, "式は{expected}個必要だが，{found}個書かれている．")
             }

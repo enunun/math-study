@@ -2,12 +2,13 @@
 
 use crate::arrow::Stealth;
 use crate::clip::clip_polyline;
-use crate::compile::{Compiled, GridPlot, Plot, TickPlot, compile};
+use crate::compile::{Compiled, GridPlot, LabelPlot, LinkPlot, Plot, PointPlot, TickPlot, compile};
 use crate::error::Error;
-use crate::figure::{ArrowHead, Bounds, Figure, Item, LabelItem, Path, Stroke};
+use crate::figure::{ArrowHead, Bounds, DotItem, Figure, Item, LabelItem, Path, Stroke};
 use crate::sample::sample;
 use crate::scene::{
-    Anchor, Arrow, Axis, CM_PER_PT, Direction, Label, Line, Object, PlaneView, Scene, Style, View,
+    Anchor, Arrow, Axis, CM_PER_PT, Direction, Label, Line, Object, PlaneView, Point, Scene, Style,
+    View,
 };
 use crate::space::render_space;
 
@@ -70,13 +71,32 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Figure 
                 };
                 items.extend(axis_items(axis, ticks, view, scale));
             }
-            Object::Label(label) => items.extend(label_item(label, scale).map(Item::Label)),
+            Object::Label(label) => {
+                if let Plot::Label(placed) = plot {
+                    items.extend(label_item(label, placed, scale).map(Item::Label));
+                }
+            }
             Object::Graph(_) | Object::Curve(_) => {
                 items.extend(plot_items(object, plot, compiled, scale, window));
             }
             Object::Grid(grid) => {
                 if let Plot::Grid(grid_plot) = plot {
                     items.extend(grid_items(&grid.style, grid_plot, view, scale));
+                }
+            }
+            Object::Point(point) => {
+                if let Plot::Point(placed) = plot {
+                    items.extend(point_items(point, placed, scale));
+                }
+            }
+            Object::Vector(vector) => {
+                if let Plot::Link(link) = plot {
+                    items.extend(link_item(&vector.style, vector.arrow, link, scale));
+                }
+            }
+            Object::Segment(segment) => {
+                if let Plot::Link(link) = plot {
+                    items.extend(link_item(&segment.style, Arrow::None, link, scale));
                 }
             }
             Object::Parameter(_) | Object::Sphere(_) => {}
@@ -98,9 +118,9 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Figure 
     }
 }
 
-fn label_item(label: &Label, scale: Scale) -> Option<LabelItem> {
+fn label_item(label: &Label, placed: &LabelPlot, scale: Scale) -> Option<LabelItem> {
     // 位置の数は，検査で確かめてある．
-    let [x, y] = label.at.as_slice() else {
+    let [x, y] = placed.at.as_slice() else {
         return None;
     };
     Some(LabelItem {
@@ -108,6 +128,47 @@ fn label_item(label: &Label, scale: Scale) -> Option<LabelItem> {
         anchor: label.anchor,
         tex: label.tex.clone(),
     })
+}
+
+/// 点の印(塗った丸)の半径(pt)．
+const DOT_RADIUS: f64 = 2.0;
+
+/// 点の印と，点の名前．名前の箱は，既定では，点の右上に置く．
+fn point_items(point: &Point, placed: &PointPlot, scale: Scale) -> Vec<Item> {
+    let at = scale.point(placed.at[0], placed.at[1]);
+    let mut items = Vec::new();
+    if point.dot {
+        items.push(Item::Dot(DotItem {
+            at,
+            radius: DOT_RADIUS,
+            color: point.style.color,
+        }));
+    }
+    if let Some(text) = &point.label {
+        items.push(Item::Label(LabelItem {
+            at,
+            anchor: point.anchor.unwrap_or(Anchor::SouthWest),
+            tex: format!("${text}$"),
+        }));
+    }
+    items
+}
+
+/// ベクトルか線分の線．終点に矢じりを付けられる．長さがなければ，何も描かない．
+fn link_item(style: &Style, arrow: Arrow, link: &LinkPlot, scale: Scale) -> Option<Item> {
+    let start = scale.point(link.from[0], link.from[1]);
+    let end = scale.point(link.to[0], link.to[1]);
+    let length = (end[0] - start[0]).hypot(end[1] - start[1]);
+    if length <= f64::EPSILON {
+        return None;
+    }
+    let stroke = stroke_of(style, Line::Solid, CURVE_WIDTH);
+    let direction = [(end[0] - start[0]) / length, (end[1] - start[1]) / length];
+    Some(Item::Path(Path {
+        points: vec![start, end],
+        stroke,
+        arrow: arrow_head(arrow, end, direction, stroke.width),
+    }))
 }
 
 /// 軸の線と，先端の矢じり，軸の名前．

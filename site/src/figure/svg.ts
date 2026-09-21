@@ -1,6 +1,6 @@
 import type { Element, ElementContent, Properties } from 'hast';
 
-import type { ArrowHead, ColorName, Figure, LabelItem, PathItem } from '@/wasm/figure';
+import type { ArrowHead, ColorName, DotItem, Figure, LabelItem, PathItem } from '@/wasm/figure';
 
 import { anchorShift, labelToMath } from './label';
 
@@ -103,6 +103,17 @@ function pathElements(item: PathItem): Element[] {
   ];
 }
 
+/** 点の印．塗った丸である． */
+function dotElement(item: DotItem): Element {
+  const [x, y] = svgPoint(item.at);
+  return element('circle', {
+    cx: format(x),
+    cy: format(y),
+    r: cm(item.radius),
+    fill: strokeColor(item.color),
+  });
+}
+
 /** 位置を割合で置き，アンカーの分だけ箱をずらした，ラベル．数式は，後段のMathJaxが描画する． */
 function labelElement(item: LabelItem, figure: Figure): Element {
   const { min, max } = figure.bounds;
@@ -129,7 +140,12 @@ function figureToHast(figure: Figure): Element {
   const { min, max } = figure.bounds;
   const width = max[0] - min[0];
   const height = max[1] - min[1];
-  const drawn = figure.items.flatMap((item) => (item.type === 'path' ? pathElements(item) : []));
+  const drawn = figure.items.flatMap((item) => {
+    if (item.type === 'path') {
+      return pathElements(item);
+    }
+    return item.type === 'dot' ? [dotElement(item)] : [];
+  });
   const labels = figure.items.flatMap((item) =>
     item.type === 'label' ? [labelElement(item, figure)] : [],
   );

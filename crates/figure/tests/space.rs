@@ -49,7 +49,7 @@ fn paths(figure: &Figure) -> Vec<&Path> {
         .iter()
         .filter_map(|item| match item {
             Item::Path(path) => Some(path),
-            Item::Label(_) => None,
+            Item::Label(_) | Item::Dot(_) => None,
         })
         .collect()
 }
@@ -67,7 +67,7 @@ fn labels(figure: &Figure) -> Vec<&LabelItem> {
         .iter()
         .filter_map(|item| match item {
             Item::Label(label) => Some(label),
-            Item::Path(_) => None,
+            Item::Path(_) | Item::Dot(_) => None,
         })
         .collect()
 }

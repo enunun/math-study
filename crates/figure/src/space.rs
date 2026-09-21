@@ -8,7 +8,7 @@
 
 use std::f64::consts::TAU;
 
-use crate::compile::{Compiled, CurvePlot, Plot};
+use crate::compile::{Compiled, CurvePlot, LabelPlot, Plot};
 use crate::figure::{Bounds, Figure, Item, LabelItem, Path, Stroke};
 use crate::render::{AXIS_WIDTH, CURVE_WIDTH, MARGIN, arrow_head, stroke_of, with_variable};
 use crate::sample::{sample, sample_with_parameters};
@@ -117,8 +117,8 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
     for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
         match (object, plot) {
             (Object::Axis(axis), _) => items.extend(axis_items(axis, &space)),
-            (Object::Label(label), _) => {
-                items.extend(label_item(label, &space.camera).map(Item::Label));
+            (Object::Label(label), Plot::Label(placed)) => {
+                items.extend(label_item(label, placed, &space.camera).map(Item::Label));
             }
             (Object::Sphere(sphere), _) => items.push(outline(sphere, &space.camera)),
             (Object::Curve(curve), Plot::Curve(plot)) => {
@@ -135,9 +135,9 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
 }
 
 /// 空間の位置に置くラベル．ラベルは，球に隠れない．
-fn label_item(label: &Label, camera: &Camera) -> Option<LabelItem> {
+fn label_item(label: &Label, placed: &LabelPlot, camera: &Camera) -> Option<LabelItem> {
     // 位置の数は，検査で確かめてある．
-    let [x, y, z] = label.at.as_slice() else {
+    let [x, y, z] = placed.at.as_slice() else {
         return None;
     };
     Some(LabelItem {
@@ -394,6 +394,7 @@ fn bounds_of(items: &[Item]) -> Bounds {
             .chain(path.arrow.iter().flat_map(|arrow| arrow.polygon))
             .collect::<Vec<_>>(),
         Item::Label(label) => vec![label.at],
+        Item::Dot(dot) => vec![dot.at],
     });
     let (min, max) = points.fold(
         ([f64::INFINITY; 2], [f64::NEG_INFINITY; 2]),

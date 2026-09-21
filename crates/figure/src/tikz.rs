@@ -6,7 +6,7 @@
 use std::fmt::Write as _;
 
 use crate::error::Error;
-use crate::figure::{Figure, Item, LabelItem, Path};
+use crate::figure::{DotItem, Figure, Item, LabelItem, Path};
 use crate::parse::parse_scene;
 use crate::render::render;
 use crate::scene::{Anchor, Arrow, Color, Line};
@@ -64,6 +64,7 @@ pub fn to_tikz(figure: &Figure, scene_json: &str) -> String {
         match item {
             Item::Path(path) => write_path(&mut out, path),
             Item::Label(label) => write_label(&mut out, label),
+            Item::Dot(dot) => write_dot(&mut out, dot),
         }
     }
     out.push_str("\\end{tikzpicture}\n");
@@ -80,6 +81,19 @@ const fn color_name(color: Color) -> &'static str {
         Color::Orange => "orange",
         Color::Purple => "violet",
     }
+}
+
+/// 点の印．塗った丸である．
+fn write_dot(out: &mut String, dot: &DotItem) {
+    let color = dot
+        .color
+        .map_or_else(String::new, |color| format!("[{}]", color_name(color)));
+    let _ = writeln!(
+        out,
+        "\\fill{color} {} circle ({}pt);",
+        coordinate(dot.at),
+        number(dot.radius)
+    );
 }
 
 fn write_path(out: &mut String, path: &Path) {

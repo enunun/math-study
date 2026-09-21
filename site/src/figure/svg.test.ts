@@ -181,6 +181,25 @@ describe('figureToHast', () => {
     expect(plain?.properties.stroke).toBe('currentColor');
   });
 
+  it('点の印は，塗った丸になり，色があれば，色の変数で塗る', () => {
+    const dots = figureToHast({
+      ...FIGURE,
+      items: [
+        { type: 'dot', at: [1, 0.5], radius: 2, color: 'red' },
+        { type: 'dot', at: [0, 0], radius: 2, color: null },
+      ],
+    });
+    const [red, plain] = all(dots, 'circle');
+    // yの向きは反転する．半径2ptは，0.07029cmである．
+    expect(red?.properties.cx).toBe('1');
+    expect(red?.properties.cy).toBe('-0.5');
+    expect(red?.properties.r).toBe('0.07029');
+    expect(red?.properties.fill).toBe('var(--figure-red)');
+    expect(plain?.properties.fill).toBe('currentColor');
+    // 丸は，SVGの絵の一部で，ラベルではない．
+    expect(all(dots, 'span')).toHaveLength(0);
+  });
+
   it('何も描かない図は，空のSVGになる', () => {
     const empty = figureToHast({ ...FIGURE, items: [] });
     expect(all(empty, 'svg')).toHaveLength(1);

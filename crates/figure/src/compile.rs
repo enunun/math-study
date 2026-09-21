@@ -1,8 +1,12 @@
 //! シーンの式を読み，定義域を評価する．描画は，ここで作る`Compiled`から式を評価する．
 
+use std::collections::HashMap;
+
 use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, is_reserved_name};
-use crate::scene::{Anchor, Axis, Bound, Curve, Direction, Graph, Grid, Object, Scene, View};
+use crate::scene::{
+    Anchor, Axis, Bound, Curve, Direction, Graph, Grid, Label, Object, Point, Scene, View,
+};
 use crate::validate::curve_expressions;
 
 /// 式を読んだ後の，グラフ．
@@ -48,8 +52,34 @@ pub struct GridPlot {
 /// 格子の，方向ごとの線の数の上限．
 const MAX_GRID_LINES: f64 = 200.0;
 
+/// 式を読んだ後の，点．
+pub struct PointPlot {
+    /// 評価した座標(数学の座標)．
+    pub at: [f64; 2],
+}
+
+/// 式を読んだ後の，ラベルの位置．
+pub struct LabelPlot {
+    /// 評価した座標(数学の座標)．平面の図では2個，空間の図では3個である．
+    pub at: Vec<f64>,
+}
+
+/// 式を読んだ後の，ベクトルか線分．両端の点の座標を持つ．
+pub struct LinkPlot {
+    /// 始点(数学の座標)．
+    pub from: [f64; 2],
+    /// 終点(数学の座標)．
+    pub to: [f64; 2],
+}
+
 /// 式を読んだ後の，描く対象．
 pub enum Plot {
+    /// 点．
+    Point(PointPlot),
+    /// ラベル．
+    Label(LabelPlot),
+    /// ベクトルか線分．
+    Link(LinkPlot),
     /// 格子．
     Grid(GridPlot),
     /// 座標軸．
@@ -64,7 +94,8 @@ pub enum Plot {
 
 /// 式を読んだ後のシーン．
 pub struct Compiled {
-    /// 媒介変数の値．シーンの中の媒介変数の順に並ぶ．
+    /// 式の中の名前の値．媒介変数(シーンの中の順)のあとに，点の座標(`x`，`y`の順で，点の順)が続く．
+    /// あるオブジェクトの式が使える名前は，この並びの先頭の部分だけである．
     pub parameters: Vec<f64>,
     /// オブジェクトごとの，描く対象．`scene.objects`と同じ順に並ぶ．
     pub plots: Vec<Plot>,
@@ -76,8 +107,8 @@ pub struct Compiled {
 ///
 /// 式の誤り，使えない名前，正しくない定義域があると，原因のオブジェクトの`id`つきの誤りを返す．
 pub fn compile(scene: &Scene) -> Result<Compiled, Error> {
-    let mut names = Vec::new();
-    let mut parameters = Vec::new();
+    let mut names: Vec<String> = Vec::new();
+    let mut values = Vec::new();
     for object in &scene.objects {
         if let Object::Parameter(parameter) = object {
             if is_reserved_name(&parameter.id) {
@@ -86,16 +117,49 @@ pub fn compile(scene: &Scene) -> Result<Compiled, Error> {
                     ErrorKind::ReservedName(parameter.id.clone()),
                 ));
             }
-            names.push(parameter.id.as_str());
-            parameters.push(parameter.value);
+            names.push(parameter.id.clone());
+            values.push(parameter.value);
         }
     }
-    let plots = scene
-        .objects
-        .iter()
-        .map(|object| compile_object(object, &names, &parameters, &scene.view))
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(Compiled { parameters, plots })
+    // オブジェクトを順に読む．点の座標は，読んだあとに，あとのオブジェクトが使える名前と値に加わる．
+    let mut plots = Vec::with_capacity(scene.objects.len());
+    let mut coordinates: HashMap<&str, [f64; 2]> = HashMap::new();
+    for object in &scene.objects {
+        let visible: Vec<&str> = names.iter().map(String::as_str).collect();
+        let plot = compile_object(object, &visible, &values, &scene.view)?;
+        if let (Object::Point(point), Plot::Point(placed)) = (object, &plot) {
+            for (suffix, value) in [("x", placed.at[0]), ("y", placed.at[1])] {
+                let name = format!("{}_{suffix}", point.id);
+                if names.contains(&name) {
+                    return Err(Error::in_object(&point.id, ErrorKind::NameConflict(name)));
+                }
+                names.push(name);
+                values.push(value);
+            }
+            coordinates.insert(point.id.as_str(), placed.at);
+        }
+        plots.push(plot);
+    }
+    // ベクトルと線分は，点の座標がすべて決まってから，端の座標を引く．
+    for (object, plot) in scene.objects.iter().zip(&mut plots) {
+        let (from, to) = match object {
+            Object::Vector(vector) => (&vector.from, &vector.to),
+            Object::Segment(segment) => (&segment.from, &segment.to),
+            _ => continue,
+        };
+        if let (Some(from), Some(to)) =
+            (coordinates.get(from.as_str()), coordinates.get(to.as_str()))
+        {
+            *plot = Plot::Link(LinkPlot {
+                from: *from,
+                to: *to,
+            });
+        }
+    }
+    Ok(Compiled {
+        parameters: values,
+        plots,
+    })
 }
 
 fn compile_object(
@@ -117,7 +181,15 @@ fn compile_object(
         Object::Grid(grid) => compile_grid(grid, names, parameters, view)
             .map(Plot::Grid)
             .map_err(|kind| Error::in_object(&grid.id, kind)),
-        Object::Label(_) | Object::Parameter(_) | Object::Sphere(_) => Ok(Plot::None),
+        Object::Label(label) => compile_label(label, names, parameters)
+            .map(Plot::Label)
+            .map_err(|kind| Error::in_object(&label.id, kind)),
+        Object::Point(point) => compile_point(point, names, parameters)
+            .map(Plot::Point)
+            .map_err(|kind| Error::in_object(&point.id, kind)),
+        Object::Parameter(_) | Object::Sphere(_) | Object::Vector(_) | Object::Segment(_) => {
+            Ok(Plot::None)
+        }
     }
 }
 
@@ -177,6 +249,52 @@ fn compile_curve(
     }
     let domain = evaluate_domain(&curve.domain, names, parameters)?;
     Ok(CurvePlot { exprs, domain })
+}
+
+/// 座標の式を評価し，有限の数にする．
+fn evaluate_coordinates(
+    bounds: &[Bound],
+    names: &[&str],
+    parameters: &[f64],
+) -> Result<Vec<f64>, ErrorKind> {
+    bounds
+        .iter()
+        .enumerate()
+        .map(|(index, bound)| {
+            let value = evaluate_bound("at", bound, index, names, parameters)?;
+            if value.is_finite() {
+                Ok(value)
+            } else {
+                Err(ErrorKind::Invalid(
+                    "座標(`at`)は，有限の数にする．".to_owned(),
+                ))
+            }
+        })
+        .collect()
+}
+
+fn compile_label(
+    label: &Label,
+    names: &[&str],
+    parameters: &[f64],
+) -> Result<LabelPlot, ErrorKind> {
+    Ok(LabelPlot {
+        at: evaluate_coordinates(&label.at, names, parameters)?,
+    })
+}
+
+fn compile_point(
+    point: &Point,
+    names: &[&str],
+    parameters: &[f64],
+) -> Result<PointPlot, ErrorKind> {
+    let at = evaluate_coordinates(&point.at, names, parameters)?;
+    match at.as_slice() {
+        [x, y] => Ok(PointPlot { at: [*x, *y] }),
+        _ => Err(ErrorKind::Invalid(
+            "点の座標(`at`)は，2個の数で書く．".to_owned(),
+        )),
+    }
 }
 
 /// 格子の刻みを評価し，正の有限の数で，線が多すぎないことを確かめる．

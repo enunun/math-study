@@ -4,7 +4,7 @@ import type { Locator, Page } from '@playwright/test';
 const PAGE = 'dev/figure-first/';
 const TOLERANCE = 3;
 
-/** ページの，最初の図と，2つ目の図(目盛つき)と，3つ目の図(格子つき)． */
+/** ページの，最初の図と，2つ目の図(目盛つき)と，3つ目の図(格子つき)と，4つ目の図(ベクトル)． */
 function first(page: Page): Locator {
   return page.locator('.figure').first();
 }
@@ -15,6 +15,10 @@ function second(page: Page): Locator {
 
 function third(page: Page): Locator {
   return page.locator('.figure').nth(2);
+}
+
+function fourth(page: Page): Locator {
+  return page.locator('.figure').nth(3);
 }
 
 /** 線幅を含まない，図形の寸法．Playwrightのboundingboxは，線幅と，とがりの分を足す． */
@@ -46,7 +50,7 @@ test.describe('シーンから描いた図', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     // ラベルの数式が描画されるまで待つ．
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(16);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(20);
   });
 
   test('SVGは，画像として説明を持ち，線と矢じりがある', async ({ page }) => {
@@ -182,6 +186,36 @@ test.describe('シーンから描いた図', () => {
     expect(Math.abs((widths[0] ?? 0) - 0.3 * cmPerPt)).toBeLessThan(1e-4);
   });
 
+  test('ベクトルの和の図は，対角線のベクトルが，Dの印に届き，名前は，印の右上にある', async ({
+    page,
+  }) => {
+    const svg = fourth(page).locator('svg');
+    // 破線の辺2本と，ベクトル3本．矢じりは3つ，点の印は1つ．
+    await expect(svg.locator('path')).toHaveCount(5);
+    await expect(svg.locator('polygon')).toHaveCount(3);
+    await expect(svg.locator('circle')).toHaveCount(1);
+    const dashed = await svg
+      .locator('path')
+      .evaluateAll((elements) =>
+        elements.map((element) => element.hasAttribute('stroke-dasharray')),
+      );
+    expect(dashed).toEqual([true, true, false, false, false]);
+    // 対角線の矢じりの先端(多角形の最初の点)は，印の中心にほぼ重なる(単位はcm)．
+    const tip = await svg.locator('polygon').nth(2).getAttribute('points');
+    const [tipX, tipY] = (tip ?? '').split(' ')[0]?.split(',').map(Number) ?? [];
+    const dot = svg.locator('circle');
+    const cx = Number(await dot.getAttribute('cx'));
+    const cy = Number(await dot.getAttribute('cy'));
+    expect(Math.hypot((tipX ?? Number.NaN) - cx, (tipY ?? Number.NaN) - cy)).toBeLessThan(0.05);
+    // 名前Dの箱の左下の角が，印の中心に合う(anchorはsouth west)．
+    const center = await geometry(dot);
+    const name = await box(fourth(page).locator('.figure-label').nth(0));
+    expect(Math.abs(name.x - (center.x + center.width / 2))).toBeLessThan(TOLERANCE * 2);
+    expect(Math.abs(name.y + name.height - (center.y + center.height / 2))).toBeLessThan(
+      TOLERANCE * 2,
+    );
+  });
+
   for (const scheme of ['light', 'dark'] as const) {
     test(`色の名前は，背景に合わせた色になる(${scheme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });
@@ -229,7 +263,7 @@ test.describe('シーンから描いた図', () => {
     page.on('pageerror', (error) => problems.push(String(error)));
     page.on('requestfailed', (request) => problems.push(request.url()));
     await page.reload();
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(16);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(20);
     expect(problems).toEqual([]);
   });
 });

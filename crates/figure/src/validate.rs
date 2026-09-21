@@ -5,8 +5,8 @@ use std::collections::HashSet;
 use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::scene::{
-    Axis, Bound, CM_PER_PT, Curve, Direction, Graph, Grid, Label, MAX_WIDTH_PT, Object, Scene,
-    SpaceView, Sphere, Style, View,
+    Axis, Bound, CM_PER_PT, Curve, Direction, Graph, Grid, Label, MAX_WIDTH_PT, Object, Point,
+    Scene, SpaceView, Sphere, Style, View,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -23,6 +23,14 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
         return Err(Error::new(ErrorKind::EmptyText("description")));
     }
     check_view(&scene.view)?;
+    let points: HashSet<&str> = scene
+        .objects
+        .iter()
+        .filter_map(|object| match object {
+            Object::Point(point) => Some(point.id.as_str()),
+            _ => None,
+        })
+        .collect();
     let mut seen = HashSet::new();
     for object in &scene.objects {
         let id = object.id();
@@ -33,6 +41,7 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
             return Err(Error::in_object(id, ErrorKind::DuplicateId(id.to_owned())));
         }
         validate_object(object, &scene.view).map_err(|kind| Error::in_object(id, kind))?;
+        check_endpoints(object, &points).map_err(|kind| Error::in_object(id, kind))?;
     }
     // 式の構文，名前，定義域は，型では確かめられないので，式を読んで確かめる．
     compile(scene).map(drop)
@@ -49,6 +58,9 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Curve(curve) => validate_curve(curve, view),
         Object::Sphere(sphere) => space_only("sphere", view).and_then(|()| validate_sphere(sphere)),
         Object::Grid(grid) => plane_only("grid", view).and_then(|()| validate_grid(grid)),
+        Object::Point(point) => plane_only("point", view).and_then(|()| validate_point(point)),
+        Object::Vector(_) => plane_only("vector", view),
+        Object::Segment(_) => plane_only("segment", view),
         Object::Parameter(_) => Ok(()),
     }
 }
@@ -60,6 +72,9 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::Curve(o) => Some(&o.style),
         Object::Sphere(o) => Some(&o.style),
         Object::Grid(o) => Some(&o.style),
+        Object::Point(o) => Some(&o.style),
+        Object::Vector(o) => Some(&o.style),
+        Object::Segment(o) => Some(&o.style),
         Object::Label(_) | Object::Parameter(_) => None,
     }
 }
@@ -72,6 +87,28 @@ fn check_style(style: &Style) -> Result<(), ErrorKind> {
         )),
         _ => Ok(()),
     }
+}
+
+fn validate_point(point: &Point) -> Result<(), ErrorKind> {
+    match &point.label {
+        Some(label) => non_empty("label", label),
+        None => Ok(()),
+    }
+}
+
+/// ベクトルと線分の端は，`point`オブジェクトの`id`でなければならない．
+fn check_endpoints(object: &Object, points: &HashSet<&str>) -> Result<(), ErrorKind> {
+    let (from, to) = match object {
+        Object::Vector(vector) => (&vector.from, &vector.to),
+        Object::Segment(segment) => (&segment.from, &segment.to),
+        _ => return Ok(()),
+    };
+    for name in [from, to] {
+        if !points.contains(name.as_str()) {
+            return Err(ErrorKind::UnknownPoint(name.clone()));
+        }
+    }
+    Ok(())
 }
 
 fn validate_grid(grid: &Grid) -> Result<(), ErrorKind> {

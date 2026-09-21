@@ -128,6 +128,12 @@ pub enum Object {
     Sphere(Sphere),
     /// 格子．平面の図でだけ使える．
     Grid(Grid),
+    /// 点．平面の図でだけ使える．座標は，あとの式から`<id>_x`と`<id>_y`で参照できる．
+    Point(Point),
+    /// 向きのある線分．平面の図でだけ使える．
+    Vector(Vector),
+    /// 線分．平面の図でだけ使える．
+    Segment(Segment),
 }
 
 /// 軸の向き．
@@ -231,8 +237,8 @@ pub enum Anchor {
 pub struct Label {
     /// 識別子．
     pub id: String,
-    /// 置く位置(数学の座標)．平面の図では2個，空間の図では3個の数で書く．
-    pub at: Vec<f64>,
+    /// 置く位置(数学の座標)．平面の図では2個，空間の図では3個の，数か式で書く．
+    pub at: Vec<Bound>,
     /// 位置の基準．
     #[serde(default)]
     pub anchor: Anchor,
@@ -349,6 +355,67 @@ impl Hidden {
     }
 }
 
+/// 点．座標は，数か，媒介変数と，先に置いた点の座標を使う式で書く．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Point {
+    /// 識別子．座標は，式の中で`<id>_x`と`<id>_y`の名前になる．
+    pub id: String,
+    /// 座標(数学の座標)．
+    pub at: [Bound; 2],
+    /// 点の名前の`TeX`の式．なければ，名前を置かない．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    /// 名前の箱の，点に合わせる部分．なければ，`south west`(点の右上に名前を置く)である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub anchor: Option<Anchor>,
+    /// 点の印(塗った丸)を描くか．
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub dot: bool,
+    /// スタイル．`color`が，点の印の色になる．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
+// serdeの`skip_serializing_if`は，参照を受け取る関数を要る．
+#[allow(clippy::trivially_copy_pass_by_ref)]
+const fn is_false(value: &bool) -> bool {
+    !*value
+}
+
+/// 向きのある線分．始点から終点へ，矢じりを付ける．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Vector {
+    /// 識別子．
+    pub id: String,
+    /// 始点の点の`id`．
+    pub from: String,
+    /// 終点の点の`id`．
+    pub to: String,
+    /// 終点の矢じり．既定は`stealth`である．
+    #[serde(default)]
+    pub arrow: Arrow,
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
+/// 線分．矢じりのない，2点を結ぶ線である．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Segment {
+    /// 識別子．
+    pub id: String,
+    /// 一方の端の点の`id`．
+    pub from: String,
+    /// もう一方の端の点の`id`．
+    pub to: String,
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
 /// 格子．見える範囲を，原点から数えた刻みの倍数の位置の線で区切る．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -427,6 +494,9 @@ impl Object {
             Self::Curve(o) => &o.id,
             Self::Sphere(o) => &o.id,
             Self::Grid(o) => &o.id,
+            Self::Point(o) => &o.id,
+            Self::Vector(o) => &o.id,
+            Self::Segment(o) => &o.id,
         }
     }
 
@@ -441,6 +511,9 @@ impl Object {
             Self::Curve(_) => "curve",
             Self::Sphere(_) => "sphere",
             Self::Grid(_) => "grid",
+            Self::Point(_) => "point",
+            Self::Vector(_) => "vector",
+            Self::Segment(_) => "segment",
         }
     }
 }

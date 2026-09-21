@@ -1,0 +1,44 @@
+{
+  "version": "0.1.0",
+  "description": "ベクトルaとbの和．aとbを2辺とする平行四辺形の対角線が，a+bである．",
+  "view": { "x": [-1, 7], "y": [-1, 6.5], "unit": { "x": "1cm", "y": "1cm" } },
+  "objects": [
+    { "id": "A", "type": "point", "at": [0, 0] },
+    { "id": "B", "type": "point", "at": [5, 1.7] },
+    { "id": "C", "type": "point", "at": [0.6, 3.9] },
+    {
+      "id": "D",
+      "type": "point",
+      "at": ["B_x + C_x - A_x", "B_y + C_y - A_y"],
+      "dot": true,
+      "label": "D",
+      "style": { "color": "red" }
+    },
+    { "id": "side_c", "type": "segment", "from": "C", "to": "D", "style": { "line": "dashed" } },
+    { "id": "side_b", "type": "segment", "from": "B", "to": "D", "style": { "line": "dashed" } },
+    { "id": "vector_a", "type": "vector", "from": "A", "to": "B" },
+    { "id": "vector_b", "type": "vector", "from": "A", "to": "C" },
+    { "id": "vector_sum", "type": "vector", "from": "A", "to": "D" },
+    {
+      "id": "name_a",
+      "type": "label",
+      "at": ["(A_x + B_x) / 2", "(A_y + B_y) / 2"],
+      "anchor": "north west",
+      "tex": "$\\vec{a}$"
+    },
+    {
+      "id": "name_b",
+      "type": "label",
+      "at": ["(A_x + C_x) / 2", "(A_y + C_y) / 2"],
+      "anchor": "south east",
+      "tex": "$\\vec{b}$"
+    },
+    {
+      "id": "name_sum",
+      "type": "label",
+      "at": ["(A_x + D_x) / 2", "(A_y + D_y) / 2"],
+      "anchor": "north west",
+      "tex": "$\\vec{a}+\\vec{b}$"
+    }
+  ]
+}
