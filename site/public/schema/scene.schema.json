@@ -1,0 +1,527 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://enunun.github.io/math-study/schema/scene.schema.json",
+  "title": "図のシーン",
+  "description": "数学の学習サイトの図が読み書きする，シーンのJSONの形式．図の作成ページ(/math-study/figure-editor/)の「JSON」タブで編集するものと同じである．このスキーマが表せない規則は，同じ場所にある「JSON Schemaで表せない規則」を読むこと．",
+  "type": "object",
+  "required": ["version", "description", "view", "objects"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$",
+      "description": "このシーンを書いたエンジンの版(semver)．読み込むエンジンの版と，主版が同じで(主版が0の間は副版も同じ)，エンジンより新しくない版だけを読める。この整合性は，スキーマでは表せない。"
+    },
+    "description": {
+      "$ref": "#/$defs/nonBlankString",
+      "description": "図の説明．SVGの代替テキスト(alt)になるので，空白だけの文字列は書けない。"
+    },
+    "view": { "$ref": "#/$defs/view" },
+    "objects": {
+      "type": "array",
+      "description": "図を作るオブジェクトの並び。並びは，描く順であり，参照の順でもある(点は，その点を使うベクトルより前に置く必要はないが，`<id>_x`などの名前は，あとに置いたオブジェクトからしか使えない)。",
+      "items": { "$ref": "#/$defs/object" }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*$",
+      "description": "英字で始まり，英数字と`_`だけでできた名前。オブジェクトの`id`と，`var`(媒介変数の名前)，曲面の`vars`に使う。シーンの中で重ならないこと，`e`・`pi`・関数の名前(`sin`など)と重ならないことは，スキーマでは表せない。"
+    },
+    "nonBlankString": {
+      "type": "string",
+      "pattern": "\\S",
+      "description": "空文字列や，空白だけの文字列を除いた，文字列。"
+    },
+    "bound": {
+      "description": "数か，式(文字列)。式の構文が正しいか，式が指す名前(媒介変数，先に置いたパラメータや点の座標)が存在するかは，スキーマでは表せず，エンジンが式を読むときに確かめる。",
+      "oneOf": [{ "type": "number" }, { "$ref": "#/$defs/nonBlankString" }]
+    },
+    "positiveNumberOrExpression": {
+      "description": "格子の刻み(`x_step`，`y_step`)に使う。数で書くときは，正の数でなければならない。式で書くときの正負は，エンジンが式を評価するときに確かめる。",
+      "oneOf": [{ "type": "number", "exclusiveMinimum": 0 }, { "$ref": "#/$defs/nonBlankString" }]
+    },
+    "numberPair": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "boundPair": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/bound" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "length": {
+      "type": "string",
+      "pattern": "^(\\d+\\.\\d+|\\d+|\\.\\d+)(cm|mm|pt)$",
+      "description": "単位つきの長さ(`\"1.2pt\"`のような文字列)。数値は正でなければならない。線の太さ(`style.width`)は，さらに0より大きく10pt以下でなければならないが，cmやmmで書かれているとptへの換算が要るので，この上限はスキーマでは表せない。"
+    },
+    "anchor": {
+      "type": "string",
+      "enum": [
+        "center",
+        "north",
+        "south",
+        "east",
+        "west",
+        "north east",
+        "north west",
+        "south east",
+        "south west"
+      ],
+      "description": "ラベルの箱の，位置に合わせる部分。TikZのanchorと同じ名前である。"
+    },
+    "color": {
+      "type": "string",
+      "enum": ["gray", "red", "blue", "green", "orange", "purple"],
+      "description": "決まった名前から選ぶ，線の色。省くと，文字の色になる。"
+    },
+    "line": {
+      "type": "string",
+      "enum": ["solid", "dotted", "dashed"]
+    },
+    "hidden": {
+      "type": "string",
+      "enum": ["dotted", "dashed", "none"],
+      "description": "空間の図で，不透明な面に隠れた部分の線の描き方。"
+    },
+    "arrow": {
+      "type": "string",
+      "enum": ["stealth", "none"]
+    },
+    "direction": {
+      "type": "string",
+      "enum": ["x", "y", "z"],
+      "description": "`z`は，空間の図でだけ使える。"
+    },
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "線のスタイル。省いた項目は，オブジェクトの種類ごとの既定になる(既定の線の種類は，格子だけ点線，ほかは実線)。",
+      "properties": {
+        "line": { "$ref": "#/$defs/line" },
+        "hidden": { "$ref": "#/$defs/hidden" },
+        "color": { "$ref": "#/$defs/color" },
+        "width": { "$ref": "#/$defs/length" }
+      }
+    },
+    "tick": {
+      "type": "object",
+      "required": ["at"],
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/bound",
+          "description": "軸の上の位置。軸の範囲の中でなければならないが，これはスキーマでは表せない。"
+        },
+        "label": { "type": "string" },
+        "anchor": { "$ref": "#/$defs/anchor" }
+      }
+    },
+    "fill": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "color": { "$ref": "#/$defs/color" },
+        "opacity": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "description": "既定は0.25。"
+        }
+      }
+    },
+    "position": {
+      "description": "オブジェクトの位置。座標の並び(平面の図では2個，空間の図では3個)か，点の式(平面の図だけで使える文字列，`\"B + C - A\"`のような形)で書く。どちらの形にするかは，`view`によって決まるが，これはスキーマでは表せない。",
+      "oneOf": [
+        { "$ref": "#/$defs/nonBlankString" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/bound" },
+          "minItems": 2,
+          "maxItems": 3
+        }
+      ]
+    },
+    "planeView": {
+      "type": "object",
+      "required": ["x", "y", "unit"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "$ref": "#/$defs/numberPair", "description": "x方向の，見える範囲。小さい方が先。" },
+        "y": { "$ref": "#/$defs/numberPair", "description": "y方向の，見える範囲。小さい方が先。" },
+        "unit": {
+          "type": "object",
+          "required": ["x", "y"],
+          "additionalProperties": false,
+          "properties": {
+            "x": { "$ref": "#/$defs/length" },
+            "y": { "$ref": "#/$defs/length" }
+          },
+          "description": "x方向とy方向それぞれの，1単位の実寸。"
+        }
+      }
+    },
+    "spaceView": {
+      "type": "object",
+      "required": ["azimuth", "elevation", "unit"],
+      "additionalProperties": false,
+      "properties": {
+        "azimuth": {
+          "type": "number",
+          "description": "方位角(度)。z軸のまわりに，x軸からy軸の向きに測る。"
+        },
+        "elevation": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90,
+          "description": "仰角(度)。xy平面から上向きに測る。"
+        },
+        "unit": { "$ref": "#/$defs/length", "description": "3方向共通の，1単位の実寸。" }
+      }
+    },
+    "view": {
+      "description": "図の見え方。平面の図は`x`，`y`，`unit`を持ち，空間の図は`azimuth`，`elevation`，`unit`を持つ。どちらの形になるかで，平面の図か空間の図かが決まり，使えるオブジェクトの種類も変わる。",
+      "oneOf": [{ "$ref": "#/$defs/planeView" }, { "$ref": "#/$defs/spaceView" }]
+    },
+    "axis": {
+      "type": "object",
+      "required": ["id", "type", "direction"],
+      "additionalProperties": false,
+      "description": "座標軸。平面の図はx軸とy軸，空間の図はx軸・y軸・z軸を使える。空間の図の軸には，`range`が必要である。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "axis" },
+        "direction": { "$ref": "#/$defs/direction" },
+        "arrow": { "$ref": "#/$defs/arrow" },
+        "label": { "type": "string", "description": "軸の名前の式(TeX)。`\"x\"`は$x$と組まれる。" },
+        "range": {
+          "$ref": "#/$defs/numberPair",
+          "description": "軸を引く範囲。平面の図では省くと見える範囲になる。空間の図では必要である。小さい方が先。"
+        },
+        "style": { "$ref": "#/$defs/style" },
+        "ticks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/tick" },
+          "description": "目盛。空間の図の軸には，まだ付けられない。"
+        }
+      }
+    },
+    "label": {
+      "type": "object",
+      "required": ["id", "type", "at", "tex"],
+      "additionalProperties": false,
+      "description": "数式を置くラベル。原点の`O`も，ラベルで書く。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "label" },
+        "at": { "$ref": "#/$defs/position" },
+        "anchor": { "$ref": "#/$defs/anchor" },
+        "tex": {
+          "$ref": "#/$defs/nonBlankString",
+          "description": "TeXの文字列。`$…$`が数式になる。"
+        }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "required": ["id", "type", "value"],
+      "additionalProperties": false,
+      "description": "式から名前で参照する数。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "parameter" },
+        "value": { "type": "number" }
+      }
+    },
+    "graph": {
+      "type": "object",
+      "required": ["id", "type", "var", "expr", "domain"],
+      "additionalProperties": false,
+      "description": "関数のグラフ(y = f(x))。平面の図でだけ使える。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "graph" },
+        "var": { "$ref": "#/$defs/identifier" },
+        "expr": { "$ref": "#/$defs/nonBlankString" },
+        "domain": {
+          "$ref": "#/$defs/boundPair",
+          "description": "定義域。数どうしなら，小さい方が先でなければならないが，これはスキーマでは表せない。"
+        },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
+    "curve": {
+      "type": "object",
+      "required": ["id", "type", "var", "expr", "domain"],
+      "additionalProperties": false,
+      "description": "媒介変数表示の曲線。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "curve" },
+        "var": { "$ref": "#/$defs/identifier" },
+        "expr": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonBlankString" },
+          "minItems": 2,
+          "maxItems": 3,
+          "description": "各座標の式。平面の図では2個，空間の図では3個でなければならないが，どちらの数にするかは`view`で決まり，スキーマでは表せない。"
+        },
+        "domain": { "$ref": "#/$defs/boundPair" },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
+    "grid": {
+      "type": "object",
+      "required": ["id", "type"],
+      "additionalProperties": false,
+      "description": "格子。平面の図でだけ使える。`x_step`と`y_step`は，少なくとも一方が必要である。",
+      "anyOf": [{ "required": ["x_step"] }, { "required": ["y_step"] }],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "grid" },
+        "x_step": { "$ref": "#/$defs/positiveNumberOrExpression" },
+        "y_step": { "$ref": "#/$defs/positiveNumberOrExpression" },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
+    "point": {
+      "type": "object",
+      "required": ["id", "type", "at"],
+      "additionalProperties": false,
+      "description": "点。座標は，あとに置いたオブジェクトの式から，`<id>_x`のような名前で参照できる。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "point" },
+        "at": { "$ref": "#/$defs/position" },
+        "label": { "type": "string", "description": "点の名前の式(TeX)。省くと，名前を置かない。" },
+        "anchor": { "$ref": "#/$defs/anchor" },
+        "dot": { "type": "boolean", "description": "点の印(塗った丸)を描くか。既定は描かない。" },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
+    "vector": {
+      "type": "object",
+      "required": ["id", "type", "from", "to"],
+      "additionalProperties": false,
+      "description": "向きのある線分。`from`と`to`は，`point`オブジェクトの`id`でなければならないが，これはスキーマでは表せない。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "vector" },
+        "from": { "$ref": "#/$defs/identifier" },
+        "to": { "$ref": "#/$defs/identifier" },
+        "arrow": { "$ref": "#/$defs/arrow" },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
+    "segment": {
+      "type": "object",
+      "required": ["id", "type", "from", "to"],
+      "additionalProperties": false,
+      "description": "線分(矢じりのない，向きのない線)。`from`と`to`は，`point`オブジェクトの`id`でなければならないが，これはスキーマでは表せない。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "segment" },
+        "from": { "$ref": "#/$defs/identifier" },
+        "to": { "$ref": "#/$defs/identifier" },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
+    "region": {
+      "type": "object",
+      "required": ["id", "type", "between", "domain"],
+      "additionalProperties": false,
+      "description": "2つのグラフ(かグラフとx軸)の間の領域。斜線で埋める。平面の図でだけ使える。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "region" },
+        "between": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/identifier" },
+          "minItems": 1,
+          "maxItems": 2,
+          "description": "領域を挟む，`graph`オブジェクトの`id`。1つならグラフとx軸の間，2つなら2つのグラフの間になるが，`graph`の`id`であることは，スキーマでは表せない。"
+        },
+        "domain": {
+          "$ref": "#/$defs/boundPair",
+          "description": "領域のxの範囲。グラフの定義域の中でなければならないが，これはスキーマでは表せない。"
+        },
+        "hatch": { "type": "boolean", "description": "斜線を引くか。既定は引く。" },
+        "fill": { "$ref": "#/$defs/fill" },
+        "angle": {
+          "type": "number",
+          "description": "斜線の角度(度)。x軸から反時計回りに測る。既定は45。"
+        },
+        "gap": { "$ref": "#/$defs/length", "description": "斜線の間隔。既定は3mm。" },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
+    "sphere": {
+      "type": "object",
+      "required": ["id", "type", "center", "radius"],
+      "additionalProperties": false,
+      "description": "球。空間の図でだけ使える。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "sphere" },
+        "center": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "radius": { "type": "number", "exclusiveMinimum": 0 },
+        "style": { "$ref": "#/$defs/style" },
+        "wireframe": {
+          "$ref": "#/$defs/style",
+          "description": "球のワイヤーフレーム(経線と緯線)。この項目があれば描き，スタイルとして使う(`{}`でもよい)。省くと描かない。"
+        }
+      }
+    },
+    "surface": {
+      "type": "object",
+      "required": ["id", "type"],
+      "additionalProperties": false,
+      "description": "曲面。空間の図でだけ使える。式(`vars`，`expr`，`domain`)か，ベジエ曲面の制御点の網(`bezier`)のどちらかで書き，両方は書けない。`control_net`は，`bezier`があるときだけ使える。",
+      "oneOf": [
+        {
+          "required": ["vars", "expr", "domain"],
+          "not": { "anyOf": [{ "required": ["bezier"] }, { "required": ["control_net"] }] }
+        },
+        {
+          "required": ["bezier"],
+          "not": {
+            "anyOf": [
+              { "required": ["vars"] },
+              { "required": ["expr"] },
+              { "required": ["domain"] }
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "surface" },
+        "vars": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/identifier" },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "2つの変数の名前。重ならないこと，`e`や`pi`と重ならないことは，スキーマでは表せない。"
+        },
+        "expr": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonBlankString" },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "x，y，z座標の式。"
+        },
+        "domain": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/boundPair" },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "各変数の範囲。数どうしなら，小さい方が先でなければならないが，これはスキーマでは表せない。"
+        },
+        "bezier": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/bound" },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "minItems": 2,
+            "maxItems": 12
+          },
+          "minItems": 2,
+          "maxItems": 12,
+          "description": "制御点の網。`bezier[i][j]`は，1つ目の変数の方向にi番目，2つ目の変数の方向にj番目の点で，x，y，zの3つの座標を持つ。各方向に2点以上12点以下を，行の長さを揃えて並べる。行の長さが揃っていることは，スキーマでは表せない。"
+        },
+        "mesh": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 4, "maximum": 200 },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "網の細かさ(各変数の方向の分割数)。既定は48と48。"
+        },
+        "boundary": { "type": "boolean", "description": "定義域の縁を描くか。既定は描かない。" },
+        "style": { "$ref": "#/$defs/style" },
+        "wireframe": {
+          "$ref": "#/$defs/style",
+          "description": "曲面のワイヤーフレーム(u一定・v一定の断面)。式で書いた曲面でも，ベジエ曲面でも，同じように，曲面の上の線として描く。この項目があれば描き，スタイルとして使う(`{}`でもよい)。省くと描かない。"
+        },
+        "control_net": {
+          "$ref": "#/$defs/style",
+          "description": "ベジエ曲面の，制御点の網(行と列を結ぶ折れ線)。`bezier`があるときだけ使える。この項目があれば描き，スタイルとして使う(`{}`でもよい)。省くと描かない。"
+        }
+      }
+    },
+    "cut": {
+      "type": "object",
+      "required": ["id", "type", "surface", "normal", "offset"],
+      "additionalProperties": false,
+      "description": "曲面の，平面による切り口。平面は，法線と定数で`normal・p = offset`と書く。空間の図でだけ使える。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "cut" },
+        "surface": {
+          "$ref": "#/$defs/identifier",
+          "description": "切る曲面の`id`。`surface`オブジェクトのものでなければならないが，これはスキーマでは表せない。"
+        },
+        "normal": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/bound" },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "平面の法線。0でない有限のベクトルでなければならないが，これはスキーマでは表せない。"
+        },
+        "offset": { "$ref": "#/$defs/bound" },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
+    "intersection": {
+      "type": "object",
+      "required": ["id", "type", "surfaces"],
+      "additionalProperties": false,
+      "description": "2つの曲面の交線。空間の図でだけ使える。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "intersection" },
+        "surfaces": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/identifier" },
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "description": "交わる，違う2つの`surface`オブジェクトの`id`。`surface`オブジェクトのものでなければならないことは，スキーマでは表せない。"
+        },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
+    "object": {
+      "description": "図を作るオブジェクト。`type`で種類を選ぶ。`graph`，`grid`，`region`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`は空間の図でだけ使える。この使い分けは，スキーマでは表せない。",
+      "oneOf": [
+        { "$ref": "#/$defs/axis" },
+        { "$ref": "#/$defs/label" },
+        { "$ref": "#/$defs/parameter" },
+        { "$ref": "#/$defs/graph" },
+        { "$ref": "#/$defs/curve" },
+        { "$ref": "#/$defs/grid" },
+        { "$ref": "#/$defs/point" },
+        { "$ref": "#/$defs/vector" },
+        { "$ref": "#/$defs/segment" },
+        { "$ref": "#/$defs/region" },
+        { "$ref": "#/$defs/sphere" },
+        { "$ref": "#/$defs/surface" },
+        { "$ref": "#/$defs/cut" },
+        { "$ref": "#/$defs/intersection" }
+      ]
+    }
+  }
+}
