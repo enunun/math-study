@@ -166,7 +166,16 @@ fn validate_surface(surface: &Surface) -> Result<(), ErrorKind> {
             Surface::MAX_MESH
         )));
     }
-    Ok(())
+    if let Some(style) = &surface.wireframe {
+        check_style(style)?;
+    }
+    match (&surface.control_net, &surface.bezier) {
+        (Some(style), Some(_)) => check_style(style),
+        (Some(_), None) => Err(ErrorKind::Invalid(
+            "制御点の網(`control_net`)は，ベジエ曲面(`bezier`)にだけ使える．".to_owned(),
+        )),
+        (None, _) => Ok(()),
+    }
 }
 
 /// 式で書いた曲面．変数，式，定義域が要る．
@@ -388,12 +397,14 @@ fn validate_graph(graph: &Graph) -> Result<(), ErrorKind> {
 }
 
 fn validate_sphere(sphere: &Sphere) -> Result<(), ErrorKind> {
-    if sphere.radius.is_finite() && sphere.radius > 0.0 {
-        Ok(())
-    } else {
-        Err(ErrorKind::Invalid(
+    if !(sphere.radius.is_finite() && sphere.radius > 0.0) {
+        return Err(ErrorKind::Invalid(
             "`radius`は，正の有限の数にする．".to_owned(),
-        ))
+        ));
+    }
+    match &sphere.wireframe {
+        Some(style) => check_style(style),
+        None => Ok(()),
     }
 }
 

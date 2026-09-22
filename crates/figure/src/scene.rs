@@ -499,6 +499,13 @@ pub struct Surface {
     /// スタイル．輪郭と縁の線に使う．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 曲面のワイヤーフレーム(u一定・v一定の断面)．なければ描かない．あれば，そのスタイルで描く．
+    /// 式で書いた曲面でも，ベジエ曲面でも，同じように，曲面の上の線として描く．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wireframe: Option<Style>,
+    /// ベジエ曲面の，制御点の網(行と列を結ぶ折れ線)．なければ描かない．`bezier`があるときだけ使える．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub control_net: Option<Style>,
 }
 
 impl Surface {
@@ -640,6 +647,9 @@ pub struct Sphere {
     /// スタイル．輪郭線の種類に使う．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 球のワイヤーフレーム(経線と緯線)．なければ描かない．あれば，そのスタイルで描く．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wireframe: Option<Style>,
 }
 
 /// 関数のグラフ．

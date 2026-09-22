@@ -36,6 +36,24 @@ const BISECTIONS: u32 = 60;
 const SURFACE_MARGIN: f64 = 1e-12;
 /// 軸の名前の向きを決める，8方向の境目の角度(度)．
 const SECTOR: f64 = 22.5;
+/// 曲面のワイヤーフレームの，u一定・v一定それぞれの本数．輪郭や縁にすでにある両端は含めない．
+const WIREFRAME_LINES: usize = 4;
+/// 球のワイヤーフレームの，経線の本数．
+const SPHERE_MERIDIANS: usize = 6;
+/// 球のワイヤーフレームの，緯線の本数．両極は含めない．
+const SPHERE_PARALLELS: usize = 3;
+
+fn lerp(low: f64, high: f64, t: f64) -> f64 {
+    low + (high - low) * t
+}
+
+/// `0`から`count + 1`等分した，内側の`count`個の位置(両端は含めない)．
+fn interior_fractions(count: usize) -> impl Iterator<Item = f64> {
+    let divisions = count.saturating_add(1);
+    (1..=count).map(move |k| {
+        f64::from(u32::try_from(k).unwrap_or(0)) / f64::from(u32::try_from(divisions).unwrap_or(1))
+    })
+}
 
 /// 画面への投影．
 struct Camera {
@@ -205,11 +223,14 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
     };
     let mut items = Vec::new();
     let mut meshes = space.meshes.iter();
+    let mut maps = space.surfaces.iter();
     for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
         match (object, plot) {
-            (Object::Surface(surface), _) => {
-                if let Some(mesh) = meshes.next() {
+            (Object::Surface(surface), Plot::Surface(placed)) => {
+                if let (Some(mesh), Some(map)) = (meshes.next(), maps.next()) {
                     items.extend(surface_items(surface, mesh, &space));
+                    items.extend(surface_wireframe_items(surface, placed, map, &space));
+                    items.extend(control_net_items(surface, placed, &space));
                 }
             }
             (Object::Point(point), Plot::Point(placed)) => {
@@ -231,7 +252,10 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
             (Object::Label(label), Plot::Label(placed)) => {
                 items.extend(label_item(label, placed, &space.camera).map(Item::Label));
             }
-            (Object::Sphere(sphere), _) => items.push(outline(sphere, &space.camera)),
+            (Object::Sphere(sphere), _) => {
+                items.push(outline(sphere, &space.camera));
+                items.extend(sphere_wireframe_items(sphere, &space));
+            }
             (Object::Curve(curve), Plot::Curve(plot)) => {
                 items.extend(curve_items(curve.style, plot, compiled, &space));
             }
@@ -450,6 +474,124 @@ fn surface_items(surface: &Surface, mesh: &Mesh, space: &Space) -> Vec<Item> {
                 &space.camera,
             ));
         }
+    }
+    items
+}
+
+/// パラメータ`t`が`start`から`end`まで動く曲線を，隠れ方に分けて描く．軸や曲線と同じ手順で，
+/// 画面での滑らかさに合わせて刻み，隠れ方が変わる点を二分法で詰める．
+fn wireframe_line(
+    style: &Style,
+    at: &dyn Fn(f64) -> Option<Point3>,
+    start: f64,
+    end: f64,
+    space: &Space,
+) -> Vec<Item> {
+    let stroke = stroke_of(style, Line::Dotted, CURVE_WIDTH);
+    let point = |t: f64| at(t).unwrap_or([f64::NAN; 3]);
+    let lines = sample_with_parameters(|t| at(t).map(|p| space.camera.project(p)), start, end);
+    let mut items = Vec::new();
+    for line in lines {
+        let steps: Vec<f64> = line.iter().map(|(t, _)| *t).collect();
+        let pieces = split_by_visibility(&steps, &point, &|t| space.hidden(point(t)));
+        items.extend(piece_items(&pieces, stroke, style.hidden, &space.camera));
+    }
+    items
+}
+
+/// 曲面のワイヤーフレーム．`u`一定・`v`一定の断面を，`WIREFRAME_LINES`本ずつ引く．式で書いた曲面でも
+/// ベジエ曲面でも，`map`(曲面の式の関数)が同じ形なので，同じように描ける．
+fn surface_wireframe_items(
+    surface: &Surface,
+    plot: &SurfacePlot,
+    map: &SurfaceMap,
+    space: &Space,
+) -> Vec<Item> {
+    let Some(style) = &surface.wireframe else {
+        return Vec::new();
+    };
+    let [[u0, u1], [v0, v1]] = plot.domain;
+    let mut items = Vec::new();
+    for t in interior_fractions(WIREFRAME_LINES) {
+        let u = lerp(u0, u1, t);
+        items.extend(wireframe_line(style, &|v| map(u, v), v0, v1, space));
+        let v = lerp(v0, v1, t);
+        items.extend(wireframe_line(style, &|u| map(u, v), u0, u1, space));
+    }
+    items
+}
+
+/// ベジエ曲面の制御点の網(行と列を結ぶ折れ線)．曲面自身と同じく，ほかの曲面や球に隠れる．
+fn control_net_items(surface: &Surface, plot: &SurfacePlot, space: &Space) -> Vec<Item> {
+    let (Some(style), Some(net)) = (&surface.control_net, &plot.net) else {
+        return Vec::new();
+    };
+    let link = |a: Point3, b: Point3| -> Vec<Item> {
+        let mix = |t: f64| {
+            [
+                lerp(a[0], b[0], t),
+                lerp(a[1], b[1], t),
+                lerp(a[2], b[2], t),
+            ]
+        };
+        wireframe_line(style, &|t| Some(mix(t)), 0.0, 1.0, space)
+    };
+    let mut items = Vec::new();
+    for row in net {
+        for pair in row.windows(2) {
+            if let [a, b] = *pair {
+                items.extend(link(a, b));
+            }
+        }
+    }
+    let columns = net.first().map_or(0, Vec::len);
+    for column in 0..columns {
+        for pair in net.windows(2) {
+            if let [row_a, row_b] = pair
+                && let (Some(a), Some(b)) = (row_a.get(column), row_b.get(column))
+            {
+                items.extend(link(*a, *b));
+            }
+        }
+    }
+    items
+}
+
+/// 球のワイヤーフレーム(経線と緯線)．経線は，方位角`theta`を一定にして，仰角`phi`を動かす．
+/// 緯線は，`phi`を一定にして，`theta`を動かす．両極を通る経線どうしが重なることは気にしない．
+fn sphere_wireframe_items(sphere: &Sphere, space: &Space) -> Vec<Item> {
+    let Some(style) = &sphere.wireframe else {
+        return Vec::new();
+    };
+    let at = |theta: f64, phi: f64| -> Point3 {
+        [
+            sphere.center[0] + sphere.radius * phi.cos() * theta.cos(),
+            sphere.center[1] + sphere.radius * phi.cos() * theta.sin(),
+            sphere.center[2] + sphere.radius * phi.sin(),
+        ]
+    };
+    let quarter_turn = TAU / 4.0;
+    let mut items = Vec::new();
+    for k in 0..SPHERE_MERIDIANS {
+        let theta = TAU * f64::from(u32::try_from(k).unwrap_or(0))
+            / f64::from(u32::try_from(SPHERE_MERIDIANS).unwrap_or(1));
+        items.extend(wireframe_line(
+            style,
+            &|phi| Some(at(theta, phi)),
+            -quarter_turn,
+            quarter_turn,
+            space,
+        ));
+    }
+    for t in interior_fractions(SPHERE_PARALLELS) {
+        let phi = lerp(-quarter_turn, quarter_turn, t);
+        items.extend(wireframe_line(
+            style,
+            &|theta| Some(at(theta, phi)),
+            0.0,
+            TAU,
+            space,
+        ));
     }
     items
 }
