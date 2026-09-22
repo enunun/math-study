@@ -286,7 +286,7 @@ Rustの核は，ブラウザにも，Astroにも依存しない．そのため�
 - シーンのJSONは，ファイルとして読み込む，書き出す．TikZは，`tikzpicture`の断片(`.tikz`)と，LuaLaTeXでそのままコンパイルできる単体の文書(`.tex`，`tikz-document.ts`)を書き出せ，クリップボードへコピーもできる．
 - 見本は，記事で使っているシーン(`site/src/figures/`)を，そのまま読み込む(`samples.ts`)．平面と空間の，両方の見本がある．
 - 空間の図では，プレビューをドラッグして，方位角と仰角を動かせる(`use-drag-rotate.ts`)．ポインタを押した要素がポインタを捕える(`setPointerCapture`)ので，指やポインタが外へ出ても追える．横のドラッグが方位角，縦のドラッグが仰角を動かす．方位角と仰角が，どちらも数のときだけ効く(式で書かれていれば，ドラッグでは変えられない)．方位角は畳み込み，仰角はエンジンの上限(90度)で止める(`draft.ts`の`rotateView`)．
-- シーンのJSONの形式は，[JSON Schema](https://enunun.github.io/math-study/schema/scene.schema.json)で決めている．図の作成ページからもリンクする．スキーマで表せない規則(範囲の大小関係，オブジェクト間の参照，識別子の重なりなど)は，スキーマ自身の`description`に，「スキーマでは表せない」と書いて示す．
+- シーンのJSONの形式は，[JSON Schema](https://enunun.github.io/math-study/schema/scene.schema.json)で決めている．図の作成ページからもリンクする．スキーマで表せない規則(範囲の大小関係，オブジェクト間の参照，識別子の重なりなど)も，スキーマ自身の`description`に，付帯条件と分けずに書く．
 
 ### 編集中の図と，プレビューの分け方
 

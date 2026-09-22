@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://enunun.github.io/math-study/schema/scene.schema.json",
   "title": "図のシーン",
-  "description": "数学の学習サイトの図が読み書きする，シーンのJSONの形式．図の作成ページ(/math-study/figure-editor/)の「JSON」タブで編集するものと同じである．このスキーマが表せない規則は，同じ場所にある「JSON Schemaで表せない規則」を読むこと．",
+  "description": "数学の学習サイトの図が読み書きする，シーンのJSONの形式．図の作成ページ(/math-study/figure-editor/)の「JSON」タブで編集するものと同じである．",
   "type": "object",
   "required": ["version", "description", "view", "objects"],
   "additionalProperties": false,
@@ -10,7 +10,7 @@
     "version": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$",
-      "description": "このシーンを書いたエンジンの版(semver)．読み込むエンジンの版と，主版が同じで(主版が0の間は副版も同じ)，エンジンより新しくない版だけを読める。この整合性は，スキーマでは表せない。"
+      "description": "このシーンを書いたエンジンの版(semver)．読み込むエンジンの版と，主版が同じで(主版が0の間は副版も同じ)，エンジンより新しくない版だけを読める。"
     },
     "description": {
       "$ref": "#/$defs/nonBlankString",
@@ -27,7 +27,7 @@
     "identifier": {
       "type": "string",
       "pattern": "^[A-Za-z][A-Za-z0-9_]*$",
-      "description": "英字で始まり，英数字と`_`だけでできた名前。オブジェクトの`id`と，`var`(媒介変数の名前)，曲面の`vars`に使う。シーンの中で重ならないこと，`e`・`pi`・関数の名前(`sin`など)と重ならないことは，スキーマでは表せない。"
+      "description": "英字で始まり，英数字と`_`だけでできた名前。オブジェクトの`id`と，`var`(媒介変数の名前)，曲面の`vars`に使う。シーンの中で重ならないこと，`e`・`pi`・関数の名前(`sin`など)と重ならないことが必要である。"
     },
     "nonBlankString": {
       "type": "string",
@@ -57,7 +57,7 @@
     "length": {
       "type": "string",
       "pattern": "^(\\d+\\.\\d+|\\d+|\\.\\d+)(cm|mm|pt)$",
-      "description": "単位つきの長さ(`\"1.2pt\"`のような文字列)。数値は正でなければならない。線の太さ(`style.width`)は，さらに0より大きく10pt以下でなければならないが，cmやmmで書かれているとptへの換算が要るので，この上限はスキーマでは表せない。"
+      "description": "単位つきの長さ(`\"1.2pt\"`のような文字列)。数値は正でなければならない。線の太さ(`style.width`)は，さらに0より大きく10pt以下でなければならない。"
     },
     "anchor": {
       "type": "string",
@@ -115,7 +115,7 @@
       "properties": {
         "at": {
           "$ref": "#/$defs/bound",
-          "description": "軸の上の位置。軸の範囲の中でなければならないが，これはスキーマでは表せない。"
+          "description": "軸の上の位置。軸の範囲の中でなければならない。"
         },
         "label": { "type": "string" },
         "anchor": { "$ref": "#/$defs/anchor" }
@@ -135,7 +135,7 @@
       }
     },
     "position": {
-      "description": "オブジェクトの位置。座標の並び(平面の図では2個，空間の図では3個)か，点の式(平面の図だけで使える文字列，`\"B + C - A\"`のような形)で書く。どちらの形にするかは，`view`によって決まるが，これはスキーマでは表せない。",
+      "description": "オブジェクトの位置。座標の並び(平面の図では2個，空間の図では3個)か，点の式(平面の図だけで使える文字列，`\"B + C - A\"`のような形)で書く。どちらの形にするかは，`view`によって決まる。",
       "oneOf": [
         { "$ref": "#/$defs/nonBlankString" },
         {
@@ -249,7 +249,7 @@
         "expr": { "$ref": "#/$defs/nonBlankString" },
         "domain": {
           "$ref": "#/$defs/boundPair",
-          "description": "定義域。数どうしなら，小さい方が先でなければならないが，これはスキーマでは表せない。"
+          "description": "定義域。数どうしなら，小さい方が先でなければならない。"
         },
         "style": { "$ref": "#/$defs/style" }
       }
@@ -298,7 +298,7 @@
           "items": { "$ref": "#/$defs/nonBlankString" },
           "minItems": 2,
           "maxItems": 3,
-          "description": "各座標の式。平面の図では2個，空間の図では3個でなければならないが，どちらの数にするかは`view`で決まり，スキーマでは表せない。"
+          "description": "各座標の式。平面の図では2個，空間の図では3個でなければならない。どちらの数にするかは`view`で決まる。"
         },
         "domain": { "$ref": "#/$defs/boundPair" },
         "bezier": {
@@ -311,7 +311,7 @@
           },
           "minItems": 2,
           "maxItems": 12,
-          "description": "ベジエ曲線の制御点。各点は，平面の図では2個，空間の図では3個の，数か式で書く座標である(スキーマでは，2個か3個としか表せない)。2点以上12点以下を並べる。媒介変数の範囲は，0から1である。"
+          "description": "ベジエ曲線の制御点。各点は，平面の図では2個，空間の図では3個の，数か式で書く座標である。2点以上12点以下を並べる。媒介変数の範囲は，0から1である。"
         },
         "spline": {
           "type": "array",
@@ -323,7 +323,7 @@
           },
           "minItems": 2,
           "maxItems": 12,
-          "description": "スプライン曲線が，順に通る点。各点は，平面の図では2個，空間の図では3個の，数か式で書く座標である(スキーマでは，2個か3個としか表せない)。2点以上12点以下を並べる。媒介変数の範囲は，0から1である。Catmull-Romの方法で，与えた点をすべて通る滑らかな曲線になる。"
+          "description": "スプライン曲線が，順に通る点。各点は，平面の図では2個，空間の図では3個の，数か式で書く座標である。2点以上12点以下を並べる。媒介変数の範囲は，0から1である。Catmull-Romの方法で，与えた点をすべて通る滑らかな曲線になる。"
         },
         "style": { "$ref": "#/$defs/style" }
       }
@@ -338,7 +338,7 @@
         "type": { "const": "tangent_line" },
         "of": {
           "$ref": "#/$defs/identifier",
-          "description": "接する対象の`id`。`graph`か`curve`オブジェクトのものでなければならないが，これはスキーマでは表せない。"
+          "description": "接する対象の`id`。`graph`か`curve`オブジェクトのものでなければならない。"
         },
         "at": {
           "$ref": "#/$defs/bound",
@@ -380,7 +380,7 @@
       "type": "object",
       "required": ["id", "type", "from", "to"],
       "additionalProperties": false,
-      "description": "向きのある線分。`from`と`to`は，`point`オブジェクトの`id`でなければならないが，これはスキーマでは表せない。",
+      "description": "向きのある線分。`from`と`to`は，`point`オブジェクトの`id`でなければならない。",
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "vector" },
@@ -394,7 +394,7 @@
       "type": "object",
       "required": ["id", "type", "from", "to"],
       "additionalProperties": false,
-      "description": "線分(矢じりのない，向きのない線)。`from`と`to`は，`point`オブジェクトの`id`でなければならないが，これはスキーマでは表せない。",
+      "description": "線分(矢じりのない，向きのない線)。`from`と`to`は，`point`オブジェクトの`id`でなければならない。",
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "segment" },
@@ -416,11 +416,11 @@
           "items": { "$ref": "#/$defs/identifier" },
           "minItems": 1,
           "maxItems": 2,
-          "description": "領域を挟む，`graph`オブジェクトの`id`。1つならグラフとx軸の間，2つなら2つのグラフの間になるが，`graph`の`id`であることは，スキーマでは表せない。"
+          "description": "領域を挟む，`graph`オブジェクトの`id`。1つならグラフとx軸の間，2つなら2つのグラフの間になる。"
         },
         "domain": {
           "$ref": "#/$defs/boundPair",
-          "description": "領域のxの範囲。グラフの定義域の中でなければならないが，これはスキーマでは表せない。"
+          "description": "領域のxの範囲。グラフの定義域の中でなければならない。"
         },
         "hatch": { "type": "boolean", "description": "斜線を引くか。既定は引く。" },
         "fill": { "$ref": "#/$defs/fill" },
@@ -512,7 +512,7 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 10,
-          "description": "再帰の深さ。変換の数のこの乗が，図形の数になるので，大きすぎる組み合わせは断られる(スキーマでは表せない)。"
+          "description": "再帰の深さ。変換の数のこの乗が，図形の数になるので，大きすぎる組み合わせは断られる。"
         },
         "style": { "$ref": "#/$defs/style" }
       }
@@ -568,7 +568,7 @@
           "items": { "$ref": "#/$defs/identifier" },
           "minItems": 2,
           "maxItems": 2,
-          "description": "2つの変数の名前。重ならないこと，`e`や`pi`と重ならないことは，スキーマでは表せない。"
+          "description": "2つの変数の名前。重ならないこと，`e`や`pi`と重ならないことが必要である。"
         },
         "expr": {
           "type": "array",
@@ -582,7 +582,7 @@
           "items": { "$ref": "#/$defs/boundPair" },
           "minItems": 2,
           "maxItems": 2,
-          "description": "各変数の範囲。数どうしなら，小さい方が先でなければならないが，これはスキーマでは表せない。"
+          "description": "各変数の範囲。数どうしなら，小さい方が先でなければならない。"
         },
         "bezier": {
           "type": "array",
@@ -599,7 +599,7 @@
           },
           "minItems": 2,
           "maxItems": 12,
-          "description": "制御点の網。`bezier[i][j]`は，1つ目の変数の方向にi番目，2つ目の変数の方向にj番目の点で，x，y，zの3つの座標を持つ。各方向に2点以上12点以下を，行の長さを揃えて並べる。行の長さが揃っていることは，スキーマでは表せない。"
+          "description": "制御点の網。`bezier[i][j]`は，1つ目の変数の方向にi番目，2つ目の変数の方向にj番目の点で，x，y，zの3つの座標を持つ。各方向に2点以上12点以下を，行の長さを揃えて並べる。"
         },
         "mesh": {
           "type": "array",
@@ -630,14 +630,14 @@
         "type": { "const": "cut" },
         "surface": {
           "$ref": "#/$defs/identifier",
-          "description": "切る曲面の`id`。`surface`オブジェクトのものでなければならないが，これはスキーマでは表せない。"
+          "description": "切る曲面の`id`。`surface`オブジェクトのものでなければならない。"
         },
         "normal": {
           "type": "array",
           "items": { "$ref": "#/$defs/bound" },
           "minItems": 3,
           "maxItems": 3,
-          "description": "平面の法線。0でない有限のベクトルでなければならないが，これはスキーマでは表せない。"
+          "description": "平面の法線。0でない有限のベクトルでなければならない。"
         },
         "offset": { "$ref": "#/$defs/bound" },
         "style": { "$ref": "#/$defs/style" }
@@ -657,7 +657,7 @@
           "minItems": 2,
           "maxItems": 2,
           "uniqueItems": true,
-          "description": "交わる，違う2つの`surface`オブジェクトの`id`。`surface`オブジェクトのものでなければならないことは，スキーマでは表せない。"
+          "description": "交わる，違う2つの`surface`オブジェクトの`id`。`surface`オブジェクトのものでなければならない。"
         },
         "style": { "$ref": "#/$defs/style" }
       }
@@ -672,7 +672,7 @@
         "type": { "const": "tangent_plane" },
         "of": {
           "$ref": "#/$defs/identifier",
-          "description": "接する曲面の`id`。`surface`オブジェクトのものでなければならないが，これはスキーマでは表せない。"
+          "description": "接する曲面の`id`。`surface`オブジェクトのものでなければならない。"
         },
         "at": {
           "type": "array",
@@ -689,7 +689,7 @@
       }
     },
     "object": {
-      "description": "図を作るオブジェクト。`type`で種類を選ぶ。`graph`，`grid`，`region`，`tangent_line`，`fractal`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`は空間の図でだけ使える。この使い分けは，スキーマでは表せない。",
+      "description": "図を作るオブジェクト。`type`で種類を選ぶ。`graph`，`grid`，`region`，`tangent_line`，`fractal`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`は空間の図でだけ使える。",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },
