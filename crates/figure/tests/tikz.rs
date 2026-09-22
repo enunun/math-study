@@ -13,18 +13,13 @@
 use std::fs;
 use std::path::Path;
 
-use figure::tikz::{export_tikz, extract_scene, number};
-use figure::{Scene, parse_scene};
+use figure::tikz::{export_tikz, number};
 
 const SINE_AND_SHIFTED_SINE: &str =
     include_str!("../../../site/src/figures/sine-and-shifted-sine.json");
 const GOLDEN: &str = "tests/golden/sine-and-shifted-sine.tikz";
 const SPHERE_WITH_AXES: &str = include_str!("../../../site/src/figures/sphere-with-axes.json");
 const SPHERE_GOLDEN: &str = "tests/golden/sphere-with-axes.tikz";
-
-fn scene(json: &str) -> Scene {
-    parse_scene(json).expect("シーンを読める")
-}
 
 fn tikz_of(json: &str) -> String {
     export_tikz(json).expect("出力できる")
@@ -170,26 +165,6 @@ fn 先頭のコメントに版と必要なライブラリを書く() {
             .iter()
             .any(|line| line.contains("\\usetikzlibrary{arrows.meta}"))
     );
-}
-
-#[test]
-fn 埋め込んだシーンを取り出して_同じシーンを読める() {
-    let tikz = tikz_of(SINE_AND_SHIFTED_SINE);
-    let embedded = extract_scene(&tikz).expect("シーンが埋め込まれている");
-    // 書かれたままの形で，取り出せる．
-    assert_eq!(embedded, SINE_AND_SHIFTED_SINE.trim_end());
-    assert_eq!(scene(&embedded), scene(SINE_AND_SHIFTED_SINE));
-    // 取り出したシーンから作り直した出力は，元の出力と同じである．
-    assert_eq!(tikz_of(&embedded), tikz);
-}
-
-#[test]
-fn シーンが埋め込まれていない文字列からは何も取り出さない() {
-    assert_eq!(
-        extract_scene("\\begin{tikzpicture}\n\\end{tikzpicture}\n"),
-        None
-    );
-    assert_eq!(extract_scene(""), None);
 }
 
 #[test]

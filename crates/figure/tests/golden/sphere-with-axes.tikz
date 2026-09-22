@@ -1,25 +1,5 @@
 % figure 0.1.0が生成した．手で直さず，シーンを直して，出力し直す．
 % 必要：\usetikzlibrary{arrows.meta}
-% --- シーン ---
-% {
-%   "version": "0.1.0",
-%   "description": "半径2の球と，球を通る3本の座標軸と，原点O．球に隠れた軸の部分は点線で描く．",
-%   "view": { "azimuth": 60, "elevation": 20, "unit": "0.8cm" },
-%   "objects": [
-%     { "id": "x_axis", "type": "axis", "direction": "x", "range": [-5, 5], "label": "x" },
-%     { "id": "y_axis", "type": "axis", "direction": "y", "range": [-5, 5], "label": "y" },
-%     { "id": "z_axis", "type": "axis", "direction": "z", "range": [-5, 5], "label": "z" },
-%     {
-%       "id": "origin_label",
-%       "type": "label",
-%       "at": [0, 0, 0],
-%       "anchor": "north east",
-%       "tex": "$O$"
-%     },
-%     { "id": "ball", "type": "sphere", "center": [0, 0, 0], "radius": 2 }
-%   ]
-% }
-% --- シーンの終わり ---
 \begin{tikzpicture}
 \draw[line width=0.6pt] (3.4641,0.684) -- (1.5697,0.31);
 \draw[line width=0.6pt, dotted] (1.5697,0.31) -- (-1.3856,-0.2736);

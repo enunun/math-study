@@ -102,8 +102,6 @@ test.describe('図のシーンの確認', () => {
     const tikz = page.getByRole('region', { name: 'TikZ' });
     await expect(tikz).toContainText(String.raw`\begin{tikzpicture}`);
     await expect(tikz).toContainText('-{Stealth}');
-    // 元のシーンが，コメントとして埋め込まれている．
-    await expect(tikz).toContainText('"id": "shifted_sine"');
   });
 
   test('JSONの構文の誤りは，行と列を示す', async ({ page }) => {

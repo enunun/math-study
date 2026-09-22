@@ -1,7 +1,6 @@
 //! 中間表現を，`TikZ`にする．
 //!
 //! 出力は，手で直さない．図を直すときは，元のシーンを直して，出力し直す．
-//! 元のシーンは，先頭のコメントに埋め込み，`extract_scene`で取り出せる．
 
 use std::fmt::Write as _;
 
@@ -12,10 +11,6 @@ use crate::render::render;
 use crate::scene::{Anchor, Arrow, Color, Line};
 use crate::version::engine_version;
 
-/// 埋め込んだシーンの，始まりを示す行．
-const SCENE_BEGIN: &str = "% --- シーン ---";
-/// 埋め込んだシーンの，終わりを示す行．
-const SCENE_END: &str = "% --- シーンの終わり ---";
 /// 折れ線の，最初の行に並べる点の数．最初の行は，`\draw[…]`が長い．
 const FIRST_LINE_POINTS: usize = 3;
 /// 折れ線の，続きの行に並べる点の数．
@@ -37,9 +32,9 @@ fn coordinate(point: [f64; 2]) -> String {
     format!("({},{})", number(point[0]), number(point[1]))
 }
 
-/// 中間表現を，`TikZ`にする．`scene_json`は，先頭のコメントに埋め込む，元のシーンである．
+/// 中間表現を，`TikZ`にする．
 #[must_use]
-pub fn to_tikz(figure: &Figure, scene_json: &str) -> String {
+pub fn to_tikz(figure: &Figure) -> String {
     let mut out = String::new();
     // 文字列への書き込みは，失敗しない．
     let _ = writeln!(
@@ -48,17 +43,6 @@ pub fn to_tikz(figure: &Figure, scene_json: &str) -> String {
         engine_version()
     );
     out.push_str("% 必要：\\usetikzlibrary{arrows.meta}\n");
-    out.push_str(SCENE_BEGIN);
-    out.push('\n');
-    for line in scene_json.lines() {
-        if line.is_empty() {
-            out.push_str("%\n");
-        } else {
-            let _ = writeln!(out, "% {line}");
-        }
-    }
-    out.push_str(SCENE_END);
-    out.push('\n');
     out.push_str("\\begin{tikzpicture}\n");
     for item in &figure.items {
         match item {
@@ -170,23 +154,7 @@ fn write_label(out: &mut String, label: &LabelItem) {
     );
 }
 
-/// `TikZ`の先頭のコメントから，埋め込まれた元のシーンを取り出す．
-#[must_use]
-pub fn extract_scene(tikz: &str) -> Option<String> {
-    let mut lines = tikz.lines().skip_while(|line| *line != SCENE_BEGIN);
-    lines.next()?;
-    let mut scene = Vec::new();
-    for line in lines {
-        if line == SCENE_END {
-            return Some(scene.join("\n"));
-        }
-        let text = line.strip_prefix("% ").or_else(|| line.strip_prefix('%'))?;
-        scene.push(text);
-    }
-    None
-}
-
-/// シーンのJSONを読み，描画して，`TikZ`にする．JSONは，書かれたままの形で，先頭のコメントに埋め込む．
+/// シーンのJSONを読み，描画して，`TikZ`にする．
 ///
 /// # Errors
 ///
@@ -194,5 +162,5 @@ pub fn extract_scene(tikz: &str) -> Option<String> {
 pub fn export_tikz(scene_json: &str) -> Result<String, Error> {
     let scene = parse_scene(scene_json)?;
     let figure = render(&scene)?;
-    Ok(to_tikz(&figure, scene_json))
+    Ok(to_tikz(&figure))
 }

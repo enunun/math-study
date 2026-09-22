@@ -113,7 +113,7 @@ export type Figure = {
   items: (PathItem | LabelItem | DotItem | FillItem)[];
 };
 
-/** 描画の結果．tikzは，元のシーンを先頭のコメントに埋め込んだTikZである． */
+/** 描画の結果． */
 export type RenderOutcome = { status: "ok"; figure: Figure; tikz: string } | SceneError;
 "#;
 
@@ -241,7 +241,7 @@ fn outcome(json: &str) -> Outcome {
 fn render_outcome(json: &str) -> RenderOutcome {
     let rendered = figure::parse_scene(json).and_then(|scene| {
         let figure = figure::render(&scene)?;
-        let tikz = figure::tikz::to_tikz(&figure, json);
+        let tikz = figure::tikz::to_tikz(&figure);
         Ok((figure, tikz))
     });
     match rendered {
