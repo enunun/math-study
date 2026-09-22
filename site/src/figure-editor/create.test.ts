@@ -19,6 +19,7 @@ const PLANE_TYPES = [
   'parameter',
   'graph',
   'curve',
+  'bezierCurve',
   'grid',
   'point',
   'point',
@@ -42,6 +43,7 @@ const SPACE_TYPES = [
   'vector',
   'segment',
   'curve',
+  'bezierCurve',
 ];
 
 /** 種類を順に，初期値で追加した図． */

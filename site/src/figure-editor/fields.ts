@@ -132,6 +132,14 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     { kind: 'list', key: 'expr', label: '座標の式', item: 'text', count: 'dimension' },
     DOMAIN,
   ],
+  bezierCurve: [
+    {
+      kind: 'json',
+      key: 'bezier',
+      label: '制御点',
+      hint: '[[0,0],[1,2],[2,0]]',
+    },
+  ],
   grid: [
     { kind: 'bound', key: 'x_step', label: 'x方向の間隔', optional: true },
     { kind: 'bound', key: 'y_step', label: 'y方向の間隔', optional: true },

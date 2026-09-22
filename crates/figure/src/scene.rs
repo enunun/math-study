@@ -669,21 +669,36 @@ pub struct Graph {
     pub style: Style,
 }
 
-/// 媒介変数表示の曲線．
+/// 媒介変数表示の曲線．式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)のどちらかで書く．
+/// 両方は書けない．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Curve {
     /// 識別子．
     pub id: String,
-    /// 媒介変数の名前．
-    pub var: String,
-    /// 各座標の式．
+    /// 媒介変数の名前．式で書く曲線だけが持つ．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub var: Option<String>,
+    /// 各座標の式．式で書く曲線だけが持つ．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub expr: Vec<String>,
-    /// 媒介変数の範囲．
-    pub domain: [Bound; 2],
+    /// 媒介変数の範囲．式で書く曲線だけが持つ．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domain: Option<[Bound; 2]>,
+    /// ベジエ曲線の制御点．各点は，平面なら2個，空間なら3個の，数か式で書く座標である．
+    /// 2点以上12点以下を並べる．媒介変数の範囲は，0から1である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bezier: Option<Vec<Vec<Bound>>>,
     /// スタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+}
+
+impl Curve {
+    /// ベジエ曲線の制御点の数の下限．
+    pub const MIN_CONTROL_POINTS: usize = Surface::MIN_CONTROL_POINTS;
+    /// ベジエ曲線の制御点の数の上限．
+    pub const MAX_CONTROL_POINTS: usize = Surface::MAX_CONTROL_POINTS;
 }
 
 impl Object {

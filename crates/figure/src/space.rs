@@ -9,7 +9,7 @@
 use std::collections::HashMap;
 use std::f64::consts::TAU;
 
-use crate::bezier::bezier_point;
+use crate::bezier::{bezier_curve_point, bezier_point};
 use crate::compile::{
     Compiled, CurvePlot, CutPlot, LabelPlot, LinkPlot, Plot, PointPlot, SurfacePlot,
 };
@@ -418,6 +418,13 @@ fn anchor_beyond([x, y]: [f64; 2]) -> Anchor {
 fn curve_items(style: Style, plot: &CurvePlot, compiled: &Compiled, space: &Space) -> Vec<Item> {
     let stroke = stroke_of(&style, Line::Solid, CURVE_WIDTH);
     let at = |t: f64| -> Option<Point3> {
+        if let Some(net) = &plot.net {
+            let point = bezier_curve_point(net, t)?;
+            let [x, y, z] = point.as_slice() else {
+                return None;
+            };
+            return Some([*x, *y, *z]);
+        }
         let values = with_variable(t, &compiled.parameters);
         let [x, y, z] = plot.exprs.as_slice() else {
             return None;

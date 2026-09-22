@@ -20,10 +20,12 @@ pub struct GraphPlot {
 
 /// 式を読んだ後の，媒介変数表示の曲線．
 pub struct CurvePlot {
-    /// 各座標の式(平面では2個，空間では3個)．名前の順は，変数，媒介変数である．
+    /// 各座標の式(平面では2個，空間では3個)．ベジエ曲線では空．名前の順は，変数，媒介変数である．
     pub exprs: Vec<Expr>,
-    /// 評価した媒介変数の範囲．
+    /// 評価した媒介変数の範囲．ベジエ曲線では`[0.0, 1.0]`である．
     pub domain: [f64; 2],
+    /// ベジエ曲線の制御点の座標(各点，平面では2個，空間では3個)．式で書く曲線では`None`．
+    pub net: Option<Vec<Vec<f64>>>,
 }
 
 /// 式を読んだ後の，軸の目盛．
@@ -304,7 +306,16 @@ fn compile_curve(
     parameters: &[f64],
     size: usize,
 ) -> Result<CurvePlot, ErrorKind> {
-    let with_var = expression_names(&curve.var, names)?;
+    if let Some(net) = &curve.bezier {
+        return compile_curve_bezier(net, names, parameters, size);
+    }
+    let Some(var) = &curve.var else {
+        return Err(ErrorKind::Invalid(
+            "曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)で書く．"
+                .to_owned(),
+        ));
+    };
+    let with_var = expression_names(var, names)?;
     let exprs = curve
         .expr
         .iter()
@@ -317,8 +328,49 @@ fn compile_curve(
             found: exprs.len(),
         });
     }
-    let domain = evaluate_domain(&curve.domain, names, parameters)?;
-    Ok(CurvePlot { exprs, domain })
+    let Some(domain) = &curve.domain else {
+        return Err(ErrorKind::Invalid(
+            "曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)で書く．"
+                .to_owned(),
+        ));
+    };
+    let domain = evaluate_domain(domain, names, parameters)?;
+    Ok(CurvePlot {
+        exprs,
+        domain,
+        net: None,
+    })
+}
+
+/// ベジエ曲線の制御点の座標を評価する．座標は，媒介変数と定数を使え，有限の数でなければならない．
+fn compile_curve_bezier(
+    net: &[Vec<Bound>],
+    names: &[&str],
+    parameters: &[f64],
+    size: usize,
+) -> Result<CurvePlot, ErrorKind> {
+    let evaluated = net
+        .iter()
+        .map(|point| {
+            let coordinates = point
+                .iter()
+                .enumerate()
+                .map(|(index, bound)| evaluate_bound("bezier", bound, index, names, parameters))
+                .collect::<Result<Vec<_>, _>>()?;
+            if coordinates.len() == size && coordinates.iter().all(|c| c.is_finite()) {
+                Ok(coordinates)
+            } else {
+                Err(ErrorKind::Invalid(
+                    "ベジエ曲線の制御点の座標は，有限の数にする．".to_owned(),
+                ))
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(CurvePlot {
+        exprs: Vec::new(),
+        domain: [0.0, 1.0],
+        net: Some(evaluated),
+    })
 }
 
 /// 切り口の平面の式を評価し，法線が0でない有限のベクトルであることを確かめる．

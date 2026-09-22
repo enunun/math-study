@@ -256,9 +256,21 @@
     },
     "curve": {
       "type": "object",
-      "required": ["id", "type", "var", "expr", "domain"],
+      "required": ["id", "type"],
       "additionalProperties": false,
-      "description": "媒介変数表示の曲線。",
+      "description": "媒介変数表示の曲線。式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)のどちらかで書き，両方は書けない。",
+      "oneOf": [
+        {
+          "required": ["var", "expr", "domain"],
+          "not": { "anyOf": [{ "required": ["bezier"] }] }
+        },
+        {
+          "required": ["bezier"],
+          "not": {
+            "anyOf": [{ "required": ["var"] }, { "required": ["expr"] }, { "required": ["domain"] }]
+          }
+        }
+      ],
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "curve" },
@@ -271,6 +283,18 @@
           "description": "各座標の式。平面の図では2個，空間の図では3個でなければならないが，どちらの数にするかは`view`で決まり，スキーマでは表せない。"
         },
         "domain": { "$ref": "#/$defs/boundPair" },
+        "bezier": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/bound" },
+            "minItems": 2,
+            "maxItems": 3
+          },
+          "minItems": 2,
+          "maxItems": 12,
+          "description": "ベジエ曲線の制御点。各点は，平面の図では2個，空間の図では3個の，数か式で書く座標である(スキーマでは，2個か3個としか表せない)。2点以上12点以下を並べる。媒介変数の範囲は，0から1である。"
+        },
         "style": { "$ref": "#/$defs/style" }
       }
     },

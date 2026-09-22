@@ -134,7 +134,7 @@ fn 媒介変数表示の曲線を読める() {
     assert_eq!(curve.expr, ["cos(t)", "sin(t)"]);
     assert_eq!(
         curve.domain,
-        [Bound::Number(0.0), Bound::Expression("2*pi".to_owned())]
+        Some([Bound::Number(0.0), Bound::Expression("2*pi".to_owned())])
     );
     assert_eq!(curve.style.line, Some(Line::Dashed));
 }

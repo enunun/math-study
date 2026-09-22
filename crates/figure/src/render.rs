@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 
 use crate::arrow::Stealth;
+use crate::bezier::bezier_curve_point;
 use crate::clip::clip_polyline;
 use crate::compile::{
     Compiled, GraphPlot, GridPlot, LabelPlot, LinkPlot, Plot, PointPlot, TickPlot, compile,
@@ -373,17 +374,21 @@ fn plot_items(
         }
         (Object::Curve(curve), Plot::Curve(plot)) => {
             let [start, end] = plot.domain;
-            let paths = sample(
-                |t| {
-                    let values = with_variable(t, &compiled.parameters);
-                    let [x_expr, y_expr] = plot.exprs.as_slice() else {
+            let at = |t: f64| -> Option<[f64; 2]> {
+                if let Some(net) = &plot.net {
+                    let point = bezier_curve_point(net, t)?;
+                    let [x, y] = point.as_slice() else {
                         return None;
                     };
-                    Some(scale.point(x_expr.eval(&values), y_expr.eval(&values)))
-                },
-                start,
-                end,
-            );
+                    return Some(scale.point(*x, *y));
+                }
+                let values = with_variable(t, &compiled.parameters);
+                let [x_expr, y_expr] = plot.exprs.as_slice() else {
+                    return None;
+                };
+                Some(scale.point(x_expr.eval(&values), y_expr.eval(&values)))
+            };
+            let paths = sample(at, start, end);
             (paths, curve.style)
         }
         _ => return Vec::new(),

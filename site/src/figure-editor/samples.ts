@@ -1,13 +1,17 @@
-import bezier from '@/figures/bezier-patch.json?raw';
-import cone from '@/figures/cone-with-cuts.json?raw';
-import paraboloid from '@/figures/paraboloid-with-axes.json?raw';
-import graphs from '@/figures/sine-and-shifted-sine.json?raw';
-import region from '@/figures/sine-cosine-region.json?raw';
-import spaceVectors from '@/figures/space-vector-addition.json?raw';
-import cylinder from '@/figures/sphere-and-cylinder.json?raw';
-import sphereAxes from '@/figures/sphere-with-axes.json?raw';
-import circles from '@/figures/sphere-with-circles.json?raw';
-import vectors from '@/figures/vector-addition.json?raw';
+const files = import.meta.glob<string>('../figures/*.json', {
+  eager: true,
+  import: 'default',
+  query: '?raw',
+});
+
+/** 見本の図のJSONを，そのソースから読む． */
+function jsonOf(file: string): string {
+  const json = files[`../figures/${file}.json`];
+  if (json === undefined) {
+    throw new Error(`図の見本が見つからない：${file}`);
+  }
+  return json;
+}
 
 /** 編集の出発点にする見本．サイトの記事で使っている図である． */
 interface EditorSample {
@@ -16,18 +20,25 @@ interface EditorSample {
   json: string;
 }
 
-const EDITOR_SAMPLES: readonly EditorSample[] = [
-  { id: 'graphs', label: '関数のグラフ', json: graphs },
-  { id: 'vectors', label: 'ベクトルの和', json: vectors },
-  { id: 'region', label: '2つのグラフの間の領域', json: region },
-  { id: 'sphere', label: '球と座標軸', json: sphereAxes },
-  { id: 'cone', label: '円錐と切り口', json: cone },
-  { id: 'cylinder', label: '球と円柱の交線', json: cylinder },
-  { id: 'bezier', label: 'ベジエ曲面', json: bezier },
-  { id: 'paraboloid', label: '放物面と座標軸', json: paraboloid },
-  { id: 'spaceVectors', label: '空間のベクトルの和', json: spaceVectors },
-  { id: 'circles', label: '球の上の円', json: circles },
+const SAMPLE_FILES: readonly { id: string; label: string; file: string }[] = [
+  { id: 'graphs', label: '関数のグラフ', file: 'sine-and-shifted-sine' },
+  { id: 'vectors', label: 'ベクトルの和', file: 'vector-addition' },
+  { id: 'region', label: '2つのグラフの間の領域', file: 'sine-cosine-region' },
+  { id: 'sphere', label: '球と座標軸', file: 'sphere-with-axes' },
+  { id: 'cone', label: '円錐と切り口', file: 'cone-with-cuts' },
+  { id: 'cylinder', label: '球と円柱の交線', file: 'sphere-and-cylinder' },
+  { id: 'bezier', label: 'ベジエ曲面', file: 'bezier-patch' },
+  { id: 'bezierCurve', label: 'ベジエ曲線', file: 'bezier-curve-control-polygon' },
+  { id: 'paraboloid', label: '放物面と座標軸', file: 'paraboloid-with-axes' },
+  { id: 'spaceVectors', label: '空間のベクトルの和', file: 'space-vector-addition' },
+  { id: 'circles', label: '球の上の円', file: 'sphere-with-circles' },
 ];
+
+const EDITOR_SAMPLES: readonly EditorSample[] = SAMPLE_FILES.map(({ id, label, file }) => ({
+  id,
+  label,
+  json: jsonOf(file),
+}));
 
 export { EDITOR_SAMPLES };
 export type { EditorSample };

@@ -28,6 +28,24 @@
         "domain": [0, "2*pi"]
       }
     },
+    "bezierCurve": {
+      "plane": {
+        "type": "curve",
+        "bezier": [
+          [0, 0],
+          [1, 2],
+          [2, 0]
+        ]
+      },
+      "space": {
+        "type": "curve",
+        "bezier": [
+          [0, 0, 0],
+          [1, 2, 1],
+          [2, 0, 0]
+        ]
+      }
+    },
     "grid": {
       "plane": { "type": "grid", "x_step": 1, "y_step": 1, "style": { "color": "gray" } }
     },

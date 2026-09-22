@@ -409,7 +409,21 @@ fn validate_sphere(sphere: &Sphere) -> Result<(), ErrorKind> {
 }
 
 fn validate_curve(curve: &Curve, view: &View) -> Result<(), ErrorKind> {
-    check_variable(&curve.var)?;
+    match &curve.bezier {
+        Some(net) => validate_curve_bezier(curve, net, view),
+        None => validate_curve_formula(curve, view),
+    }
+}
+
+/// 曲線を式で書く形の検査．
+fn validate_curve_formula(curve: &Curve, view: &View) -> Result<(), ErrorKind> {
+    let Some(var) = &curve.var else {
+        return Err(ErrorKind::Invalid(
+            "曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)で書く．"
+                .to_owned(),
+        ));
+    };
+    check_variable(var)?;
     let expected = curve_expressions(view);
     if curve.expr.len() != expected {
         return Err(ErrorKind::ExpressionCount {
@@ -420,7 +434,43 @@ fn validate_curve(curve: &Curve, view: &View) -> Result<(), ErrorKind> {
     for expr in &curve.expr {
         non_empty("expr", expr)?;
     }
-    check_domain(&curve.domain)
+    let Some(domain) = &curve.domain else {
+        return Err(ErrorKind::Invalid(
+            "曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)で書く．"
+                .to_owned(),
+        ));
+    };
+    check_domain(domain)
+}
+
+/// ベジエ曲線の検査．制御点は，2点以上12点以下を，平面なら2個，空間なら3個の座標で並べる．
+fn validate_curve_bezier(curve: &Curve, net: &[Vec<Bound>], view: &View) -> Result<(), ErrorKind> {
+    if curve.var.is_some() || !curve.expr.is_empty() || curve.domain.is_some() {
+        return Err(ErrorKind::Invalid(
+            "ベジエ曲線(`bezier`)は，式(`var`，`expr`，`domain`)と同時に書けない．".to_owned(),
+        ));
+    }
+    if net.len() < Curve::MIN_CONTROL_POINTS {
+        return Err(ErrorKind::Invalid(format!(
+            "ベジエ曲線の制御点は，{}点以上並べる．",
+            Curve::MIN_CONTROL_POINTS
+        )));
+    }
+    if net.len() > Curve::MAX_CONTROL_POINTS {
+        return Err(ErrorKind::Invalid(format!(
+            "ベジエ曲線の制御点は，{}点以下にする．",
+            Curve::MAX_CONTROL_POINTS
+        )));
+    }
+    let expected = curve_expressions(view);
+    for point in net {
+        if point.len() != expected {
+            return Err(ErrorKind::Invalid(format!(
+                "ベジエ曲線の制御点は，座標を{expected}個(平面ならx，y，空間ならx，y，z)で書く．"
+            )));
+        }
+    }
+    Ok(())
 }
 
 /// 曲線の式の数．平面の曲線は2個，空間の曲線は3個である．

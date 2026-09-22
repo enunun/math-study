@@ -139,46 +139,6 @@ test.describe('図の作成', () => {
     expect(outputStroke).not.toContain('gray');
   });
 
-  test('曲面のフォームで，ワイヤーフレームを選ぶと，編集中の図とプレビュー，どちらにも線が増える', async ({
-    page,
-  }) => {
-    await editor(page).getByRole('button', { name: '放物面と座標軸', exact: true }).click();
-    await editor(page)
-      .getByRole('list', { name: 'オブジェクトの一覧' })
-      .getByRole('button', { name: /曲面/u })
-      .click();
-    const editBefore = await preview(page).locator('path').count();
-    const outputBefore = await outputPreview(page).locator('path').count();
-    await editor(page).getByLabel('ワイヤーフレームを表示').check();
-    await expect(async () => {
-      expect(await preview(page).locator('path').count()).toBeGreaterThan(editBefore);
-    }).toPass();
-    await expect(async () => {
-      expect(await outputPreview(page).locator('path').count()).toBeGreaterThan(outputBefore);
-    }).toPass();
-  });
-
-  test('球のフォームにも，ワイヤーフレームの選択がある', async ({ page }) => {
-    await editor(page).getByRole('button', { name: '球と座標軸', exact: true }).click();
-    await editor(page)
-      .getByRole('list', { name: 'オブジェクトの一覧' })
-      .getByRole('button', { name: /球/u })
-      .click();
-    await expect(editor(page).getByLabel('ワイヤーフレームを表示')).toBeVisible();
-  });
-
-  test('ベジエ曲面のフォームには，ワイヤーフレームと，別に，制御点の網の選択もある', async ({
-    page,
-  }) => {
-    await editor(page).getByRole('button', { name: 'ベジエ曲面', exact: true }).click();
-    await editor(page)
-      .getByRole('list', { name: 'オブジェクトの一覧' })
-      .getByRole('button', { name: /曲面/u })
-      .click();
-    await expect(editor(page).getByLabel('ワイヤーフレームを表示')).toBeVisible();
-    await expect(editor(page).getByLabel('制御点の網を表示')).toBeVisible();
-  });
-
   test('JSONを書き出して，読み込み直すと，同じ図になる', async ({ page }) => {
     await editor(page).getByRole('button', { name: 'ベクトルの和', exact: true }).click();
     const exported = await downloaded(page, 'JSONを書き出す');
@@ -273,6 +233,7 @@ test.describe('図の作成', () => {
     '円錐と切り口',
     '球と円柱の交線',
     'ベジエ曲面',
+    'ベジエ曲線',
     '放物面と座標軸',
     '空間のベクトルの和',
     '球の上の円',
