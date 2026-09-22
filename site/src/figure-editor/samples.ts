@@ -1,9 +1,12 @@
 import bezier from '@/figures/bezier-patch.json?raw';
 import cone from '@/figures/cone-with-cuts.json?raw';
+import paraboloid from '@/figures/paraboloid-with-axes.json?raw';
 import graphs from '@/figures/sine-and-shifted-sine.json?raw';
 import region from '@/figures/sine-cosine-region.json?raw';
+import spaceVectors from '@/figures/space-vector-addition.json?raw';
 import cylinder from '@/figures/sphere-and-cylinder.json?raw';
 import sphereAxes from '@/figures/sphere-with-axes.json?raw';
+import circles from '@/figures/sphere-with-circles.json?raw';
 import vectors from '@/figures/vector-addition.json?raw';
 
 /** 編集の出発点にする見本．サイトの記事で使っている図である． */
@@ -21,6 +24,9 @@ const EDITOR_SAMPLES: readonly EditorSample[] = [
   { id: 'cone', label: '円錐と切り口', json: cone },
   { id: 'cylinder', label: '球と円柱の交線', json: cylinder },
   { id: 'bezier', label: 'ベジエ曲面', json: bezier },
+  { id: 'paraboloid', label: '放物面と座標軸', json: paraboloid },
+  { id: 'spaceVectors', label: '空間のベクトルの和', json: spaceVectors },
+  { id: 'circles', label: '球の上の円', json: circles },
 ];
 
 export { EDITOR_SAMPLES };
