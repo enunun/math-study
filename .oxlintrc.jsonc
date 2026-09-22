@@ -89,6 +89,8 @@
       // ブラウザの中で測る関数は，外の変数を使えないため，1つの関数にまとめる．文の数の上限は外す．
       // innerTextはPlaywrightのメソッドで，DOMのプロパティではない．
       // スクリプトは，ESMのまま直接実行するため，トップレベルのawaitを使える．
+      // 同じページを順に操作するループ(ボタンを押して結果を確かめる，を繰り返すなど)は，
+      // Promise.allで並列化すると操作の順序が崩れるため，ループの中のawaitを許す．
       "files": ["e2e/**", "playwright.config.ts"],
       "rules": {
         "import/no-nodejs-modules": "off",
@@ -96,6 +98,7 @@
         "node/no-top-level-await": "off",
         "max-lines-per-function": "off",
         "max-statements": "off",
+        "no-await-in-loop": "off",
         "no-magic-numbers": "off",
         "unicorn/prefer-dom-node-text-content": "off",
       },

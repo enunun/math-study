@@ -17,11 +17,9 @@ html[data-hide='labels'] .figure-frame svg { visibility: hidden; }
 async function captureKinds(tab: Page, names: string[], files: Map<string, string>): Promise<void> {
   const frames = tab.locator('.figure-frame');
   for (const kind of KINDS) {
-    // eslint-disable-next-line no-await-in-loop -- 表示を切り替えては，撮る．順に行う．
     await tab.evaluate((value) => {
       document.documentElement.dataset.hide = value;
     }, kind);
-    // eslint-disable-next-line no-await-in-loop -- 表示を切り替えては，撮る．順に行う．
     await Promise.all(
       names.map(async (name, index) => {
         const file = path.join(OUT_DIR, `${name}-${kind}-svg.png`);
@@ -42,17 +40,11 @@ async function captureSvgs(pages: Map<string, string[]>): Promise<Map<string, st
   });
   const files = new Map<string, string>();
   for (const [page, names] of pages) {
-    // eslint-disable-next-line no-await-in-loop -- ページごとに，順に開く．
     const tab = await context.newPage();
-    // eslint-disable-next-line no-await-in-loop -- ページごとに，順に開く．
     await tab.goto(`${BASE_URL}${page}`);
-    // eslint-disable-next-line no-await-in-loop -- ページごとに，順に開く．
     await tab.waitForSelector('.figure-label mjx-container');
-    // eslint-disable-next-line no-await-in-loop -- ページごとに，順に開く．
     await tab.addStyleTag({ content: HIDE_CSS });
-    // eslint-disable-next-line no-await-in-loop -- ページごとに，順に開く．
     await captureKinds(tab, names, files);
-    // eslint-disable-next-line no-await-in-loop -- ページごとに，順に開く．
     await tab.close();
   }
   await browser.close();

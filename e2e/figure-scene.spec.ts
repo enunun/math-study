@@ -61,40 +61,21 @@ test.describe('図のシーンの確認', () => {
     await expect(canonical).not.toContainText('"line": "solid"');
   });
 
-  test('新しい版は，版の誤りとして，両方の版を示す', async ({ page }) => {
+  test('シーンの誤りは，誤りとして表示し，入力欄を誤りの状態にする', async ({ page }) => {
     await page.getByRole('button', { name: '新しい版' }).click();
     const alert = page.getByRole('alert');
     await expect(alert).toContainText('99.0.0');
-    await expect(alert).toContainText('incompatible_version');
     await expect(input(page)).toHaveAttribute('aria-invalid', 'true');
     await expect(page.getByText('シーンを読み込めた．')).toHaveCount(0);
   });
 
-  test('オブジェクトの誤りは，そのidと，元の説明を示す', async ({ page }) => {
-    await page.getByRole('button', { name: '未知の項目' }).click();
-    const alert = page.getByRole('alert');
-    await expect(alert).toContainText('x_axis');
-    await expect(alert).toContainText('colour');
-  });
-
-  test('idの重なりは，重なったidを示す', async ({ page }) => {
-    await page.getByRole('button', { name: 'idの重なり' }).click();
-    await expect(page.getByRole('alert')).toContainText('duplicate_id');
-    await expect(page.getByRole('alert')).toContainText('sine');
-  });
-
-  test('範囲の誤りを示す', async ({ page }) => {
-    await page.getByRole('button', { name: '範囲の誤り' }).click();
-    await expect(page.getByRole('alert')).toContainText('invalid_range');
-  });
-
-  test('式の誤りは，項目と式の中の位置を示す', async ({ page }) => {
-    await page.getByRole('button', { name: '式の誤り' }).click();
-    const alert = page.getByRole('alert');
-    await expect(alert).toContainText('expression');
-    await expect(alert).toContainText('shifted_sine');
-    await expect(alert).toContainText(/expr.*1番目の式/su);
-    await expect(alert).toContainText(/\d+文字目/u);
+  test('見本のそれぞれの誤りが，読み込み時に検出される', async ({ page }) => {
+    // 誤りの内容(項目名，式の位置など)は，crates/figureとwasm.test.tsの単体テストで確認済みなので，
+    // ここでは，それぞれの見本が，実際にブラウザ上で誤りとして表示されることだけを確かめる．
+    for (const name of ['未知の項目', 'idの重なり', '範囲の誤り', '式の誤り', 'JSONの構文の誤り']) {
+      await page.getByRole('button', { name }).click();
+      await expect(page.getByRole('alert')).toBeVisible();
+    }
   });
 
   test('読み込めたシーンの，TikZの出力を表示する', async ({ page }) => {
@@ -102,11 +83,6 @@ test.describe('図のシーンの確認', () => {
     const tikz = page.getByRole('region', { name: 'TikZ' });
     await expect(tikz).toContainText(String.raw`\begin{tikzpicture}`);
     await expect(tikz).toContainText('-{Stealth}');
-  });
-
-  test('JSONの構文の誤りは，行と列を示す', async ({ page }) => {
-    await page.getByRole('button', { name: 'JSONの構文の誤り' }).click();
-    await expect(page.getByRole('alert')).toContainText(/\d+行\d+列/u);
   });
 
   test('入力を書き換えると，結果が更新される', async ({ page }) => {

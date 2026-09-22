@@ -75,6 +75,8 @@ Find the run whose `head_sha` matches the local commit and read its `status` and
 
 ## Adding E2E tests
 
+- E2E is for what only a real browser can show: layout, computed style, focus, drag, accessibility, console errors. When a feature's correctness or its error messages can be checked without a browser, check them in the Rust tests (`crates/figure/tests/`) or the Vitest unit tests (`site/src/**/*.test.ts`, including `wasm.test.ts`, which calls the Wasm module directly) instead, and add at most one E2E test per feature to confirm it is wired into the page — rendered, or an error surfaces as `role="alert"` — rather than one E2E test per case. `e2e/figure-scene.spec.ts`'s error tests follow this: one test checks the full error-display wiring, and one loops over the remaining sample buttons checking only that an alert appears, because the wording of each error is already covered in `crates/figure/tests/` and `wasm.test.ts`.
+- During iteration, run a single spec file (`pnpm exec playwright test e2e/<file>.spec.ts`) instead of the full `mise run e2e`; run the full suite once before committing.
 - Put tests in `e2e/*.spec.ts`. Helpers that are not specs (such as `routes.ts`) must not end in `.spec.ts`. Open pages by a path relative to the base path (`page.goto('dev/notation/')`).
 - Find elements by what the user sees (`getByRole`, and so on). Compare visible text with `toHaveText(…, { useInnerText: true })`, which excludes text in hidden elements.
 - Check the JavaScript-disabled rendering with `test.use({ javaScriptEnabled: false })`.
