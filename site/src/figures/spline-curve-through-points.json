@@ -1,0 +1,25 @@
+{
+  "version": "0.1.0",
+  "description": "4個の点A，B，C，Dを，順に通るスプライン曲線．",
+  "view": { "x": [-1, 5], "y": [-3, 4], "unit": { "x": "1cm", "y": "1cm" } },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "label": "x" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "label": "y" },
+    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "$O$" },
+    { "id": "A", "type": "point", "at": [0, 0], "dot": true, "label": "A", "anchor": "south west" },
+    { "id": "B", "type": "point", "at": [1, 3], "dot": true, "label": "B", "anchor": "north" },
+    { "id": "C", "type": "point", "at": [3, -2], "dot": true, "label": "C", "anchor": "south" },
+    { "id": "D", "type": "point", "at": [4, 1], "dot": true, "label": "D", "anchor": "north east" },
+    {
+      "id": "curve",
+      "type": "curve",
+      "spline": [
+        [0, 0],
+        [1, 3],
+        [3, -2],
+        [4, 1]
+      ],
+      "style": { "color": "blue" }
+    }
+  ]
+}

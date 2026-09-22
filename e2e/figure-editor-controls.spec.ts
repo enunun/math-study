@@ -80,6 +80,20 @@ test.describe('曲面・球・曲線の制御点', () => {
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
 
+  test('スプライン曲線を足すと，通る点で図を描ける', async ({ page }) => {
+    const before = await preview(page).locator('path').count();
+    await addObject(page, '曲線(スプライン)');
+    await expect(async () => {
+      expect(await preview(page).locator('path').count()).toBeGreaterThan(before);
+    }).toPass();
+    const withDefault = await preview(page).innerHTML();
+    await editor(page).getByLabel('通る点(JSON)').fill('[[0,0],[2,3],[4,0],[5,-1]]');
+    await expect(async () => {
+      expect(await preview(page).innerHTML()).not.toBe(withDefault);
+    }).toPass();
+    await expect(editor(page).getByRole('alert')).toHaveCount(0);
+  });
+
   test('接線は，グラフを選んで接する点を決めると描ける', async ({ page }) => {
     await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
     const before = await preview(page).locator('path').count();

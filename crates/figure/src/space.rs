@@ -24,6 +24,7 @@ use crate::scene::{
     Anchor, Arrow, Axis, Cut, Direction, Hidden, Intersection, Label, Line, Object, Point, Scene,
     SpaceView, Sphere, Style, Surface, TangentPlane,
 };
+use crate::spline::catmull_rom_point;
 use crate::surface::{Frame, Mesh, Rim};
 
 /// 空間の点．
@@ -451,6 +452,13 @@ fn curve_items(style: Style, plot: &CurvePlot, compiled: &Compiled, space: &Spac
     let at = |t: f64| -> Option<Point3> {
         if let Some(net) = &plot.net {
             let point = bezier_curve_point(net, t)?;
+            let [x, y, z] = point.as_slice() else {
+                return None;
+            };
+            return Some([*x, *y, *z]);
+        }
+        if let Some(points) = &plot.spline {
+            let point = catmull_rom_point(points, t)?;
             let [x, y, z] = point.as_slice() else {
                 return None;
             };

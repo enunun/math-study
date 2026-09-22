@@ -46,6 +46,26 @@
         ]
       }
     },
+    "splineCurve": {
+      "plane": {
+        "type": "curve",
+        "spline": [
+          [0, 0],
+          [1, 2],
+          [2, 0],
+          [3, 1]
+        ]
+      },
+      "space": {
+        "type": "curve",
+        "spline": [
+          [0, 0, 0],
+          [1, 2, 1],
+          [2, 0, 0],
+          [3, 1, 1]
+        ]
+      }
+    },
     "tangent_line": {
       "plane": { "type": "tangent_line", "of": "", "at": 0 }
     },

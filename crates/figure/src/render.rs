@@ -19,6 +19,7 @@ use crate::scene::{
     TangentLine, View,
 };
 use crate::space::render_space;
+use crate::spline::catmull_rom_point;
 
 /// 軸の線幅(pt)．`TikZ`の`semithick`である．
 pub const AXIS_WIDTH: f64 = 0.6;
@@ -413,6 +414,13 @@ fn plot_items(
                     };
                     return Some(scale.point(*x, *y));
                 }
+                if let Some(points) = &plot.spline {
+                    let point = catmull_rom_point(points, t)?;
+                    let [x, y] = point.as_slice() else {
+                        return None;
+                    };
+                    return Some(scale.point(*x, *y));
+                }
                 let values = with_variable(t, &compiled.parameters);
                 let [x_expr, y_expr] = plot.exprs.as_slice() else {
                     return None;
@@ -453,6 +461,13 @@ fn tangent_of(
     let at = |t: f64| -> Option<[f64; 2]> {
         if let Some(net) = &curve.net {
             let point = bezier_curve_point(net, t)?;
+            let [x, y] = point.as_slice() else {
+                return None;
+            };
+            return Some([*x, *y]);
+        }
+        if let Some(points) = &curve.spline {
+            let point = catmull_rom_point(points, t)?;
             let [x, y] = point.as_slice() else {
                 return None;
             };

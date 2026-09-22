@@ -705,8 +705,8 @@ pub struct Graph {
     pub style: Style,
 }
 
-/// 媒介変数表示の曲線．式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)のどちらかで書く．
-/// 両方は書けない．
+/// 媒介変数表示の曲線．式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)か，
+/// スプライン曲線が通る点(`spline`)の，どれか1つで書く．2つ以上は書けない．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Curve {
@@ -725,15 +725,20 @@ pub struct Curve {
     /// 2点以上12点以下を並べる．媒介変数の範囲は，0から1である．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bezier: Option<Vec<Vec<Bound>>>,
+    /// スプライン曲線が，順に通る点．各点は，平面なら2個，空間なら3個の，数か式で書く座標である．
+    /// 2点以上12点以下を並べる．媒介変数の範囲は，0から1である．Catmull-Romの方法で，
+    /// 与えた点をすべて通る滑らかな曲線になる．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spline: Option<Vec<Vec<Bound>>>,
     /// スタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
 }
 
 impl Curve {
-    /// ベジエ曲線の制御点の数の下限．
+    /// ベジエ曲線・スプライン曲線の制御点(通る点)の数の下限．
     pub const MIN_CONTROL_POINTS: usize = Surface::MIN_CONTROL_POINTS;
-    /// ベジエ曲線の制御点の数の上限．
+    /// ベジエ曲線・スプライン曲線の制御点(通る点)の数の上限．
     pub const MAX_CONTROL_POINTS: usize = Surface::MAX_CONTROL_POINTS;
 }
 

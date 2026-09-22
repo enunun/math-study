@@ -20,6 +20,7 @@ const PLANE_TYPES = [
   'graph',
   'curve',
   'bezierCurve',
+  'splineCurve',
   'tangent_line',
   'grid',
   'point',
@@ -46,6 +47,7 @@ const SPACE_TYPES = [
   'segment',
   'curve',
   'bezierCurve',
+  'splineCurve',
 ];
 
 /** 種類を順に，初期値で追加した図． */

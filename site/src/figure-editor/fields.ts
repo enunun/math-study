@@ -140,6 +140,14 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
       hint: '[[0,0],[1,2],[2,0]]',
     },
   ],
+  splineCurve: [
+    {
+      kind: 'json',
+      key: 'spline',
+      label: '通る点',
+      hint: '[[0,0],[1,2],[2,0],[3,1]]',
+    },
+  ],
   tangent_line: [
     { kind: 'reference', key: 'of', label: '接する対象', of: ['graph', 'curve'] },
     { kind: 'bound', key: 'at', label: '接する点' },

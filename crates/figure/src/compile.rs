@@ -20,12 +20,15 @@ pub struct GraphPlot {
 
 /// 式を読んだ後の，媒介変数表示の曲線．
 pub struct CurvePlot {
-    /// 各座標の式(平面では2個，空間では3個)．ベジエ曲線では空．名前の順は，変数，媒介変数である．
+    /// 各座標の式(平面では2個，空間では3個)．ベジエ曲線・スプライン曲線では空．
+    /// 名前の順は，変数，媒介変数である．
     pub exprs: Vec<Expr>,
-    /// 評価した媒介変数の範囲．ベジエ曲線では`[0.0, 1.0]`である．
+    /// 評価した媒介変数の範囲．ベジエ曲線・スプライン曲線では`[0.0, 1.0]`である．
     pub domain: [f64; 2],
-    /// ベジエ曲線の制御点の座標(各点，平面では2個，空間では3個)．式で書く曲線では`None`．
+    /// ベジエ曲線の制御点の座標(各点，平面では2個，空間では3個)．それ以外の曲線では`None`．
     pub net: Option<Vec<Vec<f64>>>,
+    /// スプライン曲線が順に通る点の座標(各点，平面では2個，空間では3個)．それ以外の曲線では`None`．
+    pub spline: Option<Vec<Vec<f64>>>,
 }
 
 /// 式を読んだ後の，接線．
@@ -324,6 +327,11 @@ fn compile_graph(
     Ok(GraphPlot { expr, domain })
 }
 
+/// 曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)か，
+/// スプライン曲線が通る点(`spline`)の，どれか1つで書く．
+const CURVE_FORM_HINT: &str = "曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)か，\
+     スプライン曲線の点(`spline`)で書く．";
+
 fn compile_curve(
     curve: &Curve,
     names: &[&str],
@@ -331,13 +339,25 @@ fn compile_curve(
     size: usize,
 ) -> Result<CurvePlot, ErrorKind> {
     if let Some(net) = &curve.bezier {
-        return compile_curve_bezier(net, names, parameters, size);
+        let evaluated = compile_curve_points(net, names, parameters, size, "bezier")?;
+        return Ok(CurvePlot {
+            exprs: Vec::new(),
+            domain: [0.0, 1.0],
+            net: Some(evaluated),
+            spline: None,
+        });
+    }
+    if let Some(points) = &curve.spline {
+        let evaluated = compile_curve_points(points, names, parameters, size, "spline")?;
+        return Ok(CurvePlot {
+            exprs: Vec::new(),
+            domain: [0.0, 1.0],
+            net: None,
+            spline: Some(evaluated),
+        });
     }
     let Some(var) = &curve.var else {
-        return Err(ErrorKind::Invalid(
-            "曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)で書く．"
-                .to_owned(),
-        ));
+        return Err(ErrorKind::Invalid(CURVE_FORM_HINT.to_owned()));
     };
     let with_var = expression_names(var, names)?;
     let exprs = curve
@@ -353,48 +373,43 @@ fn compile_curve(
         });
     }
     let Some(domain) = &curve.domain else {
-        return Err(ErrorKind::Invalid(
-            "曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)で書く．"
-                .to_owned(),
-        ));
+        return Err(ErrorKind::Invalid(CURVE_FORM_HINT.to_owned()));
     };
     let domain = evaluate_domain(domain, names, parameters)?;
     Ok(CurvePlot {
         exprs,
         domain,
         net: None,
+        spline: None,
     })
 }
 
-/// ベジエ曲線の制御点の座標を評価する．座標は，媒介変数と定数を使え，有限の数でなければならない．
-fn compile_curve_bezier(
-    net: &[Vec<Bound>],
+/// ベジエ曲線・スプライン曲線に共通の，点の座標を評価する処理．座標は，媒介変数と定数を使え，
+/// 有限の数でなければならない．
+fn compile_curve_points(
+    points: &[Vec<Bound>],
     names: &[&str],
     parameters: &[f64],
     size: usize,
-) -> Result<CurvePlot, ErrorKind> {
-    let evaluated = net
+    field: &'static str,
+) -> Result<Vec<Vec<f64>>, ErrorKind> {
+    points
         .iter()
         .map(|point| {
             let coordinates = point
                 .iter()
                 .enumerate()
-                .map(|(index, bound)| evaluate_bound("bezier", bound, index, names, parameters))
+                .map(|(index, bound)| evaluate_bound(field, bound, index, names, parameters))
                 .collect::<Result<Vec<_>, _>>()?;
             if coordinates.len() == size && coordinates.iter().all(|c| c.is_finite()) {
                 Ok(coordinates)
             } else {
-                Err(ErrorKind::Invalid(
-                    "ベジエ曲線の制御点の座標は，有限の数にする．".to_owned(),
-                ))
+                Err(ErrorKind::Invalid(format!(
+                    "`{field}`の点の座標は，有限の数にする．"
+                )))
             }
         })
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(CurvePlot {
-        exprs: Vec::new(),
-        domain: [0.0, 1.0],
-        net: Some(evaluated),
-    })
+        .collect::<Result<Vec<_>, _>>()
 }
 
 /// 接線の接する点を評価する．接する対象(`of`)がグラフか曲線かは，描画のときに`id`で引く．

@@ -455,20 +455,28 @@ fn validate_tangent_plane(tangent: &TangentPlane) -> Result<(), ErrorKind> {
     Ok(())
 }
 
+/// 曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)か，
+/// スプライン曲線が通る点(`spline`)の，どれか1つで書く．
+const CURVE_FORM_HINT: &str = "曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)か，\
+     スプライン曲線の点(`spline`)で書く．";
+
 fn validate_curve(curve: &Curve, view: &View) -> Result<(), ErrorKind> {
-    match &curve.bezier {
-        Some(net) => validate_curve_bezier(curve, net, view),
-        None => validate_curve_formula(curve, view),
+    match (&curve.bezier, &curve.spline) {
+        (Some(net), None) => validate_curve_points(curve, net, view, "ベジエ曲線", "bezier"),
+        (None, Some(points)) => {
+            validate_curve_points(curve, points, view, "スプライン曲線", "spline")
+        }
+        (Some(_), Some(_)) => Err(ErrorKind::Invalid(
+            "ベジエ曲線(`bezier`)とスプライン曲線(`spline`)は，同時に書けない．".to_owned(),
+        )),
+        (None, None) => validate_curve_formula(curve, view),
     }
 }
 
 /// 曲線を式で書く形の検査．
 fn validate_curve_formula(curve: &Curve, view: &View) -> Result<(), ErrorKind> {
     let Some(var) = &curve.var else {
-        return Err(ErrorKind::Invalid(
-            "曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)で書く．"
-                .to_owned(),
-        ));
+        return Err(ErrorKind::Invalid(CURVE_FORM_HINT.to_owned()));
     };
     check_variable(var)?;
     let expected = curve_expressions(view);
@@ -482,38 +490,42 @@ fn validate_curve_formula(curve: &Curve, view: &View) -> Result<(), ErrorKind> {
         non_empty("expr", expr)?;
     }
     let Some(domain) = &curve.domain else {
-        return Err(ErrorKind::Invalid(
-            "曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)で書く．"
-                .to_owned(),
-        ));
+        return Err(ErrorKind::Invalid(CURVE_FORM_HINT.to_owned()));
     };
     check_domain(domain)
 }
 
-/// ベジエ曲線の検査．制御点は，2点以上12点以下を，平面なら2個，空間なら3個の座標で並べる．
-fn validate_curve_bezier(curve: &Curve, net: &[Vec<Bound>], view: &View) -> Result<(), ErrorKind> {
+/// ベジエ曲線・スプライン曲線に共通の検査．点(制御点か，通る点)は，2点以上12点以下を，
+/// 平面なら2個，空間なら3個の座標で並べる．式とは同時に書けない．
+fn validate_curve_points(
+    curve: &Curve,
+    points: &[Vec<Bound>],
+    view: &View,
+    name: &str,
+    field: &str,
+) -> Result<(), ErrorKind> {
     if curve.var.is_some() || !curve.expr.is_empty() || curve.domain.is_some() {
-        return Err(ErrorKind::Invalid(
-            "ベジエ曲線(`bezier`)は，式(`var`，`expr`，`domain`)と同時に書けない．".to_owned(),
-        ));
-    }
-    if net.len() < Curve::MIN_CONTROL_POINTS {
         return Err(ErrorKind::Invalid(format!(
-            "ベジエ曲線の制御点は，{}点以上並べる．",
+            "{name}(`{field}`)は，式(`var`，`expr`，`domain`)と同時に書けない．"
+        )));
+    }
+    if points.len() < Curve::MIN_CONTROL_POINTS {
+        return Err(ErrorKind::Invalid(format!(
+            "{name}の点は，{}点以上並べる．",
             Curve::MIN_CONTROL_POINTS
         )));
     }
-    if net.len() > Curve::MAX_CONTROL_POINTS {
+    if points.len() > Curve::MAX_CONTROL_POINTS {
         return Err(ErrorKind::Invalid(format!(
-            "ベジエ曲線の制御点は，{}点以下にする．",
+            "{name}の点は，{}点以下にする．",
             Curve::MAX_CONTROL_POINTS
         )));
     }
     let expected = curve_expressions(view);
-    for point in net {
+    for point in points {
         if point.len() != expected {
             return Err(ErrorKind::Invalid(format!(
-                "ベジエ曲線の制御点は，座標を{expected}個(平面ならx，y，空間ならx，y，z)で書く．"
+                "{name}の点は，座標を{expected}個(平面ならx，y，空間ならx，y，z)で書く．"
             )));
         }
     }

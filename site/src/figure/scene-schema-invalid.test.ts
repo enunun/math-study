@@ -74,6 +74,28 @@ describe('シーンのJSON Schemaは，構造の誤りを断る', () => {
     expect(invalid({ ...plane, objects: [{ id: 'c', type: 'curve' }] })).toBe(true);
   });
 
+  it('曲線が，ベジエ曲線とスプライン曲線の両方を持てば断る', () => {
+    expect(
+      invalid({
+        ...plane,
+        objects: [
+          {
+            id: 'c',
+            type: 'curve',
+            bezier: [
+              [0, 0],
+              [1, 1],
+            ],
+            spline: [
+              [0, 0],
+              [1, 1],
+            ],
+          },
+        ],
+      }),
+    ).toBe(true);
+  });
+
   it('曲面が，式とベジエ曲面の両方を持てば断る', () => {
     expect(
       invalid({

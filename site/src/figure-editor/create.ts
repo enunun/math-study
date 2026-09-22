@@ -19,6 +19,8 @@ const SPACE: readonly ViewKind[] = ['space'];
 const BEZIER = 'bezier';
 /** ベジエ曲線は，`type`が`curve`で，`bezier`の項目を持つ．追加の一覧では，別の種類として扱う． */
 const BEZIER_CURVE = 'bezierCurve';
+/** スプライン曲線は，`type`が`curve`で，`spline`の項目を持つ．追加の一覧では，別の種類として扱う． */
+const SPLINE_CURVE = 'splineCurve';
 const PAIR = 2;
 
 const OBJECT_TYPES: readonly ObjectType[] = [
@@ -28,6 +30,7 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'graph', label: '関数のグラフ', kinds: PLANE },
   { type: 'curve', label: '曲線(式)', kinds: BOTH },
   { type: BEZIER_CURVE, label: '曲線(ベジエ)', kinds: BOTH },
+  { type: SPLINE_CURVE, label: '曲線(スプライン)', kinds: BOTH },
   { type: 'tangent_line', label: '接線', kinds: PLANE },
   { type: 'grid', label: '格子', kinds: PLANE },
   { type: 'point', label: '点', kinds: BOTH },
@@ -46,13 +49,20 @@ function typesFor(kind: ViewKind): readonly ObjectType[] {
   return OBJECT_TYPES.filter((entry) => entry.kinds.includes(kind));
 }
 
-/** 追加の一覧での種類の名前．ベジエ曲面・曲線は，`surface`・`curve`ではなく，別の名前である． */
+/** 追加の一覧での種類の名前．ベジエ曲面・曲線とスプライン曲線は，`surface`・`curve`ではなく，
+ * 別の名前である． */
 function listedType(object: JsonObject): string {
   const type = stringOf(object, 'type');
   if (type === 'surface' && BEZIER in object) {
     return BEZIER;
   }
-  return type === 'curve' && BEZIER in object ? BEZIER_CURVE : type;
+  if (type !== 'curve') {
+    return type;
+  }
+  if (BEZIER in object) {
+    return BEZIER_CURVE;
+  }
+  return 'spline' in object ? SPLINE_CURVE : type;
 }
 
 /** そのオブジェクトが，この図で使えるか． */
@@ -60,12 +70,12 @@ function allowedIn(object: JsonObject, kind: ViewKind): boolean {
   return typesFor(kind).some((entry) => entry.type === listedType(object));
 }
 
-/** 識別子の元になる名前．ベジエ曲面は`surface`，ベジエ曲線は`curve`から始める． */
+/** 識別子の元になる名前．ベジエ曲面は`surface`，ベジエ曲線とスプライン曲線は`curve`から始める． */
 function stemOf(type: string): string {
   if (type === BEZIER) {
     return 'surface';
   }
-  return type === BEZIER_CURVE ? 'curve' : type;
+  return type === BEZIER_CURVE || type === SPLINE_CURVE ? 'curve' : type;
 }
 
 /** 追加済みのオブジェクトのうち，指定の種類の識別子を，並びの順に返す． */

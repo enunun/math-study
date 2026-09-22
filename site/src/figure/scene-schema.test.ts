@@ -102,6 +102,47 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
     ).toBe(true);
   });
 
+  it('スプライン曲線は，平面でも空間でも，スキーマに合う', () => {
+    const plane = minimalObject('plane');
+    const space = minimalObject('space');
+    expect(
+      validate({
+        ...plane,
+        objects: [
+          {
+            id: 'c',
+            type: 'curve',
+            spline: [
+              [0, 0],
+              [1, 2],
+              [2, 0],
+              [3, 1],
+            ],
+          },
+        ],
+      }),
+      JSON.stringify(validate.errors),
+    ).toBe(true);
+    expect(
+      validate({
+        ...space,
+        objects: [
+          {
+            id: 'c',
+            type: 'curve',
+            spline: [
+              [0, 0, 0],
+              [1, 2, 1],
+              [2, 0, 0],
+              [3, 1, 1],
+            ],
+          },
+        ],
+      }),
+      JSON.stringify(validate.errors),
+    ).toBe(true);
+  });
+
   it('接線と接平面は，スキーマに合う', () => {
     const plane = minimalObject('plane');
     const space = minimalObject('space');
@@ -149,6 +190,7 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
               'graph',
               'curve',
               'bezierCurve',
+              'splineCurve',
               'tangent_line',
               'grid',
               'point',
@@ -174,6 +216,7 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
               'segment',
               'curve',
               'bezierCurve',
+              'splineCurve',
             ];
       for (const type of types) {
         draft = addObject(draft, createObject(type, draft, kind));
