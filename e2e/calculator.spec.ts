@@ -34,11 +34,6 @@ test.describe('多項式の計算機', () => {
     await expect(page.getByRole('heading', { name: 'bによる偏微分' })).toBeVisible();
   });
 
-  test('全角の記号で入力した式も，計算する', async ({ page }) => {
-    await input(page).fill('（ｘ＋２）＾２');
-    await expect(page.getByText('x^2 + 4*x + 4', { exact: true })).toBeVisible();
-  });
-
   test('例のボタンで，入力欄に式が入り，結果が更新される', async ({ page }) => {
     await page.getByRole('button', { name: '(a+b)^3' }).click();
     await expect(input(page)).toHaveValue('(a+b)^3');

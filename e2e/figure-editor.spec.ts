@@ -225,29 +225,14 @@ test.describe('図の作成', () => {
     await expect(items).toHaveCount(1);
   });
 
-  for (const label of [
-    '関数のグラフ',
-    'ベクトルの和',
-    '2つのグラフの間の領域',
-    'フラクタル',
-    '球と座標軸',
-    '円錐と切り口',
-    '球と円柱の交線',
-    'ベジエ曲面',
-    'ベジエ曲線',
-    'スプライン曲線',
-    '接線',
-    '放物面と座標軸',
-    '空間のベクトルの和',
-    '球の上の円',
-    '接平面',
-  ]) {
-    test(`見本「${label}」は，誤りなく描ける`, async ({ page }) => {
-      await editor(page).getByRole('button', { name: label, exact: true }).click();
-      await expect(preview(page)).toBeVisible();
-      await expect(editor(page).getByRole('alert')).toHaveCount(0);
-    });
-  }
+  test('見本「フラクタル」は，誤りなく描ける', async ({ page }) => {
+    // 見本のボタンは，選んだJSON文字列をparseDraftへ渡すだけで，中身に応じた分岐はない(toolbar.tsx)．
+    // 各見本の図としての正しさは，サイトのビルドと，site/src/figure/scene-schema.test.tsで確かめているので，
+    // ここでは，読み込みの仕組みが実際に動くことだけを，複雑な見本の1つで確かめる．
+    await editor(page).getByRole('button', { name: 'フラクタル', exact: true }).click();
+    await expect(preview(page)).toBeVisible();
+    await expect(editor(page).getByRole('alert')).toHaveCount(0);
+  });
 
   for (const tab of ['フォーム', 'JSON', 'TikZ']) {
     test(`アクセシビリティ：${tab}の表示に，違反がない`, async ({ page }) => {
