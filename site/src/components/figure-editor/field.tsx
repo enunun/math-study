@@ -11,11 +11,11 @@ import {
   ReferenceField,
   ReferencesField,
 } from './field-special';
-import { StyleInput } from './style-input';
+import { StyleInput, ToggleStyleInput } from './style-input';
 
 type BasicKind = 'text' | 'number' | 'bound' | 'select' | 'checkbox' | 'list';
 
-type LinkKind = 'reference' | 'references' | 'style';
+type LinkKind = 'reference' | 'references' | 'style' | 'toggleStyle';
 
 const BASIC_KINDS = new Set<string>(['text', 'number', 'bound', 'select', 'checkbox', 'list']);
 
@@ -46,6 +46,17 @@ function LinkField(props: FieldProps<LinkKind>): ReactElement {
   }
   if (spec.kind === 'references') {
     return <ReferencesField {...props} spec={spec} />;
+  }
+  if (spec.kind === 'toggleStyle') {
+    return (
+      <ToggleStyleInput
+        object={props.object}
+        kind={props.kind}
+        field={spec.key}
+        label={spec.label}
+        onChange={props.onChange}
+      />
+    );
   }
   return <StyleInput object={props.object} kind={props.kind} onChange={props.onChange} />;
 }

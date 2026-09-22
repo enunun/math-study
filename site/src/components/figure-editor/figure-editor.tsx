@@ -91,8 +91,6 @@ interface BodyProps extends ControlsProps {
   /** 編集の補助を加えた図． */
   editRendered: Rendered | undefined;
   failed: boolean;
-  wireframe: boolean;
-  onWireframeChange: (wireframe: boolean) => void;
   onPickObject: (id: string) => void;
   onRotate: (deltaAzimuth: number, deltaElevation: number) => void;
 }
@@ -104,8 +102,6 @@ function Body({
   rendered,
   editRendered,
   failed,
-  wireframe,
-  onWireframeChange,
   onPickObject,
   onRotate,
   ...controls
@@ -118,8 +114,6 @@ function Body({
           rendered={editRendered}
           failed={failed}
           kind={kind}
-          wireframe={wireframe}
-          onWireframeChange={onWireframeChange}
           onPickObject={onPickObject}
           onRotate={onRotate}
         />
@@ -139,8 +133,7 @@ function FigureEditor(): ReactElement {
   const [tab, setTab] = useState<Tab>('form');
   const [selected, setSelected] = useState(NO_SELECTION);
   const [message, setMessage] = useState('');
-  const [wireframe, setWireframe] = useState(false);
-  const { json, rendered, editRendered, failed } = useFigureRenders(draft, wireframe);
+  const { json, rendered, editRendered, failed } = useFigureRenders(draft);
   const replace = (next: SceneDraft): void => {
     load(next);
     setSelected(NO_SELECTION);
@@ -161,8 +154,6 @@ function FigureEditor(): ReactElement {
         rendered={rendered}
         editRendered={editRendered}
         failed={failed}
-        wireframe={wireframe}
-        onWireframeChange={setWireframe}
         onPickObject={(id) => {
           setSelected(indexOfId(draft, id));
           setTab('form');

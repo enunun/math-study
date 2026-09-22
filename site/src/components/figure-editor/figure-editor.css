@@ -108,6 +108,16 @@
   height: auto;
 }
 
+/*
+ * 編集中の図には，背景に薄い色を付ける．補助として灰色の点線で描く格子や座標軸を，実際に点線や
+ * 破線で描いたオブジェクトと見分けやすくし，プレビュー(白い背景のまま)とも見分けやすくする．
+ */
+.fe-edit-preview .fe-preview-figure {
+  padding: 0.5rem;
+  border-radius: 0.3rem;
+  background: var(--sl-color-bg-nav);
+}
+
 .fe-draggable {
   touch-action: none;
   cursor: grab;

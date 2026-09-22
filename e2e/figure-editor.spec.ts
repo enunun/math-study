@@ -139,20 +139,44 @@ test.describe('図の作成', () => {
     expect(outputStroke).not.toContain('gray');
   });
 
-  test('空間の図で，曲面のワイヤーフレームを示すと，編集中の図だけ線が増える', async ({ page }) => {
+  test('曲面のフォームで，ワイヤーフレームを選ぶと，編集中の図とプレビュー，どちらにも線が増える', async ({
+    page,
+  }) => {
     await editor(page).getByRole('button', { name: '放物面と座標軸', exact: true }).click();
+    await editor(page)
+      .getByRole('list', { name: 'オブジェクトの一覧' })
+      .getByRole('button', { name: /曲面/u })
+      .click();
     const editBefore = await preview(page).locator('path').count();
     const outputBefore = await outputPreview(page).locator('path').count();
-    await editor(page).getByLabel('曲面のワイヤーフレームを表示').check();
+    await editor(page).getByLabel('ワイヤーフレームを表示').check();
     await expect(async () => {
       expect(await preview(page).locator('path').count()).toBeGreaterThan(editBefore);
     }).toPass();
-    expect(await outputPreview(page).locator('path').count()).toBe(outputBefore);
+    await expect(async () => {
+      expect(await outputPreview(page).locator('path').count()).toBeGreaterThan(outputBefore);
+    }).toPass();
   });
 
-  test('平面の図には，ワイヤーフレームの切り替えがない', async ({ page }) => {
-    await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
-    await expect(editor(page).getByLabel('曲面のワイヤーフレームを表示')).toHaveCount(0);
+  test('球のフォームにも，ワイヤーフレームの選択がある', async ({ page }) => {
+    await editor(page).getByRole('button', { name: '球と座標軸', exact: true }).click();
+    await editor(page)
+      .getByRole('list', { name: 'オブジェクトの一覧' })
+      .getByRole('button', { name: /球/u })
+      .click();
+    await expect(editor(page).getByLabel('ワイヤーフレームを表示')).toBeVisible();
+  });
+
+  test('ベジエ曲面のフォームには，ワイヤーフレームと，別に，制御点の網の選択もある', async ({
+    page,
+  }) => {
+    await editor(page).getByRole('button', { name: 'ベジエ曲面', exact: true }).click();
+    await editor(page)
+      .getByRole('list', { name: 'オブジェクトの一覧' })
+      .getByRole('button', { name: /曲面/u })
+      .click();
+    await expect(editor(page).getByLabel('ワイヤーフレームを表示')).toBeVisible();
+    await expect(editor(page).getByLabel('制御点の網を表示')).toBeVisible();
   });
 
   test('JSONを書き出して，読み込み直すと，同じ図になる', async ({ page }) => {

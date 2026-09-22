@@ -16,7 +16,7 @@ interface FigureRenders {
   /** 実際の出力(TikZやJSON)と同じ，そのままの図．エンジンを読み込むまでは`undefined`である． */
   rendered: Rendered | undefined;
   /**
-   * 編集の補助(格子と座標軸の補助のスタイル，曲面のワイヤーフレーム)を加えた図．
+   * 編集の補助(格子と座標軸の補助のスタイル，平面の軸の目盛)を加えた図．
    * 補助だけが原因で描けないときは，`rendered`に落とす(補助が作った，実在しないオブジェクトの誤りを見せないため)．
    */
   editRendered: Rendered | undefined;
@@ -25,13 +25,10 @@ interface FigureRenders {
 }
 
 /** 実際の出力と，編集の補助を加えた図の，2とおりの描画結果． */
-function useFigureRenders(draft: SceneDraft, wireframe: boolean): FigureRenders {
+function useFigureRenders(draft: SceneDraft): FigureRenders {
   const engine = useLoaded<SceneEngine>(loadSceneEngine);
   const json = useMemo(() => stringifyDraft(draft), [draft]);
-  const editJson = useMemo(
-    () => stringifyDraft(buildEditScene(draft, { wireframe })),
-    [draft, wireframe],
-  );
+  const editJson = useMemo(() => stringifyDraft(buildEditScene(draft)), [draft]);
   const rendered = useMemo(
     () => (engine.value === undefined ? undefined : renderFigure(engine.value, json)),
     [engine.value, json],

@@ -27,7 +27,9 @@ type FieldSpec =
   | { kind: 'references'; key: string; label: string; of: readonly string[]; count: number }
   /** JSONの値を，そのまま書く． */
   | { kind: 'json'; key: string; label: string; optional?: boolean; hint: string }
-  | { kind: 'style' };
+  | { kind: 'style' }
+  /** あれば描く，スタイルつきの項目(曲面のワイヤーフレームなど)．チェックボックスで有無を選ぶ． */
+  | { kind: 'toggleStyle'; key: string; label: string };
 
 type Option = readonly [value: string, label: string];
 
@@ -84,6 +86,18 @@ const BOUNDARY: FieldSpec = {
   key: 'boundary',
   label: '縁を描く',
   initial: false,
+};
+/** 曲面と球で共通の，ワイヤーフレーム(u一定・v一定の断面，球では経線と緯線)の項目． */
+const WIREFRAME: FieldSpec = {
+  kind: 'toggleStyle',
+  key: 'wireframe',
+  label: 'ワイヤーフレームを表示',
+};
+/** ベジエ曲面だけの，制御点の網の項目． */
+const CONTROL_NET: FieldSpec = {
+  kind: 'toggleStyle',
+  key: 'control_net',
+  label: '制御点の網を表示',
 };
 
 const AXIS: readonly FieldSpec[] = [
@@ -154,6 +168,7 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
   sphere: [
     { kind: 'list', key: 'center', label: '中心', item: 'number', count: TRIPLE },
     { kind: 'number', key: 'radius', label: '半径' },
+    WIREFRAME,
   ],
   surface: [
     { kind: 'list', key: 'vars', label: '変数の名前', item: 'text', count: PAIR },
@@ -161,6 +176,7 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     { kind: 'domain2', key: 'domain', label: '変数の範囲' },
     MESH,
     BOUNDARY,
+    WIREFRAME,
   ],
   bezier: [
     {
@@ -171,6 +187,8 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     },
     MESH,
     BOUNDARY,
+    WIREFRAME,
+    CONTROL_NET,
   ],
   cut: [
     { kind: 'reference', key: 'surface', label: '切る曲面', of: SURFACES },
