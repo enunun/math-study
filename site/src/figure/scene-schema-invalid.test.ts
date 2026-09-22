@@ -155,6 +155,63 @@ describe('シーンのJSON Schemaは，構造の誤りを断る', () => {
     expect(invalid({ ...plane, objects: [{ id: 'g', type: 'grid' }] })).toBe(true);
   });
 
+  it('フラクタルの基本図形が1点しかなければ断る', () => {
+    expect(
+      invalid({
+        ...plane,
+        objects: [
+          {
+            id: 'g',
+            type: 'fractal',
+            base: [[0, 0]],
+            transforms: [[{ translate: [1, 0] }]],
+            depth: 1,
+          },
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  it('フラクタルの変換に，知らない手順があれば断る', () => {
+    expect(
+      invalid({
+        ...plane,
+        objects: [
+          {
+            id: 'g',
+            type: 'fractal',
+            base: [
+              [0, 0],
+              [1, 0],
+            ],
+            transforms: [[{ skew: [1, 0] }]],
+            depth: 1,
+          },
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  it('フラクタルの深さが，上限(10)を超えれば断る', () => {
+    expect(
+      invalid({
+        ...plane,
+        objects: [
+          {
+            id: 'g',
+            type: 'fractal',
+            base: [
+              [0, 0],
+              [1, 0],
+            ],
+            transforms: [[{ translate: [1, 0] }]],
+            depth: 11,
+          },
+        ],
+      }),
+    ).toBe(true);
+  });
+
   it('交線が，同じ曲面を2つ指せば断る', () => {
     expect(
       invalid({

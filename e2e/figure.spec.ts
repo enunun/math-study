@@ -23,7 +23,7 @@ test.describe('シーンから描いた図', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     // ラベルの数式が描画されるまで待つ．
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(41);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(44);
   });
 
   test('SVGは，画像として説明を持ち，線と矢じりがある', async ({ page }) => {
@@ -118,7 +118,7 @@ test.describe('シーンから描いた図', () => {
     page.on('pageerror', (error) => problems.push(String(error)));
     page.on('requestfailed', (request) => problems.push(request.url()));
     await page.reload();
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(41);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(44);
     expect(problems).toEqual([]);
   });
 });

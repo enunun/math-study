@@ -21,6 +21,7 @@ mod derivative;
 pub mod error;
 pub mod expr;
 pub mod figure;
+mod fractal;
 pub mod hatch;
 mod parse;
 mod refine;

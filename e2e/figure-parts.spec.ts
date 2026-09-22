@@ -49,7 +49,7 @@ test.describe('シーンから描いた図の部品', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     // ラベルの数式が描画されるまで待つ．
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(41);
+    await expect(page.locator('.figure-label mjx-container')).toHaveCount(44);
   });
 
   test('目盛の線は，軸に直角な，3pt(約4px)ずつ両側に出る短い線である', async ({ page }) => {

@@ -23,6 +23,7 @@ const PLANE_TYPES = [
   'splineCurve',
   'tangent_line',
   'grid',
+  'fractal',
   'point',
   'point',
   'label',

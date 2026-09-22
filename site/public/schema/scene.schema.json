@@ -432,6 +432,91 @@
         "style": { "$ref": "#/$defs/style" }
       }
     },
+    "transformOp": {
+      "description": "フラクタルの変換の，1つの手順。並びの順に施す(最初に書いた手順が，点に最初にかかる)。並進・回転・拡大縮小・せん断を組み合わせれば，平面のどんなアフィン変換も作れる。",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["translate"],
+          "additionalProperties": false,
+          "properties": {
+            "translate": { "$ref": "#/$defs/boundPair", "description": "平行移動の量(x，y)。" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["rotate"],
+          "additionalProperties": false,
+          "properties": {
+            "rotate": {
+              "$ref": "#/$defs/bound",
+              "description": "原点を中心とした回転の角度(度，反時計回り)。"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["scale"],
+          "additionalProperties": false,
+          "properties": {
+            "scale": {
+              "$ref": "#/$defs/boundPair",
+              "description": "原点を中心とした拡大縮小の倍率(x，y)。負の数で，その向きに反転する。"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["shear"],
+          "additionalProperties": false,
+          "properties": {
+            "shear": {
+              "$ref": "#/$defs/boundPair",
+              "description": "原点を中心としたせん断の量(x方向がyに，y方向がxに，それぞれ比例して動く量)。"
+            }
+          }
+        }
+      ]
+    },
+    "fractal": {
+      "type": "object",
+      "required": ["id", "type", "base", "transforms", "depth"],
+      "additionalProperties": false,
+      "description": "フラクタル図形。平面の図でだけ使える。反復関数系(IFS)：基本図形(`base`)を，`transforms`で`depth`回，再帰的に写す。深さ0は`base`をそのまま描き，深さnは，深さn-1の図形全体に，それぞれの変換を施したものをすべて集めたものになる。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "fractal" },
+        "base": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/boundPair" },
+          "minItems": 2,
+          "maxItems": 12,
+          "description": "基本図形が通る点(x，y)の列。2点以上12点以下。"
+        },
+        "closed": {
+          "type": "boolean",
+          "description": "基本図形を閉じるか(最後の点から最初の点へも線を引く)。既定は閉じない。"
+        },
+        "transforms": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/transformOp" },
+            "minItems": 1
+          },
+          "minItems": 1,
+          "maxItems": 12,
+          "description": "変換の並び。各要素は，1つの変換を表す，手順(`transformOp`)の並びである。1つ以上12個以下。"
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "再帰の深さ。変換の数のこの乗が，図形の数になるので，大きすぎる組み合わせは断られる(スキーマでは表せない)。"
+        },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
     "sphere": {
       "type": "object",
       "required": ["id", "type", "center", "radius"],
@@ -604,7 +689,7 @@
       }
     },
     "object": {
-      "description": "図を作るオブジェクト。`type`で種類を選ぶ。`graph`，`grid`，`region`，`tangent_line`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`は空間の図でだけ使える。この使い分けは，スキーマでは表せない。",
+      "description": "図を作るオブジェクト。`type`で種類を選ぶ。`graph`，`grid`，`region`，`tangent_line`，`fractal`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`は空間の図でだけ使える。この使い分けは，スキーマでは表せない。",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },
@@ -617,6 +702,7 @@
         { "$ref": "#/$defs/vector" },
         { "$ref": "#/$defs/segment" },
         { "$ref": "#/$defs/region" },
+        { "$ref": "#/$defs/fractal" },
         { "$ref": "#/$defs/sphere" },
         { "$ref": "#/$defs/surface" },
         { "$ref": "#/$defs/cut" },

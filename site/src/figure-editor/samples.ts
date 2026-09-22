@@ -24,6 +24,7 @@ const SAMPLE_FILES: readonly { id: string; label: string; file: string }[] = [
   { id: 'graphs', label: '関数のグラフ', file: 'sine-and-shifted-sine' },
   { id: 'vectors', label: 'ベクトルの和', file: 'vector-addition' },
   { id: 'region', label: '2つのグラフの間の領域', file: 'sine-cosine-region' },
+  { id: 'fractal', label: 'フラクタル', file: 'sierpinski-triangle' },
   { id: 'sphere', label: '球と座標軸', file: 'sphere-with-axes' },
   { id: 'cone', label: '円錐と切り口', file: 'cone-with-cuts' },
   { id: 'cylinder', label: '球と円柱の交線', file: 'sphere-and-cylinder' },

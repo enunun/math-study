@@ -177,6 +177,34 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
     ).toBe(true);
   });
 
+  it('フラクタル図形は，スキーマに合う', () => {
+    const plane = minimalObject('plane');
+    expect(
+      validate({
+        ...plane,
+        objects: [
+          {
+            id: 'g',
+            type: 'fractal',
+            base: [
+              [0, 0],
+              [1, 0],
+              [0.5, 'sqrt(3)/2'],
+            ],
+            closed: true,
+            transforms: [
+              [{ scale: [0.5, 0.5] }, { translate: [0, 0] }],
+              [{ scale: [0.5, 0.5] }, { translate: [0.5, 0] }],
+              [{ rotate: 45 }, { shear: [0.1, 0] }, { translate: [0.25, 'sqrt(3)/4'] }],
+            ],
+            depth: 3,
+          },
+        ],
+      }),
+      JSON.stringify(validate.errors),
+    ).toBe(true);
+  });
+
   it.each(['plane', 'space'] as const)(
     '図の作成ページが作る，%sの図の既定のオブジェクトが，スキーマに合う',
     (kind) => {
@@ -193,6 +221,7 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
               'splineCurve',
               'tangent_line',
               'grid',
+              'fractal',
               'point',
               'point',
               'label',

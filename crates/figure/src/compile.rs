@@ -4,9 +4,10 @@ use std::collections::HashMap;
 
 use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, is_reserved_name};
+use crate::fractal;
 use crate::scene::{
-    Anchor, Axis, Bound, Curve, Cut, Direction, Graph, Grid, Label, Object, Point, Position,
-    Region, Scene, Surface, TangentLine, TangentPlane, View,
+    Anchor, Axis, Bound, Curve, Cut, Direction, Fractal, Graph, Grid, Label, Object, Point,
+    Position, Region, Scene, Surface, TangentLine, TangentPlane, TransformOp, View,
 };
 use crate::validate::curve_expressions;
 
@@ -43,6 +44,12 @@ pub struct TangentPlanePlot {
     pub at: [f64; 2],
     /// 接平面の半径(cm)．
     pub size: f64,
+}
+
+/// 式を読んだ後の，フラクタル図形．反復関数系(IFS)の展開まで，あらかじめ計算してある．
+pub struct FractalPlot {
+    /// 展開したあとの，線をなす点の並び(数学の座標)の列．基本図形1つにつき1本の並びである．
+    pub paths: Vec<Vec<[f64; 2]>>,
 }
 
 /// 式を読んだ後の，軸の目盛．
@@ -124,6 +131,8 @@ pub enum Plot {
     Surface(SurfacePlot),
     /// 領域．
     Region(RegionPlot),
+    /// フラクタル図形．
+    Fractal(FractalPlot),
     /// 点．
     Point(PointPlot),
     /// ラベル．
@@ -281,6 +290,9 @@ fn compile_object(
         Object::Region(region) => compile_region(region, names, parameters)
             .map(Plot::Region)
             .map_err(|kind| Error::in_object(&region.id, kind)),
+        Object::Fractal(fractal) => compile_fractal(fractal, names, parameters)
+            .map(Plot::Fractal)
+            .map_err(|kind| Error::in_object(&fractal.id, kind)),
         Object::TangentPlane(tangent) => compile_tangent_plane(tangent, names, parameters)
             .map(Plot::TangentPlane)
             .map_err(|kind| Error::in_object(&tangent.id, kind)),
@@ -553,6 +565,96 @@ fn compile_region(
     Ok(RegionPlot {
         domain: evaluate_domain(&region.domain, names, parameters)?,
     })
+}
+
+/// 基本図形の点と，変換の並びを評価し，反復関数系(IFS)として展開する．
+fn compile_fractal(
+    fractal: &Fractal,
+    names: &[&str],
+    parameters: &[f64],
+) -> Result<FractalPlot, ErrorKind> {
+    let mut base = fractal
+        .base
+        .iter()
+        .map(|[x, y]| {
+            let point = [
+                evaluate_bound("base", x, 0, names, parameters)?,
+                evaluate_bound("base", y, 1, names, parameters)?,
+            ];
+            if point.iter().all(|c| c.is_finite()) {
+                Ok(point)
+            } else {
+                Err(ErrorKind::Invalid(
+                    "基本図形(`base`)の点の座標は，有限の数にする．".to_owned(),
+                ))
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if fractal.closed
+        && let Some(first) = base.first().copied()
+    {
+        base.push(first);
+    }
+    let transforms = fractal
+        .transforms
+        .iter()
+        .map(|steps| {
+            steps
+                .iter()
+                .map(|op| compile_transform_op(op, names, parameters))
+                .collect::<Result<Vec<_>, _>>()
+                .map(|ops| fractal::compose(&ops))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let paths = fractal::instances(&base, &transforms, fractal.depth);
+    Ok(FractalPlot { paths })
+}
+
+/// フラクタルの変換の，1つの手順を評価する．座標や角度は，媒介変数と定数を使え，有限の数でなければ
+/// ならない．
+fn compile_transform_op(
+    op: &TransformOp,
+    names: &[&str],
+    parameters: &[f64],
+) -> Result<fractal::Affine, ErrorKind> {
+    let pair = |field: &'static str, bounds: &[Bound; 2]| -> Result<[f64; 2], ErrorKind> {
+        let [x, y] = bounds;
+        let values = [
+            evaluate_bound(field, x, 0, names, parameters)?,
+            evaluate_bound(field, y, 1, names, parameters)?,
+        ];
+        if values.iter().all(|value| value.is_finite()) {
+            Ok(values)
+        } else {
+            Err(ErrorKind::Invalid(format!(
+                "フラクタルの変換(`{field}`)は，有限の数にする．"
+            )))
+        }
+    };
+    match op {
+        TransformOp::Translate { translate } => {
+            let [x, y] = pair("translate", translate)?;
+            Ok(fractal::Affine::translate(x, y))
+        }
+        TransformOp::Rotate { rotate } => {
+            let angle = evaluate_bound("rotate", rotate, 0, names, parameters)?;
+            if angle.is_finite() {
+                Ok(fractal::Affine::rotate(angle))
+            } else {
+                Err(ErrorKind::Invalid(
+                    "フラクタルの変換(`rotate`)は，有限の数にする．".to_owned(),
+                ))
+            }
+        }
+        TransformOp::Scale { scale } => {
+            let [x, y] = pair("scale", scale)?;
+            Ok(fractal::Affine::scale(x, y))
+        }
+        TransformOp::Shear { shear } => {
+            let [x, y] = pair("shear", shear)?;
+            Ok(fractal::Affine::shear(x, y))
+        }
+    }
 }
 
 /// 領域の範囲は，挟むグラフの定義域の中でなければならない．グラフは，領域よりあとに置いてもよい．

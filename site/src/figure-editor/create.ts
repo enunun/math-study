@@ -37,6 +37,7 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'vector', label: 'ベクトル', kinds: BOTH },
   { type: 'segment', label: '線分', kinds: BOTH },
   { type: 'region', label: '領域', kinds: PLANE },
+  { type: 'fractal', label: 'フラクタル', kinds: PLANE },
   { type: 'sphere', label: '球', kinds: SPACE },
   { type: 'surface', label: '曲面(式)', kinds: SPACE },
   { type: BEZIER, label: '曲面(ベジエ)', kinds: SPACE },

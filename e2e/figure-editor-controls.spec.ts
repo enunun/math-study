@@ -94,6 +94,19 @@ test.describe('曲面・球・曲線の制御点', () => {
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
 
+  test('フラクタルは_深さを変えると図形の数が変わる', async ({ page }) => {
+    await addObject(page, 'フラクタル');
+    const withDefaultDepth = await preview(page).locator('path').count();
+    expect(withDefaultDepth).toBeGreaterThan(0);
+    await editor(page).getByLabel('再帰の深さ').fill('2');
+    await expect(async () => {
+      const count = await preview(page).locator('path').count();
+      expect(count).toBeGreaterThan(0);
+      expect(count).toBeLessThan(withDefaultDepth);
+    }).toPass();
+    await expect(editor(page).getByRole('alert')).toHaveCount(0);
+  });
+
   test('接線は，グラフを選んで接する点を決めると描ける', async ({ page }) => {
     await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
     const before = await preview(page).locator('path').count();

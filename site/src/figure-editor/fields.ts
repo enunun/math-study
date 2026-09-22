@@ -185,6 +185,22 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
       hint: '{"color": "blue", "opacity": 0.25}',
     },
   ],
+  fractal: [
+    {
+      kind: 'json',
+      key: 'base',
+      label: '基本図形の点',
+      hint: '[[0,0],[1,0]]',
+    },
+    { kind: 'checkbox', key: 'closed', label: '基本図形を閉じる', initial: false },
+    {
+      kind: 'json',
+      key: 'transforms',
+      label: '変換',
+      hint: '[[{"scale":[0.5,0.5]},{"translate":[1,0]}]]',
+    },
+    { kind: 'number', key: 'depth', label: '再帰の深さ' },
+  ],
   sphere: [
     { kind: 'list', key: 'center', label: '中心', item: 'number', count: TRIPLE },
     { kind: 'number', key: 'radius', label: '半径' },

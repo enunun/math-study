@@ -6,7 +6,7 @@ use crate::arrow::Stealth;
 use crate::bezier::bezier_curve_point;
 use crate::clip::clip_polyline;
 use crate::compile::{
-    Compiled, CurvePlot, GraphPlot, GridPlot, LabelPlot, LinkPlot, Plot, PointPlot,
+    Compiled, CurvePlot, FractalPlot, GraphPlot, GridPlot, LabelPlot, LinkPlot, Plot, PointPlot,
     TangentLinePlot, TickPlot, compile,
 };
 use crate::derivative::{central_difference, central_difference_point};
@@ -15,8 +15,8 @@ use crate::figure::{ArrowHead, Bounds, DotItem, Figure, Item, LabelItem, Path, S
 use crate::region::region_items;
 use crate::sample::sample;
 use crate::scene::{
-    Anchor, Arrow, Axis, CM_PER_PT, Direction, Label, Line, Object, PlaneView, Point, Scene, Style,
-    TangentLine, View,
+    Anchor, Arrow, Axis, CM_PER_PT, Direction, Fractal, Label, Line, Object, PlaneView, Point,
+    Scene, Style, TangentLine, View,
 };
 use crate::space::render_space;
 use crate::spline::catmull_rom_point;
@@ -128,6 +128,11 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Result<
             Object::Segment(segment) => {
                 if let Plot::Link(link) = plot {
                     items.extend(link_item(&segment.style, Arrow::None, link, scale));
+                }
+            }
+            Object::Fractal(fractal) => {
+                if let Plot::Fractal(placed) = plot {
+                    items.extend(fractal_items(fractal, placed, scale, window));
                 }
             }
             Object::Parameter(_)
@@ -517,6 +522,26 @@ fn tangent_line_items(
     clip_polyline(&segment, min, max)
         .into_iter()
         .map(|points| Item::Path(curve_path(points, tangent.style)))
+        .collect()
+}
+
+/// フラクタル図形の線．タートルが歩いた点の並びを，数学の座標からcmに直し，見える範囲で切り取る．
+fn fractal_items(
+    fractal: &Fractal,
+    plot: &FractalPlot,
+    scale: Scale,
+    window: [[f64; 2]; 2],
+) -> Vec<Item> {
+    let [min, max] = window;
+    plot.paths
+        .iter()
+        .map(|path| {
+            path.iter()
+                .map(|&[x, y]| scale.point(x, y))
+                .collect::<Vec<_>>()
+        })
+        .flat_map(|points| clip_polyline(&points, min, max))
+        .map(|points| Item::Path(curve_path(points, fractal.style)))
         .collect()
 }
 

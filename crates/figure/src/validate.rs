@@ -5,8 +5,9 @@ use std::collections::HashSet;
 use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::scene::{
-    Axis, Bound, CM_PER_PT, Curve, Cut, Direction, Graph, Grid, Intersection, Label, MAX_WIDTH_PT,
-    Object, Point, Position, Region, Scene, SpaceView, Sphere, Style, Surface, TangentPlane, View,
+    Axis, Bound, CM_PER_PT, Curve, Cut, Direction, Fractal, Graph, Grid, Intersection, Label,
+    MAX_WIDTH_PT, Object, Point, Position, Region, Scene, SpaceView, Sphere, Style, Surface,
+    TangentPlane, View,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -91,6 +92,9 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Grid(grid) => plane_only("grid", view).and_then(|()| validate_grid(grid)),
         Object::Point(point) => validate_point(point, view),
         Object::Region(region) => plane_only("region", view).and_then(|()| validate_region(region)),
+        Object::Fractal(fractal) => {
+            plane_only("fractal", view).and_then(|()| validate_fractal(fractal))
+        }
         Object::Surface(surface) => {
             space_only("surface", view).and_then(|()| validate_surface(surface))
         }
@@ -117,6 +121,7 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::Vector(o) => Some(&o.style),
         Object::Segment(o) => Some(&o.style),
         Object::Region(o) => Some(&o.style),
+        Object::Fractal(o) => Some(&o.style),
         Object::Surface(o) => Some(&o.style),
         Object::Cut(o) => Some(&o.style),
         Object::Intersection(o) => Some(&o.style),
@@ -331,6 +336,48 @@ fn validate_region(region: &Region) -> Result<(), ErrorKind> {
         ));
     }
     check_domain(&region.domain)
+}
+
+/// 各変換の中身(数や式)は，`compile.rs`が確かめる．
+fn validate_fractal(fractal: &Fractal) -> Result<(), ErrorKind> {
+    if fractal.base.len() < Fractal::MIN_BASE_POINTS {
+        return Err(ErrorKind::Invalid(format!(
+            "基本図形の点(`base`)は，{}点以上並べる．",
+            Fractal::MIN_BASE_POINTS
+        )));
+    }
+    if fractal.base.len() > Fractal::MAX_BASE_POINTS {
+        return Err(ErrorKind::Invalid(format!(
+            "基本図形の点(`base`)は，{}点以下にする．",
+            Fractal::MAX_BASE_POINTS
+        )));
+    }
+    if fractal.transforms.is_empty() {
+        return Err(ErrorKind::Invalid(
+            "`transforms`には，変換を1つ以上書く．".to_owned(),
+        ));
+    }
+    if fractal.transforms.len() > Fractal::MAX_TRANSFORMS {
+        return Err(ErrorKind::Invalid(format!(
+            "`transforms`の変換は，{}個以下にする．",
+            Fractal::MAX_TRANSFORMS
+        )));
+    }
+    if fractal.depth > Fractal::MAX_DEPTH {
+        return Err(ErrorKind::Invalid(format!(
+            "`depth`(再帰の深さ)は，{}以下にする．",
+            Fractal::MAX_DEPTH
+        )));
+    }
+    let instances = fractal.transforms.len().checked_pow(fractal.depth);
+    if instances.is_none_or(|count| count > Fractal::MAX_INSTANCES) {
+        return Err(ErrorKind::Invalid(format!(
+            "フラクタルの図形の数(変換の数の{}乗)が多すぎる．`depth`を減らすか，\
+             `transforms`を見直す．",
+            fractal.depth
+        )));
+    }
+    Ok(())
 }
 
 /// 領域が挟むグラフは，`graph`オブジェクトの`id`でなければならない．

@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "description": "シェルピンスキーの三角形．正三角形を，半分の大きさの3つの三角形に写す変換を，4回繰り返す．",
+  "view": { "x": [-1, 5], "y": [-1, 5], "unit": { "x": "1cm", "y": "1cm" } },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "label": "x" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "label": "y" },
+    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "$O$" },
+    {
+      "id": "gasket",
+      "type": "fractal",
+      "base": [
+        [0, 0],
+        [4, 0],
+        [2, "2*sqrt(3)"]
+      ],
+      "closed": true,
+      "transforms": [
+        [{ "scale": [0.5, 0.5] }, { "translate": [0, 0] }],
+        [{ "scale": [0.5, 0.5] }, { "translate": [2, 0] }],
+        [{ "scale": [0.5, 0.5] }, { "translate": [1, "sqrt(3)"] }]
+      ],
+      "depth": 5,
+      "style": { "color": "blue" }
+    }
+  ]
+}

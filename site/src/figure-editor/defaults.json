@@ -87,6 +87,23 @@
     "region": {
       "plane": { "type": "region", "between": [], "domain": [-1, 1] }
     },
+    "fractal": {
+      "plane": {
+        "type": "fractal",
+        "base": [
+          [0, 0],
+          [4, 0],
+          [2, "2*sqrt(3)"]
+        ],
+        "closed": true,
+        "transforms": [
+          [{ "scale": [0.5, 0.5] }, { "translate": [0, 0] }],
+          [{ "scale": [0.5, 0.5] }, { "translate": [2, 0] }],
+          [{ "scale": [0.5, 0.5] }, { "translate": [1, "sqrt(3)"] }]
+        ],
+        "depth": 4
+      }
+    },
     "sphere": {
       "space": { "type": "sphere", "center": [0, 0, 0], "radius": 1 }
     },

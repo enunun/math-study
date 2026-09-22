@@ -138,6 +138,8 @@ pub enum Object {
     Segment(Segment),
     /// 領域．斜線で埋める．平面の図でだけ使える．
     Region(Region),
+    /// フラクタル図形．平面の図でだけ使える．
+    Fractal(Fractal),
     /// 曲面．式で書く．空間の図でだけ使える．
     Surface(Surface),
     /// 曲面の，平面による切り口．空間の図でだけ使える．
@@ -487,6 +489,72 @@ pub struct TangentPlane {
     pub style: Style,
 }
 
+/// フラクタル図形．平面の図でだけ使える．反復関数系(IFS)：基本図形(`base`)を，`transforms`(並進・
+/// 回転・拡大縮小・せん断を組み合わせた，自由な変換の並び)で，`depth`回，再帰的に写して描く．
+///
+/// 深さ0は，`base`をそのまま描く．深さ`n`は，深さ`n - 1`の図形全体に，`transforms`のそれぞれの
+/// 変換を施したものをすべて集めたものである(標準の，IFSのアトラクターを求める反復計算)．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Fractal {
+    /// 識別子．
+    pub id: String,
+    /// 基本図形が通る点(数学の座標，2個)の列．2点以上12点以下．数か式．
+    pub base: Vec<[Bound; 2]>,
+    /// 基本図形を閉じるか(最後の点から最初の点へも線を引く)．既定は閉じない．
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub closed: bool,
+    /// 変換の並び．各要素は，1つの変換を表す，変換の手順(`TransformOp`)の並びである．
+    /// 1つ以上12個以下．
+    pub transforms: Vec<Vec<TransformOp>>,
+    /// 再帰の深さ．
+    pub depth: u32,
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
+impl Fractal {
+    /// 基本図形の点の数の下限．
+    pub const MIN_BASE_POINTS: usize = 2;
+    /// 基本図形の点の数の上限．
+    pub const MAX_BASE_POINTS: usize = 12;
+    /// 変換の数の上限．
+    pub const MAX_TRANSFORMS: usize = 12;
+    /// 再帰の深さの上限．
+    pub const MAX_DEPTH: u32 = 10;
+    /// 描く図形の数(`変換の数の transforms.len() 乗`)の上限．`MAX_DEPTH`だけでは足りない，
+    /// 変換の数が多いときの歯止めをかける．
+    pub const MAX_INSTANCES: usize = 20_000;
+}
+
+/// フラクタルの1つの変換を作る，手順の1つ．並びの順に施す(最初に書いた手順が，点に最初にかかる)．
+/// 並進・回転・拡大縮小・せん断を組み合わせれば，平面のどんなアフィン変換も作れる．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged, deny_unknown_fields)]
+pub enum TransformOp {
+    /// 平行移動．数か式，2個(x，y方向)．
+    Translate {
+        /// 平行移動の量．
+        translate: [Bound; 2],
+    },
+    /// 原点を中心とした回転．度，反時計回り．数か式．
+    Rotate {
+        /// 回転の角度(度)．
+        rotate: Bound,
+    },
+    /// 原点を中心とした拡大縮小．数か式，2個(x，y方向)．負の数で，その向きに反転する．
+    Scale {
+        /// 拡大縮小の倍率．
+        scale: [Bound; 2],
+    },
+    /// 原点を中心としたせん断．数か式，2個(x方向がyに，y方向がxに，それぞれ比例して動く量)．
+    Shear {
+        /// せん断の量．
+        shear: [Bound; 2],
+    },
+}
+
 /// 曲面の，平面による切り口．平面は，法線と定数で`normal・p = offset`と書く．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -759,6 +827,7 @@ impl Object {
             Self::Vector(o) => &o.id,
             Self::Segment(o) => &o.id,
             Self::Region(o) => &o.id,
+            Self::Fractal(o) => &o.id,
             Self::Surface(o) => &o.id,
             Self::Cut(o) => &o.id,
             Self::Intersection(o) => &o.id,
@@ -782,6 +851,7 @@ impl Object {
             Self::Vector(_) => "vector",
             Self::Segment(_) => "segment",
             Self::Region(_) => "region",
+            Self::Fractal(_) => "fractal",
             Self::Surface(_) => "surface",
             Self::Cut(_) => "cut",
             Self::Intersection(_) => "intersection",
