@@ -37,7 +37,9 @@ mise run screenshot -- dev/notation/ /tmp/math.png --scroll "h3#導出木"
 
 ## Checking the TikZ output
 
-`mise run tikz` (local only; CI does not run it) compiles the TikZ that the engine writes for every figure of `figure-first.mdx` and `figure-space.mdx` with LuaLaTeX (`standalone`, `luatexja-preset`), rasterizes the PDF with `pdftoppm`, and lays it over a screenshot of the same figure on the built site. It needs TeX Live and `poppler-utils` (see the pitfalls in `CLAUDE.md`). Pass figure names to check a few: `mise run tikz -- vector-addition`.
+`mise run tikz` (local only; CI does not run it) compiles the TikZ that the engine writes for every figure of `figure-first.mdx` and `figure-space.mdx` with LuaLaTeX (`standalone`, `luatexja-preset`), rasterizes the PDF with `pdftoppm`, and lays it over a screenshot of the same figure on the built site. Pass figure names to check a few: `mise run tikz -- vector-addition`.
+
+TeX Live (the official `install-tl`, scheme infraonly plus LaTeX, LuaLaTeX, pgf, standalone, LuaTeX-ja, and the Harano Aji fonts) is installed by `.devcontainer/install-texlive.sh`, which the Dockerfile runs; `poppler-utils` gives `pdftoppm`. It lives in `/opt/texlive/<year>` and links its programs into `/usr/local/bin`. A running container that predates the Dockerfile change needs `apt-get install perl poppler-utils` and then `sh .devcontainer/install-texlive.sh` as root (several minutes, about 250 MB). It installs the latest release, so the pgf version follows the year (2026: pgf 3.1.12, LuaHBTeX 1.24); recompile with `mise run tikz` after a rebuild. Figure labels are TeX that MathJax reads, so the comparison document loads `amsmath` (a label with `\boldsymbol` does not compile without it). Figure labels are 10 pt (`figure.css`), the TikZ default `\normalsize`, so that the SVG and the TikZ output look alike.
 
 - Each figure is compared three ways at 3x resolution: `paths` (lines, arrowheads, dots, fills; labels hidden on both sides), `labels` (text only), and `full`. A pixel is ink when it is darker than white; the score is the share of ink that has no ink of the other image within a few pixels. The limits are in `e2e/tikz/settings.ts`: lines may differ by 2 px, labels by 4 px.
 - The result is one image per figure and kind in `tikz-out/` (git-ignored): SVG, PDF, and the difference (red only in the SVG, blue only in the PDF). Open the `-paths.png` or `-labels.png` of a failing figure with the Read tool.
@@ -94,7 +96,8 @@ Check these by hand, in a local browser or with assistive technology.
 
 ## Troubleshooting
 
-- Browser missing or wrong version: run `mise run browsers`.
+- Browser missing or wrong version: run `mise run browsers`. The Playwright browsers live in `/opt/ms-playwright`; this drifts when the `@playwright/test` version in `package.json` changes without a matching reinstall.
+- Measuring figure geometry: Playwright's `boundingBox()` of an SVG path adds the stroke width times the miter limit (4), so a 1.6 cm circle measures 4 px too wide. Measure with `getBoundingClientRect()` inside `evaluate` instead (`geometry()` in `e2e/figure-space.spec.ts`).
 - `astro preview` exits immediately: in agent environments it runs as a background server by design. Check it with `astro preview status` and stop it with `astro preview stop`. E2E tests use their own server (`e2e/serve.ts`).
 - Port 4322 is in use: stop the existing process. Playwright reuses an existing server.
 - E2E shows stale content: `mise run e2e` builds first. Running `pnpm exec playwright test` directly may serve an old `site/dist`.
