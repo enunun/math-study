@@ -206,7 +206,7 @@ Rustの核は，ブラウザにも，Astroにも依存しない．そのため�
 
 ## 図のシーンのしくみ
 
-図は，シーンと呼ぶJSONのデータから作る．シーンをRustで読み込んで検査し，描画の中間表現にして，SVGとTikZに書き出す．最初の図は，`/math-study/dev/figure-first/`にある．空間の図(球と座標軸，球の面の上の円)は，`/math-study/dev/figure-space/`にある．確認用のページ(`/math-study/dev/figure-scene/`)では，シーンを入力して，読み込みと検査の結果とTikZの出力を見られる．設計の全体は，`docs/graph-design.md`にある．
+図は，描画する内容(シーンと呼ぶ)を定義したJSONのデータから作る．シーンをRustで読み込んで検査し，描画の中間表現にして，SVGとTikZに書き出す．最初の図は，`/math-study/dev/figure-first/`にある．空間の図(球と座標軸，球の面の上の円)は，`/math-study/dev/figure-space/`にある．確認用のページ(`/math-study/dev/figure-scene/`)では，シーンを定義したJSONを入力して，読み込みと検査の結果とTikZの出力を見られる．設計の全体は，`docs/graph-design.md`にある．
 
 ### シーンの読み込みの流れ
 

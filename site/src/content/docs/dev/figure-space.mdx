@@ -1,6 +1,6 @@
 ---
 title: 空間の図
-description: シーン(JSON)から，ビルド時に描画した，空間の図である．球と3本の座標軸を，平行投影で描き，球に隠れた軸の部分を点線にする．
+description: シーンを定義したJSONから，ビルド時に描画した，空間の図である．球と3本の座標軸を，平行投影で描き，球に隠れた軸の部分を点線にする．
 sidebar:
   hidden: true
 pagefind: false
@@ -11,7 +11,7 @@ head:
       content: noindex
 ---
 
-図のシーン(`site/src/figures/sphere-with-axes.json`)を，ビルド時にRustのWasmで描画し，SVGとラベルにした図である．KeTCindyの見本`s0905sphere`と同じ内容で，半径2の球と，球を通る3本の座標軸を描く．
+描画する内容(シーンと呼ぶ)を定義したJSONは，`site/src/figures/sphere-with-axes.json`である．これを，ビルド時にRustのWasmで描画し，SVGとラベルにした図である．KeTCindyの見本`s0905sphere`と同じ内容で，半径2の球と，球を通る3本の座標軸を描く．
 
 ## 図
 
