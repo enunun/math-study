@@ -6,15 +6,17 @@ use crate::arrow::Stealth;
 use crate::bezier::bezier_curve_point;
 use crate::clip::clip_polyline;
 use crate::compile::{
-    Compiled, GraphPlot, GridPlot, LabelPlot, LinkPlot, Plot, PointPlot, TickPlot, compile,
+    Compiled, CurvePlot, GraphPlot, GridPlot, LabelPlot, LinkPlot, Plot, PointPlot,
+    TangentLinePlot, TickPlot, compile,
 };
+use crate::derivative::{central_difference, central_difference_point};
 use crate::error::Error;
 use crate::figure::{ArrowHead, Bounds, DotItem, Figure, Item, LabelItem, Path, Stroke};
 use crate::region::region_items;
 use crate::sample::sample;
 use crate::scene::{
     Anchor, Arrow, Axis, CM_PER_PT, Direction, Label, Line, Object, PlaneView, Point, Scene, Style,
-    View,
+    TangentLine, View,
 };
 use crate::space::render_space;
 
@@ -67,16 +69,8 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Result<
         scale.point(view.x[0], view.y[0]),
         scale.point(view.x[1], view.y[1]),
     ];
-    // 領域が挟むグラフは，`id`から引く．
-    let graphs: HashMap<&str, &GraphPlot> = scene
-        .objects
-        .iter()
-        .zip(&compiled.plots)
-        .filter_map(|(object, plot)| match (object, plot) {
-            (Object::Graph(graph), Plot::Graph(placed)) => Some((graph.id.as_str(), placed)),
-            _ => None,
-        })
-        .collect();
+    // 領域が挟むグラフと，接線が接する対象は，`id`から引く．
+    let (graphs, curves) = graphs_and_curves_of(scene, compiled);
     let mut items = Vec::new();
     for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
         match object {
@@ -108,6 +102,13 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Result<
             Object::Graph(_) | Object::Curve(_) => {
                 items.extend(plot_items(object, plot, compiled, scale, window));
             }
+            Object::TangentLine(tangent) => {
+                if let Plot::TangentLine(placed) = plot {
+                    items.extend(tangent_line_items(
+                        tangent, placed, &graphs, &curves, compiled, scale, window,
+                    ));
+                }
+            }
             Object::Grid(grid) => {
                 if let Plot::Grid(grid_plot) = plot {
                     items.extend(grid_items(&grid.style, grid_plot, view, scale));
@@ -132,7 +133,8 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Result<
             | Object::Sphere(_)
             | Object::Surface(_)
             | Object::Cut(_)
-            | Object::Intersection(_) => {}
+            | Object::Intersection(_)
+            | Object::TangentPlane(_) => {}
         }
     }
     Ok(Figure {
@@ -149,6 +151,35 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Result<
         },
         items,
     })
+}
+
+/// グラフと曲線を，`id`から引けるようにする．領域が挟むグラフと，接線が接する対象を探すために使う．
+fn graphs_and_curves_of<'a>(
+    scene: &'a Scene,
+    compiled: &'a Compiled,
+) -> (
+    HashMap<&'a str, &'a GraphPlot>,
+    HashMap<&'a str, &'a CurvePlot>,
+) {
+    let graphs = scene
+        .objects
+        .iter()
+        .zip(&compiled.plots)
+        .filter_map(|(object, plot)| match (object, plot) {
+            (Object::Graph(graph), Plot::Graph(placed)) => Some((graph.id.as_str(), placed)),
+            _ => None,
+        })
+        .collect();
+    let curves = scene
+        .objects
+        .iter()
+        .zip(&compiled.plots)
+        .filter_map(|(object, plot)| match (object, plot) {
+            (Object::Curve(curve), Plot::Curve(placed)) => Some((curve.id.as_str(), placed)),
+            _ => None,
+        })
+        .collect();
+    (graphs, curves)
 }
 
 fn label_item(label: &Label, placed: &LabelPlot, scale: Scale) -> Option<LabelItem> {
@@ -398,6 +429,79 @@ fn plot_items(
         .iter()
         .flat_map(|points| clip_polyline(points, min, max))
         .map(|points| Item::Path(curve_path(points, style)))
+        .collect()
+}
+
+/// 接線の，接する点と向き(数学の座標)．グラフなら`(1, f'(x0))`，曲線なら媒介変数の微分`(dx/dt, dy/dt)`．
+/// 対象が見つからないか，微分が求められなければ，`None`を返す．
+fn tangent_of(
+    tangent: &TangentLine,
+    placed: &TangentLinePlot,
+    graphs: &HashMap<&str, &GraphPlot>,
+    curves: &HashMap<&str, &CurvePlot>,
+    compiled: &Compiled,
+) -> Option<([f64; 2], [f64; 2])> {
+    let t0 = placed.at;
+    if let Some(graph) = graphs.get(tangent.of.as_str()) {
+        let eval = |x: f64| graph.expr.eval(&with_variable(x, &compiled.parameters));
+        let width = graph.domain[1] - graph.domain[0];
+        let y0 = eval(t0);
+        let slope = central_difference(eval, t0, width);
+        return (y0.is_finite() && slope.is_finite()).then_some(([t0, y0], [1.0, slope]));
+    }
+    let curve = curves.get(tangent.of.as_str())?;
+    let at = |t: f64| -> Option<[f64; 2]> {
+        if let Some(net) = &curve.net {
+            let point = bezier_curve_point(net, t)?;
+            let [x, y] = point.as_slice() else {
+                return None;
+            };
+            return Some([*x, *y]);
+        }
+        let values = with_variable(t, &compiled.parameters);
+        let [x_expr, y_expr] = curve.exprs.as_slice() else {
+            return None;
+        };
+        Some([x_expr.eval(&values), y_expr.eval(&values)])
+    };
+    let point = at(t0)?;
+    let width = curve.domain[1] - curve.domain[0];
+    let direction = central_difference_point(at, t0, width)?;
+    Some((point, direction))
+}
+
+/// 接線を，接する点を通り，見える範囲いっぱいに引いた線分として描く．向きが求められないか，
+/// 長さが0になれば(垂直接線を除く定義域の端など)，何も描かない．
+#[allow(clippy::too_many_arguments)]
+fn tangent_line_items(
+    tangent: &TangentLine,
+    placed: &TangentLinePlot,
+    graphs: &HashMap<&str, &GraphPlot>,
+    curves: &HashMap<&str, &CurvePlot>,
+    compiled: &Compiled,
+    scale: Scale,
+    window: [[f64; 2]; 2],
+) -> Vec<Item> {
+    let Some((point, direction)) = tangent_of(tangent, placed, graphs, curves, compiled) else {
+        return Vec::new();
+    };
+    let point = scale.point(point[0], point[1]);
+    let direction = [direction[0] * scale.x, direction[1] * scale.y];
+    let length = direction[0].hypot(direction[1]);
+    if !(length.is_finite() && length > 0.0) {
+        return Vec::new();
+    }
+    let unit = [direction[0] / length, direction[1] / length];
+    let [min, max] = window;
+    // 見える範囲の対角線より確実に長く延ばしてから，範囲で切り取る．
+    let reach = (max[0] - min[0]).hypot(max[1] - min[1]).mul_add(2.0, 1.0);
+    let segment = [
+        [point[0] - unit[0] * reach, point[1] - unit[1] * reach],
+        [point[0] + unit[0] * reach, point[1] + unit[1] * reach],
+    ];
+    clip_polyline(&segment, min, max)
+        .into_iter()
+        .map(|points| Item::Path(curve_path(points, tangent.style)))
         .collect()
 }
 

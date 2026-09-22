@@ -298,6 +298,25 @@
         "style": { "$ref": "#/$defs/style" }
       }
     },
+    "tangent_line": {
+      "type": "object",
+      "required": ["id", "type", "of", "at"],
+      "additionalProperties": false,
+      "description": "グラフか曲線の接線。平面の図でだけ使える。接する点での向きは，数値微分(中心差分)で求める。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "tangent_line" },
+        "of": {
+          "$ref": "#/$defs/identifier",
+          "description": "接する対象の`id`。`graph`か`curve`オブジェクトのものでなければならないが，これはスキーマでは表せない。"
+        },
+        "at": {
+          "$ref": "#/$defs/bound",
+          "description": "接する点。`of`がグラフなら変数の値，曲線なら媒介変数の値。"
+        },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
     "grid": {
       "type": "object",
       "required": ["id", "type"],
@@ -528,14 +547,41 @@
         "style": { "$ref": "#/$defs/style" }
       }
     },
+    "tangent_plane": {
+      "type": "object",
+      "required": ["id", "type", "of", "at", "size"],
+      "additionalProperties": false,
+      "description": "曲面の接平面。空間の図でだけ使える。接する点での，2つの偏微分(中心差分)の向きに張る平行四辺形として描く。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "tangent_plane" },
+        "of": {
+          "$ref": "#/$defs/identifier",
+          "description": "接する曲面の`id`。`surface`オブジェクトのものでなければならないが，これはスキーマでは表せない。"
+        },
+        "at": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/bound" },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "接する点の，曲面の2つの変数の値。"
+        },
+        "size": {
+          "$ref": "#/$defs/positiveNumberOrExpression",
+          "description": "接平面の半径(cm)。中心から各辺への距離。"
+        },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
     "object": {
-      "description": "図を作るオブジェクト。`type`で種類を選ぶ。`graph`，`grid`，`region`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`は空間の図でだけ使える。この使い分けは，スキーマでは表せない。",
+      "description": "図を作るオブジェクト。`type`で種類を選ぶ。`graph`，`grid`，`region`，`tangent_line`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`は空間の図でだけ使える。この使い分けは，スキーマでは表せない。",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },
         { "$ref": "#/$defs/parameter" },
         { "$ref": "#/$defs/graph" },
         { "$ref": "#/$defs/curve" },
+        { "$ref": "#/$defs/tangent_line" },
         { "$ref": "#/$defs/grid" },
         { "$ref": "#/$defs/point" },
         { "$ref": "#/$defs/vector" },
@@ -544,7 +590,8 @@
         { "$ref": "#/$defs/sphere" },
         { "$ref": "#/$defs/surface" },
         { "$ref": "#/$defs/cut" },
-        { "$ref": "#/$defs/intersection" }
+        { "$ref": "#/$defs/intersection" },
+        { "$ref": "#/$defs/tangent_plane" }
       ]
     }
   }

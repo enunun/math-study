@@ -234,9 +234,11 @@ test.describe('図の作成', () => {
     '球と円柱の交線',
     'ベジエ曲面',
     'ベジエ曲線',
+    '接線',
     '放物面と座標軸',
     '空間のベクトルの和',
     '球の上の円',
+    '接平面',
   ]) {
     test(`見本「${label}」は，誤りなく描ける`, async ({ page }) => {
       await editor(page).getByRole('button', { name: label, exact: true }).click();

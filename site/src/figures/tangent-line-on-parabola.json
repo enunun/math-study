@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0",
+  "description": "y=x^2のグラフと，点Pにおける接線．",
+  "view": { "x": [-3, 3], "y": [-1, 6], "unit": { "x": "1cm", "y": "1cm" } },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "label": "x" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "label": "y" },
+    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "$O$" },
+    {
+      "id": "f",
+      "type": "graph",
+      "var": "x",
+      "expr": "x^2",
+      "domain": [-3, 3],
+      "style": { "color": "blue" }
+    },
+    { "id": "p", "type": "point", "at": [1, 1], "dot": true, "label": "P", "anchor": "south west" },
+    {
+      "id": "t",
+      "type": "tangent_line",
+      "of": "f",
+      "at": 1,
+      "style": { "color": "red", "line": "dashed" }
+    }
+  ]
+}

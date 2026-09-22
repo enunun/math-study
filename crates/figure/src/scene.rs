@@ -124,6 +124,8 @@ pub enum Object {
     Graph(Graph),
     /// 媒介変数表示の曲線．
     Curve(Curve),
+    /// グラフか曲線の接線．平面の図でだけ使える．
+    TangentLine(TangentLine),
     /// 球．空間の図でだけ使える．
     Sphere(Sphere),
     /// 格子．平面の図でだけ使える．
@@ -142,6 +144,8 @@ pub enum Object {
     Cut(Cut),
     /// 2つの曲面の交線．空間の図でだけ使える．
     Intersection(Intersection),
+    /// 曲面の接平面．空間の図でだけ使える．
+    TangentPlane(TangentPlane),
 }
 
 /// 軸の向き．
@@ -451,6 +455,38 @@ pub struct Intersection {
     pub style: Style,
 }
 
+/// グラフか曲線の接線．平面の図でだけ使える．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TangentLine {
+    /// 識別子．
+    pub id: String,
+    /// 接する対象(`graph`か`curve`)の`id`．
+    pub of: String,
+    /// 接する点．`of`がグラフなら変数の値，曲線なら媒介変数の値．数か式．
+    pub at: Bound,
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
+/// 曲面の接平面．空間の図でだけ使える．接する点での，2つの偏微分の向きに張る平行四辺形として描く．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TangentPlane {
+    /// 識別子．
+    pub id: String,
+    /// 接する曲面(`surface`)の`id`．
+    pub of: String,
+    /// 接する点の，曲面の2つの変数の値．数か式．
+    pub at: [Bound; 2],
+    /// 接平面の半径(cm)．中心から各辺への距離．数か式．
+    pub size: Bound,
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
 /// 曲面の，平面による切り口．平面は，法線と定数で`normal・p = offset`と書く．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -711,6 +747,7 @@ impl Object {
             Self::Parameter(o) => &o.id,
             Self::Graph(o) => &o.id,
             Self::Curve(o) => &o.id,
+            Self::TangentLine(o) => &o.id,
             Self::Sphere(o) => &o.id,
             Self::Grid(o) => &o.id,
             Self::Point(o) => &o.id,
@@ -720,6 +757,7 @@ impl Object {
             Self::Surface(o) => &o.id,
             Self::Cut(o) => &o.id,
             Self::Intersection(o) => &o.id,
+            Self::TangentPlane(o) => &o.id,
         }
     }
 
@@ -732,6 +770,7 @@ impl Object {
             Self::Parameter(_) => "parameter",
             Self::Graph(_) => "graph",
             Self::Curve(_) => "curve",
+            Self::TangentLine(_) => "tangent_line",
             Self::Sphere(_) => "sphere",
             Self::Grid(_) => "grid",
             Self::Point(_) => "point",
@@ -741,6 +780,7 @@ impl Object {
             Self::Surface(_) => "surface",
             Self::Cut(_) => "cut",
             Self::Intersection(_) => "intersection",
+            Self::TangentPlane(_) => "tangent_plane",
         }
     }
 }

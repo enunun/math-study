@@ -60,6 +60,8 @@ pub enum ErrorKind {
     UnknownSurface(String),
     /// 領域が，存在しないグラフ(グラフでないオブジェクトを含む)を指している．中身は，指された`id`．
     UnknownGraph(String),
+    /// 接線が，存在しないグラフか曲線(どちらでもないオブジェクトを含む)を指している．中身は，指された`id`．
+    UnknownTangentTarget(String),
     /// 曲線の式の数が合わない．
     ExpressionCount {
         /// 必要な数．
@@ -91,6 +93,7 @@ impl ErrorKind {
             Self::UnknownPoint(_) => "unknown_point",
             Self::UnknownGraph(_) => "unknown_graph",
             Self::UnknownSurface(_) => "unknown_surface",
+            Self::UnknownTangentTarget(_) => "unknown_tangent_target",
         }
     }
 }
@@ -179,11 +182,15 @@ impl fmt::Display for Error {
             ),
             ErrorKind::UnknownSurface(name) => write!(
                 f,
-                "曲面「{name}」がない．`surface`には，`surface`オブジェクトの`id`を書く．"
+                "曲面「{name}」がない．曲面を指す項目には，`surface`オブジェクトの`id`を書く．"
             ),
             ErrorKind::UnknownGraph(name) => write!(
                 f,
                 "グラフ「{name}」がない．`between`には，`graph`オブジェクトの`id`を書く．"
+            ),
+            ErrorKind::UnknownTangentTarget(name) => write!(
+                f,
+                "「{name}」がない．接線の`of`には，`graph`か`curve`オブジェクトの`id`を書く．"
             ),
             ErrorKind::ExpressionCount { expected, found } => {
                 write!(f, "式は{expected}個必要だが，{found}個書かれている．")

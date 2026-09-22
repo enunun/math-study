@@ -46,6 +46,9 @@
         ]
       }
     },
+    "tangent_line": {
+      "plane": { "type": "tangent_line", "of": "", "at": 0 }
+    },
     "grid": {
       "plane": { "type": "grid", "x_step": 1, "y_step": 1, "style": { "color": "gray" } }
     },
@@ -98,6 +101,9 @@
     },
     "intersection": {
       "space": { "type": "intersection", "surfaces": [] }
+    },
+    "tangent_plane": {
+      "space": { "type": "tangent_plane", "of": "", "at": [0, 0], "size": 1 }
     }
   }
 }

@@ -6,7 +6,7 @@ use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, is_reserved_name};
 use crate::scene::{
     Anchor, Axis, Bound, Curve, Cut, Direction, Graph, Grid, Label, Object, Point, Position,
-    Region, Scene, Surface, View,
+    Region, Scene, Surface, TangentLine, TangentPlane, View,
 };
 use crate::validate::curve_expressions;
 
@@ -26,6 +26,20 @@ pub struct CurvePlot {
     pub domain: [f64; 2],
     /// ベジエ曲線の制御点の座標(各点，平面では2個，空間では3個)．式で書く曲線では`None`．
     pub net: Option<Vec<Vec<f64>>>,
+}
+
+/// 式を読んだ後の，接線．
+pub struct TangentLinePlot {
+    /// 接する点(`of`がグラフなら変数の値，曲線なら媒介変数の値)．
+    pub at: f64,
+}
+
+/// 式を読んだ後の，接平面．
+pub struct TangentPlanePlot {
+    /// 接する点の，曲面の2つの変数の値．
+    pub at: [f64; 2],
+    /// 接平面の半径(cm)．
+    pub size: f64,
 }
 
 /// 式を読んだ後の，軸の目盛．
@@ -121,6 +135,10 @@ pub enum Plot {
     Graph(GraphPlot),
     /// 曲線．
     Curve(CurvePlot),
+    /// 接線．
+    TangentLine(TangentLinePlot),
+    /// 接平面．
+    TangentPlane(TangentPlanePlot),
     /// 式のないオブジェクト．
     None,
 }
@@ -239,6 +257,9 @@ fn compile_object(
         Object::Curve(curve) => compile_curve(curve, names, parameters, curve_expressions(view))
             .map(Plot::Curve)
             .map_err(|kind| Error::in_object(&curve.id, kind)),
+        Object::TangentLine(tangent) => compile_tangent_line(tangent, names, parameters)
+            .map(Plot::TangentLine)
+            .map_err(|kind| Error::in_object(&tangent.id, kind)),
         Object::Grid(grid) => compile_grid(grid, names, parameters, view)
             .map(Plot::Grid)
             .map_err(|kind| Error::in_object(&grid.id, kind)),
@@ -257,6 +278,9 @@ fn compile_object(
         Object::Region(region) => compile_region(region, names, parameters)
             .map(Plot::Region)
             .map_err(|kind| Error::in_object(&region.id, kind)),
+        Object::TangentPlane(tangent) => compile_tangent_plane(tangent, names, parameters)
+            .map(Plot::TangentPlane)
+            .map_err(|kind| Error::in_object(&tangent.id, kind)),
         Object::Parameter(_)
         | Object::Sphere(_)
         | Object::Vector(_)
@@ -371,6 +395,37 @@ fn compile_curve_bezier(
         domain: [0.0, 1.0],
         net: Some(evaluated),
     })
+}
+
+/// 接線の接する点を評価する．接する対象(`of`)がグラフか曲線かは，描画のときに`id`で引く．
+fn compile_tangent_line(
+    tangent: &TangentLine,
+    names: &[&str],
+    parameters: &[f64],
+) -> Result<TangentLinePlot, ErrorKind> {
+    let at = evaluate_bound("at", &tangent.at, 0, names, parameters)?;
+    Ok(TangentLinePlot { at })
+}
+
+/// 接平面の接する点と半径を評価する．接する曲面(`of`)は，描画のときに`id`で引く．
+fn compile_tangent_plane(
+    tangent: &TangentPlane,
+    names: &[&str],
+    parameters: &[f64],
+) -> Result<TangentPlanePlot, ErrorKind> {
+    let [u, v] = &tangent.at;
+    let at = [
+        evaluate_bound("at", u, 0, names, parameters)?,
+        evaluate_bound("at", v, 1, names, parameters)?,
+    ];
+    let size = evaluate_bound("size", &tangent.size, 0, names, parameters)?;
+    if size.is_finite() && size > 0.0 {
+        Ok(TangentPlanePlot { at, size })
+    } else {
+        Err(ErrorKind::Invalid(
+            "接平面の半径(`size`)は，正の有限の数にする．".to_owned(),
+        ))
+    }
 }
 
 /// 切り口の平面の式を評価し，法線が0でない有限のベクトルであることを確かめる．

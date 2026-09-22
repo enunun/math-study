@@ -12,7 +12,9 @@ use std::f64::consts::TAU;
 use crate::bezier::{bezier_curve_point, bezier_point};
 use crate::compile::{
     Compiled, CurvePlot, CutPlot, LabelPlot, LinkPlot, Plot, PointPlot, SurfacePlot,
+    TangentPlanePlot,
 };
+use crate::derivative::central_difference_point;
 use crate::figure::{Bounds, DotItem, Figure, Item, LabelItem, Path, Stroke};
 use crate::render::{
     AXIS_WIDTH, CURVE_WIDTH, DOT_RADIUS, MARGIN, arrow_head, stroke_of, with_variable,
@@ -20,7 +22,7 @@ use crate::render::{
 use crate::sample::{sample, sample_with_parameters};
 use crate::scene::{
     Anchor, Arrow, Axis, Cut, Direction, Hidden, Intersection, Label, Line, Object, Point, Scene,
-    SpaceView, Sphere, Style, Surface,
+    SpaceView, Sphere, Style, Surface, TangentPlane,
 };
 use crate::surface::{Frame, Mesh, Rim};
 
@@ -100,6 +102,20 @@ fn minus(a: Point3, b: Point3) -> Point3 {
     [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
 
+fn add(a: Point3, b: Point3) -> Point3 {
+    [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+}
+
+fn scale(a: Point3, s: f64) -> Point3 {
+    [a[0] * s, a[1] * s, a[2] * s]
+}
+
+/// 長さ1に直した向き．長さが0か有限でなければ，`None`．
+fn normalized3(v: Point3) -> Option<Point3> {
+    let length = dot(v, v).sqrt();
+    (length.is_finite() && length > 0.0).then(|| scale(v, 1.0 / length))
+}
+
 /// 空間の図で，点を隠す球．
 struct Ball {
     center: Point3,
@@ -128,8 +144,10 @@ struct Space<'a> {
     meshes: Vec<Mesh>,
     /// 曲面の式の関数．`meshes`と同じ順に並び，交線と切り口を，厳密な式の上へ磨くために使う．
     surfaces: Vec<SurfaceMap<'a>>,
-    /// 曲面の`id`から，`meshes`の中の番号．
+    /// 曲面の`id`から，`meshes`と`surfaces`の中の番号．
     mesh_of: HashMap<String, usize>,
+    /// 曲面の`id`から，2つの変数それぞれの範囲．接平面の偏微分の刻みを決めるために使う．
+    surface_domains: HashMap<String, [[f64; 2]; 2]>,
 }
 
 impl Space<'_> {
@@ -171,8 +189,8 @@ fn surface_map<'a>(plot: &'a SurfacePlot, compiled: &'a Compiled) -> SurfaceMap<
     })
 }
 
-/// 空間の図を，描画の中間表現にする．
-pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Figure {
+/// 図全体(投影と，点を隠す球と曲面)を組み立てる．
+fn build_space<'a>(scene: &'a Scene, view: &SpaceView, compiled: &'a Compiled) -> Space<'a> {
     let camera = Camera::new(view);
     let placed_surfaces: Vec<(&Surface, &SurfacePlot)> = scene
         .objects
@@ -204,11 +222,16 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
         .enumerate()
         .map(|(index, id)| (id, index))
         .collect();
-    let space = Space {
+    let surface_domains: HashMap<String, [[f64; 2]; 2]> = placed_surfaces
+        .iter()
+        .map(|(surface, placed)| (surface.id.clone(), placed.domain))
+        .collect();
+    Space {
         camera,
         meshes,
         surfaces,
         mesh_of,
+        surface_domains,
         balls: scene
             .objects
             .iter()
@@ -220,7 +243,12 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
                 _ => None,
             })
             .collect(),
-    };
+    }
+}
+
+/// 空間の図を，描画の中間表現にする．
+pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Figure {
+    let space = build_space(scene, view, compiled);
     let mut items = Vec::new();
     let mut meshes = space.meshes.iter();
     let mut maps = space.surfaces.iter();
@@ -247,6 +275,9 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
             }
             (Object::Cut(cut), Plot::Cut(placed)) => {
                 items.extend(cut_items(cut, placed, &space));
+            }
+            (Object::TangentPlane(tangent), Plot::TangentPlane(placed)) => {
+                items.extend(tangent_plane_items(tangent, placed, &space));
             }
             (Object::Axis(axis), _) => items.extend(axis_items(axis, &space)),
             (Object::Label(label), Plot::Label(placed)) => {
@@ -486,15 +517,17 @@ fn surface_items(surface: &Surface, mesh: &Mesh, space: &Space) -> Vec<Item> {
 }
 
 /// パラメータ`t`が`start`から`end`まで動く曲線を，隠れ方に分けて描く．軸や曲線と同じ手順で，
-/// 画面での滑らかさに合わせて刻み，隠れ方が変わる点を二分法で詰める．
+/// 画面での滑らかさに合わせて刻み，隠れ方が変わる点を二分法で詰める．`default_line`は，`style`が
+/// 線の種類を指定しないときに使う(ワイヤーフレームと制御点の網は点線，接平面は実線)．
 fn wireframe_line(
     style: &Style,
+    default_line: Line,
     at: &dyn Fn(f64) -> Option<Point3>,
     start: f64,
     end: f64,
     space: &Space,
 ) -> Vec<Item> {
-    let stroke = stroke_of(style, Line::Dotted, CURVE_WIDTH);
+    let stroke = stroke_of(style, default_line, CURVE_WIDTH);
     let point = |t: f64| at(t).unwrap_or([f64::NAN; 3]);
     let lines = sample_with_parameters(|t| at(t).map(|p| space.camera.project(p)), start, end);
     let mut items = Vec::new();
@@ -521,9 +554,23 @@ fn surface_wireframe_items(
     let mut items = Vec::new();
     for t in interior_fractions(WIREFRAME_LINES) {
         let u = lerp(u0, u1, t);
-        items.extend(wireframe_line(style, &|v| map(u, v), v0, v1, space));
+        items.extend(wireframe_line(
+            style,
+            Line::Dotted,
+            &|v| map(u, v),
+            v0,
+            v1,
+            space,
+        ));
         let v = lerp(v0, v1, t);
-        items.extend(wireframe_line(style, &|u| map(u, v), u0, u1, space));
+        items.extend(wireframe_line(
+            style,
+            Line::Dotted,
+            &|u| map(u, v),
+            u0,
+            u1,
+            space,
+        ));
     }
     items
 }
@@ -541,7 +588,7 @@ fn control_net_items(surface: &Surface, plot: &SurfacePlot, space: &Space) -> Ve
                 lerp(a[2], b[2], t),
             ]
         };
-        wireframe_line(style, &|t| Some(mix(t)), 0.0, 1.0, space)
+        wireframe_line(style, Line::Dotted, &|t| Some(mix(t)), 0.0, 1.0, space)
     };
     let mut items = Vec::new();
     for row in net {
@@ -584,6 +631,7 @@ fn sphere_wireframe_items(sphere: &Sphere, space: &Space) -> Vec<Item> {
             / f64::from(u32::try_from(SPHERE_MERIDIANS).unwrap_or(1));
         items.extend(wireframe_line(
             style,
+            Line::Dotted,
             &|phi| Some(at(theta, phi)),
             -quarter_turn,
             quarter_turn,
@@ -594,6 +642,7 @@ fn sphere_wireframe_items(sphere: &Sphere, space: &Space) -> Vec<Item> {
         let phi = lerp(-quarter_turn, quarter_turn, t);
         items.extend(wireframe_line(
             style,
+            Line::Dotted,
             &|theta| Some(at(theta, phi)),
             0.0,
             TAU,
@@ -748,6 +797,73 @@ fn cut_items(cut: &Cut, placed: &CutPlot, space: &Space) -> Vec<Item> {
             stroke,
             cut.style.hidden,
             &space.camera,
+        ));
+    }
+    items
+}
+
+/// 接平面．接する曲面の2つの偏微分(中心差分)の向きに，半径`size`だけ広げた平行四辺形として描く．
+/// 曲面が見つからないか，偏微分が求められないか，どちらかの向きが0になれば(特異点など)，何も描かない．
+fn tangent_plane_items(
+    tangent: &TangentPlane,
+    placed: &TangentPlanePlot,
+    space: &Space,
+) -> Vec<Item> {
+    let Some((map, domain)) = space.mesh_of.get(&tangent.of).and_then(|index| {
+        Some((
+            space.surfaces.get(*index)?,
+            space.surface_domains.get(&tangent.of)?,
+        ))
+    }) else {
+        return Vec::new();
+    };
+    let [u0, v0] = placed.at;
+    let Some(point) = map(u0, v0) else {
+        return Vec::new();
+    };
+    let [[u_low, u_high], [v_low, v_high]] = *domain;
+    let along_u =
+        central_difference_point(|u| map(u, v0), u0, u_high - u_low).and_then(normalized3);
+    let along_v =
+        central_difference_point(|v| map(u0, v), v0, v_high - v_low).and_then(normalized3);
+    let (Some(along_u), Some(along_v)) = (along_u, along_v) else {
+        return Vec::new();
+    };
+    let size = placed.size;
+    let corner = |u_sign: f64, v_sign: f64| {
+        add(
+            point,
+            add(scale(along_u, u_sign * size), scale(along_v, v_sign * size)),
+        )
+    };
+    let corners = [
+        corner(1.0, 1.0),
+        corner(1.0, -1.0),
+        corner(-1.0, -1.0),
+        corner(-1.0, 1.0),
+    ];
+    let mut items = Vec::new();
+    for pair in [
+        [corners[0], corners[1]],
+        [corners[1], corners[2]],
+        [corners[2], corners[3]],
+        [corners[3], corners[0]],
+    ] {
+        let [a, b] = pair;
+        let at = |t: f64| {
+            Some([
+                lerp(a[0], b[0], t),
+                lerp(a[1], b[1], t),
+                lerp(a[2], b[2], t),
+            ])
+        };
+        items.extend(wireframe_line(
+            &tangent.style,
+            Line::Solid,
+            &at,
+            0.0,
+            1.0,
+            space,
         ));
     }
     items

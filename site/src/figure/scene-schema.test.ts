@@ -102,6 +102,40 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
     ).toBe(true);
   });
 
+  it('接線と接平面は，スキーマに合う', () => {
+    const plane = minimalObject('plane');
+    const space = minimalObject('space');
+    expect(
+      validate({
+        ...plane,
+        objects: [
+          { id: 'f', type: 'graph', var: 'x', expr: 'x^2', domain: [-3, 3] },
+          { id: 't', type: 'tangent_line', of: 'f', at: 1 },
+        ],
+      }),
+      JSON.stringify(validate.errors),
+    ).toBe(true);
+    expect(
+      validate({
+        ...space,
+        objects: [
+          {
+            id: 's',
+            type: 'surface',
+            vars: ['u', 'v'],
+            expr: ['u', 'v', 'u^2 + v^2'],
+            domain: [
+              [-2, 2],
+              [-2, 2],
+            ],
+          },
+          { id: 'p', type: 'tangent_plane', of: 's', at: [0, 0], size: 1 },
+        ],
+      }),
+      JSON.stringify(validate.errors),
+    ).toBe(true);
+  });
+
   it.each(['plane', 'space'] as const)(
     '図の作成ページが作る，%sの図の既定のオブジェクトが，スキーマに合う',
     (kind) => {
@@ -115,6 +149,7 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
               'graph',
               'curve',
               'bezierCurve',
+              'tangent_line',
               'grid',
               'point',
               'point',
@@ -131,6 +166,7 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
               'bezier',
               'cut',
               'intersection',
+              'tangent_plane',
               'point',
               'point',
               'label',

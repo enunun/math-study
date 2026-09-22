@@ -79,4 +79,27 @@ test.describe('曲面・球・曲線の制御点', () => {
     }).toPass();
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
+
+  test('接線は，グラフを選んで接する点を決めると描ける', async ({ page }) => {
+    await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
+    const before = await preview(page).locator('path').count();
+    await addObject(page, '接線');
+    await expect(async () => {
+      expect(await preview(page).locator('path').count()).toBeGreaterThan(before);
+    }).toPass();
+    await expect(editor(page).getByRole('alert')).toHaveCount(0);
+  });
+
+  test('接平面は，曲面を選んで接する点を決めると描ける', async ({ page }) => {
+    await editor(page).getByRole('button', { name: '放物面と座標軸', exact: true }).click();
+    const before = await preview(page).locator('path').count();
+    await addObject(page, '接平面');
+    // 既定の接する点(原点)は，このサンプルの極座標では特異点になるので，ずらす．
+    const at = editor(page).getByRole('group', { name: '接する点(変数の値)' });
+    await at.getByLabel('1番目').fill('1');
+    await expect(async () => {
+      expect(await preview(page).locator('path').count()).toBeGreaterThan(before);
+    }).toPass();
+    await expect(editor(page).getByRole('alert')).toHaveCount(0);
+  });
 });

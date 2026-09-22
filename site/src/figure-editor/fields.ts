@@ -140,6 +140,10 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
       hint: '[[0,0],[1,2],[2,0]]',
     },
   ],
+  tangent_line: [
+    { kind: 'reference', key: 'of', label: '接する対象', of: ['graph', 'curve'] },
+    { kind: 'bound', key: 'at', label: '接する点' },
+  ],
   grid: [
     { kind: 'bound', key: 'x_step', label: 'x方向の間隔', optional: true },
     { kind: 'bound', key: 'y_step', label: 'y方向の間隔', optional: true },
@@ -205,6 +209,11 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
   ],
   intersection: [
     { kind: 'references', key: 'surfaces', label: '交わる2つの曲面', of: SURFACES, count: PAIR },
+  ],
+  tangent_plane: [
+    { kind: 'reference', key: 'of', label: '接する曲面', of: SURFACES },
+    { kind: 'list', key: 'at', label: '接する点(変数の値)', item: 'bound', count: PAIR },
+    { kind: 'bound', key: 'size', label: '半径(cm)' },
   ],
 };
 

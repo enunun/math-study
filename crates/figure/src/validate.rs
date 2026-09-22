@@ -6,7 +6,7 @@ use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::scene::{
     Axis, Bound, CM_PER_PT, Curve, Cut, Direction, Graph, Grid, Intersection, Label, MAX_WIDTH_PT,
-    Object, Point, Position, Region, Scene, SpaceView, Sphere, Style, Surface, View,
+    Object, Point, Position, Region, Scene, SpaceView, Sphere, Style, Surface, TangentPlane, View,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -39,6 +39,14 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
             _ => None,
         })
         .collect();
+    let curves: HashSet<&str> = scene
+        .objects
+        .iter()
+        .filter_map(|object| match object {
+            Object::Curve(curve) => Some(curve.id.as_str()),
+            _ => None,
+        })
+        .collect();
     let surfaces: HashSet<&str> = scene
         .objects
         .iter()
@@ -60,6 +68,8 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
         check_endpoints(object, &points).map_err(|kind| Error::in_object(id, kind))?;
         check_graphs(object, &graphs).map_err(|kind| Error::in_object(id, kind))?;
         check_surface(object, &surfaces).map_err(|kind| Error::in_object(id, kind))?;
+        check_tangent_target(object, &graphs, &curves)
+            .map_err(|kind| Error::in_object(id, kind))?;
     }
     // 式の構文，名前，定義域は，型では確かめられないので，式を読んで確かめる．
     compile(scene).map(drop)
@@ -74,6 +84,9 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Label(label) => validate_label(label, view),
         Object::Graph(graph) => plane_only("graph", view).and_then(|()| validate_graph(graph)),
         Object::Curve(curve) => validate_curve(curve, view),
+        // 接する対象(`of`)の存在は，`check_tangent_target`が確かめる．接する点(`at`)は，
+        // 数か式(`Bound`)なので，ここで確かめることはない．
+        Object::TangentLine(_) => plane_only("tangent_line", view),
         Object::Sphere(sphere) => space_only("sphere", view).and_then(|()| validate_sphere(sphere)),
         Object::Grid(grid) => plane_only("grid", view).and_then(|()| validate_grid(grid)),
         Object::Point(point) => validate_point(point, view),
@@ -85,6 +98,9 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Intersection(found) => {
             space_only("intersection", view).and_then(|()| validate_intersection(found))
         }
+        Object::TangentPlane(tangent) => {
+            space_only("tangent_plane", view).and_then(|()| validate_tangent_plane(tangent))
+        }
         Object::Vector(_) | Object::Segment(_) | Object::Parameter(_) => Ok(()),
     }
 }
@@ -94,6 +110,7 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::Axis(o) => Some(&o.style),
         Object::Graph(o) => Some(&o.style),
         Object::Curve(o) => Some(&o.style),
+        Object::TangentLine(o) => Some(&o.style),
         Object::Sphere(o) => Some(&o.style),
         Object::Grid(o) => Some(&o.style),
         Object::Point(o) => Some(&o.style),
@@ -103,6 +120,7 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::Surface(o) => Some(&o.style),
         Object::Cut(o) => Some(&o.style),
         Object::Intersection(o) => Some(&o.style),
+        Object::TangentPlane(o) => Some(&o.style),
         Object::Label(_) | Object::Parameter(_) => None,
     }
 }
@@ -263,6 +281,7 @@ fn check_surface(object: &Object, surfaces: &HashSet<&str>) -> Result<(), ErrorK
     let names: Vec<&String> = match object {
         Object::Cut(cut) => vec![&cut.surface],
         Object::Intersection(found) => found.surfaces.iter().collect(),
+        Object::TangentPlane(tangent) => vec![&tangent.of],
         _ => return Ok(()),
     };
     for name in names {
@@ -271,6 +290,22 @@ fn check_surface(object: &Object, surfaces: &HashSet<&str>) -> Result<(), ErrorK
         }
     }
     Ok(())
+}
+
+/// 接線が接する対象は，`graph`か`curve`オブジェクトの`id`でなければならない．
+fn check_tangent_target(
+    object: &Object,
+    graphs: &HashSet<&str>,
+    curves: &HashSet<&str>,
+) -> Result<(), ErrorKind> {
+    let Object::TangentLine(tangent) = object else {
+        return Ok(());
+    };
+    if graphs.contains(tangent.of.as_str()) || curves.contains(tangent.of.as_str()) {
+        Ok(())
+    } else {
+        Err(ErrorKind::UnknownTangentTarget(tangent.of.clone()))
+    }
 }
 
 fn validate_intersection(found: &Intersection) -> Result<(), ErrorKind> {
@@ -406,6 +441,18 @@ fn validate_sphere(sphere: &Sphere) -> Result<(), ErrorKind> {
         Some(style) => check_style(style),
         None => Ok(()),
     }
+}
+
+/// 接平面の検査．接する曲面(`of`)の存在は，`check_surface`が確かめる．
+fn validate_tangent_plane(tangent: &TangentPlane) -> Result<(), ErrorKind> {
+    if let Bound::Number(value) = &tangent.size
+        && !(value.is_finite() && *value > 0.0)
+    {
+        return Err(ErrorKind::Invalid(
+            "接平面の半径(`size`)は，正の有限の数にする．".to_owned(),
+        ));
+    }
+    Ok(())
 }
 
 fn validate_curve(curve: &Curve, view: &View) -> Result<(), ErrorKind> {

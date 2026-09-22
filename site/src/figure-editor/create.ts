@@ -28,6 +28,7 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'graph', label: '関数のグラフ', kinds: PLANE },
   { type: 'curve', label: '曲線(式)', kinds: BOTH },
   { type: BEZIER_CURVE, label: '曲線(ベジエ)', kinds: BOTH },
+  { type: 'tangent_line', label: '接線', kinds: PLANE },
   { type: 'grid', label: '格子', kinds: PLANE },
   { type: 'point', label: '点', kinds: BOTH },
   { type: 'vector', label: 'ベクトル', kinds: BOTH },
@@ -38,6 +39,7 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: BEZIER, label: '曲面(ベジエ)', kinds: SPACE },
   { type: 'cut', label: '曲面の切り口', kinds: SPACE },
   { type: 'intersection', label: '曲面の交線', kinds: SPACE },
+  { type: 'tangent_plane', label: '接平面', kinds: SPACE },
 ];
 
 function typesFor(kind: ViewKind): readonly ObjectType[] {
@@ -78,12 +80,15 @@ function withReferences(content: JsonObject, draft: SceneDraft): JsonObject {
   const points = idsOfType(draft, 'point');
   const surfaces = idsOfType(draft, 'surface');
   const graphs = idsOfType(draft, 'graph');
+  const curves = idsOfType(draft, 'curve');
   const references: Record<string, Record<string, Json>> = {
     vector: { from: points[0] ?? '', to: points[1] ?? '' },
     segment: { from: points[0] ?? '', to: points[1] ?? '' },
     region: { between: graphs.slice(0, PAIR) },
     cut: { surface: surfaces[0] ?? '' },
     intersection: { surfaces: surfaces.slice(0, PAIR) },
+    tangent_line: { of: graphs[0] ?? curves[0] ?? '' },
+    tangent_plane: { of: surfaces[0] ?? '' },
   };
   return { ...content, ...references[stringOf(content, 'type')] };
 }
