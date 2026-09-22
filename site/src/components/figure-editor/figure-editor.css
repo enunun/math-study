@@ -72,13 +72,18 @@
   gap: 1rem;
 }
 
+.fe-preview-stack {
+  display: grid;
+  gap: 1rem;
+}
+
 @media (min-width: 64rem) {
   .fe-body {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
   }
 
-  .fe-preview {
+  .fe-preview-stack {
     position: sticky;
     top: 5rem;
   }

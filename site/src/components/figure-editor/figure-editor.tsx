@@ -1,24 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 
-import { renderFigure } from '@/components/figure/render-figure';
-import { useLoaded } from '@/components/use-loaded';
-import {
-  NO_SELECTION,
-  indexOfId,
-  rotateView,
-  stringifyDraft,
-  viewKind,
-} from '@/figure-editor/draft';
+import type { Rendered } from '@/components/figure/render-figure';
+import { NO_SELECTION, indexOfId, rotateView, viewKind } from '@/figure-editor/draft';
 import type { SceneDraft } from '@/figure-editor/draft';
-import { loadSceneEngine } from '@/figure/wasm';
-import type { SceneEngine } from '@/figure/wasm';
 
 import { FormPanel } from './form-panel';
 import { JsonPanel, TikzPanel } from './output-panel';
+import { OutputPreview } from './output-preview';
 import { Preview } from './preview';
 import { Toolbar } from './toolbar';
 import { useDraft } from './use-draft';
+import { useFigureRenders } from './use-figure-renders';
 
 import './figure-editor.css';
 
@@ -48,19 +41,6 @@ function Tabs({ tab, onTab }: { tab: Tab; onTab: (tab: Tab) => void }): ReactEle
       ))}
     </div>
   );
-}
-
-/** 描いた結果．エンジンを読み込むまでは，`rendered`が`undefined`である． */
-function useRendered(json: string): {
-  rendered: ReturnType<typeof renderFigure> | undefined;
-  failed: boolean;
-} {
-  const engine = useLoaded<SceneEngine>(loadSceneEngine);
-  const rendered = useMemo(
-    () => (engine.value === undefined ? undefined : renderFigure(engine.value, json)),
-    [engine.value, json],
-  );
-  return { rendered, failed: engine.failed };
 }
 
 interface ControlsProps {
@@ -106,23 +86,45 @@ function Controls({
 }
 
 interface BodyProps extends ControlsProps {
-  rendered: ReturnType<typeof renderFigure> | undefined;
+  /** 実際の出力と同じ，そのままの図． */
+  rendered: Rendered | undefined;
+  /** 編集の補助を加えた図． */
+  editRendered: Rendered | undefined;
   failed: boolean;
+  wireframe: boolean;
+  onWireframeChange: (wireframe: boolean) => void;
   onPickObject: (id: string) => void;
   onRotate: (deltaAzimuth: number, deltaElevation: number) => void;
 }
 
-/** プレビューと，タブで切り替える操作の欄． */
-function Body({ rendered, failed, onPickObject, onRotate, ...controls }: BodyProps): ReactElement {
+/**
+ * 編集中の図(補助つき，操作できる)と，実際の出力のプレビュー(補助なし)を分けて示し，タブで切り替える操作の欄．
+ */
+function Body({
+  rendered,
+  editRendered,
+  failed,
+  wireframe,
+  onWireframeChange,
+  onPickObject,
+  onRotate,
+  ...controls
+}: BodyProps): ReactElement {
+  const kind = viewKind(controls.draft);
   return (
     <div className="fe-body">
-      <Preview
-        rendered={rendered}
-        failed={failed}
-        kind={viewKind(controls.draft)}
-        onPickObject={onPickObject}
-        onRotate={onRotate}
-      />
+      <div className="fe-preview-stack">
+        <Preview
+          rendered={editRendered}
+          failed={failed}
+          kind={kind}
+          wireframe={wireframe}
+          onWireframeChange={onWireframeChange}
+          onPickObject={onPickObject}
+          onRotate={onRotate}
+        />
+        <OutputPreview rendered={rendered} failed={failed} />
+      </div>
       <Controls {...controls} />
     </div>
   );
@@ -137,8 +139,8 @@ function FigureEditor(): ReactElement {
   const [tab, setTab] = useState<Tab>('form');
   const [selected, setSelected] = useState(NO_SELECTION);
   const [message, setMessage] = useState('');
-  const json = useMemo(() => stringifyDraft(draft), [draft]);
-  const { rendered, failed } = useRendered(json);
+  const [wireframe, setWireframe] = useState(false);
+  const { json, rendered, editRendered, failed } = useFigureRenders(draft, wireframe);
   const replace = (next: SceneDraft): void => {
     load(next);
     setSelected(NO_SELECTION);
@@ -157,7 +159,10 @@ function FigureEditor(): ReactElement {
       />
       <Body
         rendered={rendered}
+        editRendered={editRendered}
         failed={failed}
+        wireframe={wireframe}
+        onWireframeChange={setWireframe}
         onPickObject={(id) => {
           setSelected(indexOfId(draft, id));
           setTab('form');

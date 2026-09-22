@@ -11,7 +11,11 @@ function editor(page: Page): Locator {
 }
 
 function preview(page: Page): Locator {
-  return editor(page).locator('.fe-preview svg');
+  return editor(page).locator('.fe-edit-preview svg');
+}
+
+function outputPreview(page: Page): Locator {
+  return editor(page).locator('.fe-output-preview svg');
 }
 
 /** ボタンを押して，始まったダウンロードの内容を読む． */
@@ -95,7 +99,9 @@ test.describe('図の作成', () => {
     const azimuth = editor(page).getByLabel('方位角(度)');
     const elevation = editor(page).getByLabel('仰角(度)');
     const before = { azimuth: await azimuth.inputValue(), elevation: await elevation.inputValue() };
-    const box = await editor(page).locator('.fe-draggable').boundingBox();
+    const draggable = editor(page).locator('.fe-draggable');
+    await draggable.scrollIntoViewIfNeeded();
+    const box = await draggable.boundingBox();
     if (box === null) {
       throw new Error('ドラッグする領域が見つからない');
     }
@@ -112,6 +118,41 @@ test.describe('図の作成', () => {
     await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
     await expect(editor(page).locator('.fe-draggable')).toHaveCount(0);
     await expect(editor(page).getByText('ドラッグすると')).toHaveCount(0);
+  });
+
+  test('編集中の図とプレビューが，別々に表示される', async ({ page }) => {
+    await addObject(page, '座標軸');
+    await expect(editor(page).getByRole('heading', { name: '編集中の図' })).toBeVisible();
+    await expect(
+      editor(page).getByRole('heading', { name: 'プレビュー', exact: true }),
+    ).toBeVisible();
+    await expect(outputPreview(page)).toBeVisible();
+  });
+
+  test('編集中の図では，座標軸を補助のスタイル(灰色の点線)で描き，プレビューでは元のスタイルのままにする', async ({
+    page,
+  }) => {
+    await addObject(page, '座標軸');
+    const editStroke = await preview(page).locator('path').first().getAttribute('stroke');
+    const outputStroke = await outputPreview(page).locator('path').first().getAttribute('stroke');
+    expect(editStroke).toContain('gray');
+    expect(outputStroke).not.toContain('gray');
+  });
+
+  test('空間の図で，曲面のワイヤーフレームを示すと，編集中の図だけ線が増える', async ({ page }) => {
+    await editor(page).getByRole('button', { name: '放物面と座標軸', exact: true }).click();
+    const editBefore = await preview(page).locator('path').count();
+    const outputBefore = await outputPreview(page).locator('path').count();
+    await editor(page).getByLabel('曲面のワイヤーフレームを表示').check();
+    await expect(async () => {
+      expect(await preview(page).locator('path').count()).toBeGreaterThan(editBefore);
+    }).toPass();
+    expect(await outputPreview(page).locator('path').count()).toBe(outputBefore);
+  });
+
+  test('平面の図には，ワイヤーフレームの切り替えがない', async ({ page }) => {
+    await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
+    await expect(editor(page).getByLabel('曲面のワイヤーフレームを表示')).toHaveCount(0);
   });
 
   test('JSONを書き出して，読み込み直すと，同じ図になる', async ({ page }) => {
