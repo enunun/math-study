@@ -1,5 +1,13 @@
 import defaults from './defaults.json';
-import { arrayOf, isJsonObject, objectOf, parseJson, stringOf, toJsonObject } from './json';
+import {
+  arrayOf,
+  isJsonObject,
+  objectOf,
+  parseJson,
+  stringOf,
+  toJsonObject,
+  withField,
+} from './json';
 import type { JsonObject } from './json';
 
 /** 編集中の図のシーン．エンジンが読む形のJSONと同じで，誤りがあっても持てる． */
@@ -108,6 +116,34 @@ function indexOfId(draft: SceneDraft, id: string): number {
   return draft.objects.findIndex((object) => stringOf(object, 'id') === id);
 }
 
+/** エンジンが許す，仰角の絶対値の上限(度)．`crates/figure/src/validate.rs`の`MAX_ELEVATION`と同じ． */
+const ELEVATION_LIMIT = 90;
+/** 半回転と，1回転の度数． */
+const HALF_TURN = 180;
+const FULL_TURN = 360;
+
+/** 度を，-180より大きく180以下の範囲へ，同じ向きを表すように畳み込む． */
+function wrapAzimuth(value: number): number {
+  return ((((value + HALF_TURN) % FULL_TURN) + FULL_TURN) % FULL_TURN) - HALF_TURN;
+}
+
+/**
+ * 空間の図の見る向きを，ドラッグの移動量(度)だけ回す．方位角は畳み込み，仰角は上限で止める．
+ * 方位角か仰角が数でなければ(式で書かれていれば)，ドラッグでは変えられないので，そのまま返す．
+ */
+function rotateView(draft: SceneDraft, deltaAzimuth: number, deltaElevation: number): SceneDraft {
+  const { view } = draft;
+  if (typeof view.azimuth !== 'number' || typeof view.elevation !== 'number') {
+    return draft;
+  }
+  const azimuth = wrapAzimuth(view.azimuth + deltaAzimuth);
+  const elevation = Math.min(
+    ELEVATION_LIMIT,
+    Math.max(-ELEVATION_LIMIT, view.elevation + deltaElevation),
+  );
+  return { ...draft, view: withField(withField(view, 'azimuth', azimuth), 'elevation', elevation) };
+}
+
 export {
   NO_SELECTION,
   indexOfId,
@@ -118,6 +154,7 @@ export {
   parseDraft,
   removeObject,
   replaceObject,
+  rotateView,
   SCENE_VERSION,
   stringifyDraft,
   uniqueId,

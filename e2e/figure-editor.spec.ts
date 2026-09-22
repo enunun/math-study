@@ -90,6 +90,30 @@ test.describe('図の作成', () => {
     await expect(preview(page)).toBeVisible();
   });
 
+  test('空間の図は，プレビューをドラッグすると，見る向きが変わる', async ({ page }) => {
+    await editor(page).getByRole('button', { name: '球と座標軸', exact: true }).click();
+    const azimuth = editor(page).getByLabel('方位角(度)');
+    const elevation = editor(page).getByLabel('仰角(度)');
+    const before = { azimuth: await azimuth.inputValue(), elevation: await elevation.inputValue() };
+    const box = await editor(page).locator('.fe-draggable').boundingBox();
+    if (box === null) {
+      throw new Error('ドラッグする領域が見つからない');
+    }
+    const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    await page.mouse.move(center.x, center.y);
+    await page.mouse.down();
+    await page.mouse.move(center.x + 60, center.y + 30, { steps: 5 });
+    await page.mouse.up();
+    await expect(azimuth).not.toHaveValue(before.azimuth);
+    await expect(elevation).not.toHaveValue(before.elevation);
+  });
+
+  test('平面の図には，ドラッグの案内も，ドラッグできる領域もない', async ({ page }) => {
+    await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
+    await expect(editor(page).locator('.fe-draggable')).toHaveCount(0);
+    await expect(editor(page).getByText('ドラッグすると')).toHaveCount(0);
+  });
+
   test('JSONを書き出して，読み込み直すと，同じ図になる', async ({ page }) => {
     await editor(page).getByRole('button', { name: 'ベクトルの和', exact: true }).click();
     const exported = await downloaded(page, 'JSONを書き出す');
@@ -175,6 +199,25 @@ test.describe('図の作成', () => {
       .click();
     await expect(items).toHaveCount(1);
   });
+
+  for (const label of [
+    '関数のグラフ',
+    'ベクトルの和',
+    '2つのグラフの間の領域',
+    '球と座標軸',
+    '円錐と切り口',
+    '球と円柱の交線',
+    'ベジエ曲面',
+    '放物面と座標軸',
+    '空間のベクトルの和',
+    '球の上の円',
+  ]) {
+    test(`見本「${label}」は，誤りなく描ける`, async ({ page }) => {
+      await editor(page).getByRole('button', { name: label, exact: true }).click();
+      await expect(preview(page)).toBeVisible();
+      await expect(editor(page).getByRole('alert')).toHaveCount(0);
+    });
+  }
 
   for (const tab of ['フォーム', 'JSON', 'TikZ']) {
     test(`アクセシビリティ：${tab}の表示に，違反がない`, async ({ page }) => {

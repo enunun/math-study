@@ -97,6 +97,27 @@
   font-size: var(--sl-text-base);
 }
 
+.fe-preview-figure svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.fe-draggable {
+  touch-action: none;
+  cursor: grab;
+}
+
+.fe-draggable:active {
+  cursor: grabbing;
+}
+
+.fe-hint {
+  margin: 0.4rem 0 0;
+  color: var(--sl-color-gray-3);
+  font-size: var(--sl-text-xs);
+}
+
 .fe-error {
   padding: 0.6rem 0.9rem;
   border-inline-start: 0.3rem solid var(--sl-color-red);

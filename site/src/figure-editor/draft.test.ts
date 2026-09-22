@@ -10,6 +10,7 @@ import {
   parseDraft,
   removeObject,
   replaceObject,
+  rotateView,
   stringifyDraft,
   uniqueId,
   viewKind,
@@ -192,5 +193,33 @@ describe('入力欄の読み書き', () => {
       '2番目',
       '3番目',
     ]);
+  });
+});
+
+describe('視点の回転', () => {
+  it('方位角と仰角に，移動量を足す', () => {
+    const draft = emptyDraft('space');
+    const rotated = rotateView(draft, 10, -5);
+    expect(rotated.view.azimuth).toBe(70);
+    expect(rotated.view.elevation).toBe(15);
+  });
+
+  it('仰角は，90度を超えない', () => {
+    const draft = emptyDraft('space');
+    expect(rotateView(draft, 0, 1000).view.elevation).toBe(90);
+    expect(rotateView(draft, 0, -1000).view.elevation).toBe(-90);
+  });
+
+  it('方位角は，-180度より大きく180度以下に畳み込む', () => {
+    const draft = emptyDraft('space');
+    expect(rotateView(draft, 200, 0).view.azimuth).toBe(-100);
+    expect(rotateView(draft, -400, 0).view.azimuth).toBe(20);
+  });
+
+  it('平面の図や，式で書いた向きは，そのまま返す', () => {
+    const plane = emptyDraft('plane');
+    expect(rotateView(plane, 10, 10)).toBe(plane);
+    const expressed = { ...emptyDraft('space'), view: { azimuth: 'az', elevation: 20 } };
+    expect(rotateView(expressed, 10, 10)).toBe(expressed);
   });
 });

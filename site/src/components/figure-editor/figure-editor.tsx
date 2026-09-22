@@ -3,7 +3,13 @@ import type { ReactElement } from 'react';
 
 import { renderFigure } from '@/components/figure/render-figure';
 import { useLoaded } from '@/components/use-loaded';
-import { NO_SELECTION, indexOfId, stringifyDraft } from '@/figure-editor/draft';
+import {
+  NO_SELECTION,
+  indexOfId,
+  rotateView,
+  stringifyDraft,
+  viewKind,
+} from '@/figure-editor/draft';
 import type { SceneDraft } from '@/figure-editor/draft';
 import { loadSceneEngine } from '@/figure/wasm';
 import type { SceneEngine } from '@/figure/wasm';
@@ -57,6 +63,71 @@ function useRendered(json: string): {
   return { rendered, failed: engine.failed };
 }
 
+interface ControlsProps {
+  tab: Tab;
+  onTab: (tab: Tab) => void;
+  draft: SceneDraft;
+  revision: number;
+  onDraft: (draft: SceneDraft) => void;
+  tikz: string;
+  invalidId: string;
+  selected: number;
+  onSelect: (index: number) => void;
+}
+
+/** タブの切り替えと，選んだタブの中身(フォーム，JSON，TikZ)． */
+function Controls({
+  tab,
+  onTab,
+  draft,
+  revision,
+  onDraft,
+  tikz,
+  invalidId,
+  selected,
+  onSelect,
+}: ControlsProps): ReactElement {
+  return (
+    <div className="fe-controls">
+      <Tabs tab={tab} onTab={onTab} />
+      {tab === 'form' && (
+        <FormPanel
+          draft={draft}
+          onDraft={onDraft}
+          invalidId={invalidId}
+          selected={selected}
+          onSelect={onSelect}
+        />
+      )}
+      {tab === 'json' && <JsonPanel key={revision} draft={draft} onChange={onDraft} />}
+      {tab === 'tikz' && <TikzPanel tikz={tikz} />}
+    </div>
+  );
+}
+
+interface BodyProps extends ControlsProps {
+  rendered: ReturnType<typeof renderFigure> | undefined;
+  failed: boolean;
+  onPickObject: (id: string) => void;
+  onRotate: (deltaAzimuth: number, deltaElevation: number) => void;
+}
+
+/** プレビューと，タブで切り替える操作の欄． */
+function Body({ rendered, failed, onPickObject, onRotate, ...controls }: BodyProps): ReactElement {
+  return (
+    <div className="fe-body">
+      <Preview
+        rendered={rendered}
+        failed={failed}
+        kind={viewKind(controls.draft)}
+        onPickObject={onPickObject}
+        onRotate={onRotate}
+      />
+      <Controls {...controls} />
+    </div>
+  );
+}
+
 /**
  * 図の作成．オブジェクトを足して設定すると，図のシーン(JSON)ができ，RustのエンジンをWasmで動かして描く．
  * シーンのJSONの読み込みと書き出し，対応するTikZの書き出しができる．
@@ -84,30 +155,26 @@ function FigureEditor(): ReactElement {
           replace({ ...draft, objects: [] });
         }}
       />
-      <div className="fe-body">
-        <Preview
-          rendered={rendered}
-          failed={failed}
-          onPickObject={(id) => {
-            setSelected(indexOfId(draft, id));
-            setTab('form');
-          }}
-        />
-        <div className="fe-controls">
-          <Tabs tab={tab} onTab={setTab} />
-          {tab === 'form' && (
-            <FormPanel
-              draft={draft}
-              onDraft={setDraft}
-              invalidId={rendered?.failure?.object ?? ''}
-              selected={selected}
-              onSelect={setSelected}
-            />
-          )}
-          {tab === 'json' && <JsonPanel key={revision} draft={draft} onChange={setDraft} />}
-          {tab === 'tikz' && <TikzPanel tikz={rendered?.tikz ?? ''} />}
-        </div>
-      </div>
+      <Body
+        rendered={rendered}
+        failed={failed}
+        onPickObject={(id) => {
+          setSelected(indexOfId(draft, id));
+          setTab('form');
+        }}
+        onRotate={(deltaAzimuth, deltaElevation) => {
+          setDraft(rotateView(draft, deltaAzimuth, deltaElevation));
+        }}
+        tab={tab}
+        onTab={setTab}
+        draft={draft}
+        revision={revision}
+        onDraft={setDraft}
+        tikz={rendered?.tikz ?? ''}
+        invalidId={rendered?.failure?.object ?? ''}
+        selected={selected}
+        onSelect={setSelected}
+      />
     </div>
   );
 }
