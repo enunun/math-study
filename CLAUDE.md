@@ -18,6 +18,7 @@ A study site for mathematics (Astro 7, Starlight, MDX). `README.md` (Japanese) g
 - The figure feature (`crates/figure/`, design in `docs/graph-design.md`) is developed test-first: write the failing test, see it fail, then write the code that makes it pass. See the `figure-engine` skill.
 - Run `system-development-skills:finalize-artifacts` before reporting a deliverable as done (see "Artifact Cleanup" below).
 - Prefix commands with `rtk`. The hook is in `.claude/settings.json`; do not install it in the user-level settings.
+- `enabledPlugins` in `.claude/settings.json` only enables a plugin that is already installed. If `system-development-skills:finalize-artifacts` is an `Unknown skill` (the plugin is missing from `~/.claude/plugins/installed_plugins.json`, as in a fresh container), ask the user to install it from `/plugin`; it loads in the next session.
 - `git commit` runs lefthook hooks. If they fail, fix what they report. Never use `--no-verify`.
 - Before `git add -A`, read `git status --short`: check the number of entries and the paths. A pnpm store (`.pnpm-store/`, 26,000 files) once slipped into a commit and a push because its location changed after a container rebuild. It is git-ignored now. Rewriting history and force-pushing need the user's confirmation.
 
