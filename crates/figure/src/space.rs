@@ -6,7 +6,7 @@
 //! 線は，まず点で刻み，隠れ方が変わる区間を二分法で詰めて，隠れた部分と見える部分に分ける．
 //! 刻みの間に，隠れ方が2回変わる細かい隠れは，見つけられない．
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::f64::consts::TAU;
 
 use crate::bezier::{bezier_curve_point, bezier_point};
@@ -21,8 +21,8 @@ use crate::render::{
 };
 use crate::sample::{sample, sample_with_parameters};
 use crate::scene::{
-    Anchor, Arrow, Axis, Cut, Direction, Hidden, Intersection, Label, Line, Object, Point, Scene,
-    SpaceView, Sphere, Style, Surface, TangentPlane,
+    Anchor, Arrow, Axis, Complex, Cut, Direction, Hidden, Intersection, Label, Line, Object, Point,
+    Scene, SpaceView, Sphere, Style, Surface, TangentPlane,
 };
 use crate::spline::catmull_rom_point;
 use crate::surface::{Frame, Mesh, Rim};
@@ -39,8 +39,6 @@ const BISECTIONS: u32 = 60;
 const SURFACE_MARGIN: f64 = 1e-12;
 /// 軸の名前の向きを決める，8方向の境目の角度(度)．
 const SECTOR: f64 = 22.5;
-/// 曲面のワイヤーフレームの，u一定・v一定それぞれの本数．輪郭や縁にすでにある両端は含めない．
-const WIREFRAME_LINES: usize = 4;
 /// 球のワイヤーフレームの，経線の本数．
 const SPHERE_MERIDIANS: usize = 6;
 /// 球のワイヤーフレームの，緯線の本数．両極は含めない．
@@ -143,6 +141,9 @@ struct Space<'a> {
     balls: Vec<Ball>,
     /// 曲面の網．シーンの中の曲面の順に並ぶ．
     meshes: Vec<Mesh>,
+    /// 複体の網．シーンの中の複体の順に並ぶ．面を三角形分割したもので，`hides`にだけ使う
+    /// (複体自身の稜が隠れるかは，稜に隣接する面の向きで決めるので，ここは使わない)．
+    complex_meshes: Vec<Mesh>,
     /// 曲面の式の関数．`meshes`と同じ順に並び，交線と切り口を，厳密な式の上へ磨くために使う．
     surfaces: Vec<SurfaceMap<'a>>,
     /// 曲面の`id`から，`meshes`と`surfaces`の中の番号．
@@ -171,6 +172,20 @@ impl Space<'_> {
             .iter()
             .any(|ball| ball.hides(point, self.camera.toward))
             || self.meshes.iter().any(|mesh| mesh.hides(point))
+            || self.complex_meshes.iter().any(|mesh| mesh.hides(point))
+    }
+
+    /// 点が，自分(`own`)以外のオブジェクト(球，曲面，ほかの複体)に隠れているか．複体自身の稜の
+    /// 隠れ方は，稜に隣接する面の向きで別に決めるので，自分の網はここでは調べない．
+    fn hidden_by_others(&self, point: Point3, own: &Mesh) -> bool {
+        self.balls
+            .iter()
+            .any(|ball| ball.hides(point, self.camera.toward))
+            || self.meshes.iter().any(|mesh| mesh.hides(point))
+            || self
+                .complex_meshes
+                .iter()
+                .any(|mesh| !std::ptr::eq(mesh, own) && mesh.hides(point))
     }
 }
 
@@ -188,6 +203,24 @@ fn surface_map<'a>(plot: &'a SurfacePlot, compiled: &'a Compiled) -> SurfaceMap<
         let point = [x.eval(&values), y.eval(&values), z.eval(&values)];
         point.iter().all(|c| c.is_finite()).then_some(point)
     })
+}
+
+/// 面(頂点の番号の周)を，最初の頂点を要にした扇形に，三角形分割する．
+fn fan_triangles(face: &[usize]) -> impl Iterator<Item = [usize; 3]> + '_ {
+    let first = face.first().copied().unwrap_or(0);
+    let seconds = face.iter().copied().skip(1);
+    let thirds = face.iter().copied().skip(2);
+    seconds.zip(thirds).map(move |(b, c)| [first, b, c])
+}
+
+/// 複体の面を三角形分割して，ほかのオブジェクトを隠すための網にする．
+fn complex_mesh(complex: &Complex, frame: Frame) -> Mesh {
+    let indices = complex
+        .faces
+        .iter()
+        .flat_map(|face| fan_triangles(face))
+        .collect();
+    Mesh::from_triangles(complex.vertices.clone(), indices, frame)
 }
 
 /// 図全体(投影と，点を隠す球と曲面)を組み立てる．
@@ -227,9 +260,18 @@ fn build_space<'a>(scene: &'a Scene, view: &SpaceView, compiled: &'a Compiled) -
         .iter()
         .map(|(surface, placed)| (surface.id.clone(), placed.domain))
         .collect();
+    let complex_meshes: Vec<Mesh> = scene
+        .objects
+        .iter()
+        .filter_map(|object| match object {
+            Object::Complex(complex) => Some(complex_mesh(complex, camera.frame())),
+            _ => None,
+        })
+        .collect();
     Space {
         camera,
         meshes,
+        complex_meshes,
         surfaces,
         mesh_of,
         surface_domains,
@@ -253,8 +295,14 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
     let mut items = Vec::new();
     let mut meshes = space.meshes.iter();
     let mut maps = space.surfaces.iter();
+    let mut complex_meshes = space.complex_meshes.iter();
     for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
         match (object, plot) {
+            (Object::Complex(complex), _) => {
+                if let Some(mesh) = complex_meshes.next() {
+                    items.extend(complex_items(complex, mesh, &space));
+                }
+            }
             (Object::Surface(surface), Plot::Surface(placed)) => {
                 if let (Some(mesh), Some(map)) = (meshes.next(), maps.next()) {
                     items.extend(surface_items(surface, mesh, &space));
@@ -547,8 +595,8 @@ fn wireframe_line(
     items
 }
 
-/// 曲面のワイヤーフレーム．`u`一定・`v`一定の断面を，`WIREFRAME_LINES`本ずつ引く．式で書いた曲面でも
-/// ベジエ曲面でも，`map`(曲面の式の関数)が同じ形なので，同じように描ける．
+/// 曲面のワイヤーフレーム．`u`一定・`v`一定の断面を，`surface.wireframe_lines`本ずつ引く．
+/// 式で書いた曲面でもベジエ曲面でも，`map`(曲面の式の関数)が同じ形なので，同じように描ける．
 fn surface_wireframe_items(
     surface: &Surface,
     plot: &SurfacePlot,
@@ -560,7 +608,7 @@ fn surface_wireframe_items(
     };
     let [[u0, u1], [v0, v1]] = plot.domain;
     let mut items = Vec::new();
-    for t in interior_fractions(WIREFRAME_LINES) {
+    for t in interior_fractions(surface.wireframe_lines) {
         let u = lerp(u0, u1, t);
         items.extend(wireframe_line(
             style,
@@ -746,6 +794,96 @@ fn link_items(style: &Style, arrow: Arrow, link: &LinkPlot, space: &Space) -> Ve
             },
             arrow: head,
         }));
+    }
+    items
+}
+
+fn cross(a: Point3, b: Point3) -> Point3 {
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
+}
+
+/// 面(頂点の番号の周)の，外向きの法線(長さ1)．最初の3頂点から求める．3頂点が一直線に並ぶ
+/// (退化した)面では，`None`を返す．
+fn face_normal(vertices: &[Point3], face: &[usize]) -> Option<Point3> {
+    let point = |index: usize| vertices.get(index).copied();
+    let (a, b, c) = (
+        point(*face.first()?)?,
+        point(*face.get(1)?)?,
+        point(*face.get(2)?)?,
+    );
+    normalized3(cross(minus(b, a), minus(c, a)))
+}
+
+/// 複体の稜(頂点の番号の組，小さい方が先)と，それに隣接する面の法線の並び．稜は，面の周にある
+/// 隣り合う頂点の組として決まるので，手で指定しない．同じ稜が2つの面にまたがれば，法線は2個になる．
+fn complex_edges(complex: &Complex) -> BTreeMap<(usize, usize), Vec<Point3>> {
+    let mut edges: BTreeMap<(usize, usize), Vec<Point3>> = BTreeMap::new();
+    for face in &complex.faces {
+        let Some(normal) = face_normal(&complex.vertices, face) else {
+            continue;
+        };
+        let next = face.iter().copied().cycle().skip(1).take(face.len());
+        for (a, b) in face.iter().copied().zip(next) {
+            let key = if a < b { (a, b) } else { (b, a) };
+            edges.entry(key).or_default().push(normal);
+        }
+    }
+    edges
+}
+
+/// 複体の稜．稜の両側の面が2つともカメラを向いていなければ，複体自身に隠れているとする(凸体なら
+/// 正確に決まる)．そうでなければ，ほかのオブジェクト(球，曲面，ほかの複体)に隠れているかを調べる．
+fn complex_items(complex: &Complex, mesh: &Mesh, space: &Space) -> Vec<Item> {
+    let stroke = stroke_of(&complex.style, Line::Solid, CURVE_WIDTH);
+    let mut items = Vec::new();
+    for ((from_index, to_index), normals) in complex_edges(complex) {
+        let (Some(from), Some(to)) = (
+            complex.vertices.get(from_index).copied(),
+            complex.vertices.get(to_index).copied(),
+        ) else {
+            continue;
+        };
+        let hidden_by_own_faces = normals.len() == 2
+            && normals
+                .iter()
+                .all(|normal| dot(*normal, space.camera.toward) <= 0.0);
+        let at = |t: f64| add(from, scale(minus(to, from), t));
+        let steps: Vec<f64> = (0..=AXIS_STEPS)
+            .map(|step| {
+                if step == AXIS_STEPS {
+                    1.0
+                } else {
+                    f64::from(step) / f64::from(AXIS_STEPS)
+                }
+            })
+            .collect();
+        let pieces = split_by_visibility(&steps, &at, &|t| {
+            hidden_by_own_faces || space.hidden_by_others(at(t), mesh)
+        });
+        for piece in &pieces {
+            let Some(kind) = piece_line(piece.hidden, stroke.line, complex.style.hidden) else {
+                continue;
+            };
+            let (Some(first), Some(final_point)) = (piece.points.first(), piece.points.last())
+            else {
+                continue;
+            };
+            items.push(Item::Path(Path {
+                points: vec![
+                    space.camera.project(*first),
+                    space.camera.project(*final_point),
+                ],
+                stroke: Stroke {
+                    line: kind,
+                    ..stroke
+                },
+                arrow: None,
+            }));
+        }
     }
     items
 }

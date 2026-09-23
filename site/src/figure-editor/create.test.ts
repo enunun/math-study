@@ -41,6 +41,7 @@ const SPACE_TYPES = [
   'cut',
   'intersection',
   'tangent_plane',
+  'complex',
   'point',
   'point',
   'label',

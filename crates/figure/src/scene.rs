@@ -148,6 +148,8 @@ pub enum Object {
     Intersection(Intersection),
     /// 曲面の接平面．空間の図でだけ使える．
     TangentPlane(TangentPlane),
+    /// 複体(頂点と面でできた図形)．空間の図でだけ使える．
+    Complex(Complex),
 }
 
 /// 軸の向き．
@@ -489,6 +491,33 @@ pub struct TangentPlane {
     pub style: Style,
 }
 
+/// 複体．頂点と，面(頂点の番号を周に沿って並べたもの，3個以上)でできた図形．空間の図でだけ使える．
+/// 稜(辺)は，どの2つの面にも属さない稜がないよう，面から自動的に求める(手で書かない)．
+/// 面は，向き(頂点の並ぶ順)がすべて外向きになるように書く：稜を隠すかどうかは，その稜に隣接する
+/// 2つの面の法線の向きで決まるので，向きが逆だと隠れ方が逆になる．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Complex {
+    /// 識別子．
+    pub id: String,
+    /// 頂点の座標．3個ずつ(x，y，z)．
+    pub vertices: Vec<[f64; 3]>,
+    /// 面．頂点の番号(0始まり)を，周に沿って，外から見て反時計回りに並べる．1つの面は3個以上．
+    pub faces: Vec<Vec<usize>>,
+    /// 稜のスタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
+impl Complex {
+    /// 頂点の数の上限．
+    pub const MAX_VERTICES: usize = 64;
+    /// 面の数の上限．
+    pub const MAX_FACES: usize = 64;
+    /// 1つの面の頂点の数の上限．
+    pub const MAX_FACE_VERTICES: usize = 32;
+}
+
 /// フラクタル図形．平面の図でだけ使える．反復関数系(IFS)：基本図形(`base`)を，`transforms`(並進・
 /// 回転・拡大縮小・せん断を組み合わせた，自由な変換の並び)で，`depth`回，再帰的に写して描く．
 ///
@@ -607,6 +636,12 @@ pub struct Surface {
     /// 式で書いた曲面でも，ベジエ曲面でも，同じように，曲面の上の線として描く．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub wireframe: Option<Style>,
+    /// ワイヤーフレームの，u一定・v一定それぞれの断面の本数．`wireframe`があるときだけ使う．
+    #[serde(
+        default = "default_wireframe_lines",
+        skip_serializing_if = "is_default_wireframe_lines"
+    )]
+    pub wireframe_lines: usize,
     /// ベジエ曲面の，制御点の網(行と列を結ぶ折れ線)．なければ描かない．`bezier`があるときだけ使える．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub control_net: Option<Style>,
@@ -623,6 +658,12 @@ impl Surface {
     pub const MIN_CONTROL_POINTS: usize = 2;
     /// ベジエ曲面の制御点の数の上限(各方向)．次数が高いと，制御点の動きが，形に効きにくくなる．
     pub const MAX_CONTROL_POINTS: usize = 12;
+    /// ワイヤーフレームの断面の本数の既定．
+    pub const DEFAULT_WIREFRAME_LINES: usize = 4;
+    /// ワイヤーフレームの断面の本数の下限．
+    pub const MIN_WIREFRAME_LINES: usize = 1;
+    /// ワイヤーフレームの断面の本数の上限．多すぎると，TikZの出力が大きくなりすぎる．
+    pub const MAX_WIREFRAME_LINES: usize = 24;
 }
 
 const fn default_mesh() -> [usize; 2] {
@@ -632,6 +673,15 @@ const fn default_mesh() -> [usize; 2] {
 #[allow(clippy::trivially_copy_pass_by_ref)]
 fn is_default_mesh(mesh: &[usize; 2]) -> bool {
     *mesh == default_mesh()
+}
+
+const fn default_wireframe_lines() -> usize {
+    Surface::DEFAULT_WIREFRAME_LINES
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn is_default_wireframe_lines(lines: &usize) -> bool {
+    *lines == Surface::DEFAULT_WIREFRAME_LINES
 }
 
 /// 領域．2つのグラフ(かグラフとx軸)の間を，定義域の中で，平行な斜線で埋める．
@@ -832,6 +882,7 @@ impl Object {
             Self::Cut(o) => &o.id,
             Self::Intersection(o) => &o.id,
             Self::TangentPlane(o) => &o.id,
+            Self::Complex(o) => &o.id,
         }
     }
 
@@ -856,6 +907,7 @@ impl Object {
             Self::Cut(_) => "cut",
             Self::Intersection(_) => "intersection",
             Self::TangentPlane(_) => "tangent_plane",
+            Self::Complex(_) => "complex",
         }
     }
 }

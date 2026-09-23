@@ -311,6 +311,33 @@ impl Mesh {
         result
     }
 
+    /// 三角形を直接指定して，網を作る．複体(平らな面の集まり)のように，パラメータの升目からではなく，
+    /// 頂点と三角形(頂点の番号)が決まっているときに使う．面は平らなので，曲率のずれ(`sag`)はなく，
+    /// `offset`(隠れ判定でカメラ側へずらす量)は，丸め誤差だけを吸収するごく小さい値でよい．
+    /// この網は，`hides`(ほかのオブジェクトを隠すか)にだけ使い，`silhouette`や`boundary`は使わない
+    /// (曲面のパラメータの升目を前提にしており，直接指定した三角形には合わない)．
+    pub fn from_triangles(points: Vec<Point3>, indices: Vec<[usize; 3]>, frame: Frame) -> Self {
+        let scale = points
+            .iter()
+            .flat_map(|p| p.iter().map(|c| c.abs()))
+            .fold(1.0_f64, f64::max);
+        let mut result = Self {
+            points: points.into_iter().map(Some).collect(),
+            columns: 0,
+            indices,
+            triangles: Vec::new(),
+            grid: ScreenGrid::new(&[]),
+            offset: 1e-9 * scale,
+            scale,
+            frame,
+            domain: [[0.0, 0.0], [0.0, 0.0]],
+            divisions: [0, 0],
+        };
+        result.triangles = result.project_triangles();
+        result.grid = ScreenGrid::new(&result.triangles);
+        result
+    }
+
     /// 頂点の，曲面のパラメータ(2つの変数の値)．
     fn vertex_params(&self, vertex: usize) -> [f64; 2] {
         let row = vertex.checked_div(self.columns).unwrap_or(0);

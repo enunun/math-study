@@ -251,6 +251,23 @@ test.describe('図の作成', () => {
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
 
+  test('部品のテンプレート「正4面体」は，見える稜と隠れた稜の両方を描く', async ({ page }) => {
+    // 隠れ方の判定そのもの(どの稜が隠れるか)は，crates/figure/tests/complex.rsで確かめているので，
+    // ここでは，複体(complex)オブジェクトの隠れ方が，実際のSVGの出力(破線と実線)にまで
+    // 届いていることだけを確かめる．
+    await editor(page).getByRole('button', { name: '空間のベクトルの和', exact: true }).click();
+    const picker = editor(page).locator('.fe-template-picker').filter({ hasText: '正多面体' });
+    await picker.getByLabel('正多面体').selectOption({ label: '正4面体' });
+    await picker.getByRole('button', { name: '挿入' }).click();
+    await expect(editor(page).getByRole('alert')).toHaveCount(0);
+    const edges = outputPreview(page).locator('path');
+    const dashArrays = await edges.evaluateAll((paths) =>
+      paths.map((path) => path.getAttribute('stroke-dasharray')),
+    );
+    expect(dashArrays.some((value) => value === null)).toBe(true);
+    expect(dashArrays.some((value) => value !== null)).toBe(true);
+  });
+
   test('図全体のテンプレート「メビウスの帯」は，誤りなく描ける', async ({ page }) => {
     await editor(page).getByRole('button', { name: 'メビウスの帯', exact: true }).click();
     await expect(preview(page)).toBeVisible();

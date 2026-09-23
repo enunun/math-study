@@ -614,6 +614,12 @@
           "$ref": "#/$defs/style",
           "description": "曲面のワイヤーフレーム(u一定・v一定の断面)。式で書いた曲面でも，ベジエ曲面でも，同じように，曲面の上の線として描く。この項目があれば描き，スタイルとして使う(`{}`でもよい)。省くと描かない。"
         },
+        "wireframe_lines": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 24,
+          "description": "ワイヤーフレームの，u一定・v一定それぞれの断面の本数。`wireframe`があるときだけ使う。既定は4。"
+        },
         "control_net": {
           "$ref": "#/$defs/style",
           "description": "ベジエ曲面の，制御点の網(行と列を結ぶ折れ線)。`bezier`があるときだけ使える。この項目があれば描き，スタイルとして使う(`{}`でもよい)。省くと描かない。"
@@ -688,8 +694,43 @@
         "style": { "$ref": "#/$defs/style" }
       }
     },
+    "complex": {
+      "type": "object",
+      "required": ["id", "type", "vertices", "faces"],
+      "additionalProperties": false,
+      "description": "複体(頂点と面でできた図形，正多面体など)。空間の図でだけ使える。稜(辺)は，どの2つの面にも属さない稜がないよう，`faces`から自動的に決まる(スキーマでは表せない)。`faces`は，外から見て頂点が反時計回りになるように書く：稜を隠すかどうかは，その稜に隣接する2つの面の法線の向きで決まるので，向きが逆だと隠れ方が逆になる(スキーマでは表せない)。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "complex" },
+        "vertices": {
+          "type": "array",
+          "description": "頂点の座標。3個ずつ(x，y，z)。3個以上64個以下。",
+          "items": {
+            "type": "array",
+            "items": { "type": "number" },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "minItems": 3,
+          "maxItems": 64
+        },
+        "faces": {
+          "type": "array",
+          "description": "面。頂点の番号(0始まり，`vertices`の添字)を，周に沿って並べる。1個以上64個以下の面，1つの面は3個以上32個以下の頂点。",
+          "items": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 0 },
+            "minItems": 3,
+            "maxItems": 32
+          },
+          "minItems": 1,
+          "maxItems": 64
+        },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
     "object": {
-      "description": "図を作るオブジェクト。`type`で種類を選ぶ。`graph`，`grid`，`region`，`tangent_line`，`fractal`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`は空間の図でだけ使える。",
+      "description": "図を作るオブジェクト。`type`で種類を選ぶ。`graph`，`grid`，`region`，`tangent_line`，`fractal`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`は空間の図でだけ使える。",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },
@@ -707,7 +748,8 @@
         { "$ref": "#/$defs/surface" },
         { "$ref": "#/$defs/cut" },
         { "$ref": "#/$defs/intersection" },
-        { "$ref": "#/$defs/tangent_plane" }
+        { "$ref": "#/$defs/tangent_plane" },
+        { "$ref": "#/$defs/complex" }
       ]
     }
   }

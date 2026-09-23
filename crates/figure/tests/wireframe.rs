@@ -82,6 +82,32 @@ fn 式で書いた曲面のワイヤーフレームは_指定した色で描か�
 }
 
 #[test]
+fn ワイヤーフレームの本数は_指定した数だけ断面が増える() {
+    let default_count = figure_of(&with_field(PARABOLOID, r#""wireframe": {}"#))
+        .items
+        .len();
+    let more = figure_of(&with_field(
+        PARABOLOID,
+        r#""wireframe": {}, "wireframe_lines": 8"#,
+    ))
+    .items
+    .len();
+    assert!(more > default_count);
+}
+
+#[test]
+fn ワイヤーフレームの本数が0以下か多すぎれば誤りになる() {
+    error_of(&with_field(
+        PARABOLOID,
+        r#""wireframe": {}, "wireframe_lines": 0"#,
+    ));
+    error_of(&with_field(
+        PARABOLOID,
+        r#""wireframe": {}, "wireframe_lines": 1000"#,
+    ));
+}
+
+#[test]
 fn ベジエ曲面にも_式の曲面と同じようにワイヤーフレームを引ける() {
     let without = figure_of(BEZIER).items.len();
     let with = figure_of(&with_field(BEZIER, r#""wireframe": {}"#))

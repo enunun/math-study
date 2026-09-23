@@ -5,8 +5,8 @@ use std::collections::HashSet;
 use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::scene::{
-    Axis, Bound, CM_PER_PT, Curve, Cut, Direction, Fractal, Graph, Grid, Intersection, Label,
-    MAX_WIDTH_PT, Object, Point, Position, Region, Scene, SpaceView, Sphere, Style, Surface,
+    Axis, Bound, CM_PER_PT, Complex, Curve, Cut, Direction, Fractal, Graph, Grid, Intersection,
+    Label, MAX_WIDTH_PT, Object, Point, Position, Region, Scene, SpaceView, Sphere, Style, Surface,
     TangentPlane, View,
 };
 
@@ -105,6 +105,9 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::TangentPlane(tangent) => {
             space_only("tangent_plane", view).and_then(|()| validate_tangent_plane(tangent))
         }
+        Object::Complex(complex) => {
+            space_only("complex", view).and_then(|()| validate_complex(complex))
+        }
         Object::Vector(_) | Object::Segment(_) | Object::Parameter(_) => Ok(()),
     }
 }
@@ -126,6 +129,7 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::Cut(o) => Some(&o.style),
         Object::Intersection(o) => Some(&o.style),
         Object::TangentPlane(o) => Some(&o.style),
+        Object::Complex(o) => Some(&o.style),
         Object::Label(_) | Object::Parameter(_) => None,
     }
 }
@@ -191,6 +195,15 @@ fn validate_surface(surface: &Surface) -> Result<(), ErrorKind> {
     }
     if let Some(style) = &surface.wireframe {
         check_style(style)?;
+    }
+    if !(Surface::MIN_WIREFRAME_LINES..=Surface::MAX_WIREFRAME_LINES)
+        .contains(&surface.wireframe_lines)
+    {
+        return Err(ErrorKind::Invalid(format!(
+            "ワイヤーフレームの本数(`wireframe_lines`)は，{}以上{}以下にする．",
+            Surface::MIN_WIREFRAME_LINES,
+            Surface::MAX_WIREFRAME_LINES
+        )));
     }
     match (&surface.control_net, &surface.bezier) {
         (Some(style), Some(_)) => check_style(style),
@@ -498,6 +511,38 @@ fn validate_tangent_plane(tangent: &TangentPlane) -> Result<(), ErrorKind> {
         return Err(ErrorKind::Invalid(
             "接平面の半径(`size`)は，正の有限の数にする．".to_owned(),
         ));
+    }
+    Ok(())
+}
+
+fn validate_complex(complex: &Complex) -> Result<(), ErrorKind> {
+    let count = complex.vertices.len();
+    if !(3..=Complex::MAX_VERTICES).contains(&count) {
+        return Err(ErrorKind::Invalid(format!(
+            "`vertices`(頂点)は，3個以上{}個以下にする．",
+            Complex::MAX_VERTICES
+        )));
+    }
+    if complex.faces.is_empty() || complex.faces.len() > Complex::MAX_FACES {
+        return Err(ErrorKind::Invalid(format!(
+            "`faces`(面)は，1個以上{}個以下にする．",
+            Complex::MAX_FACES
+        )));
+    }
+    for face in &complex.faces {
+        if !(3..=Complex::MAX_FACE_VERTICES).contains(&face.len()) {
+            return Err(ErrorKind::Invalid(format!(
+                "面(`faces`の要素)の頂点は，3個以上{}個以下にする．",
+                Complex::MAX_FACE_VERTICES
+            )));
+        }
+        let unique: HashSet<usize> = face.iter().copied().collect();
+        if unique.len() != face.len() || face.iter().any(|&index| index >= count) {
+            return Err(ErrorKind::Invalid(
+                "面(`faces`の要素)は，`vertices`の番号(0始まり)を，重ならないように並べる．"
+                    .to_owned(),
+            ));
+        }
     }
     Ok(())
 }

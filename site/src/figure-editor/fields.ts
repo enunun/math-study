@@ -93,6 +93,13 @@ const WIREFRAME: FieldSpec = {
   key: 'wireframe',
   label: 'ワイヤーフレームを表示',
 };
+/** 曲面だけの，ワイヤーフレームの断面の本数．球の経線・緯線の本数は，今のところ変えられない． */
+const WIREFRAME_LINES: FieldSpec = {
+  kind: 'number',
+  key: 'wireframe_lines',
+  label: 'ワイヤーフレームの本数(各方向)',
+  optional: true,
+};
 /** ベジエ曲面だけの，制御点の網の項目． */
 const CONTROL_NET: FieldSpec = {
   kind: 'toggleStyle',
@@ -213,6 +220,7 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     MESH,
     BOUNDARY,
     WIREFRAME,
+    WIREFRAME_LINES,
   ],
   bezier: [
     {
@@ -224,6 +232,7 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     MESH,
     BOUNDARY,
     WIREFRAME,
+    WIREFRAME_LINES,
     CONTROL_NET,
   ],
   cut: [
@@ -238,6 +247,15 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     { kind: 'reference', key: 'of', label: '接する曲面', of: SURFACES },
     { kind: 'list', key: 'at', label: '接する点(変数の値)', item: 'bound', count: PAIR },
     { kind: 'bound', key: 'size', label: '半径(cm)' },
+  ],
+  complex: [
+    { kind: 'json', key: 'vertices', label: '頂点', hint: '[[1,1,1],[1,-1,-1],[-1,1,-1]]' },
+    {
+      kind: 'json',
+      key: 'faces',
+      label: '面(頂点の番号，反時計回り)',
+      hint: '[[0,1,2],[0,2,1]]',
+    },
   ],
 };
 

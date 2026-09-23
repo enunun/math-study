@@ -40,6 +40,7 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
               [0, 1],
             ],
             wireframe: { color: 'blue' },
+            wireframe_lines: 8,
           },
           {
             id: 'z',
@@ -205,6 +206,34 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
     ).toBe(true);
   });
 
+  it('複体(正4面体)は，スキーマに合う', () => {
+    const space = minimalObject('space');
+    expect(
+      validate({
+        ...space,
+        objects: [
+          {
+            id: 't',
+            type: 'complex',
+            vertices: [
+              [1, 1, 1],
+              [1, -1, -1],
+              [-1, 1, -1],
+              [-1, -1, 1],
+            ],
+            faces: [
+              [1, 3, 2],
+              [0, 2, 3],
+              [0, 3, 1],
+              [0, 1, 2],
+            ],
+          },
+        ],
+      }),
+      JSON.stringify(validate.errors),
+    ).toBe(true);
+  });
+
   it.each(['plane', 'space'] as const)(
     '図の作成ページが作る，%sの図の既定のオブジェクトが，スキーマに合う',
     (kind) => {
@@ -238,6 +267,7 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
               'cut',
               'intersection',
               'tangent_plane',
+              'complex',
               'point',
               'point',
               'label',

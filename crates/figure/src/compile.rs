@@ -300,7 +300,8 @@ fn compile_object(
         | Object::Sphere(_)
         | Object::Vector(_)
         | Object::Segment(_)
-        | Object::Intersection(_) => Ok(Plot::None),
+        | Object::Intersection(_)
+        | Object::Complex(_) => Ok(Plot::None),
     }
 }
 
