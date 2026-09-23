@@ -12,8 +12,9 @@
       }
     ]
   },
-  "timeZone": "Asia/Tokyo",
-  "timeFormat": "24-hour",
+  "enabledPlugins": {
+    "system-development-skills@system-development-skills": true
+  },
   "extraKnownMarketplaces": {
     "system-development-skills": {
       "source": {
@@ -22,7 +23,6 @@
       }
     }
   },
-  "enabledPlugins": {
-    "system-development-skills@system-development-skills": true
-  }
+  "timeFormat": "24-hour",
+  "timeZone": "Asia/Tokyo"
 }
