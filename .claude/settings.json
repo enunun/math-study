@@ -13,5 +13,16 @@
     ]
   },
   "timeZone": "Asia/Tokyo",
-  "timeFormat": "24-hour"
+  "timeFormat": "24-hour",
+  "extraKnownMarketplaces": {
+    "system-development-skills": {
+      "source": {
+        "source": "github",
+        "repo": "enunun/system-development-skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "system-development-skills@system-development-skills": true
+  }
 }

@@ -16,7 +16,7 @@ A study site for mathematics (Astro 7, Starlight, MDX). `README.md` (Japanese) g
 - Record what you learn in the same change, so the next session and the human maintainer can find it. Put durable knowledge where it belongs: `CLAUDE.md` for conventions and pitfalls, `.claude/skills/**` for procedures, `docs/tech-decisions.md` for decisions and verified facts, and `README.md` plus `site/src/content/docs/dev/internals.mdx` (Japanese, for humans) for how the system works. Do not leave findings only in the conversation or the scratchpad. If a change alters who does what, what is custom-built, or how a feature is used, update `internals.mdx` and the "Code map" below in the same commit. Skip this only when the information is already recorded.
 - Read the `write-content` skill before writing site content or documentation.
 - The figure feature (`crates/figure/`, design in `docs/graph-design.md`) is developed test-first: write the failing test, see it fail, then write the code that makes it pass. See the `figure-engine` skill.
-- Run `finalize-artifacts` before reporting a deliverable as done (see "Artifact Cleanup" below).
+- Run `system-development-skills:finalize-artifacts` before reporting a deliverable as done (see "Artifact Cleanup" below).
 - Prefix commands with `rtk`. The hook is in `.claude/settings.json`; do not install it in the user-level settings.
 - `git commit` runs lefthook hooks. If they fail, fix what they report. Never use `--no-verify`.
 - Before `git add -A`, read `git status --short`: check the number of entries and the paths. A pnpm store (`.pnpm-store/`, 26,000 files) once slipped into a commit and a push because its location changed after a container rebuild. It is git-ignored now. Rewriting history and force-pushing need the user's confirmation.
@@ -63,16 +63,16 @@ Build-time pipeline: MDX → remark (`remark-math`) → rehype (`rehypeStatement
 - `math-pipeline`: how math rendering itself works (the Worker, the shared CSS file, Starlight interaction, autospacing) — the internals behind what `write-content` documents for authors.
 - `rust-wasm`: how the Rust/Wasm polynomial calculator works, and how to add or change it.
 - `figure-engine`: how the Rust figure engine and its browser editor work, and how to add or change an object type.
-- `finalize-artifacts`: how to finish a deliverable.
+- `system-development-skills:finalize-artifacts`: how to finish a deliverable. Provided by the `enunun/system-development-skills` plugin (see `extraKnownMarketplaces`/`enabledPlugins` in `.claude/settings.json`), not a local skill in this repository.
 
 # Artifact Cleanup
 
 ## Golden Rule
 
-**Whenever you produce an artifact, always run the `finalize-artifacts` skill (`.claude/skills/finalize-artifacts/`) to clean it up before reporting the work as done.**
+**Whenever you produce an artifact, always run the `system-development-skills:finalize-artifacts` skill to clean it up before reporting the work as done.**
 
 An artifact is any deliverable you create or substantially rewrite: documents, READMEs, code and code comments, config files, scripts, commit messages, PR descriptions, and so on.
 
-- Invoke the skill via the Skill tool (`finalize-artifacts`) after the artifact is written and before the final reply.
+- Invoke the skill via the Skill tool (`system-development-skills:finalize-artifacts`) after the artifact is written and before the final reply.
 - The skill edits the artifact files in place. Do not append a changelog of the cleanup to the artifact; in the final reply, mention what changed in a sentence or two at most unless the user asks for a full report.
 - Skip it only for replies that produce no artifact (answering questions, explaining code, running read-only commands).
