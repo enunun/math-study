@@ -5,6 +5,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { initSync, renderScene } from '@/wasm/figure';
 
 import { emptyDraft, stringifyDraft } from './draft';
+import { PLANE_SAMPLE_SCENES, SPACE_SAMPLE_SCENES } from './sample-scenes';
+import { EDITOR_SAMPLES } from './samples';
 import { OBJECT_TEMPLATE_GROUPS, SCENE_TEMPLATES } from './templates';
 
 beforeAll(async () => {
@@ -24,9 +26,36 @@ describe('部品のテンプレートは，単独で図に描ける', () => {
   });
 });
 
-describe('図全体のテンプレートは，そのまま描ける', () => {
+describe('図のテンプレートは，そのまま描ける', () => {
   it.each(SCENE_TEMPLATES)('$labelを描ける', (template) => {
     const outcome = renderScene(stringifyDraft(template.scene));
     expect(outcome.status, JSON.stringify(outcome)).toBe('ok');
+  });
+});
+
+describe('見本は，そのまま描ける', () => {
+  it.each(EDITOR_SAMPLES)('$labelを描ける', (sample) => {
+    const outcome = renderScene(stringifyDraft(sample.scene));
+    expect(outcome.status, JSON.stringify(outcome)).toBe('ok');
+  });
+
+  it('見本の識別子と名前は，重ならない', () => {
+    expect(new Set(EDITOR_SAMPLES.map((sample) => sample.id)).size).toBe(EDITOR_SAMPLES.length);
+    expect(new Set(EDITOR_SAMPLES.map((sample) => sample.label)).size).toBe(EDITOR_SAMPLES.length);
+  });
+});
+
+// 記事の図の見本は，記事と同じファイルを使うので，ここでは確かめない．
+describe('テンプレートと，ここで書いた見本の曲面は，ワイヤーフレームと刻みを持つ', () => {
+  const surfaces = [
+    ...OBJECT_TEMPLATE_GROUPS.flatMap((group) =>
+      group.templates.flatMap((template) => template.objects),
+    ),
+    ...[...PLANE_SAMPLE_SCENES, ...SPACE_SAMPLE_SCENES].flatMap((sample) => sample.scene.objects),
+  ].filter((object) => object.type === 'surface');
+
+  it.each(surfaces)('曲面$idは，wireframeとwireframe_stepを持つ', (surface) => {
+    expect(surface).toHaveProperty('wireframe');
+    expect(surface).toHaveProperty('wireframe_step');
   });
 });

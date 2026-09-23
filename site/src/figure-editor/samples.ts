@@ -1,48 +1,48 @@
+import { parseDraft } from './draft';
+import { PLANE_SAMPLE_SCENES, SPACE_SAMPLE_SCENES } from './sample-scenes';
+import type { SceneTemplate } from './template-types';
+
 const files = import.meta.glob<string>('../figures/*.json', {
   eager: true,
   import: 'default',
   query: '?raw',
 });
 
-/** 見本の図のJSONを，そのソースから読む． */
-function jsonOf(file: string): string {
+/**
+ * 記事の図(`site/src/figures/*.json`)を，見本として読む．記事の図を作った手順を見せるため，
+ * 記事と同じファイルを，手を加えずに使う．
+ */
+function articleSample(id: string, label: string, file: string): SceneTemplate {
   const json = files[`../figures/${file}.json`];
   if (json === undefined) {
     throw new Error(`図の見本が見つからない：${file}`);
   }
-  return json;
+  const parsed = parseDraft(json);
+  if (!parsed.ok) {
+    throw new Error(`図の見本を読めない：${file}：${parsed.message}`);
+  }
+  return { id, label, scene: parsed.draft };
 }
 
-/** 編集の出発点にする見本．サイトの記事で使っている図である． */
-interface EditorSample {
-  id: string;
-  label: string;
-  json: string;
-}
-
-const SAMPLE_FILES: readonly { id: string; label: string; file: string }[] = [
-  { id: 'graphs', label: '関数のグラフ', file: 'sine-and-shifted-sine' },
-  { id: 'vectors', label: 'ベクトルの和', file: 'vector-addition' },
-  { id: 'region', label: '2つのグラフの間の領域', file: 'sine-cosine-region' },
-  { id: 'fractal', label: 'フラクタル', file: 'sierpinski-triangle' },
-  { id: 'sphere', label: '球と座標軸', file: 'sphere-with-axes' },
-  { id: 'cone', label: '円錐と切り口', file: 'cone-with-cuts' },
-  { id: 'cylinder', label: '球と円柱の交線', file: 'sphere-and-cylinder' },
-  { id: 'bezier', label: 'ベジエ曲面', file: 'bezier-patch' },
-  { id: 'bezierCurve', label: 'ベジエ曲線', file: 'bezier-curve-control-polygon' },
-  { id: 'splineCurve', label: 'スプライン曲線', file: 'spline-curve-through-points' },
-  { id: 'tangentLine', label: '接線', file: 'tangent-line-on-parabola' },
-  { id: 'paraboloid', label: '放物面と座標軸', file: 'paraboloid-with-axes' },
-  { id: 'spaceVectors', label: '空間のベクトルの和', file: 'space-vector-addition' },
-  { id: 'circles', label: '球の上の円', file: 'sphere-with-circles' },
-  { id: 'tangentPlane', label: '接平面', file: 'tangent-plane-on-paraboloid' },
+/**
+ * 見本．そのまま使える，完成した図である．記事の図と，ここで書いた図(`sample-scenes.ts`)があり，
+ * 平面の図，空間の図の順に並べる．選ぶと，今の図を置き換える．
+ */
+const EDITOR_SAMPLES: readonly SceneTemplate[] = [
+  articleSample('graphs', '関数のグラフ', 'sine-and-shifted-sine'),
+  articleSample('vectors', 'ベクトルの和', 'vector-addition'),
+  articleSample('region', '2つのグラフの間の領域', 'sine-cosine-region'),
+  articleSample('tangentLine', '接線', 'tangent-line-on-parabola'),
+  articleSample('fractal', 'フラクタル', 'sierpinski-triangle'),
+  ...PLANE_SAMPLE_SCENES,
+  articleSample('sphere', '球と座標軸', 'sphere-with-axes'),
+  articleSample('paraboloid', '放物面と座標軸', 'paraboloid-with-axes'),
+  articleSample('spaceVectors', '空間のベクトルの和', 'space-vector-addition'),
+  articleSample('circles', '球の上の円', 'sphere-with-circles'),
+  articleSample('tangentPlane', '接平面', 'tangent-plane-on-paraboloid'),
+  articleSample('cone', '円錐と切り口', 'cone-with-cuts'),
+  articleSample('cylinder', '球と円柱の交線', 'sphere-and-cylinder'),
+  ...SPACE_SAMPLE_SCENES,
 ];
 
-const EDITOR_SAMPLES: readonly EditorSample[] = SAMPLE_FILES.map(({ id, label, file }) => ({
-  id,
-  label,
-  json: jsonOf(file),
-}));
-
 export { EDITOR_SAMPLES };
-export type { EditorSample };

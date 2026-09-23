@@ -108,6 +108,15 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Complex(complex) => {
             space_only("complex", view).and_then(|()| validate_complex(complex))
         }
+        Object::Polyhedron(polyhedron) => space_only("polyhedron", view).and_then(|()| {
+            if polyhedron.radius.is_finite() && polyhedron.radius > 0.0 {
+                Ok(())
+            } else {
+                Err(ErrorKind::Invalid(
+                    "正多面体の半径(`radius`)は，正の有限の数にする．".to_owned(),
+                ))
+            }
+        }),
         Object::Vector(_) | Object::Segment(_) | Object::Parameter(_) => Ok(()),
     }
 }
@@ -130,6 +139,7 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::Intersection(o) => Some(&o.style),
         Object::TangentPlane(o) => Some(&o.style),
         Object::Complex(o) => Some(&o.style),
+        Object::Polyhedron(o) => Some(&o.style),
         Object::Label(_) | Object::Parameter(_) => None,
     }
 }
@@ -196,14 +206,16 @@ fn validate_surface(surface: &Surface) -> Result<(), ErrorKind> {
     if let Some(style) = &surface.wireframe {
         check_style(style)?;
     }
-    if !(Surface::MIN_WIREFRAME_LINES..=Surface::MAX_WIREFRAME_LINES)
-        .contains(&surface.wireframe_lines)
+    // 式で書いた刻みは，評価してから`compile.rs`で確かめる．
+    if surface
+        .wireframe_step
+        .iter()
+        .flatten()
+        .any(|step| matches!(step, Bound::Number(value) if !(value.is_finite() && *value > 0.0)))
     {
-        return Err(ErrorKind::Invalid(format!(
-            "ワイヤーフレームの本数(`wireframe_lines`)は，{}以上{}以下にする．",
-            Surface::MIN_WIREFRAME_LINES,
-            Surface::MAX_WIREFRAME_LINES
-        )));
+        return Err(ErrorKind::Invalid(
+            "ワイヤーフレームの刻み(`wireframe_step`)は，正の有限の数にする．".to_owned(),
+        ));
     }
     match (&surface.control_net, &surface.bezier) {
         (Some(style), Some(_)) => check_style(style),

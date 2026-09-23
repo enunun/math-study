@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import { initSync, renderScene } from '@/wasm/figure';
 
-import { addObject, emptyDraft, parseDraft, stringifyDraft } from './draft';
+import { addObject, emptyDraft, stringifyDraft } from './draft';
 import type { SceneDraft } from './draft';
 import { buildEditScene } from './edit-scene';
 import { stringOf } from './json';
@@ -96,12 +96,8 @@ describe('編集の補助を加えた図', () => {
 });
 
 describe('見本の図に，編集の補助を加える', () => {
-  it.each(EDITOR_SAMPLES)('「$label」の補助を加えても，エンジンが描ける', ({ json }) => {
-    const parsed = parseDraft(json);
-    if (!parsed.ok) {
-      throw new Error(parsed.message);
-    }
-    const edited = buildEditScene(parsed.draft);
+  it.each(EDITOR_SAMPLES)('「$label」の補助を加えても，エンジンが描ける', ({ scene }) => {
+    const edited = buildEditScene(scene);
     const outcome = renderScene(stringifyDraft(edited));
     if (outcome.status !== 'ok') {
       throw new Error(`${outcome.message}(${outcome.object ?? ''})`);

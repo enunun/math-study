@@ -81,30 +81,62 @@ fn 式で書いた曲面のワイヤーフレームは_指定した色で描か�
     assert!(colored_paths(&colored, Color::Blue) > 0);
 }
 
-#[test]
-fn ワイヤーフレームの本数は_指定した数だけ断面が増える() {
-    let default_count = figure_of(&with_field(PARABOLOID, r#""wireframe": {}"#))
-        .items
-        .len();
-    let more = figure_of(&with_field(
-        PARABOLOID,
-        r#""wireframe": {}, "wireframe_lines": 8"#,
-    ))
-    .items
-    .len();
-    assert!(more > default_count);
+/// 平らな正方形(z = 0，x，yとも-2から2)．ほかに隠すものがないので，断面の1本が1つの線になる．
+const FLAT: &str = r#"{ "id": "f", "type": "surface", "vars": ["u", "v"],
+    "expr": ["u", "v", "0"], "domain": [[-2, 2], [-2, 2]] }"#;
+
+fn flat_wireframe_lines(step: &str) -> usize {
+    let objects = with_field(
+        FLAT,
+        &format!(r#""wireframe": {{ "color": "blue" }}, "wireframe_step": {step}"#),
+    );
+    colored_paths(&figure_of(&objects), Color::Blue)
 }
 
 #[test]
-fn ワイヤーフレームの本数が0以下か多すぎれば誤りになる() {
+fn ワイヤーフレームの断面は_刻みの整数倍の所に_定義域の内側だけ引く() {
+    // u一定は-1，0，1の3本，v一定は-1.5から1.5まで0.5おきの7本．定義域の端(±2)は縁なので引かない．
+    assert_eq!(flat_wireframe_lines("[1, 0.5]"), 10);
+    // 4の整数倍で-2と2の間にあるのは0だけなので，u一定・v一定とも1本ずつ．
+    assert_eq!(flat_wireframe_lines("[4, 4]"), 2);
+}
+
+#[test]
+fn ワイヤーフレームの刻みは_u方向とv方向で別々に効く() {
+    // u一定は0の1本，v一定は-1，0，1の3本．
+    assert_eq!(flat_wireframe_lines("[4, 1]"), 4);
+    assert_eq!(flat_wireframe_lines("[1, 4]"), 4);
+}
+
+#[test]
+fn ワイヤーフレームの刻みは式でも書ける() {
+    // 刻み2/3なら，u一定・v一定とも-4/3，-2/3，0，2/3，4/3の5本ずつ．
+    assert_eq!(flat_wireframe_lines(r#"["2/3", "2/3"]"#), 10);
+}
+
+#[test]
+fn ワイヤーフレームの刻みを書かなければ_定義域の幅の4分の1になる() {
+    let objects = with_field(FLAT, r#""wireframe": { "color": "blue" }"#);
+    // 刻み1なので，u一定・v一定とも-1，0，1の3本ずつ．
+    assert_eq!(colored_paths(&figure_of(&objects), Color::Blue), 6);
+}
+
+#[test]
+fn ワイヤーフレームの刻みが0以下か_断面が多すぎれば誤りになる() {
     error_of(&with_field(
         PARABOLOID,
-        r#""wireframe": {}, "wireframe_lines": 0"#,
+        r#""wireframe": {}, "wireframe_step": [0, 1]"#,
     ));
     error_of(&with_field(
         PARABOLOID,
-        r#""wireframe": {}, "wireframe_lines": 1000"#,
+        r#""wireframe": {}, "wireframe_step": [1, -1]"#,
     ));
+    // 式で書いた刻みは，評価してから確かめる．
+    let error = error_of(&with_field(
+        PARABOLOID,
+        r#""wireframe": {}, "wireframe_step": ["1/1000", 1]"#,
+    ));
+    assert!(error.to_string().contains("多すぎる"), "{error}");
 }
 
 #[test]

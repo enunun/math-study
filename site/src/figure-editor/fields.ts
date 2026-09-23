@@ -1,5 +1,7 @@
 import { listedType } from './create';
 import type { ViewKind } from './draft';
+import { ANCHORS, ARROWS, PLANE_DIRECTIONS, SOLIDS, SPACE_DIRECTIONS } from './field-options';
+import type { Option } from './field-options';
 import type { JsonObject } from './json';
 
 /** 項目の入力欄の種類と，内容． */
@@ -31,37 +33,11 @@ type FieldSpec =
   /** あれば描く，スタイルつきの項目(曲面のワイヤーフレームなど)．チェックボックスで有無を選ぶ． */
   | { kind: 'toggleStyle'; key: string; label: string };
 
-type Option = readonly [value: string, label: string];
-
 /** 座標の成分の名前． */
 const COORDINATE_NAMES = { plane: ['x', 'y'], space: ['x', 'y', 'z'] } as const;
 
 const PAIR = 2;
 const TRIPLE = 3;
-
-const ANCHORS: readonly Option[] = [
-  ['center', '中央'],
-  ['north', '上'],
-  ['south', '下'],
-  ['east', '右'],
-  ['west', '左'],
-  ['north east', '右上'],
-  ['north west', '左上'],
-  ['south east', '右下'],
-  ['south west', '左下'],
-];
-
-const ARROWS: readonly Option[] = [
-  ['stealth', '矢じりあり'],
-  ['none', '矢じりなし'],
-];
-
-const PLANE_DIRECTIONS: readonly Option[] = [
-  ['x', 'x軸'],
-  ['y', 'y軸'],
-];
-
-const SPACE_DIRECTIONS: readonly Option[] = [...PLANE_DIRECTIONS, ['z', 'z軸']];
 
 const POINTS = ['point'];
 const SURFACES = ['surface'];
@@ -93,11 +69,16 @@ const WIREFRAME: FieldSpec = {
   key: 'wireframe',
   label: 'ワイヤーフレームを表示',
 };
-/** 曲面だけの，ワイヤーフレームの断面の本数．球の経線・緯線の本数は，今のところ変えられない． */
-const WIREFRAME_LINES: FieldSpec = {
-  kind: 'number',
-  key: 'wireframe_lines',
-  label: 'ワイヤーフレームの本数(各方向)',
+/**
+ * 曲面だけの，ワイヤーフレームの刻み(u方向，v方向)．断面は，刻みの整数倍の所に引く．球の経線・緯線の
+ * 本数は，今のところ変えられない．
+ */
+const WIREFRAME_STEP: FieldSpec = {
+  kind: 'list',
+  key: 'wireframe_step',
+  label: 'ワイヤーフレームの刻み(u方向，v方向)',
+  item: 'bound',
+  count: PAIR,
   optional: true,
 };
 /** ベジエ曲面だけの，制御点の網の項目． */
@@ -220,7 +201,7 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     MESH,
     BOUNDARY,
     WIREFRAME,
-    WIREFRAME_LINES,
+    WIREFRAME_STEP,
   ],
   bezier: [
     {
@@ -232,7 +213,7 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     MESH,
     BOUNDARY,
     WIREFRAME,
-    WIREFRAME_LINES,
+    WIREFRAME_STEP,
     CONTROL_NET,
   ],
   cut: [
@@ -247,6 +228,11 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     { kind: 'reference', key: 'of', label: '接する曲面', of: SURFACES },
     { kind: 'list', key: 'at', label: '接する点(変数の値)', item: 'bound', count: PAIR },
     { kind: 'bound', key: 'size', label: '半径(cm)' },
+  ],
+  polyhedron: [
+    { kind: 'select', key: 'solid', label: '種類', options: SOLIDS },
+    { kind: 'list', key: 'center', label: '中心', item: 'number', count: TRIPLE },
+    { kind: 'number', key: 'radius', label: '半径(中心から頂点まで)' },
   ],
   complex: [
     { kind: 'json', key: 'vertices', label: '頂点', hint: '[[1,1,1],[1,-1,-1],[-1,1,-1]]' },
@@ -291,5 +277,5 @@ function listNames(spec: Extract<FieldSpec, { kind: 'list' }>, kind: ViewKind): 
   return Array.from({ length: count }, (_, at) => `${at + 1}番目`);
 }
 
-export { ANCHORS, ARROWS, COORDINATE_NAMES, fieldsFor, listNames };
-export type { FieldSpec, Option };
+export { COORDINATE_NAMES, fieldsFor, listNames };
+export type { FieldSpec };

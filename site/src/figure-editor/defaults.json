@@ -105,7 +105,7 @@
       }
     },
     "sphere": {
-      "space": { "type": "sphere", "center": [0, 0, 0], "radius": 1 }
+      "space": { "type": "sphere", "center": [0, 0, 0], "radius": 1, "wireframe": {} }
     },
     "surface": {
       "space": {
@@ -117,7 +117,8 @@
           [-2, 2]
         ],
         "boundary": true,
-        "wireframe": {}
+        "wireframe": {},
+        "wireframe_step": [1, 1]
       }
     },
     "bezier": {
@@ -134,7 +135,8 @@
           ]
         ],
         "boundary": true,
-        "wireframe": {}
+        "wireframe": {},
+        "wireframe_step": [0.25, 0.25]
       }
     },
     "cut": {
@@ -145,6 +147,9 @@
     },
     "tangent_plane": {
       "space": { "type": "tangent_plane", "of": "", "at": [0, 0], "size": 1 }
+    },
+    "polyhedron": {
+      "space": { "type": "polyhedron", "solid": "cube", "center": [0, 0, 0], "radius": 1 }
     },
     "complex": {
       "space": {

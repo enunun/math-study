@@ -253,7 +253,7 @@ test.describe('図の作成', () => {
 
   test('部品のテンプレート「正4面体」は，見える稜と隠れた稜の両方を描く', async ({ page }) => {
     // 隠れ方の判定そのもの(どの稜が隠れるか)は，crates/figure/tests/complex.rsで確かめているので，
-    // ここでは，複体(complex)オブジェクトの隠れ方が，実際のSVGの出力(破線と実線)にまで
+    // ここでは，正多面体(polyhedron，複体として描く)の隠れ方が，実際のSVGの出力(破線と実線)にまで
     // 届いていることだけを確かめる．
     await editor(page).getByRole('button', { name: '空間のベクトルの和', exact: true }).click();
     const picker = editor(page).locator('.fe-template-picker').filter({ hasText: '正多面体' });
@@ -268,9 +268,23 @@ test.describe('図の作成', () => {
     expect(dashArrays.some((value) => value !== null)).toBe(true);
   });
 
-  test('図全体のテンプレート「メビウスの帯」は，誤りなく描ける', async ({ page }) => {
+  test('コードで書いた見本「メビウスの帯」は，誤りなく描ける', async ({ page }) => {
+    // 記事の図のファイルではなく，sample-scenes.tsのシーンを読み込む見本も，同じように動くことを確かめる．
     await editor(page).getByRole('button', { name: 'メビウスの帯', exact: true }).click();
     await expect(preview(page)).toBeVisible();
+    await expect(editor(page).getByRole('alert')).toHaveCount(0);
+  });
+
+  test('図のテンプレート「座標軸(空間)」を選ぶと，3本の座標軸だけの空間の図になる', async ({
+    page,
+  }) => {
+    await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
+    await editor(page).getByRole('button', { name: '座標軸(空間)', exact: true }).click();
+    const items = editor(page)
+      .getByRole('list', { name: 'オブジェクトの一覧' })
+      .getByRole('listitem');
+    await expect(items).toHaveCount(3);
+    await expect(editor(page).getByLabel('方位角(度)')).toBeVisible();
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
 

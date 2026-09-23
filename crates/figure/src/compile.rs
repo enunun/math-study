@@ -115,6 +115,8 @@ pub struct SurfacePlot {
     pub domain: [[f64; 2]; 2],
     /// 評価した，ベジエ曲面の制御点の網．式で書く曲面では`None`である．
     pub net: Option<Vec<Vec<[f64; 3]>>>,
+    /// ワイヤーフレームの断面を引く，uの値とvの値．`wireframe`がなければ，どちらも空である．
+    pub wireframe: [Vec<f64>; 2],
 }
 
 /// 式を読んだ後の，領域．
@@ -301,7 +303,8 @@ fn compile_object(
         | Object::Vector(_)
         | Object::Segment(_)
         | Object::Intersection(_)
-        | Object::Complex(_) => Ok(Plot::None),
+        | Object::Complex(_)
+        | Object::Polyhedron(_) => Ok(Plot::None),
     }
 }
 
@@ -482,6 +485,18 @@ fn compile_surface(
     names: &[&str],
     parameters: &[f64],
 ) -> Result<SurfacePlot, ErrorKind> {
+    let mut plot = compile_surface_shape(surface, names, parameters)?;
+    if surface.wireframe.is_some() {
+        plot.wireframe = wireframe_values(surface, plot.domain, names, parameters)?;
+    }
+    Ok(plot)
+}
+
+fn compile_surface_shape(
+    surface: &Surface,
+    names: &[&str],
+    parameters: &[f64],
+) -> Result<SurfacePlot, ErrorKind> {
     if let Some(net) = &surface.bezier {
         return compile_bezier(net, names, parameters);
     }
@@ -520,8 +535,55 @@ fn compile_surface(
             evaluate_domain(v_domain, names, parameters)?,
         ],
         net: None,
+        wireframe: [Vec::new(), Vec::new()],
     })
 }
+
+/// ワイヤーフレームの断面を引く，uの値とvの値．各変数の刻みの整数倍のうち，定義域の内側(両端を除く)に
+/// あるものである．刻みを書かなければ，定義域の幅の`Surface::DEFAULT_WIREFRAME_DIVISIONS`分の1にする．
+fn wireframe_values(
+    surface: &Surface,
+    domain: [[f64; 2]; 2],
+    names: &[&str],
+    parameters: &[f64],
+) -> Result<[Vec<f64>; 2], ErrorKind> {
+    let mut values = [Vec::new(), Vec::new()];
+    for (index, ([low, high], slot)) in domain.into_iter().zip(&mut values).enumerate() {
+        let step = match surface
+            .wireframe_step
+            .as_ref()
+            .and_then(|steps| steps.get(index))
+        {
+            Some(bound) => evaluate_bound("wireframe_step", bound, index, names, parameters)?,
+            None => (high - low) / Surface::DEFAULT_WIREFRAME_DIVISIONS,
+        };
+        if !(step.is_finite() && step > 0.0) {
+            return Err(ErrorKind::Invalid(
+                "ワイヤーフレームの刻み(`wireframe_step`)は，正の有限の数にする．".to_owned(),
+            ));
+        }
+        if (high - low) / step > Surface::MAX_WIREFRAME_LINES {
+            return Err(ErrorKind::Invalid(format!(
+                "ワイヤーフレームの断面が多すぎる．刻み(`wireframe_step`)を大きくして，各方向{}本以下にする．",
+                Surface::MAX_WIREFRAME_LINES
+            )));
+        }
+        // 端とほとんど重なる断面は，縁や輪郭と重なるので引かない．
+        let margin = (high - low) * WIREFRAME_EDGE_MARGIN;
+        let mut multiple = (low / step).floor();
+        while multiple * step < high - margin {
+            let value = multiple * step;
+            if value > low + margin {
+                slot.push(value);
+            }
+            multiple += 1.0;
+        }
+    }
+    Ok(values)
+}
+
+/// 定義域の端と重なるとみなす，断面の近さ(定義域の幅に対する割合)．
+const WIREFRAME_EDGE_MARGIN: f64 = 1e-9;
 
 /// ベジエ曲面の制御点の座標を評価する．座標は，媒介変数と定数を使え，有限の数でなければならない．
 fn compile_bezier(
@@ -555,6 +617,7 @@ fn compile_bezier(
         exprs: Vec::new(),
         domain: [[0.0, 1.0], [0.0, 1.0]],
         net: Some(evaluated),
+        wireframe: [Vec::new(), Vec::new()],
     })
 }
 

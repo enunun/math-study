@@ -44,6 +44,7 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'cut', label: '曲面の切り口', kinds: SPACE },
   { type: 'intersection', label: '曲面の交線', kinds: SPACE },
   { type: 'tangent_plane', label: '接平面', kinds: SPACE },
+  { type: 'polyhedron', label: '正多面体', kinds: SPACE },
   { type: 'complex', label: '複体', kinds: SPACE },
 ];
 

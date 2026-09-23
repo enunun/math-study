@@ -39,7 +39,7 @@
       "oneOf": [{ "type": "number" }, { "$ref": "#/$defs/nonBlankString" }]
     },
     "positiveNumberOrExpression": {
-      "description": "格子の刻み(`x_step`，`y_step`)に使う。数で書くときは，正の数でなければならない。式で書くときの正負は，エンジンが式を評価するときに確かめる。",
+      "description": "格子の刻み(`x_step`，`y_step`)，接平面の半径(`size`)，曲面のワイヤーフレームの刻み(`wireframe_step`)に使う。数で書くときは，正の数でなければならない。式で書くときの正負は，エンジンが式を評価するときに確かめる。",
       "oneOf": [{ "type": "number", "exclusiveMinimum": 0 }, { "$ref": "#/$defs/nonBlankString" }]
     },
     "numberPair": {
@@ -614,11 +614,12 @@
           "$ref": "#/$defs/style",
           "description": "曲面のワイヤーフレーム(u一定・v一定の断面)。式で書いた曲面でも，ベジエ曲面でも，同じように，曲面の上の線として描く。この項目があれば描き，スタイルとして使う(`{}`でもよい)。省くと描かない。"
         },
-        "wireframe_lines": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 24,
-          "description": "ワイヤーフレームの，u一定・v一定それぞれの断面の本数。`wireframe`があるときだけ使う。既定は4。"
+        "wireframe_step": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/positiveNumberOrExpression" },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "ワイヤーフレームの刻み(u方向，v方向)。断面は，各変数が刻みの整数倍になる所のうち，定義域の内側(両端を除く)に引く。数か式で書く。省くと，どちらも定義域の幅の4分の1。ベジエ曲面の変数の範囲は0から1。`wireframe`があるときだけ使う。各方向の断面が50本を超える刻みは断られる(スキーマでは表せない)。"
         },
         "control_net": {
           "$ref": "#/$defs/style",
@@ -729,8 +730,34 @@
         "style": { "$ref": "#/$defs/style" }
       }
     },
+    "polyhedron": {
+      "type": "object",
+      "required": ["id", "type", "solid", "center", "radius"],
+      "additionalProperties": false,
+      "description": "正多面体。種類と，中心と，半径(中心から頂点までの距離)だけで書き，頂点と面はエンジンが決める。空間の図でだけ使える。同じ頂点と面の複体(`complex`)と同じように描き，隠す。向きは種類ごとに決まっている(立方体は，面が座標軸に垂直)。",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "polyhedron" },
+        "solid": {
+          "enum": ["tetrahedron", "cube", "octahedron", "dodecahedron", "icosahedron"],
+          "description": "種類。正4面体，正6面体(立方体)，正8面体，正12面体，正20面体。"
+        },
+        "center": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "中心から頂点までの距離(外接球の半径)。"
+        },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
     "object": {
-      "description": "図を作るオブジェクト。`type`で種類を選ぶ。`graph`，`grid`，`region`，`tangent_line`，`fractal`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`は空間の図でだけ使える。",
+      "description": "図を作るオブジェクト。`type`で種類を選ぶ。`graph`，`grid`，`region`，`tangent_line`，`fractal`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える。",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },
@@ -749,7 +776,8 @@
         { "$ref": "#/$defs/cut" },
         { "$ref": "#/$defs/intersection" },
         { "$ref": "#/$defs/tangent_plane" },
-        { "$ref": "#/$defs/complex" }
+        { "$ref": "#/$defs/complex" },
+        { "$ref": "#/$defs/polyhedron" }
       ]
     }
   }

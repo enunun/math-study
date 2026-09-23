@@ -40,7 +40,7 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
               [0, 1],
             ],
             wireframe: { color: 'blue' },
-            wireframe_lines: 8,
+            wireframe_step: [0.25, '1/3'],
           },
           {
             id: 'z',

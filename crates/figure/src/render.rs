@@ -141,7 +141,8 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Result<
             | Object::Cut(_)
             | Object::Intersection(_)
             | Object::TangentPlane(_)
-            | Object::Complex(_) => {}
+            | Object::Complex(_)
+            | Object::Polyhedron(_) => {}
         }
     }
     Ok(Figure {

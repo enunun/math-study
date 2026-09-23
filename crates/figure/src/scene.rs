@@ -150,6 +150,8 @@ pub enum Object {
     TangentPlane(TangentPlane),
     /// 複体(頂点と面でできた図形)．空間の図でだけ使える．
     Complex(Complex),
+    /// 正多面体(種類と中心と半径で書く複体)．空間の図でだけ使える．
+    Polyhedron(Polyhedron),
 }
 
 /// 軸の向き．
@@ -491,6 +493,41 @@ pub struct TangentPlane {
     pub style: Style,
 }
 
+/// 正多面体の種類．
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Solid {
+    /// 正4面体．
+    Tetrahedron,
+    /// 正6面体(立方体)．
+    Cube,
+    /// 正8面体．
+    Octahedron,
+    /// 正12面体．
+    Dodecahedron,
+    /// 正20面体．
+    Icosahedron,
+}
+
+/// 正多面体．種類と，中心と，半径(中心から頂点までの距離)だけで書く．空間の図でだけ使える．
+/// 頂点と面はエンジンが決め(`polyhedron.rs`)，同じ頂点と面を持つ複体(`Complex`)と同じように描いて隠す．
+/// 向きは種類ごとに決まっている(立方体は，面が座標軸に垂直になる向き)．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Polyhedron {
+    /// 識別子．
+    pub id: String,
+    /// 種類．
+    pub solid: Solid,
+    /// 中心の座標．
+    pub center: [f64; 3],
+    /// 中心から頂点までの距離(外接球の半径)．
+    pub radius: f64,
+    /// 稜のスタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
 /// 複体．頂点と，面(頂点の番号を周に沿って並べたもの，3個以上)でできた図形．空間の図でだけ使える．
 /// 稜(辺)は，どの2つの面にも属さない稜がないよう，面から自動的に求める(手で書かない)．
 /// 面は，向き(頂点の並ぶ順)がすべて外向きになるように書く：稜を隠すかどうかは，その稜に隣接する
@@ -636,12 +673,11 @@ pub struct Surface {
     /// 式で書いた曲面でも，ベジエ曲面でも，同じように，曲面の上の線として描く．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub wireframe: Option<Style>,
-    /// ワイヤーフレームの，u一定・v一定それぞれの断面の本数．`wireframe`があるときだけ使う．
-    #[serde(
-        default = "default_wireframe_lines",
-        skip_serializing_if = "is_default_wireframe_lines"
-    )]
-    pub wireframe_lines: usize,
+    /// ワイヤーフレームの刻み(u方向，v方向)．断面は，各変数が刻みの整数倍になる所のうち，定義域の内側
+    /// (両端を除く)に引く．数か式で書く．なければ，どちらも定義域の幅の4分の1である．ベジエ曲面の変数の
+    /// 範囲は0から1である．`wireframe`があるときだけ使う．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wireframe_step: Option<[Bound; 2]>,
     /// ベジエ曲面の，制御点の網(行と列を結ぶ折れ線)．なければ描かない．`bezier`があるときだけ使える．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub control_net: Option<Style>,
@@ -658,12 +694,10 @@ impl Surface {
     pub const MIN_CONTROL_POINTS: usize = 2;
     /// ベジエ曲面の制御点の数の上限(各方向)．次数が高いと，制御点の動きが，形に効きにくくなる．
     pub const MAX_CONTROL_POINTS: usize = 12;
-    /// ワイヤーフレームの断面の本数の既定．
-    pub const DEFAULT_WIREFRAME_LINES: usize = 4;
-    /// ワイヤーフレームの断面の本数の下限．
-    pub const MIN_WIREFRAME_LINES: usize = 1;
-    /// ワイヤーフレームの断面の本数の上限．多すぎると，TikZの出力が大きくなりすぎる．
-    pub const MAX_WIREFRAME_LINES: usize = 24;
+    /// ワイヤーフレームの刻みを書かないときの，定義域の分け方(幅の何分の1を刻みにするか)．
+    pub const DEFAULT_WIREFRAME_DIVISIONS: f64 = 4.0;
+    /// ワイヤーフレームの断面の本数の上限(各方向)．多すぎると，TikZの出力が大きくなりすぎる．
+    pub const MAX_WIREFRAME_LINES: f64 = 50.0;
 }
 
 const fn default_mesh() -> [usize; 2] {
@@ -673,15 +707,6 @@ const fn default_mesh() -> [usize; 2] {
 #[allow(clippy::trivially_copy_pass_by_ref)]
 fn is_default_mesh(mesh: &[usize; 2]) -> bool {
     *mesh == default_mesh()
-}
-
-const fn default_wireframe_lines() -> usize {
-    Surface::DEFAULT_WIREFRAME_LINES
-}
-
-#[allow(clippy::trivially_copy_pass_by_ref)]
-fn is_default_wireframe_lines(lines: &usize) -> bool {
-    *lines == Surface::DEFAULT_WIREFRAME_LINES
 }
 
 /// 領域．2つのグラフ(かグラフとx軸)の間を，定義域の中で，平行な斜線で埋める．
@@ -883,6 +908,7 @@ impl Object {
             Self::Intersection(o) => &o.id,
             Self::TangentPlane(o) => &o.id,
             Self::Complex(o) => &o.id,
+            Self::Polyhedron(o) => &o.id,
         }
     }
 
@@ -908,6 +934,7 @@ impl Object {
             Self::Intersection(_) => "intersection",
             Self::TangentPlane(_) => "tangent_plane",
             Self::Complex(_) => "complex",
+            Self::Polyhedron(_) => "polyhedron",
         }
     }
 }

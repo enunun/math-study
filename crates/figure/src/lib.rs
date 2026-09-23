@@ -24,6 +24,7 @@ pub mod figure;
 mod fractal;
 pub mod hatch;
 mod parse;
+mod polyhedron;
 mod refine;
 mod region;
 mod render;

@@ -42,7 +42,7 @@ describe('シーンのJSON Schemaは，空間のオブジェクトの構造の�
     ).toBe(true);
   });
 
-  it('曲面のワイヤーフレームの本数が0以下なら断る', () => {
+  it('曲面のワイヤーフレームの刻みが0以下なら断る', () => {
     expect(
       invalid({
         ...space,
@@ -57,7 +57,7 @@ describe('シーンのJSON Schemaは，空間のオブジェクトの構造の�
               [0, 1],
             ],
             wireframe: {},
-            wireframe_lines: 0,
+            wireframe_step: [0, 1],
           },
         ],
       }),

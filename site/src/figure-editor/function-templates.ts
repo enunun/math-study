@@ -1,13 +1,5 @@
-import type { ViewKind } from './draft';
-import type { Json, JsonObject } from './json';
-
-/** 記事に紐づかないテンプレートの型．`templates.ts`のものと同じ形にする． */
-interface ObjectTemplate {
-  id: string;
-  label: string;
-  kind: ViewKind;
-  objects: readonly JsonObject[];
-}
+import type { Json } from './json';
+import type { ObjectTemplate } from './template-types';
 
 /** 定義域の境界に使う，名前のついた値．関数ごとに，特異点や急な増加を避けて選ぶ． */
 const JUST_ABOVE_ZERO = 0.05;

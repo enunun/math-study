@@ -57,7 +57,10 @@ test.describe('曲面・球・曲線の制御点', () => {
   test('ベジエ曲面のフォームには，ワイヤーフレームと，別に，制御点の網の選択もある', async ({
     page,
   }) => {
-    await editor(page).getByRole('button', { name: 'ベジエ曲面', exact: true }).click();
+    await editor(page).getByRole('button', { name: '座標軸(空間)', exact: true }).click();
+    const picker = editor(page).locator('.fe-template-picker').filter({ hasText: 'ベジエ曲面' });
+    await picker.getByLabel('ベジエ曲面').selectOption({ label: '双3次ベジエ曲面(制御点4×4個)' });
+    await picker.getByRole('button', { name: '挿入' }).click();
     await editor(page)
       .getByRole('list', { name: 'オブジェクトの一覧' })
       .getByRole('button', { name: /曲面/u })

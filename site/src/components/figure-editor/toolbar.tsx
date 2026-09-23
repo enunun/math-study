@@ -22,7 +22,7 @@ interface Props {
   onMessage: (message: string) => void;
 }
 
-/** 見本と，空の図の選択． */
+/** 見本(そのまま使える完成した図)と，空の図の選択．見本は，今の図を置き換える． */
 function Samples({ onLoad, onNew }: Pick<Props, 'onLoad' | 'onNew'>): ReactElement {
   return (
     <div className="fe-buttons" role="group" aria-label="見本">
@@ -32,10 +32,7 @@ function Samples({ onLoad, onNew }: Pick<Props, 'onLoad' | 'onNew'>): ReactEleme
           key={sample.id}
           type="button"
           onClick={() => {
-            const parsed = parseDraft(sample.json);
-            if (parsed.ok) {
-              onLoad(parsed.draft);
-            }
+            onLoad(sample.scene);
           }}
         >
           {sample.label}
@@ -48,10 +45,7 @@ function Samples({ onLoad, onNew }: Pick<Props, 'onLoad' | 'onNew'>): ReactEleme
   );
 }
 
-/**
- * 記事に紐づかない，部品として組み合わせるテンプレート(正多角形・正多面体・関数のグラフ)を，
- * 種類ごとに選んで，今の図に挿入する．
- */
+/** 部品として組み合わせるテンプレート(正多角形・2次曲線・ベジエ曲面など)を，種類ごとに選んで，今の図に挿入する． */
 function ObjectTemplatePicker({
   group,
   onInsert,
@@ -84,7 +78,10 @@ function ObjectTemplatePicker({
   );
 }
 
-/** 部品のテンプレートの一覧．今の図の種類(平面・空間)で使えないものは出さない． */
+/**
+ * 部品のテンプレートの一覧．今の図の種類(平面・空間)で使えないものは出さない．平面と空間の両方を持つ
+ * まとまりもあるので，図の種類が変わったら，選択欄を作り直す(`key`に種類を含める)．
+ */
 function ObjectTemplates({
   kind,
   onInsert,
@@ -100,13 +97,13 @@ function ObjectTemplates({
     <div className="fe-buttons" role="group" aria-label="部品のテンプレート">
       <span>テンプレート(部品)：</span>
       {groups.map((group) => (
-        <ObjectTemplatePicker key={group.label} group={group} onInsert={onInsert} />
+        <ObjectTemplatePicker key={`${kind}-${group.label}`} group={group} onInsert={onInsert} />
       ))}
     </div>
   );
 }
 
-/** 図全体のテンプレート(メビウスの帯・コッホ曲線など)．選ぶと，今の図を置き換える． */
+/** 図のテンプレート(座標軸だけの図など)．中身のない出発点で，選ぶと，今の図を置き換える． */
 function SceneTemplates({ onLoad }: Pick<Props, 'onLoad'>): ReactElement {
   return (
     <div className="fe-buttons" role="group" aria-label="図のテンプレート">

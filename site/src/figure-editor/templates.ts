@@ -1,34 +1,9 @@
-import type { ViewKind } from './draft';
+import { BEZIER_SPLINE_TEMPLATES, BEZIER_SURFACE_TEMPLATES } from './bezier-templates';
+import { CONIC_TEMPLATES, PLANE_CURVE_TEMPLATES, SPACE_CURVE_TEMPLATES } from './curve-templates';
 import { FUNCTION_TEMPLATES } from './function-templates';
-import type { JsonObject } from './json';
-import { NAMED_SCENE_TEMPLATES } from './named-scenes';
-import {
-  CUBE_VERTICES,
-  DODECAHEDRON_VERTICES,
-  ICOSAHEDRON_VERTICES,
-  OCTAHEDRON_VERTICES,
-  TETRAHEDRON_VERTICES,
-  polyhedronObjects,
-  regularPolygonObjects,
-} from './regular-shapes';
-import type { Vertex3 } from './regular-shapes';
-
-/**
- * 記事に紐づく「見本」(`samples.ts`)とは別の，部品として組み合わせて使うテンプレート．
- * 正多角形・正多面体・関数のグラフは，今編集している図にオブジェクトとして挿入する．
- * メビウスの帯とコッホ曲線は，それ自体が図なので，新しい図として読み込む(`named-scenes.ts`)．
- */
-interface ObjectTemplate {
-  id: string;
-  label: string;
-  kind: ViewKind;
-  objects: readonly JsonObject[];
-}
-
-interface ObjectTemplateGroup {
-  label: string;
-  templates: readonly ObjectTemplate[];
-}
+import { regularPolygonObjects } from './regular-shapes';
+import { OTHER_SURFACE_TEMPLATES, QUADRIC_TEMPLATES } from './surface-templates';
+import type { ObjectTemplate, ObjectTemplateGroup } from './template-types';
 
 const TRIANGLE_SIDES = 3;
 const SQUARE_SIDES = 4;
@@ -55,31 +30,46 @@ const POLYGON_TEMPLATES: readonly ObjectTemplate[] = POLYGON_SPECS.map(({ n, lab
   objects: regularPolygonObjects(n),
 }));
 
-const POLYHEDRON_SPECS: readonly { id: string; label: string; vertices: readonly Vertex3[] }[] = [
-  { id: 'tetrahedron', label: '正4面体', vertices: TETRAHEDRON_VERTICES },
-  { id: 'cube', label: '正6面体(立方体)', vertices: CUBE_VERTICES },
-  { id: 'octahedron', label: '正8面体', vertices: OCTAHEDRON_VERTICES },
-  { id: 'dodecahedron', label: '正12面体', vertices: DODECAHEDRON_VERTICES },
-  { id: 'icosahedron', label: '正20面体', vertices: ICOSAHEDRON_VERTICES },
+/** 正多面体の既定の半径(中心から頂点までの距離)． */
+const POLYHEDRON_RADIUS = 2;
+
+const POLYHEDRON_SPECS: readonly { solid: string; label: string }[] = [
+  { solid: 'tetrahedron', label: '正4面体' },
+  { solid: 'cube', label: '正6面体(立方体)' },
+  { solid: 'octahedron', label: '正8面体' },
+  { solid: 'dodecahedron', label: '正12面体' },
+  { solid: 'icosahedron', label: '正20面体' },
 ];
 
+/** 正多面体は，種類と中心と半径だけを持つ`polyhedron`で書く．頂点と面はエンジンが決める． */
 const POLYHEDRON_TEMPLATES: readonly ObjectTemplate[] = POLYHEDRON_SPECS.map(
-  ({ id, label, vertices }) => ({
-    id,
+  ({ solid, label }) => ({
+    id: solid,
     label,
     kind: 'space',
-    objects: polyhedronObjects(vertices),
+    objects: [{ id: 'p', type: 'polyhedron', solid, center: [0, 0, 0], radius: POLYHEDRON_RADIUS }],
   }),
 );
 
+/**
+ * 部品のテンプレートのまとまり．今編集している図に，オブジェクトとして挿入する．ツールバーは，
+ * 今の図の種類(平面・空間)で使えるものだけを出すので，平面と空間の両方を持つまとまりもある．
+ * 図全体を置き換える図のテンプレート(`scene-templates.ts`)は，座標軸だけの出発点である．
+ * そのまま使える完成した図は，見本(`samples.ts`)に置く．
+ */
 const OBJECT_TEMPLATE_GROUPS: readonly ObjectTemplateGroup[] = [
   { label: '正多角形', templates: POLYGON_TEMPLATES },
-  { label: '正多面体', templates: POLYHEDRON_TEMPLATES },
+  { label: '2次曲線', templates: CONIC_TEMPLATES },
+  { label: '平面曲線', templates: PLANE_CURVE_TEMPLATES },
   { label: '関数のグラフ', templates: FUNCTION_TEMPLATES },
+  { label: 'ベジエ曲線・スプライン曲線', templates: BEZIER_SPLINE_TEMPLATES },
+  { label: '空間曲線', templates: SPACE_CURVE_TEMPLATES },
+  { label: '正多面体', templates: POLYHEDRON_TEMPLATES },
+  { label: '2次曲面', templates: QUADRIC_TEMPLATES },
+  { label: 'ベジエ曲面', templates: BEZIER_SURFACE_TEMPLATES },
+  { label: 'いろいろな曲面', templates: OTHER_SURFACE_TEMPLATES },
 ];
 
-const SCENE_TEMPLATES = NAMED_SCENE_TEMPLATES;
-
-export { OBJECT_TEMPLATE_GROUPS, SCENE_TEMPLATES };
-export type { ObjectTemplate, ObjectTemplateGroup };
-export type { SceneTemplate } from './named-scenes';
+export { OBJECT_TEMPLATE_GROUPS };
+export { SCENE_TEMPLATES } from './scene-templates';
+export type { ObjectTemplate, ObjectTemplateGroup, SceneTemplate } from './template-types';

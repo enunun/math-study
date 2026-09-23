@@ -6,6 +6,7 @@
 //! 線は，まず点で刻み，隠れ方が変わる区間を二分法で詰めて，隠れた部分と見える部分に分ける．
 //! 刻みの間に，隠れ方が2回変わる細かい隠れは，見つけられない．
 
+use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap};
 use std::f64::consts::TAU;
 
@@ -213,6 +214,15 @@ fn fan_triangles(face: &[usize]) -> impl Iterator<Item = [usize; 3]> + '_ {
     seconds.zip(thirds).map(move |(b, c)| [first, b, c])
 }
 
+/// 複体として描くオブジェクト(複体と正多面体)の，複体．ほかのオブジェクトなら`None`．
+fn as_complex(object: &Object) -> Option<Cow<'_, Complex>> {
+    match object {
+        Object::Complex(complex) => Some(Cow::Borrowed(complex)),
+        Object::Polyhedron(polyhedron) => Some(Cow::Owned(polyhedron.to_complex())),
+        _ => None,
+    }
+}
+
 /// 複体の面を三角形分割して，ほかのオブジェクトを隠すための網にする．
 fn complex_mesh(complex: &Complex, frame: Frame) -> Mesh {
     let indices = complex
@@ -263,9 +273,8 @@ fn build_space<'a>(scene: &'a Scene, view: &SpaceView, compiled: &'a Compiled) -
     let complex_meshes: Vec<Mesh> = scene
         .objects
         .iter()
-        .filter_map(|object| match object {
-            Object::Complex(complex) => Some(complex_mesh(complex, camera.frame())),
-            _ => None,
+        .filter_map(|object| {
+            as_complex(object).map(|complex| complex_mesh(&complex, camera.frame()))
         })
         .collect();
     Space {
@@ -297,12 +306,13 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
     let mut maps = space.surfaces.iter();
     let mut complex_meshes = space.complex_meshes.iter();
     for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
-        match (object, plot) {
-            (Object::Complex(complex), _) => {
-                if let Some(mesh) = complex_meshes.next() {
-                    items.extend(complex_items(complex, mesh, &space));
-                }
+        if let Some(complex) = as_complex(object) {
+            if let Some(mesh) = complex_meshes.next() {
+                items.extend(complex_items(&complex, mesh, &space));
             }
+            continue;
+        }
+        match (object, plot) {
             (Object::Surface(surface), Plot::Surface(placed)) => {
                 if let (Some(mesh), Some(map)) = (meshes.next(), maps.next()) {
                     items.extend(surface_items(surface, mesh, &space));
@@ -595,8 +605,8 @@ fn wireframe_line(
     items
 }
 
-/// 曲面のワイヤーフレーム．`u`一定・`v`一定の断面を，`surface.wireframe_lines`本ずつ引く．
-/// 式で書いた曲面でもベジエ曲面でも，`map`(曲面の式の関数)が同じ形なので，同じように描ける．
+/// 曲面のワイヤーフレーム．`u`一定・`v`一定の断面を，`plot.wireframe`(刻みから`compile.rs`が求めた値)
+/// の所に引く．式で書いた曲面でもベジエ曲面でも，`map`(曲面の式の関数)が同じ形なので，同じように描ける．
 fn surface_wireframe_items(
     surface: &Surface,
     plot: &SurfacePlot,
@@ -607,9 +617,9 @@ fn surface_wireframe_items(
         return Vec::new();
     };
     let [[u0, u1], [v0, v1]] = plot.domain;
+    let [us, vs] = &plot.wireframe;
     let mut items = Vec::new();
-    for t in interior_fractions(surface.wireframe_lines) {
-        let u = lerp(u0, u1, t);
+    for &u in us {
         items.extend(wireframe_line(
             style,
             Line::Dotted,
@@ -618,7 +628,8 @@ fn surface_wireframe_items(
             v1,
             space,
         ));
-        let v = lerp(v0, v1, t);
+    }
+    for &v in vs {
         items.extend(wireframe_line(
             style,
             Line::Dotted,
