@@ -12,7 +12,8 @@ Confirm that a change builds, works under the same base path as production, and 
 1. Run `mise run check`. It runs formatting, oxlint, `cargo fmt` and `clippy` (`lint:rust`), remark-lint (MDX), markdownlint, textlint, the type check (`astro check`), the Vitest unit tests, `cargo test`, and the build. The wasm module is built first (`mise run wasm`). CI runs the same thing.
 2. For changes that affect rendering or behavior, run `mise run e2e`. It builds `site/dist` and runs the tests in `e2e/`.
 3. For changes that affect appearance, take screenshots and look at the images (next section).
-4. After committing and pushing, confirm that CI succeeded (the section after next).
+
+Local `mise run check` and `mise run e2e` run the same checks CI does, so a task is done once it is pushed. Do not wait for or poll CI as part of finishing a task; check it only when the user asks (see "Checking CI").
 
 ## Checking appearance
 
@@ -62,7 +63,7 @@ Scrollable regions must be keyboard-focusable (axe rule `scrollable-region-focus
 
 ## Checking CI
 
-A push triggers GitHub Actions, which runs `build` (`mise run check`, then `mise run e2e`) and `deploy`. Check the result through the public API.
+A push triggers GitHub Actions, which runs `build` (`mise run check`, then `mise run e2e`) and `deploy`. This is not part of finishing a task — do not wait for or poll it proactively; local `mise run check` and `mise run e2e` already give the same coverage. Check it only when the user asks, through the public API.
 
 ```sh
 git rev-parse HEAD

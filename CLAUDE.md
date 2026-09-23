@@ -11,7 +11,7 @@ A study site for mathematics (Astro 7, Starlight, MDX). `README.md` (Japanese) g
 ## Working conventions
 
 - This is a solo project: work on `main` only. Do not use branches or pull requests. Commit finished work and push it to `main`, and split unrelated changes into separate commits.
-- Pushing publishes the site through GitHub Pages. After a push, confirm that the GitHub Actions `build` and `deploy` jobs succeed.
+- Pushing publishes the site through GitHub Pages. Local `mise run check` and `mise run e2e` already give enough confidence before pushing, so a task is done once it is pushed: do not wait for or poll GitHub Actions as part of finishing a task. Check CI only when the user asks.
 - After a change, run `mise run check`. For changes that affect rendering or behavior, also run `mise run e2e` and check the appearance with `mise run screenshot`. The procedure is in the `verify-site` skill.
 - Record what you learn in the same change, so the next session and the human maintainer can find it. Put durable knowledge where it belongs: `CLAUDE.md` for conventions and pitfalls, `.claude/skills/**` for procedures, `docs/tech-decisions.md` for decisions and verified facts, and `README.md` plus `site/src/content/docs/dev/internals.mdx` (Japanese, for humans) for how the system works. Do not leave findings only in the conversation or the scratchpad. If a change alters who does what, what is custom-built, or how a feature is used, update `internals.mdx` and the "Code map" below in the same commit. Skip this only when the information is already recorded.
 - Read the `write-content` skill before writing site content or documentation.
