@@ -69,10 +69,38 @@ enum Function {
     Log,
     Sqrt,
     Abs,
+    /// ガンマ関数．階乗の一般化(`gamma(n + 1)`が`n!`)．
+    Gamma,
+    /// ガンマ関数の自然対数．ガンマ関数自体が大きくなりすぎる引数でも使える．
+    LnGamma,
+    /// 誤差関数．
+    Erf,
+    /// 相補誤差関数(`1 - erf(x)`)．
+    Erfc,
+    /// ドーソン関数．
+    Dawson,
+    /// ランベルトのW関数の主枝(`w * exp(w) = x`を満たす`w`のうち，`x >= -1/e`で定まる方)．
+    LambertW,
+    /// 0次の第1種ベッセル関数．
+    BesselJ0,
+    /// 1次の第1種ベッセル関数．
+    BesselJ1,
+    /// 0次の第2種ベッセル関数．
+    BesselY0,
+    /// 1次の第2種ベッセル関数．
+    BesselY1,
+    /// 0次の第1種変形ベッセル関数．
+    BesselI0,
+    /// 1次の第1種変形ベッセル関数．
+    BesselI1,
+    /// 0次の第2種変形ベッセル関数．
+    BesselK0,
+    /// 1次の第2種変形ベッセル関数．
+    BesselK1,
 }
 
 impl Function {
-    /// 名前から関数を探す．`log`と`ln`は，どちらも自然対数である．
+    /// 名前から関数を探す．`log`と`ln`，`loggamma`と`lgamma`は，それぞれ同じ関数である．
     fn from_name(name: &str) -> Option<Self> {
         Some(match name {
             "sin" => Self::Sin,
@@ -88,6 +116,20 @@ impl Function {
             "log" | "ln" => Self::Log,
             "sqrt" => Self::Sqrt,
             "abs" => Self::Abs,
+            "gamma" => Self::Gamma,
+            "loggamma" | "lgamma" => Self::LnGamma,
+            "erf" => Self::Erf,
+            "erfc" => Self::Erfc,
+            "dawson" => Self::Dawson,
+            "lambertw" => Self::LambertW,
+            "besselj0" => Self::BesselJ0,
+            "besselj1" => Self::BesselJ1,
+            "bessely0" => Self::BesselY0,
+            "bessely1" => Self::BesselY1,
+            "besseli0" => Self::BesselI0,
+            "besseli1" => Self::BesselI1,
+            "besselk0" => Self::BesselK0,
+            "besselk1" => Self::BesselK1,
             _ => return None,
         })
     }
@@ -107,6 +149,20 @@ impl Function {
             Self::Log => x.ln(),
             Self::Sqrt => x.sqrt(),
             Self::Abs => x.abs(),
+            Self::Gamma => puruspe::gamma(x),
+            Self::LnGamma => puruspe::ln_gamma(x),
+            Self::Erf => puruspe::erf(x),
+            Self::Erfc => puruspe::erfc(x),
+            Self::Dawson => puruspe::dawson(x),
+            Self::LambertW => puruspe::lambert_w0(x),
+            Self::BesselJ0 => puruspe::Jn(0, x),
+            Self::BesselJ1 => puruspe::Jn(1, x),
+            Self::BesselY0 => puruspe::Yn(0, x),
+            Self::BesselY1 => puruspe::Yn(1, x),
+            Self::BesselI0 => puruspe::In(0, x),
+            Self::BesselI1 => puruspe::In(1, x),
+            Self::BesselK0 => puruspe::Kn(0, x),
+            Self::BesselK1 => puruspe::Kn(1, x),
         }
     }
 }
