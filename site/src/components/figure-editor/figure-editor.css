@@ -26,6 +26,24 @@
   align-items: end;
 }
 
+.fe-template-picker {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+/* 見本や図のテンプレートの行と高さを揃えるため，ここでだけラベルを横並びにする． */
+.fe-template-picker .fe-field {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.fe-template-picker .fe-field select {
+  width: auto;
+  min-width: 12rem;
+}
+
 .figure-editor button {
   padding: 0.25rem 0.7rem;
   border: 1px solid var(--sl-color-gray-4);

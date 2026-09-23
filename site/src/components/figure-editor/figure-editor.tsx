@@ -129,7 +129,7 @@ function Body({
  * シーンのJSONの読み込みと書き出し，対応するTikZの書き出しができる．
  */
 function FigureEditor(): ReactElement {
-  const { draft, revision, setDraft, load } = useDraft();
+  const { draft, revision, setDraft, load, insert } = useDraft();
   const [tab, setTab] = useState<Tab>('form');
   const [selected, setSelected] = useState(NO_SELECTION);
   const [message, setMessage] = useState('');
@@ -141,6 +141,7 @@ function FigureEditor(): ReactElement {
   return (
     <div className="figure-editor not-content">
       <Toolbar
+        kind={viewKind(draft)}
         json={json}
         tikz={rendered?.tikz ?? ''}
         message={message}
@@ -149,6 +150,7 @@ function FigureEditor(): ReactElement {
         onNew={() => {
           replace({ ...draft, objects: [] });
         }}
+        onInsert={insert}
       />
       <Body
         rendered={rendered}

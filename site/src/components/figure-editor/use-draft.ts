@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { emptyDraft, parseDraft, stringifyDraft } from '@/figure-editor/draft';
+import { emptyDraft, parseDraft, stringifyDraft, viewKind } from '@/figure-editor/draft';
 import type { SceneDraft } from '@/figure-editor/draft';
+import { insertObjects } from '@/figure-editor/insert-template';
+import type { JsonObject } from '@/figure-editor/json';
 
 const STORAGE_KEY = 'math-study:figure-editor';
 
@@ -12,6 +14,8 @@ interface DraftState {
   setDraft: (draft: SceneDraft) => void;
   /** 見本や，読み込んだファイルの図に置き換える． */
   load: (draft: SceneDraft) => void;
+  /** テンプレートのオブジェクトを，重ならない識別子に付け替えて，今の図に加える． */
+  insert: (objects: readonly JsonObject[]) => void;
 }
 
 function readSaved(): SceneDraft | undefined {
@@ -58,7 +62,11 @@ function useDraft(): DraftState {
     setRevision((value) => value + 1);
   }, []);
 
-  return { draft, revision, setDraft, load };
+  const insert = useCallback((objects: readonly JsonObject[]) => {
+    setDraft((current) => insertObjects(current, viewKind(current), objects));
+  }, []);
+
+  return { draft, revision, setDraft, load, insert };
 }
 
 export { useDraft };

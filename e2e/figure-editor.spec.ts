@@ -234,6 +234,29 @@ test.describe('図の作成', () => {
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
 
+  test('部品のテンプレート「正六角形」を挿入すると，頂点と辺のオブジェクトが増える', async ({
+    page,
+  }) => {
+    // 生成する頂点・辺の正しさ(数，辺の長さなど)は，site/src/figure-editor/regular-shapes.test.tsと
+    // templates.test.tsで確かめているので，ここでは，選んで挿入する操作が実際に図に反映されることだけを確かめる．
+    const HEXAGON_OBJECT_COUNT = 12;
+    const items = editor(page)
+      .getByRole('list', { name: 'オブジェクトの一覧' })
+      .getByRole('listitem');
+    const before = await items.count();
+    const picker = editor(page).locator('.fe-template-picker').filter({ hasText: '正多角形' });
+    await picker.getByLabel('正多角形').selectOption({ label: '正六角形' });
+    await picker.getByRole('button', { name: '挿入' }).click();
+    await expect(items).toHaveCount(before + HEXAGON_OBJECT_COUNT);
+    await expect(editor(page).getByRole('alert')).toHaveCount(0);
+  });
+
+  test('図全体のテンプレート「メビウスの帯」は，誤りなく描ける', async ({ page }) => {
+    await editor(page).getByRole('button', { name: 'メビウスの帯', exact: true }).click();
+    await expect(preview(page)).toBeVisible();
+    await expect(editor(page).getByRole('alert')).toHaveCount(0);
+  });
+
   for (const tab of ['フォーム', 'JSON', 'TikZ']) {
     test(`アクセシビリティ：${tab}の表示に，違反がない`, async ({ page }) => {
       await editor(page).getByRole('button', { name: '円錐と切り口', exact: true }).click();

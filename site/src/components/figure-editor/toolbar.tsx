@@ -1,17 +1,24 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 
 import { copyText, downloadText } from '@/figure-editor/download';
 import { parseDraft } from '@/figure-editor/draft';
-import type { SceneDraft } from '@/figure-editor/draft';
+import type { SceneDraft, ViewKind } from '@/figure-editor/draft';
+import type { JsonObject } from '@/figure-editor/json';
 import { EDITOR_SAMPLES } from '@/figure-editor/samples';
+import { OBJECT_TEMPLATE_GROUPS, SCENE_TEMPLATES } from '@/figure-editor/templates';
+import type { ObjectTemplateGroup } from '@/figure-editor/templates';
 import { fileName, standaloneDocument } from '@/figure-editor/tikz-document';
+
+import { SelectInput } from './field-inputs';
 
 const STEM = 'figure';
 
 interface Props {
+  kind: ViewKind;
   onLoad: (draft: SceneDraft) => void;
   onNew: () => void;
+  onInsert: (objects: readonly JsonObject[]) => void;
   onMessage: (message: string) => void;
 }
 
@@ -37,6 +44,84 @@ function Samples({ onLoad, onNew }: Pick<Props, 'onLoad' | 'onNew'>): ReactEleme
       <button type="button" onClick={onNew}>
         空の図
       </button>
+    </div>
+  );
+}
+
+/**
+ * 記事に紐づかない，部品として組み合わせるテンプレート(正多角形・正多面体・関数のグラフ)を，
+ * 種類ごとに選んで，今の図に挿入する．
+ */
+function ObjectTemplatePicker({
+  group,
+  onInsert,
+}: {
+  group: ObjectTemplateGroup;
+  onInsert: (objects: readonly JsonObject[]) => void;
+}): ReactElement {
+  const { templates } = group;
+  const [choice, setChoice] = useState(templates[0]?.id ?? '');
+  const current = templates.find((template) => template.id === choice) ?? templates[0];
+  return (
+    <span className="fe-template-picker">
+      <SelectInput
+        label={group.label}
+        value={choice}
+        options={templates.map((template) => [template.id, template.label])}
+        onChange={setChoice}
+      />
+      <button
+        type="button"
+        onClick={() => {
+          if (current !== undefined) {
+            onInsert(current.objects);
+          }
+        }}
+      >
+        挿入
+      </button>
+    </span>
+  );
+}
+
+/** 部品のテンプレートの一覧．今の図の種類(平面・空間)で使えないものは出さない． */
+function ObjectTemplates({
+  kind,
+  onInsert,
+}: {
+  kind: ViewKind;
+  onInsert: (objects: readonly JsonObject[]) => void;
+}): ReactElement {
+  const groups = OBJECT_TEMPLATE_GROUPS.map((group) => ({
+    label: group.label,
+    templates: group.templates.filter((template) => template.kind === kind),
+  })).filter((group) => group.templates.length > 0);
+  return (
+    <div className="fe-buttons" role="group" aria-label="部品のテンプレート">
+      <span>テンプレート(部品)：</span>
+      {groups.map((group) => (
+        <ObjectTemplatePicker key={group.label} group={group} onInsert={onInsert} />
+      ))}
+    </div>
+  );
+}
+
+/** 図全体のテンプレート(メビウスの帯・コッホ曲線など)．選ぶと，今の図を置き換える． */
+function SceneTemplates({ onLoad }: Pick<Props, 'onLoad'>): ReactElement {
+  return (
+    <div className="fe-buttons" role="group" aria-label="図のテンプレート">
+      <span>テンプレート(図)：</span>
+      {SCENE_TEMPLATES.map((template) => (
+        <button
+          key={template.id}
+          type="button"
+          onClick={() => {
+            onLoad(template.scene);
+          }}
+        >
+          {template.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -150,6 +235,8 @@ function Toolbar({
   return (
     <div className="fe-toolbar">
       <Samples onLoad={actions.onLoad} onNew={actions.onNew} />
+      <ObjectTemplates kind={actions.kind} onInsert={actions.onInsert} />
+      <SceneTemplates onLoad={actions.onLoad} />
       <div className="fe-buttons" role="group" aria-label="ファイル">
         <ImportButton {...actions} />
         <ExportButtons json={json} tikz={tikz} onMessage={actions.onMessage} />
