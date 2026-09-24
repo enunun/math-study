@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { hastToReact } from '@/figure/hast-react';
 import { figureToHast } from '@/figure/svg';
 import type { SceneEngine } from '@/figure/wasm';
+import type { Figure } from '@/wasm/figure';
 
 import { InlineMath } from './inline-math';
 
@@ -11,6 +12,8 @@ interface Rendered {
   figure: ReactNode;
   failure: Extract<ReturnType<SceneEngine['renderScene']>, { status: 'error' }> | undefined;
   tikz: string | undefined;
+  /** エンジンが出した中間表現．画像の書き出しに使う． */
+  ir: Figure | undefined;
 }
 
 /**
@@ -20,7 +23,7 @@ interface Rendered {
 function renderFigure(engine: SceneEngine, json: string): Rendered {
   const outcome = engine.renderScene(json);
   if (outcome.status !== 'ok') {
-    return { figure: undefined, failure: outcome, tikz: undefined };
+    return { figure: undefined, failure: outcome, tikz: undefined, ir: undefined };
   }
   const figure = hastToReact(figureToHast(outcome.figure), 'figure', (element, key) => {
     const [text] = element.children;
@@ -29,7 +32,7 @@ function renderFigure(engine: SceneEngine, json: string): Rendered {
     }
     return false;
   });
-  return { figure, failure: undefined, tikz: outcome.tikz };
+  return { figure, failure: undefined, tikz: outcome.tikz, ir: outcome.figure };
 }
 
 export { renderFigure };

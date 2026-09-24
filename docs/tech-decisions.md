@@ -29,6 +29,7 @@ The technical decisions for the mathematics study site, and the facts verified a
 | Commit-time checks          | lefthook                                                                            | Staged files are checked before the commit                                                                      |
 | Browser verification        | Playwright, with tests in `e2e/`                                                    | Browser behavior is kept in a reproducible form                                                                 |
 | Publishing                  | GitHub Actions to GitHub Pages                                                      | Actions are pinned by commit SHA                                                                                |
+| Figure image export         | Build an SVG from the engine IR in the browser, then rasterize it on a canvas       | Needs no server; labels become MathJax SVG paths, so the file needs no fonts                                    |
 
 ## Verified facts
 
@@ -40,6 +41,10 @@ The technical decisions for the mathematics study site, and the facts verified a
 
 ### Math
 
+- The figure editor's image export typesets labels with MathJax's SVG output, built from the ES modules (`@mathjax/src/js/...`) with `liteAdaptor`, separate from the CHTML bundle the page uses. Three facts shape that setup:
+  - MathJax 4 breaks inline math at operators by default and emits one `<svg>` per piece, so reading only the first `<svg>` of `x+y` gives `x`. `linebreaks: { inline: false }` keeps a label in one `<svg>`.
+  - Glyphs outside the core set (`\mathbb`, `\mathcal`, and others) live in the font's `dynamic/` files, which MathJax loads through `mathjax.asyncLoad`. An `import.meta.glob` over `/node_modules/...` works in the build and in Vitest but fails on the dev server (`dynamic file ... failed to load`): the dev server imports the dynamic files as a second copy of the font module, and they register their glyphs on that copy. Importing them by package name (`label-font-files.ts`) goes through the same resolution as the font itself.
+  - MathJax can reject with a value that is not an `Error`, so error messages are read from any object with a `message`.
 - MathJax 4 rendered both macros and `bussproofs` trees in Node. Write trees with `\AxiomC` and `\BinaryInfC`. The `\Axiom…\fCenter…` form is rendered, but speech generation fails with an error.
 - Speech strings exist only for a few locales, such as English. There is no Japanese locale. Japanese text is read one character at a time, and a proof tree's premises are not read out.
 - In build-time output, the speech string is stored in the `data-semantic-speech-none` attribute. Turning it into `aria-label` needs post-processing.

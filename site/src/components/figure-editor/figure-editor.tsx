@@ -144,6 +144,7 @@ function FigureEditor(): ReactElement {
         kind={viewKind(draft)}
         json={json}
         tikz={rendered?.tikz ?? ''}
+        figure={rendered?.ir}
         message={message}
         onMessage={setMessage}
         onLoad={replace}

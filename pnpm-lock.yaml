@@ -128,6 +128,9 @@ importers:
       hast-util-from-html:
         specifier: ^2.0.3
         version: 2.0.3
+      hast-util-to-html:
+        specifier: ^9.0.5
+        version: 9.0.5
       react:
         specifier: ^19.3.0
         version: 19.3.0

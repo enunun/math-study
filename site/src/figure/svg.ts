@@ -154,15 +154,9 @@ function labelElement(item: LabelItem, figure: Figure): Element {
   ]);
 }
 
-/**
- * 中間表現を，HTMLの木にする．`figure`の中に，SVG(線と矢じり)と，その上に重ねるラベルを置く．
- * ラベルの数式は，行内の数式(`code.language-math`)として置き，MathJaxのプラグインが描画する．
- */
-function figureToHast(figure: Figure): Element {
-  const { min, max } = figure.bounds;
-  const width = max[0] - min[0];
-  const height = max[1] - min[1];
-  const drawn = figure.items.flatMap((item) => {
+/** ラベル以外(線，矢じり，塗り，点)の，SVGの要素．座標はcmで，yは下向きである． */
+function drawnElements(figure: Figure): Element[] {
+  return figure.items.flatMap((item) => {
     if (item.type === 'path') {
       return pathElements(item);
     }
@@ -171,6 +165,17 @@ function figureToHast(figure: Figure): Element {
     }
     return item.type === 'dot' ? [dotElement(item)] : [];
   });
+}
+
+/**
+ * 中間表現を，HTMLの木にする．`figure`の中に，SVG(線と矢じり)と，その上に重ねるラベルを置く．
+ * ラベルの数式は，行内の数式(`code.language-math`)として置き，MathJaxのプラグインが描画する．
+ */
+function figureToHast(figure: Figure): Element {
+  const { min, max } = figure.bounds;
+  const width = max[0] - min[0];
+  const height = max[1] - min[1];
+  const drawn = drawnElements(figure);
   const labels = figure.items.flatMap((item) =>
     item.type === 'label' ? [labelElement(item, figure)] : [],
   );
@@ -190,4 +195,4 @@ function figureToHast(figure: Figure): Element {
   );
 }
 
-export { figureToHast };
+export { CM_PER_PT, drawnElements, element, figureToHast, format, svgPoint };

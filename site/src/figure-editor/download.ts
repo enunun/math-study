@@ -1,6 +1,6 @@
-/** 文字列を，ファイルとして，ダウンロードさせる．ブラウザだけで動く． */
-function downloadText(name: string, text: string, mime: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type: `${mime};charset=utf-8` }));
+/** データを，ファイルとして，ダウンロードさせる．ブラウザだけで動く． */
+function downloadBlob(name: string, blob: Blob): void {
+  const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = name;
@@ -8,6 +8,11 @@ function downloadText(name: string, text: string, mime: string): void {
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
+}
+
+/** 文字列を，ファイルとして，ダウンロードさせる．ブラウザだけで動く． */
+function downloadText(name: string, text: string, mime: string): void {
+  downloadBlob(name, new Blob([text], { type: `${mime};charset=utf-8` }));
 }
 
 /** 文字列を，クリップボードへ写す．できなければ，偽を返す． */
@@ -20,4 +25,4 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-export { copyText, downloadText };
+export { copyText, downloadBlob, downloadText };

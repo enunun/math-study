@@ -9,8 +9,10 @@ import { EDITOR_SAMPLES } from '@/figure-editor/samples';
 import { OBJECT_TEMPLATE_GROUPS, SCENE_TEMPLATES } from '@/figure-editor/templates';
 import type { ObjectTemplateGroup } from '@/figure-editor/templates';
 import { fileName, standaloneDocument } from '@/figure-editor/tikz-document';
+import type { Figure } from '@/wasm/figure';
 
 import { SelectInput } from './field-inputs';
+import { ImageExportControls } from './image-export-controls';
 
 const STEM = 'figure';
 
@@ -218,13 +220,19 @@ function ExportButtons({ json, tikz, onMessage }: ExportProps): ReactElement {
   );
 }
 
-/** 見本，JSONの読み込みと書き出し，TikZの書き出し． */
+/** 見本とテンプレート，JSONの読み込みと書き出し，TikZと画像の書き出し． */
 function Toolbar({
   message,
   json,
   tikz,
+  figure,
   ...actions
-}: Props & ExportProps & { message: string }): ReactElement {
+}: Props &
+  ExportProps & {
+    message: string;
+    /** 図を描けているときの，中間表現．描けていなければ，`undefined`． */
+    figure: Figure | undefined;
+  }): ReactElement {
   return (
     <div className="fe-toolbar">
       <Samples onLoad={actions.onLoad} />
@@ -234,6 +242,7 @@ function Toolbar({
         <ImportButton {...actions} />
         <ExportButtons json={json} tikz={tikz} onMessage={actions.onMessage} />
       </div>
+      <ImageExportControls figure={figure} stem={STEM} onMessage={actions.onMessage} />
       <p role="status" className="fe-message">
         {message}
       </p>

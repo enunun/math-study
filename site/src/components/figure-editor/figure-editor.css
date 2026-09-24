@@ -32,8 +32,17 @@
   align-items: center;
 }
 
-/* 見本や図のテンプレートの行と高さを揃えるため，ここでだけラベルを横並びにする． */
-.fe-template-picker .fe-field {
+.fe-image-export {
+  align-items: center;
+}
+
+.fe-image-export .fe-field span {
+  white-space: nowrap;
+}
+
+/* 見本や図のテンプレートの行と高さを揃えるため，テンプレートの選択と画像の書き出しでは，ラベルを横並びにする． */
+.fe-template-picker .fe-field,
+.fe-image-export .fe-field {
   display: flex;
   align-items: center;
   gap: 0.4rem;
