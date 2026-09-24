@@ -205,7 +205,7 @@ Checked on 2026-09-22 with TeX Live 2026 (pgf 3.1.12, LuaHBTeX 1.24), `standalon
 - Lines, arrowheads, dots, fills, dashes, colours, and opacity agree with the SVG: with the labels hidden on both sides, no ink in either image lies more than 2 px (0.5 mm) from ink in the other, at 3x resolution (0.0 % of the ink for every figure).
 - Labels agree when their size agrees. A TikZ node is 10 pt (`\normalsize`), so the label size in `figure.css` is 10 pt; with the page's 16 px (12 pt) every label was 30 % larger and the mismatch was 3 to 13 %, against 0 to 8 % now. The MathJax font and Computer Modern look alike at this size.
 - Known difference: the vertical position of a label anchored `north` or `south` differs by up to about 4 px. The HTML label box has a fixed line height (10 pt), while a TikZ node box is as tall as the glyphs of its text (a label with a descender such as `y` is taller than `x`), so the anchored edge sits at a different height. Fitting it would need the height and depth of each label from MathJax.
-- The figures of `dev/figure-algorithms.mdx` are not part of `mise run tikz`. Checked by hand: the paths match, and every figure compiles (a label with `\boldsymbol` needs `amsmath`), but `projection-screen` and `projection-staircase` exceed the label limit (about 20%) although the PDF and the SVG look the same: the labels differ by about 2 px vertically. Giving the nodes a fixed `text height` and `text depth` (7.5 pt and 2.5 pt) brought `sphere-with-axes` from 8% to 0% but did not change these two, so the cause of the remaining offset is not found yet.
+- The figures of `topics/figure-algorithms.mdx` are not part of `mise run tikz`. Checked by hand: the paths match, and every figure compiles (a label with `\boldsymbol` needs `amsmath`), but `projection-screen` and `projection-staircase` exceed the label limit (about 20%) although the PDF and the SVG look the same: the labels differ by about 2 px vertically. Giving the nodes a fixed `text height` and `text depth` (7.5 pt and 2.5 pt) brought `sphere-with-axes` from 8% to 0% but did not change these two, so the cause of the remaining offset is not found yet.
 - The check wraps the product TikZ in a `standalone` document and adds only a bounding box (`\useasboundingbox`, the view plus margin) and, for the split kinds, options that hide one half. The product itself is not edited.
 
 ### Stealth arrowhead
@@ -224,7 +224,7 @@ From `tex/generic/pgf/frontendlayer/tikz/tikz.code.tex` (master, read on 2026-09
 
 ## Interactive editor
 
-The public page `figure-editor/` builds a scene in the browser and draws it with the same Wasm engine as the articles. Decisions:
+The public page `tools/figure-editor/` builds a scene in the browser and draws it with the same Wasm engine as the articles. Decisions:
 
 - The editor holds a draft of the scene JSON and never validates it itself: the engine's error (with the object `id`) is shown under the preview, so the editor and the engine cannot disagree about what a valid scene is.
 - Initial objects come from `site/src/figure-editor/defaults.json`, and the input fields per object type from the table in `fields.ts`. Every default object, in a plane and in a space view, is rendered by the engine in `create.test.ts`, so a change in the scene format that breaks a default fails a test.

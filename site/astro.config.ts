@@ -52,6 +52,14 @@ export default defineConfig({
       defaultLocale: 'root',
       locales: { root: { label: '日本語', lang: 'ja' } },
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/enunun/math-study' }],
+      // ページは，カテゴリから自由に選んで読む．一続きに読むものではないので，ページ下部の「前へ」「次へ」は出さない．
+      pagination: false,
+      // カテゴリは，content/docsのディレクトリ1つに対応する．カテゴリを足したときは，ホームの一覧にも足す．
+      sidebar: [
+        'index',
+        { label: '単発ネタ', items: [{ autogenerate: { directory: 'topics' } }] },
+        { label: 'ツール', items: [{ autogenerate: { directory: 'tools' } }] },
+      ],
       head: [
         {
           // JavaScriptが有効なことをCSSに伝える．補足(Detail)は，無効なときだけ常に表示する．

@@ -24,7 +24,7 @@ async function downloadedImage(page: Page, name: string): Promise<Buffer> {
 
 test.describe('図の作成：画像の書き出し', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('figure-editor/');
+    await page.goto('tools/figure-editor/');
     await expect(editor(page).locator('.fe-output-preview svg')).toBeVisible();
   });
 

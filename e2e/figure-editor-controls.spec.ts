@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
-const PAGE = 'figure-editor/';
+const PAGE = 'tools/figure-editor/';
 
 function editor(page: Page): Locator {
   return page.locator('.figure-editor');

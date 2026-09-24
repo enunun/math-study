@@ -9,20 +9,34 @@ hero:
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-## 解説
+記事はカテゴリごとにまとめてあり，どれから読んでもよい．各ページのサイドバーからも選べる．
 
-図を描くときの数学を，実装から離れて説明したページである．空間の図形の投影，隠れ方，輪郭，交線，近似の精度と，平面の図の塗りつぶしを扱う．
+## 単発ネタ
+
+1ページで完結する話題である．ほかのページを前提にせず，単独で読める．
 
 <CardGrid>
   <LinkCard
     title="図を描く数学"
     description="空間の図形を平面へ描く原理を，定理と証明つきで説明する．"
-    href="dev/figure-algorithms/"
+    href="topics/figure-algorithms/"
   />
   <LinkCard
     title="平面の図の塗りつぶし"
     description="斜線を引く範囲の決め方と，表示範囲での切り取りを説明する．"
-    href="dev/figure-fill/"
+    href="topics/figure-fill/"
+  />
+</CardGrid>
+
+## ツール
+
+ブラウザの上で動く道具である．
+
+<CardGrid>
+  <LinkCard
+    title="図の作成"
+    description="座標軸，グラフ，曲線，曲面などを組み合わせて，平面や空間の図を作る．JSON，TikZ，画像として取り出せる．"
+    href="tools/figure-editor/"
   />
 </CardGrid>
 
