@@ -195,10 +195,11 @@
       "type": "object",
       "required": ["id", "type", "at", "tex"],
       "additionalProperties": false,
-      "description": "数式を置くラベル．原点の`O`も，ラベルで書く．",
+      "description": "数式を置くラベル．原点の`O`も，ラベルで書く．変換(`transform`)は位置だけを動かし，文字の向きや大きさは変えない．",
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "label" },
+        "transform": { "$ref": "#/$defs/transform" },
         "at": { "$ref": "#/$defs/position" },
         "anchor": { "$ref": "#/$defs/anchor" },
         "tex": {
@@ -317,6 +318,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "tangent_line" },
+        "transform": { "$ref": "#/$defs/transform" },
         "of": {
           "$ref": "#/$defs/identifier",
           "description": "接する対象の`id`．`graph`か`curve`オブジェクトのものでなければならない．"
@@ -404,6 +406,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "region" },
+        "transform": { "$ref": "#/$defs/transform" },
         "between": {
           "type": "array",
           "items": { "$ref": "#/$defs/identifier" },
@@ -469,10 +472,11 @@
       "type": "object",
       "required": ["id", "type", "center", "radius"],
       "additionalProperties": false,
-      "description": "球．空間の図でだけ使える．",
+      "description": "球．空間の図でだけ使える．変換(`transform`)があれば，同じ形の曲面(`surface`)として描く(拡大縮小で楕円面にもなる)．",
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "sphere" },
+        "transform": { "$ref": "#/$defs/transform" },
         "center": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
         "radius": { "type": "number", "exclusiveMinimum": 0 },
         "style": { "$ref": "#/$defs/style" },
@@ -579,6 +583,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "cut" },
+        "transform": { "$ref": "#/$defs/transform" },
         "surface": {
           "$ref": "#/$defs/identifier",
           "description": "切る曲面の`id`．`surface`オブジェクトのものでなければならない．"
@@ -602,6 +607,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "intersection" },
+        "transform": { "$ref": "#/$defs/transform" },
         "surfaces": {
           "type": "array",
           "items": { "$ref": "#/$defs/identifier" },
@@ -621,6 +627,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "tangent_plane" },
+        "transform": { "$ref": "#/$defs/transform" },
         "of": {
           "$ref": "#/$defs/identifier",
           "description": "接する曲面の`id`．`surface`オブジェクトのものでなければならない．"
@@ -854,7 +861,7 @@
       "type": "object",
       "required": ["id", "type", "of", "transform"],
       "additionalProperties": false,
-      "description": "別のオブジェクトを変換した像．元のオブジェクトはそのまま残る．元にできるのは，先に置いた点・線分・ベクトル・グラフ・曲線・多角形・フラクタル・格子・曲面・複体・正多面体である(スキーマでは表せない)．",
+      "description": "別のオブジェクトを変換した像．元のオブジェクトはそのまま残る．元にできるのは，先に置いた，座標軸・媒介変数・関数・写像を除くオブジェクト(像も含む)である(スキーマでは表せない)．",
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "image" },
@@ -875,6 +882,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "taylor" },
+        "transform": { "$ref": "#/$defs/transform" },
         "of": {
           "$ref": "#/$defs/identifier",
           "description": "展開するグラフ(`graph`)の`id`．変換したグラフは使えない．"

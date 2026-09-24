@@ -273,6 +273,9 @@ pub struct Label {
     pub anchor: Anchor,
     /// `TeX`の文字列．
     pub tex: String,
+    /// 変換．書いた順に施す．位置だけを動かし，文字の向きや大きさは変えない．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 /// 式から名前で参照する数．
@@ -478,6 +481,9 @@ pub struct Intersection {
     /// スタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 /// グラフか曲線の接線．平面の図でだけ使える．
@@ -493,6 +499,9 @@ pub struct TangentLine {
     /// スタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 /// 曲面の接平面．空間の図でだけ使える．接する点での，2つの偏微分の向きに張る平行四辺形として描く．
@@ -510,6 +519,9 @@ pub struct TangentPlane {
     /// スタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 /// 正多面体の種類．
@@ -784,6 +796,9 @@ pub struct Taylor {
     /// スタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 impl Taylor {
@@ -806,6 +821,9 @@ pub struct Cut {
     /// スタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 /// 曲面．空間の点を，2つの変数の式か，ベジエ曲面の制御点の網で表す．輪郭と，曲面に隠れる線を，三角形の網から求める．
@@ -907,6 +925,9 @@ pub struct Region {
     /// スタイル．斜線の線の種類，色，太さである．太さの既定は0.4ptである．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 /// 領域の塗り．
@@ -1012,6 +1033,9 @@ pub struct Sphere {
     /// 球のワイヤーフレーム(経線と緯線)．なければ描かない．あれば，そのスタイルで描く．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub wireframe: Option<Style>,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 /// 関数のグラフ．

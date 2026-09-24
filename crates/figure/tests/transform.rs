@@ -322,3 +322,241 @@ fn 変換したグラフは領域とテイラー展開に使えない() {
     );
     assert!(error.to_string().contains("変換"));
 }
+
+// ---- 座標軸などを除く，すべての図形の変換 ----
+
+fn space_figure(objects: &str) -> Figure {
+    render(&parse_scene(&space_scene(objects)).expect("読める")).expect("描画できる")
+}
+
+fn labels_at(figure: &Figure) -> Vec<[f64; 2]> {
+    figure
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            Item::Label(label) => Some(label.at),
+            _ => None,
+        })
+        .collect()
+}
+
+/// 色が赤の線の点．
+fn red_points(figure: &Figure) -> Vec<[f64; 2]> {
+    paths(figure)
+        .iter()
+        .filter(|path| format!("{:?}", path.stroke.color).contains("Red"))
+        .flat_map(|path| path.points.clone())
+        .collect()
+}
+
+/// 点`p`から，`a`と`b`を通る直線までの距離．
+fn distance_to_line(p: [f64; 2], a: [f64; 2], b: [f64; 2]) -> f64 {
+    let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
+    ((p[0] - a[0]) * dy - (p[1] - a[1]) * dx).abs() / dx.hypot(dy)
+}
+
+#[test]
+fn ラベルの位置を変換できる() {
+    let figure = plane_figure(
+        r#"{ "id": "l", "type": "label", "at": [1, 0], "tex": "$A$",
+             "transform": [{ "translate": [1, 1] }] }"#,
+    );
+    assert!(close(labels_at(&figure)[0], [2.0, 1.0]));
+    let moved = space_figure(
+        r#"{ "id": "l", "type": "label", "at": [0, 0, 0], "tex": "$A$",
+             "transform": [{ "translate": [0, 0, 1] }] }"#,
+    );
+    let placed = space_figure(r#"{ "id": "l", "type": "label", "at": [0, 0, 1], "tex": "$A$" }"#);
+    assert!(close(labels_at(&moved)[0], labels_at(&placed)[0]));
+}
+
+#[test]
+fn テイラー展開の多項式のグラフを変換できる() {
+    // y = x^2の2次の展開は，x^2そのものである．90度回すと，x = -y^2になる．
+    let figure = plane_figure(
+        r#"{ "id": "f", "type": "graph", "var": "x", "expr": "x^2", "domain": [-2, 2],
+             "style": { "line": "dotted" } },
+           { "id": "t", "type": "taylor", "of": "f", "at": 0, "order": 2,
+             "transform": [{ "rotate": 90 }] }"#,
+    );
+    let solid: Vec<[f64; 2]> = paths(&figure)
+        .iter()
+        .filter(|path| path.stroke.line == figure::scene::Line::Solid)
+        .flat_map(|path| path.points.clone())
+        .collect();
+    assert!(solid.len() > 2);
+    assert!(
+        solid.iter().all(|p| (p[0] + p[1] * p[1]).abs() < 1e-6),
+        "{solid:?}"
+    );
+}
+
+#[test]
+fn 接線を変換できる_写像で写すと曲がる() {
+    let moved = plane_figure(
+        r#"{ "id": "f", "type": "graph", "var": "x", "expr": "0", "domain": [-2, 2],
+             "style": { "color": "blue" } },
+           { "id": "t", "type": "tangent_line", "of": "f", "at": 0,
+             "style": { "color": "red" }, "transform": [{ "translate": [0, 1] }] }"#,
+    );
+    let points = red_points(&moved);
+    assert!(!points.is_empty());
+    assert!(points.iter().all(|p| (p[1] - 1.0).abs() < 1e-9));
+    let bent = plane_figure(
+        r#"{ "id": "F", "type": "map", "vars": ["x", "y"], "expr": ["x", "y + x^2/4"] },
+           { "id": "f", "type": "graph", "var": "x", "expr": "0", "domain": [-2, 2],
+             "style": { "color": "blue" } },
+           { "id": "t", "type": "tangent_line", "of": "f", "at": 0,
+             "style": { "color": "red" }, "transform": [{ "map": "F" }] }"#,
+    );
+    let points = red_points(&bent);
+    assert!(points.len() > 2);
+    // 見える範囲の端で切った点は，弦の上にあるので，標本化の誤差の分だけずれる．
+    assert!(
+        points
+            .iter()
+            .all(|p| (p[1] - p[0] * p[0] / 4.0).abs() < 1e-2)
+    );
+}
+
+fn region_fill(transform: &str, map: &str) -> Vec<[f64; 2]> {
+    let figure = plane_figure(&format!(
+        r#"{map}{{ "id": "f", "type": "graph", "var": "x", "expr": "1", "domain": [-3, 3] }},
+           {{ "id": "r", "type": "region", "between": ["f"], "domain": [0, 1], "hatch": false,
+             "fill": {{}}, "transform": {transform} }}"#
+    ));
+    figure
+        .items
+        .iter()
+        .find_map(|item| match item {
+            Item::Fill(fill) => Some(fill.points.clone()),
+            _ => None,
+        })
+        .expect("塗りがある")
+}
+
+#[test]
+fn 領域を変換できる_写像で写すとx軸の辺も曲がる() {
+    let moved = region_fill(r#"[{ "translate": [0, 1] }]"#, "");
+    assert!(
+        moved
+            .iter()
+            .all(|p| p[1] >= 1.0 - 1e-9 && p[1] <= 2.0 + 1e-9)
+    );
+    assert!(moved.iter().any(|p| (p[1] - 1.0).abs() < 1e-9));
+    // x軸の辺(y = 0)は，写像でy = x^2に写る．辺の途中の点も，その曲線の上にある．
+    let bent = region_fill(
+        r#"[{ "map": "F" }]"#,
+        r#"{ "id": "F", "type": "map", "vars": ["x", "y"], "expr": ["x", "y + x^2"] },"#,
+    );
+    assert!(
+        bent.iter()
+            .any(|p| p[0] > 0.2 && p[0] < 0.8 && (p[1] - p[0] * p[0]).abs() < 1e-6),
+        "{bent:?}"
+    );
+}
+
+#[test]
+fn 球を変換できる() {
+    // 半径1の球を2倍にして，z方向に3動かす．輪郭は，(0, 0, 3)の投影を中心とする，半径2の円に近い．
+    let figure = space_figure(
+        r#"{ "id": "s", "type": "sphere", "center": [0, 0, 0], "radius": 1, "wireframe": {},
+             "transform": [{ "scale": 2 }, { "translate": [0, 0, 3] }] },
+           { "id": "c", "type": "label", "at": [0, 0, 3], "tex": "$C$" }"#,
+    );
+    let center = labels_at(&figure)[0];
+    let solid: Vec<[f64; 2]> = paths(&figure)
+        .iter()
+        .filter(|path| path.stroke.line == figure::scene::Line::Solid)
+        .flat_map(|path| path.points.clone())
+        .collect();
+    assert!(!solid.is_empty());
+    for p in &solid {
+        let r = (p[0] - center[0]).hypot(p[1] - center[1]);
+        assert!((r - 2.0).abs() < 0.05, "{r}");
+    }
+    // ワイヤーフレーム(点線)も描く．
+    assert!(
+        paths(&figure)
+            .iter()
+            .any(|path| path.stroke.line == figure::scene::Line::Dotted)
+    );
+}
+
+/// xy平面の正方形の曲面．
+const FLOOR: &str = r#"{ "id": "floor", "type": "surface", "vars": ["x", "y"],
+    "expr": ["x", "y", "0"], "domain": [[-2, 2], [-2, 2]] }"#;
+/// 直線x = 0.3，z = 1の上の2点を結ぶ曲線．変換した線が，この直線の上にあるかを比べる．
+const GUIDE: &str = r#"{ "id": "guide", "type": "curve", "var": "t", "expr": ["0.3", "t", "1"],
+    "domain": [-2, 2], "style": { "color": "blue" } }"#;
+
+fn guide_ends(figure: &Figure) -> ([f64; 2], [f64; 2]) {
+    let guide = paths(figure)
+        .into_iter()
+        .find(|path| format!("{:?}", path.stroke.color).contains("Blue"))
+        .expect("目安の線がある");
+    (guide.points[0], *guide.points.last().unwrap())
+}
+
+#[test]
+fn 切り口を変換できる() {
+    let figure = space_figure(&format!(
+        r#"{FLOOR}, {GUIDE},
+           {{ "id": "c", "type": "cut", "surface": "floor", "normal": [1, 0, 0], "offset": 0.3,
+             "style": {{ "color": "red" }}, "transform": [{{ "translate": [0, 0, 1] }}] }}"#
+    ));
+    let (a, b) = guide_ends(&figure);
+    let points = red_points(&figure);
+    assert!(!points.is_empty());
+    assert!(points.iter().all(|p| distance_to_line(*p, a, b) < 1e-6));
+}
+
+#[test]
+fn 交線を変換できる() {
+    let figure = space_figure(&format!(
+        r#"{FLOOR}, {GUIDE},
+           {{ "id": "wall", "type": "surface", "vars": ["y", "z"], "expr": ["0.3", "y", "z"],
+             "domain": [[-2, 2], [-1, 1]] }},
+           {{ "id": "c", "type": "intersection", "surfaces": ["floor", "wall"],
+             "style": {{ "color": "red" }}, "transform": [{{ "translate": [0, 0, 1] }}] }}"#
+    ));
+    let (a, b) = guide_ends(&figure);
+    let points = red_points(&figure);
+    assert!(!points.is_empty());
+    assert!(points.iter().all(|p| distance_to_line(*p, a, b) < 1e-6));
+}
+
+#[test]
+fn 接平面を変換できる() {
+    let tangent = |surface_z: &str, transform: &str| {
+        let figure = space_figure(&format!(
+            r#"{{ "id": "s", "type": "surface", "vars": ["x", "y"], "expr": ["x", "y", "{surface_z}"],
+                 "domain": [[-2, 2], [-2, 2]] }},
+               {{ "id": "t", "type": "tangent_plane", "of": "s", "at": [0, 0], "size": 1,
+                 "style": {{ "color": "red" }}, "transform": {transform} }}"#
+        ));
+        let mut ends: Vec<String> = paths(&figure)
+            .iter()
+            .filter(|path| format!("{:?}", path.stroke.color).contains("Red"))
+            .flat_map(|path| [path.points[0], *path.points.last().unwrap()])
+            .map(|[x, y]| format!("{x:.6},{y:.6}"))
+            .collect();
+        ends.sort();
+        ends.dedup();
+        ends
+    };
+    let moved = tangent("0", r#"[{ "translate": [0, 0, 1] }]"#);
+    assert_eq!(moved.len(), 4);
+    assert_eq!(moved, tangent("1", "[]"));
+}
+
+#[test]
+fn 新しく変換できる種類も像の元にできる() {
+    let figure = plane_figure(
+        r#"{ "id": "l", "type": "label", "at": [1, 0], "tex": "$A$" },
+           { "id": "m", "type": "image", "of": "l", "transform": [{ "rotate": 90 }] }"#,
+    );
+    let at = labels_at(&figure);
+    assert!(close(at[0], [1.0, 0.0]));
+    assert!(close(at[1], [0.0, 1.0]));
+}

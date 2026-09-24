@@ -54,8 +54,8 @@ const WIREFRAME_STEP: FieldSpec = {
   optional: true,
 };
 /**
- * 変換(平行移動・回転・拡大縮小・対称移動・せん断・写像)．変換できる種類(`create.ts`の`TRANSFORMABLE`)は，
- * どれも最後にこの項目を持つ．
+ * 変換(平行移動・回転・拡大縮小・対称移動・せん断・写像)．変換できる種類(`create.ts`の`TRANSFORMABLE`で，
+ * 座標軸・媒介変数・関数・写像のほかのすべて)は，どれもスタイルの前にこの項目を持つ．
  */
 const TRANSFORM: FieldSpec = { kind: 'transform', key: 'transform', label: '変換' };
 /** 塗り(色と不透明度)．領域と多角形で共通． */
@@ -199,7 +199,6 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
   image: [
     { kind: 'reference', key: 'of', label: '元のオブジェクト', of: TRANSFORMABLE },
     { kind: 'text', key: 'label', label: '名前(点の像だけ)', optional: true },
-    TRANSFORM,
   ],
   sphere: [
     { kind: 'list', key: 'center', label: '中心', item: 'number', count: TRIPLE },

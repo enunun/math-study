@@ -32,6 +32,7 @@ mod render;
 pub mod sample;
 pub mod scene;
 mod space;
+mod sphere;
 pub mod spline;
 pub mod surface;
 pub mod tikz;

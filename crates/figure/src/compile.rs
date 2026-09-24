@@ -611,7 +611,7 @@ fn compile_object(
         Object::Grid(grid) => compile_grid(grid, env, view)
             .map(Plot::Grid)
             .map_err(|kind| Error::in_object(&grid.id, kind)),
-        Object::Label(label) => compile_label(label, env, scope)
+        Object::Label(label) => compile_label(label, env, scope, transform)
             .map(Plot::Label)
             .map_err(|kind| Error::in_object(&label.id, kind)),
         Object::Point(point) => compile_point(point, env, scope, transform)
@@ -1209,10 +1209,18 @@ fn evaluate_vector(source: &str, scope: &VectorScope) -> Result<Vec<f64>, ErrorK
     }
 }
 
-fn compile_label(label: &Label, env: &Env, scope: &VectorScope) -> Result<LabelPlot, ErrorKind> {
-    Ok(LabelPlot {
-        at: evaluate_position(&label.at, env, scope)?,
-    })
+/// ラベルの位置．変換は，位置にだけ施す．
+fn compile_label(
+    label: &Label,
+    env: &Env,
+    scope: &VectorScope,
+    transform: &Transform,
+) -> Result<LabelPlot, ErrorKind> {
+    let at = evaluate_position(&label.at, env, scope)?;
+    let at = transform.apply(&at).ok_or_else(|| {
+        ErrorKind::Invalid("変換したラベルの位置が，有限の数にならない．".to_owned())
+    })?;
+    Ok(LabelPlot { at })
 }
 
 fn compile_point(

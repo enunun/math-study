@@ -43,9 +43,9 @@ const SURFACE_MARGIN: f64 = 1e-12;
 /// 軸の名前の向きを決める，8方向の境目の角度(度)．
 const SECTOR: f64 = 22.5;
 /// 球のワイヤーフレームの，経線の本数．
-const SPHERE_MERIDIANS: usize = 6;
+pub const SPHERE_MERIDIANS: usize = 6;
 /// 球のワイヤーフレームの，緯線の本数．両極は含めない．
-const SPHERE_PARALLELS: usize = 3;
+pub const SPHERE_PARALLELS: usize = 3;
 
 fn lerp(low: f64, high: f64, t: f64) -> f64 {
     low + (high - low) * t
@@ -370,13 +370,13 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
                 items.extend(link_items(&segment.style, Arrow::None, link, &space));
             }
             (Object::Intersection(found), _) => {
-                items.extend(intersection_items(found, &space));
+                items.extend(intersection_items(found, transform, &space));
             }
             (Object::Cut(cut), Plot::Cut(placed)) => {
-                items.extend(cut_items(cut, placed, &space));
+                items.extend(cut_items(cut, placed, transform, &space));
             }
             (Object::TangentPlane(tangent), Plot::TangentPlane(placed)) => {
-                items.extend(tangent_plane_items(tangent, placed, &space));
+                items.extend(tangent_plane_items(tangent, placed, transform, &space));
             }
             (Object::Axis(axis), _) => items.extend(axis_items(axis, &space)),
             (Object::Label(label), Plot::Label(placed)) => {
@@ -1017,7 +1017,7 @@ fn complex_items(complex: &Complex, mesh: &Mesh, space: &Space) -> Vec<Item> {
 }
 
 /// 2つの曲面の交線．曲面の上にあるので，曲面に隠れる部分は，隠れた部分の線で描く．
-fn intersection_items(found: &Intersection, space: &Space) -> Vec<Item> {
+fn intersection_items(found: &Intersection, transform: &Transform, space: &Space) -> Vec<Item> {
     // 曲面の名前から，網と，式の関数．
     let surface_for = |name: &String| {
         let index = *space.mesh_of.get(name)?;
@@ -1034,6 +1034,7 @@ fn intersection_items(found: &Intersection, space: &Space) -> Vec<Item> {
     let stroke = stroke_of(&found.style, Line::Solid, CURVE_WIDTH);
     let mut items = Vec::new();
     for line in &first.intersection(second, first_map.as_ref(), second_map.as_ref()) {
+        let line = &moved_line(line, transform);
         let steps: Vec<f64> = (0..line.len())
             .map(|k| f64::from(u32::try_from(k).unwrap_or(u32::MAX)))
             .collect();
@@ -1049,8 +1050,19 @@ fn intersection_items(found: &Intersection, space: &Space) -> Vec<Item> {
     items
 }
 
+/// 切り口か交線の折れ線に，その線の変換を施したもの．値が有限にならない点は除く．
+/// 変換した線は曲面の上から離れるので，隠れ方は，動かした先の位置で調べる．
+fn moved_line(line: &[Rim], transform: &Transform) -> Vec<Rim> {
+    if transform.is_identity() {
+        return line.to_vec();
+    }
+    line.iter()
+        .filter_map(|(point, normal)| Some((transform.apply3(*point)?, *normal)))
+        .collect()
+}
+
 /// 曲面の切り口の線．曲面の上にあるので，曲面に隠れる部分は，隠れた部分の線で描く．
-fn cut_items(cut: &Cut, placed: &CutPlot, space: &Space) -> Vec<Item> {
+fn cut_items(cut: &Cut, placed: &CutPlot, transform: &Transform, space: &Space) -> Vec<Item> {
     let Some((mesh, map)) = space
         .mesh_of
         .get(&cut.surface)
@@ -1061,6 +1073,7 @@ fn cut_items(cut: &Cut, placed: &CutPlot, space: &Space) -> Vec<Item> {
     let stroke = stroke_of(&cut.style, Line::Solid, CURVE_WIDTH);
     let mut items = Vec::new();
     for line in &mesh.cut(placed.normal, placed.offset, map.as_ref()) {
+        let line = &moved_line(line, transform);
         let steps: Vec<f64> = (0..line.len())
             .map(|k| f64::from(u32::try_from(k).unwrap_or(u32::MAX)))
             .collect();
@@ -1077,10 +1090,12 @@ fn cut_items(cut: &Cut, placed: &CutPlot, space: &Space) -> Vec<Item> {
 }
 
 /// 接平面．接する曲面の2つの偏微分(中心差分)の向きに，半径`size`だけ広げた平行四辺形として描く．
+/// 接平面自身の変換は，平行四辺形の辺の点に施す(写像なら，辺が曲がる)．
 /// 曲面が見つからないか，偏微分が求められないか，どちらかの向きが0になれば(特異点など)，何も描かない．
 fn tangent_plane_items(
     tangent: &TangentPlane,
     placed: &TangentPlanePlot,
+    transform: &Transform,
     space: &Space,
 ) -> Vec<Item> {
     let Some((map, domain)) = space.mesh_of.get(&tangent.of).and_then(|index| {
@@ -1125,7 +1140,7 @@ fn tangent_plane_items(
     ] {
         let [a, b] = pair;
         let at = |t: f64| {
-            Some([
+            transform.apply3([
                 lerp(a[0], b[0], t),
                 lerp(a[1], b[1], t),
                 lerp(a[2], b[2], t),

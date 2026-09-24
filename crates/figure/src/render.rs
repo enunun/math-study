@@ -20,6 +20,7 @@ use crate::scene::{
     PlaneView, Point, Polygon, Scene, Style, TangentLine, Taylor, View,
 };
 use crate::space::render_space;
+use crate::sphere::expand_transformed_spheres;
 use crate::spline::catmull_rom_point;
 use crate::transform::Transform;
 
@@ -55,7 +56,7 @@ impl Scale {
 ///
 /// 式の誤りがあると，誤りを返す．
 pub fn render(scene: &Scene) -> Result<Figure, Error> {
-    let scene = expand_images(scene)?;
+    let scene = expand_transformed_spheres(expand_images(scene)?);
     let compiled = compile(&scene)?;
     match &scene.view {
         View::Plane(view) => render_plane(&scene, view, &compiled),
@@ -139,6 +140,7 @@ fn object_items(
             placed,
             &context.graphs,
             &compiled.parameters,
+            transform,
             [scale.x, scale.y],
             window,
         )?,
@@ -161,7 +163,7 @@ fn object_items(
                 .unwrap_or_default()
         }
         (Object::TangentLine(tangent), Plot::TangentLine(placed)) => {
-            tangent_line_items(tangent, placed, &context.curves, compiled, scale, window)
+            tangent_line_items(tangent, placed, transform, context)
         }
         (Object::Grid(grid), Plot::Grid(grid_plot)) => {
             grid_items(&grid.style, grid_plot, transform, scale, window)
@@ -184,7 +186,7 @@ fn object_items(
             polygon_items(polygon, placed, transform, scale, window)
         }
         (Object::Taylor(taylor), Plot::Taylor(placed)) => {
-            taylor_items(taylor, placed, scale, window)
+            taylor_items(taylor, placed, transform, scale, window)
         }
         _ => Vec::new(),
     })
@@ -496,16 +498,21 @@ fn polygon_items(
     items
 }
 
-/// テイラー展開の多項式のグラフ．グラフと同じに標本化し，見える範囲で切り取る．
+/// テイラー展開の多項式のグラフ．グラフと同じに(変換を施して)標本化し，見える範囲で切り取る．
 fn taylor_items(
     taylor: &Taylor,
     placed: &TaylorPlot,
+    transform: &Transform,
     scale: Scale,
     window: [[f64; 2]; 2],
 ) -> Vec<Item> {
     let [start, end] = placed.domain;
     let [min, max] = window;
-    sample(|x| Some(scale.point(x, placed.value(x))), start, end)
+    let at = |x: f64| {
+        let [x, y] = transform.apply2([x, placed.value(x)])?;
+        Some(scale.point(x, y))
+    };
+    sample(at, start, end)
         .iter()
         .flat_map(|points| clip_polyline(points, min, max))
         .map(|points| Item::Path(curve_path(points, taylor.style)))
@@ -625,18 +632,30 @@ fn tangent_of(
 }
 
 /// 接線を，接する点を通り，見える範囲いっぱいに引いた線分として描く．向きが求められないか，
-/// 長さが0になれば(垂直接線を除く定義域の端など)，何も描かない．
+/// 長さが0になれば(垂直接線を除く定義域の端など)，何も描かない．接線の変換は，アフィン変換なら
+/// 接する点と向きに施す．写像なら直線が曲がるので，見える範囲に掛かる部分を写して標本化する．
 fn tangent_line_items(
     tangent: &TangentLine,
     placed: &TangentLinePlot,
-    curves: &HashMap<&str, PlaneCurve>,
-    compiled: &Compiled,
-    scale: Scale,
-    window: [[f64; 2]; 2],
+    transform: &Transform,
+    context: &PlaneContext,
 ) -> Vec<Item> {
-    let Some((point, direction)) = tangent_of(tangent, placed, curves, compiled) else {
+    let PlaneContext {
+        scale,
+        window,
+        compiled,
+        ..
+    } = *context;
+    let Some((point, direction)) = tangent_of(tangent, placed, &context.curves, compiled) else {
         return Vec::new();
     };
+    let Some(affine) = transform.as_affine() else {
+        return mapped_line_items(tangent, point, direction, transform, context);
+    };
+    let origin = affine.apply2([0.0, 0.0]);
+    let moved = affine.apply2(direction);
+    let direction = [moved[0] - origin[0], moved[1] - origin[1]];
+    let point = affine.apply2(point);
     let point = scale.point(point[0], point[1]);
     let direction = [direction[0] * scale.x, direction[1] * scale.y];
     let length = direction[0].hypot(direction[1]);
@@ -655,6 +674,42 @@ fn tangent_line_items(
         .into_iter()
         .map(|points| Item::Path(curve_path(points, tangent.style)))
         .collect()
+}
+
+/// 写像で写した接線．変換する前の直線のうち，見える範囲の対角線の2倍の長さを，接する点から両側に取り，
+/// 写して標本化する．
+fn mapped_line_items(
+    tangent: &TangentLine,
+    point: [f64; 2],
+    direction: [f64; 2],
+    transform: &Transform,
+    context: &PlaneContext,
+) -> Vec<Item> {
+    let PlaneContext {
+        view,
+        scale,
+        window,
+        ..
+    } = *context;
+    let length = direction[0].hypot(direction[1]);
+    if !(length.is_finite() && length > 0.0) {
+        return Vec::new();
+    }
+    let unit = [direction[0] / length, direction[1] / length];
+    let reach = (view.x[1] - view.x[0]).hypot(view.y[1] - view.y[0]) * 2.0;
+    let [min, max] = window;
+    sample(
+        |s| {
+            let [x, y] = transform.apply2([point[0] + unit[0] * s, point[1] + unit[1] * s])?;
+            Some(scale.point(x, y))
+        },
+        -reach,
+        reach,
+    )
+    .iter()
+    .flat_map(|points| clip_polyline(points, min, max))
+    .map(|points| Item::Path(curve_path(points, tangent.style)))
+    .collect()
 }
 
 /// フラクタル図形の線．タートルが歩いた点の並びを，数学の座標からcmに直し，見える範囲で切り取る．

@@ -25,21 +25,6 @@ const SPLINE_CURVE = 'splineCurve';
 const VERTEX_POLYGON = 'vertexPolygon';
 const PAIR = 2;
 
-/** 変換(`transform`)を持てる種類．像(`image`)の元にできる． */
-const TRANSFORMABLE: readonly string[] = [
-  'point',
-  'segment',
-  'vector',
-  'graph',
-  'curve',
-  'polygon',
-  'fractal',
-  'grid',
-  'surface',
-  'complex',
-  'polyhedron',
-];
-
 const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'axis', label: '座標軸', kinds: BOTH },
   { type: 'label', label: 'ラベル', kinds: BOTH },
@@ -70,6 +55,22 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'polyhedron', label: '正多面体', kinds: SPACE },
   { type: 'complex', label: '複体', kinds: SPACE },
 ];
+
+/** 追加の一覧で別の種類として扱うものの，本当の`type`． */
+const REAL_TYPES: Readonly<Record<string, string>> = {
+  [BEZIER]: 'surface',
+  [BEZIER_CURVE]: 'curve',
+  [SPLINE_CURVE]: 'curve',
+  [VERTEX_POLYGON]: 'polygon',
+};
+
+/** 変換(`transform`)を持てない種類．図形でないもの(媒介変数・関数・写像)と，座標軸である． */
+const UNTRANSFORMABLE: ReadonlySet<string> = new Set(['axis', 'parameter', 'function', 'map']);
+
+/** 変換を持てる種類(`type`)．`UNTRANSFORMABLE`のほかのすべてで，像(`image`)の元にできる． */
+const TRANSFORMABLE: readonly string[] = [
+  ...new Set(OBJECT_TYPES.map((entry) => REAL_TYPES[entry.type] ?? entry.type)),
+].filter((type) => !UNTRANSFORMABLE.has(type));
 
 function typesFor(kind: ViewKind): readonly ObjectType[] {
   return OBJECT_TYPES.filter((entry) => entry.kinds.includes(kind));

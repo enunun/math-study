@@ -57,8 +57,7 @@ fn copy_of(original: &Object, image: &Image) -> Result<Object, ErrorKind> {
     }
     let Some((id, transform, style)) = parts_of(&mut copy) else {
         return Err(ErrorKind::Invalid(format!(
-            "「{}」(`{}`)は変換できない．像の元には，点・線分・ベクトル・グラフ・曲線・多角形・\
-             フラクタル・格子・曲面・複体・正多面体を使う．",
+            "「{}」(`{}`)は変換できない．座標軸・媒介変数・関数・写像は，像の元にできない．",
             original.id(),
             original.type_name()
         )));
@@ -66,6 +65,11 @@ fn copy_of(original: &Object, image: &Image) -> Result<Object, ErrorKind> {
     image.id.clone_into(id);
     transform.extend(image.transform.iter().cloned());
     if !image.style.is_default() {
+        let Some(style) = style else {
+            return Err(ErrorKind::Invalid(
+                "ラベルの像には，スタイル(`style`)を書けない．".to_owned(),
+            ));
+        };
         *style = image.style;
     }
     if let Object::Point(point) = &mut copy {
@@ -74,25 +78,40 @@ fn copy_of(original: &Object, image: &Image) -> Result<Object, ErrorKind> {
     Ok(copy)
 }
 
-/// 変換できるオブジェクトの，`id`，変換，スタイル．変換できない種類なら`None`．
-fn parts_of(object: &mut Object) -> Option<(&mut String, &mut Vec<TransformStep>, &mut Style)> {
+/// 変換できるオブジェクトの，`id`，変換，スタイル(ラベルは持たない)．変換できない種類なら`None`．
+type Parts<'a> = (
+    &'a mut String,
+    &'a mut Vec<TransformStep>,
+    Option<&'a mut Style>,
+);
+
+fn parts_of(object: &mut Object) -> Option<Parts<'_>> {
     Some(match object {
-        Object::Point(o) => (&mut o.id, &mut o.transform, &mut o.style),
-        Object::Segment(o) => (&mut o.id, &mut o.transform, &mut o.style),
-        Object::Vector(o) => (&mut o.id, &mut o.transform, &mut o.style),
-        Object::Graph(o) => (&mut o.id, &mut o.transform, &mut o.style),
-        Object::Curve(o) => (&mut o.id, &mut o.transform, &mut o.style),
-        Object::Polygon(o) => (&mut o.id, &mut o.transform, &mut o.style),
-        Object::Fractal(o) => (&mut o.id, &mut o.transform, &mut o.style),
-        Object::Grid(o) => (&mut o.id, &mut o.transform, &mut o.style),
-        Object::Surface(o) => (&mut o.id, &mut o.transform, &mut o.style),
-        Object::Complex(o) => (&mut o.id, &mut o.transform, &mut o.style),
-        Object::Polyhedron(o) => (&mut o.id, &mut o.transform, &mut o.style),
+        Object::Label(o) => (&mut o.id, &mut o.transform, None),
+        Object::Point(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Segment(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Vector(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Graph(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Curve(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Polygon(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Fractal(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Grid(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Surface(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Complex(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Polyhedron(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::TangentLine(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Region(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Taylor(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Sphere(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Cut(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::Intersection(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::TangentPlane(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
         _ => return None,
     })
 }
 
-/// 変換(`transform`)を持つオブジェクトの，変換の手順．持たない種類なら`None`．
+/// 変換(`transform`)を持つオブジェクトの，変換の手順．持たない種類(座標軸・媒介変数・関数・写像・像)なら`None`．
+/// 像の変換は，`expand_images`が複製に移す．
 #[must_use]
 pub fn transform_of(object: &Object) -> Option<&[TransformStep]> {
     Some(match object {
@@ -107,6 +126,14 @@ pub fn transform_of(object: &Object) -> Option<&[TransformStep]> {
         Object::Surface(o) => &o.transform,
         Object::Complex(o) => &o.transform,
         Object::Polyhedron(o) => &o.transform,
+        Object::Label(o) => &o.transform,
+        Object::TangentLine(o) => &o.transform,
+        Object::Region(o) => &o.transform,
+        Object::Taylor(o) => &o.transform,
+        Object::Sphere(o) => &o.transform,
+        Object::Cut(o) => &o.transform,
+        Object::Intersection(o) => &o.transform,
+        Object::TangentPlane(o) => &o.transform,
         _ => return None,
     })
 }
