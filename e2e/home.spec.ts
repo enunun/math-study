@@ -28,8 +28,12 @@ test.describe('トップページ', () => {
     for (const [title, path] of pages) {
       test(`「${name}」の「${title}」へのリンクから，${path}を開ける`, async ({ page }) => {
         await page.goto('');
-        await expect(page.getByRole('heading', { name })).toBeVisible();
-        await page.getByRole('link', { name: new RegExp(title, 'u') }).click();
+        await expect(page.locator('main').getByRole('heading', { name })).toBeVisible();
+        // サイドバーにも同じ名前のリンクがあるので，本文のカードをたどる．
+        await page
+          .locator('main')
+          .getByRole('link', { name: new RegExp(title, 'u') })
+          .click();
         await expect(page).toHaveURL(new RegExp(`/${path}$`, 'u'));
         await expect(page.locator('h1')).toBeVisible();
       });
@@ -50,6 +54,14 @@ test.describe('トップページ', () => {
     await expect(page.locator('nav[aria-label="メイン"] a[href$="dev/continuity/"]')).toHaveCount(
       0,
     );
+  });
+
+  test('トップページにも，カテゴリのサイドバーがある', async ({ page }) => {
+    await page.goto('');
+    const sidebar = page.locator('nav[aria-label="メイン"]');
+    for (const { name } of CATEGORIES) {
+      await expect(sidebar.getByText(name, { exact: true })).toBeVisible();
+    }
   });
 
   for (const { name, pages } of CATEGORIES) {
