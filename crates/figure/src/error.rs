@@ -219,5 +219,10 @@ fn describe(kind: &ExprErrorKind) -> String {
         }
         ExprErrorKind::TooLong => "式が長すぎる．".to_owned(),
         ExprErrorKind::TooDeep => "括弧や記号の入れ子が深すぎる．".to_owned(),
+        ExprErrorKind::ArgumentCount {
+            name,
+            expected,
+            found,
+        } => format!("関数「{name}」の引数は{expected}個だが，{found}個書かれている．"),
     }
 }

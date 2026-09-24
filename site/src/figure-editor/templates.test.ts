@@ -59,3 +59,13 @@ describe('テンプレートと，ここで書いた見本の曲面は，ワイ�
     expect(surface).toHaveProperty('wireframe_step');
   });
 });
+
+describe('座標軸のある図のテンプレートは，原点Oを持つ', () => {
+  const withAxes = SCENE_TEMPLATES.filter((template) =>
+    template.scene.objects.some((object) => object.type === 'axis'),
+  );
+
+  it.each(withAxes)('$labelは，原点の名前Oを持つ', (template) => {
+    expect(template.scene.objects).toContainEqual(expect.objectContaining({ tex: '$O$' }));
+  });
+});

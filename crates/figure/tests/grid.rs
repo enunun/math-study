@@ -118,15 +118,47 @@ fn 線が多すぎる格子は_誤りになる() {
 }
 
 #[test]
-fn 空間の図では_格子は使えない() {
+fn 空間の図の格子には_線を引く範囲が要る() {
     let error = parse_scene(
         r#"{ "version": "0.1.0", "description": "a",
              "view": { "azimuth": 0, "elevation": 0, "unit": "1cm" },
              "objects": [ { "id": "grid", "type": "grid", "x_step": 1 } ] }"#,
     )
     .expect_err("誤りになる");
-    assert!(error.to_string().contains("空間"), "{error}");
+    assert!(error.to_string().contains("範囲"), "{error}");
     assert_eq!(error.object.as_deref(), Some("grid"));
+}
+
+fn space_grid(extra: &str) -> Figure {
+    let scene = format!(
+        r#"{{ "version": "0.1.0", "description": "a",
+             "view": {{ "azimuth": 90, "elevation": 90, "unit": "1cm" }},
+             "objects": [ {{ "id": "grid", "type": "grid", "x_step": 1, "y_step": 1,
+                             "x_range": [-1, 1], "y_range": [0, 2]{extra} }} ] }}"#
+    );
+    render(&parse_scene(&scene).expect("読める")).expect("描画できる")
+}
+
+#[test]
+fn 空間の図の格子は_xy平面の上に引く() {
+    // 真上から見ると，xy平面の格子は，そのままの形に見える．
+    let figure = space_grid("");
+    let lines = paths(&figure);
+    assert_eq!(lines.len(), 6, "縦の線3本と横の線3本");
+    assert!(lines.iter().all(|path| path.stroke.line == Line::Dotted));
+}
+
+#[test]
+fn 空間の図の格子は_変換でほかの平面に動かせる() {
+    // x軸のまわりに90度回すと，xz平面の格子になり，真上からは線分に潰れて見える．
+    let figure = space_grid(r#", "transform": [{ "rotate": 90, "axis": [1, 0, 0] }]"#);
+    let lines = paths(&figure);
+    assert!(!lines.is_empty());
+    for path in lines {
+        for [_, y] in &path.points {
+            assert!(y.abs() < 1e-9, "真上から見たy座標は0になる");
+        }
+    }
 }
 
 #[test]

@@ -1,3 +1,4 @@
+import { ANALYSIS_SAMPLE_SCENES } from './analysis-sample-scenes';
 import { SCENE_VERSION } from './draft';
 import type { SceneDraft } from './draft';
 import type { JsonObject } from './json';
@@ -62,55 +63,6 @@ const MOBIUS_STRIP_SCENE: SceneDraft = {
       var: 't',
       expr: ['(2 + cos(t / 2) / 2) * cos(t)', '(2 + cos(t / 2) / 2) * sin(t)', 'sin(t / 2) / 2'],
       domain: ['-pi', '3*pi'],
-    },
-  ],
-};
-
-/** コッホ曲線の見える範囲と，基本図形(線分)の長さ，繰り返す回数． */
-const KOCH_VIEW_X_MAX = 5;
-const KOCH_VIEW_Y_MAX = 2;
-const KOCH_VIEW_Y_MIN = 0.5;
-const KOCH_BASE_LENGTH = 4;
-const KOCH_MIDPOINT_X = 2;
-const KOCH_BUMP_ANGLE = 60;
-const KOCH_DEPTH = 5;
-
-/**
- * コッホ曲線．長さ4の線分を，3等分した真ん中を，正三角形の2辺で置き換える変換を，5回繰り返す．
- * 変換は，拡大縮小(1/3)・回転・平行移動を式(分数と`sqrt`)で正確に書く．
- */
-const KOCH_CURVE_SCENE: SceneDraft = {
-  version: SCENE_VERSION,
-  description:
-    'コッホ曲線．線分を3等分し，真ん中を正三角形の2辺で置き換える操作を繰り返してできる，どこも微分できない曲線．',
-  view: {
-    x: [-1, KOCH_VIEW_X_MAX],
-    y: [-KOCH_VIEW_Y_MIN, KOCH_VIEW_Y_MAX],
-    unit: { x: '1.5cm', y: '1.5cm' },
-  },
-  objects: [
-    { id: 'x_axis', type: 'axis', direction: 'x', label: 'x' },
-    { id: 'y_axis', type: 'axis', direction: 'y', label: 'y' },
-    {
-      id: 'koch',
-      type: 'fractal',
-      base: [
-        [0, 0],
-        [KOCH_BASE_LENGTH, 0],
-      ],
-      closed: false,
-      transforms: [
-        [{ scale: ['1/3', '1/3'] }, { translate: [0, 0] }],
-        [{ scale: ['1/3', '1/3'] }, { rotate: KOCH_BUMP_ANGLE }, { translate: ['4/3', 0] }],
-        [
-          { scale: ['1/3', '1/3'] },
-          { rotate: -KOCH_BUMP_ANGLE },
-          { translate: [KOCH_MIDPOINT_X, '2*sqrt(3)/3'] },
-        ],
-        [{ scale: ['1/3', '1/3'] }, { translate: ['8/3', 0] }],
-      ],
-      depth: KOCH_DEPTH,
-      style: { color: 'blue' },
     },
   ],
 };
@@ -269,7 +221,7 @@ const HELIX_SCENE: SceneDraft = {
 /** 記事の図とは別に，ここで書いた見本．`samples.ts`が，記事の図の見本と並べる． */
 const PLANE_SAMPLE_SCENES: readonly SceneTemplate[] = [
   { id: 'ellipseFoci', label: '楕円と焦点', scene: ELLIPSE_FOCI_SCENE },
-  { id: 'koch', label: 'コッホ曲線', scene: KOCH_CURVE_SCENE },
+  ...ANALYSIS_SAMPLE_SCENES,
 ];
 
 const SPACE_SAMPLE_SCENES: readonly SceneTemplate[] = [

@@ -11,6 +11,7 @@ import {
   ReferenceField,
   ReferencesField,
 } from './field-special';
+import { TransformField } from './field-transform';
 import { StyleInput, ToggleStyleInput } from './style-input';
 
 type BasicKind = 'text' | 'number' | 'bound' | 'select' | 'checkbox' | 'list';
@@ -72,6 +73,9 @@ function ComplexField(props: FieldProps<Exclude<FieldSpec['kind'], BasicKind>>):
   }
   if (spec.kind === 'json') {
     return <JsonField {...props} spec={spec} />;
+  }
+  if (spec.kind === 'transform') {
+    return <TransformField {...props} spec={spec} />;
   }
   return <LinkField {...props} spec={spec} />;
 }

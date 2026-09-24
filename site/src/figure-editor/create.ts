@@ -21,7 +21,24 @@ const BEZIER = 'bezier';
 const BEZIER_CURVE = 'bezierCurve';
 /** スプライン曲線は，`type`が`curve`で，`spline`の項目を持つ．追加の一覧では，別の種類として扱う． */
 const SPLINE_CURVE = 'splineCurve';
+/** 頂点で書く多角形は，`type`が`polygon`で，`vertices`の項目を持つ．正多角形とは別の種類として扱う． */
+const VERTEX_POLYGON = 'vertexPolygon';
 const PAIR = 2;
+
+/** 変換(`transform`)を持てる種類．像(`image`)の元にできる． */
+const TRANSFORMABLE: readonly string[] = [
+  'point',
+  'segment',
+  'vector',
+  'graph',
+  'curve',
+  'polygon',
+  'fractal',
+  'grid',
+  'surface',
+  'complex',
+  'polyhedron',
+];
 
 const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'axis', label: '座標軸', kinds: BOTH },
@@ -32,12 +49,18 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: BEZIER_CURVE, label: '曲線(ベジエ)', kinds: BOTH },
   { type: SPLINE_CURVE, label: '曲線(スプライン)', kinds: BOTH },
   { type: 'tangent_line', label: '接線', kinds: PLANE },
-  { type: 'grid', label: '格子', kinds: PLANE },
+  { type: 'grid', label: '格子', kinds: BOTH },
   { type: 'point', label: '点', kinds: BOTH },
   { type: 'vector', label: 'ベクトル', kinds: BOTH },
   { type: 'segment', label: '線分', kinds: BOTH },
+  { type: 'polygon', label: '正多角形', kinds: PLANE },
+  { type: VERTEX_POLYGON, label: '多角形(頂点)', kinds: PLANE },
   { type: 'region', label: '領域', kinds: PLANE },
   { type: 'fractal', label: 'フラクタル', kinds: PLANE },
+  { type: 'taylor', label: 'テイラー展開', kinds: PLANE },
+  { type: 'function', label: '関数', kinds: BOTH },
+  { type: 'map', label: '写像', kinds: BOTH },
+  { type: 'image', label: '像(変換した図形)', kinds: BOTH },
   { type: 'sphere', label: '球', kinds: SPACE },
   { type: 'surface', label: '曲面(式)', kinds: SPACE },
   { type: BEZIER, label: '曲面(ベジエ)', kinds: SPACE },
@@ -59,6 +82,9 @@ function listedType(object: JsonObject): string {
   if (type === 'surface' && BEZIER in object) {
     return BEZIER;
   }
+  if (type === 'polygon') {
+    return 'vertices' in object ? VERTEX_POLYGON : type;
+  }
   if (type !== 'curve') {
     return type;
   }
@@ -73,12 +99,21 @@ function allowedIn(object: JsonObject, kind: ViewKind): boolean {
   return typesFor(kind).some((entry) => entry.type === listedType(object));
 }
 
-/** 識別子の元になる名前．ベジエ曲面は`surface`，ベジエ曲線とスプライン曲線は`curve`から始める． */
+/**
+ * 識別子の元になる名前．ベジエ曲面は`surface`，ベジエ曲線とスプライン曲線は`curve`，頂点で書く多角形は
+ * `polygon`から始める．関数と写像は，式の中で呼ぶ名前になるので，短い`f`と`F`から始める．
+ */
+const STEMS: Readonly<Record<string, string>> = {
+  [BEZIER]: 'surface',
+  [BEZIER_CURVE]: 'curve',
+  [SPLINE_CURVE]: 'curve',
+  [VERTEX_POLYGON]: 'polygon',
+  function: 'f',
+  map: 'F',
+};
+
 function stemOf(type: string): string {
-  if (type === BEZIER) {
-    return 'surface';
-  }
-  return type === BEZIER_CURVE || type === SPLINE_CURVE ? 'curve' : type;
+  return STEMS[type] ?? type;
 }
 
 /** 追加済みのオブジェクトのうち，指定の種類の識別子を，並びの順に返す． */
@@ -94,6 +129,9 @@ function withReferences(content: JsonObject, draft: SceneDraft): JsonObject {
   const surfaces = idsOfType(draft, 'surface');
   const graphs = idsOfType(draft, 'graph');
   const curves = idsOfType(draft, 'curve');
+  const transformable = draft.objects
+    .filter((object) => TRANSFORMABLE.includes(stringOf(object, 'type')))
+    .map((object) => stringOf(object, 'id'));
   const references: Record<string, Record<string, Json>> = {
     vector: { from: points[0] ?? '', to: points[1] ?? '' },
     segment: { from: points[0] ?? '', to: points[1] ?? '' },
@@ -102,6 +140,8 @@ function withReferences(content: JsonObject, draft: SceneDraft): JsonObject {
     intersection: { surfaces: surfaces.slice(0, PAIR) },
     tangent_line: { of: graphs[0] ?? curves[0] ?? '' },
     tangent_plane: { of: surfaces[0] ?? '' },
+    taylor: { of: graphs[0] ?? '' },
+    image: { of: transformable.at(-1) ?? '' },
   };
   return { ...content, ...references[stringOf(content, 'type')] };
 }
@@ -128,5 +168,5 @@ function changeKind(draft: SceneDraft, kind: ViewKind): SceneDraft {
   };
 }
 
-export { allowedIn, changeKind, createObject, listedType, OBJECT_TYPES, typesFor };
+export { allowedIn, changeKind, createObject, listedType, OBJECT_TYPES, TRANSFORMABLE, typesFor };
 export type { ObjectType };

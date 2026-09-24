@@ -5,11 +5,12 @@
 //! term   = unary { ("*" | "/") unary }
 //! unary  = ("-" | "+") unary | power
 //! power  = atom [ "^" unary ]          (右に結ぶ．-x^2は-(x^2)，x^-2も読める)
-//! atom   = number | name | name "(" expr ")" | "(" expr ")"
+//! atom   = number | name | name "(" expr { "," expr } ")" | "(" expr ")"
+//!                                    (引数を複数とれるのは，利用者が定義した関数だけ)
 //! ```
 
 use super::lexer::{Token, TokenKind};
-use super::{BinaryOp, ExprError, ExprErrorKind, Function, Node, Span};
+use super::{BinaryOp, ExprError, ExprErrorKind, Function, Functions, Node, Span};
 
 /// 括弧や単項の記号の入れ子の上限．
 const MAX_DEPTH: usize = 128;
@@ -22,16 +23,18 @@ pub fn is_constant(name: &str) -> bool {
     CONSTANTS.iter().any(|(constant, _)| *constant == name)
 }
 
-/// 字句の列を，構文木にする．`names`にある名前は，その位置の変数になる．
+/// 字句の列を，構文木にする．`names`にある名前は，その位置の変数になる．`functions`の関数の呼び出しは，
+/// 本体に展開する．
 ///
 /// # Errors
 ///
 /// 構文の誤り，使えない名前，入れ子の深すぎる式があると，誤りを返す．
-pub fn parse(tokens: &[Token], names: &[&str]) -> Result<Node, ExprError> {
+pub fn parse(tokens: &[Token], names: &[&str], functions: &Functions) -> Result<Node, ExprError> {
     let mut parser = Parser {
         tokens,
         position: 0,
         names,
+        functions,
         depth: 0,
     };
     let node = parser.expression()?;
@@ -47,6 +50,7 @@ struct Parser<'a> {
     tokens: &'a [Token],
     position: usize,
     names: &'a [&'a str],
+    functions: &'a Functions,
     depth: usize,
 }
 
@@ -199,6 +203,9 @@ impl Parser<'_> {
     /// 名前が，関数の呼び出し，変数，定数のどれかを決める．
     fn name(&mut self, name: &str, span: &Span) -> Result<Node, ExprError> {
         if self.peek()?.kind == TokenKind::OpenParen {
+            if Function::from_name(name).is_none() && self.functions.contains(name) {
+                return self.user_call(name, span);
+            }
             let function = Function::from_name(name).ok_or_else(|| {
                 error_at(
                     ExprErrorKind::UnknownFunction(name.to_owned()),
@@ -225,5 +232,33 @@ impl Parser<'_> {
             ExprErrorKind::UnknownName(name.to_owned())
         };
         Err(error_at(kind, span.clone()))
+    }
+
+    /// 利用者が定義した関数の呼び出し．引数を`,`で区切って読み，関数の本体に展開する．
+    fn user_call(&mut self, name: &str, span: &Span) -> Result<Node, ExprError> {
+        self.advance();
+        self.enter(span)?;
+        let arguments = self.arguments();
+        self.leave();
+        let arguments = arguments?;
+        self.expect_close()?;
+        self.functions
+            .expand(name, &arguments, self.names, span)
+            .unwrap_or_else(|| {
+                Err(error_at(
+                    ExprErrorKind::UnknownFunction(name.to_owned()),
+                    span.clone(),
+                ))
+            })
+    }
+
+    /// `,`で区切った引数の並び．閉じ括弧の手前まで読む．
+    fn arguments(&mut self) -> Result<Vec<Node>, ExprError> {
+        let mut arguments = vec![self.expression()?];
+        while self.peek()?.kind == TokenKind::Comma {
+            self.advance();
+            arguments.push(self.expression()?);
+        }
+        Ok(arguments)
     }
 }

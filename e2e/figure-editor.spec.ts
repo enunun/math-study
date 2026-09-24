@@ -145,7 +145,7 @@ test.describe('図の作成', () => {
     expect(exported.file).toBe('figure.json');
     expect(JSON.parse(exported.text)).toMatchObject({ version: '0.1.0' });
 
-    await editor(page).getByRole('button', { name: '空の図' }).click();
+    await editor(page).getByRole('button', { name: '空の図(平面)', exact: true }).click();
     await editor(page)
       .getByLabel('読み込むJSONのファイル')
       .setInputFiles({
@@ -225,21 +225,21 @@ test.describe('図の作成', () => {
     await expect(items).toHaveCount(1);
   });
 
-  test('見本「フラクタル」は，誤りなく描ける', async ({ page }) => {
-    // 見本のボタンは，選んだJSON文字列をparseDraftへ渡すだけで，中身に応じた分岐はない(toolbar.tsx)．
-    // 各見本の図としての正しさは，サイトのビルドと，site/src/figure/scene-schema.test.tsで確かめているので，
-    // ここでは，読み込みの仕組みが実際に動くことだけを，複雑な見本の1つで確かめる．
-    await editor(page).getByRole('button', { name: 'フラクタル', exact: true }).click();
+  test('見本「シェルピンスキーの三角形」は，誤りなく描ける', async ({ page }) => {
+    // 見本の図の正しさはビルドとscene-schema.test.tsが確かめるので，読み込みの仕組みだけを確かめる．
+    await editor(page)
+      .getByRole('button', { name: 'シェルピンスキーの三角形', exact: true })
+      .click();
     await expect(preview(page)).toBeVisible();
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
 
-  test('部品のテンプレート「正六角形」を挿入すると，頂点と辺のオブジェクトが増える', async ({
+  test('部品のテンプレート「正六角形」を挿入すると，多角形のオブジェクトが1つ増える', async ({
     page,
   }) => {
-    // 生成する頂点・辺の正しさ(数，辺の長さなど)は，site/src/figure-editor/regular-shapes.test.tsと
+    // 頂点の置き方(中心，半径，底辺が水平)は，crates/figure/tests/polygon.rsで，描けることは
     // templates.test.tsで確かめているので，ここでは，選んで挿入する操作が実際に図に反映されることだけを確かめる．
-    const HEXAGON_OBJECT_COUNT = 12;
+    const HEXAGON_OBJECT_COUNT = 1;
     const items = editor(page)
       .getByRole('list', { name: 'オブジェクトの一覧' })
       .getByRole('listitem');
@@ -275,7 +275,7 @@ test.describe('図の作成', () => {
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
 
-  test('図のテンプレート「座標軸(空間)」を選ぶと，3本の座標軸だけの空間の図になる', async ({
+  test('図のテンプレート「座標軸(空間)」を選ぶと，3本の座標軸と原点の名前だけの空間の図になる', async ({
     page,
   }) => {
     await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
@@ -283,7 +283,7 @@ test.describe('図の作成', () => {
     const items = editor(page)
       .getByRole('list', { name: 'オブジェクトの一覧' })
       .getByRole('listitem');
-    await expect(items).toHaveCount(3);
+    await expect(items).toHaveCount(4);
     await expect(editor(page).getByLabel('方位角(度)')).toBeVisible();
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });

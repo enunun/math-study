@@ -42,12 +42,7 @@
       "description": "格子の刻み(`x_step`，`y_step`)，接平面の半径(`size`)，曲面のワイヤーフレームの刻み(`wireframe_step`)に使う．数で書くときは，正の数でなければならない．式で書くときの正負は，エンジンが式を評価するときに確かめる．",
       "oneOf": [{ "type": "number", "exclusiveMinimum": 0 }, { "$ref": "#/$defs/nonBlankString" }]
     },
-    "numberPair": {
-      "type": "array",
-      "items": { "type": "number" },
-      "minItems": 2,
-      "maxItems": 2
-    },
+    "numberPair": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
     "boundPair": {
       "type": "array",
       "items": { "$ref": "#/$defs/bound" },
@@ -79,19 +74,13 @@
       "enum": ["gray", "red", "blue", "green", "orange", "purple"],
       "description": "決まった名前から選ぶ，線の色．省くと，文字の色になる．"
     },
-    "line": {
-      "type": "string",
-      "enum": ["solid", "dotted", "dashed"]
-    },
+    "line": { "type": "string", "enum": ["solid", "dotted", "dashed"] },
     "hidden": {
       "type": "string",
       "enum": ["dotted", "dashed", "none"],
       "description": "空間の図で，不透明な面に隠れた部分の線の描き方．"
     },
-    "arrow": {
-      "type": "string",
-      "enum": ["stealth", "none"]
-    },
+    "arrow": { "type": "string", "enum": ["stealth", "none"] },
     "direction": {
       "type": "string",
       "enum": ["x", "y", "z"],
@@ -138,12 +127,7 @@
       "description": "オブジェクトの位置．座標の並び(平面の図では2個，空間の図では3個)か，点の式(平面の図だけで使える文字列，`\"B + C - A\"`のような形)で書く．どちらの形にするかは，`view`によって決まる．",
       "oneOf": [
         { "$ref": "#/$defs/nonBlankString" },
-        {
-          "type": "array",
-          "items": { "$ref": "#/$defs/bound" },
-          "minItems": 2,
-          "maxItems": 3
-        }
+        { "type": "array", "items": { "$ref": "#/$defs/bound" }, "minItems": 2, "maxItems": 3 }
       ]
     },
     "planeView": {
@@ -157,10 +141,7 @@
           "type": "object",
           "required": ["x", "y"],
           "additionalProperties": false,
-          "properties": {
-            "x": { "$ref": "#/$defs/length" },
-            "y": { "$ref": "#/$defs/length" }
-          },
+          "properties": { "x": { "$ref": "#/$defs/length" }, "y": { "$ref": "#/$defs/length" } },
           "description": "x方向とy方向それぞれの，1単位の実寸．"
         }
       }
@@ -251,7 +232,8 @@
           "$ref": "#/$defs/boundPair",
           "description": "定義域．数どうしなら，小さい方が先でなければならない．"
         },
-        "style": { "$ref": "#/$defs/style" }
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" }
       }
     },
     "curve": {
@@ -262,9 +244,7 @@
       "oneOf": [
         {
           "required": ["var", "expr", "domain"],
-          "not": {
-            "anyOf": [{ "required": ["bezier"] }, { "required": ["spline"] }]
-          }
+          "not": { "anyOf": [{ "required": ["bezier"] }, { "required": ["spline"] }] }
         },
         {
           "required": ["bezier"],
@@ -325,7 +305,8 @@
           "maxItems": 12,
           "description": "スプライン曲線が，順に通る点．各点は，平面の図では2個，空間の図では3個の，数か式で書く座標である．2点以上12点以下を並べる．媒介変数の範囲は，0から1である．Catmull-Romの方法で，与えた点をすべて通る滑らかな曲線になる．"
         },
-        "style": { "$ref": "#/$defs/style" }
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" }
       }
     },
     "tangent_line": {
@@ -351,14 +332,23 @@
       "type": "object",
       "required": ["id", "type"],
       "additionalProperties": false,
-      "description": "格子．平面の図でだけ使える．`x_step`と`y_step`は，少なくとも一方が必要である．",
+      "description": "格子．範囲を，原点から数えた刻みの倍数の位置の線で区切る．`x_step`と`y_step`は，少なくとも一方が必要である．空間の図では，xy平面(z = 0)の上に引き，範囲(`x_range`，`y_range`)が要る(スキーマでは表せない)．ほかの平面には，変換で動かす．",
       "anyOf": [{ "required": ["x_step"] }, { "required": ["y_step"] }],
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "grid" },
         "x_step": { "$ref": "#/$defs/positiveNumberOrExpression" },
         "y_step": { "$ref": "#/$defs/positiveNumberOrExpression" },
-        "style": { "$ref": "#/$defs/style" }
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" },
+        "x_range": {
+          "$ref": "#/$defs/numberPair",
+          "description": "線を引くxの範囲．平面の図では，なければ見える範囲．"
+        },
+        "y_range": {
+          "$ref": "#/$defs/numberPair",
+          "description": "線を引くyの範囲．平面の図では，なければ見える範囲．"
+        }
       }
     },
     "point": {
@@ -373,7 +363,8 @@
         "label": { "type": "string", "description": "点の名前の式(TeX)．省くと，名前を置かない．" },
         "anchor": { "$ref": "#/$defs/anchor" },
         "dot": { "type": "boolean", "description": "点の印(塗った丸)を描くか．既定は描かない．" },
-        "style": { "$ref": "#/$defs/style" }
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" }
       }
     },
     "vector": {
@@ -387,7 +378,8 @@
         "from": { "$ref": "#/$defs/identifier" },
         "to": { "$ref": "#/$defs/identifier" },
         "arrow": { "$ref": "#/$defs/arrow" },
-        "style": { "$ref": "#/$defs/style" }
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" }
       }
     },
     "segment": {
@@ -400,7 +392,8 @@
         "type": { "const": "segment" },
         "from": { "$ref": "#/$defs/identifier" },
         "to": { "$ref": "#/$defs/identifier" },
-        "style": { "$ref": "#/$defs/style" }
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" }
       }
     },
     "region": {
@@ -432,52 +425,6 @@
         "style": { "$ref": "#/$defs/style" }
       }
     },
-    "transformOp": {
-      "description": "フラクタルの変換の，1つの手順．並びの順に施す(最初に書いた手順が，点に最初にかかる)．並進・回転・拡大縮小・せん断を組み合わせれば，平面のどんなアフィン変換も作れる．",
-      "oneOf": [
-        {
-          "type": "object",
-          "required": ["translate"],
-          "additionalProperties": false,
-          "properties": {
-            "translate": { "$ref": "#/$defs/boundPair", "description": "平行移動の量(x，y)．" }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["rotate"],
-          "additionalProperties": false,
-          "properties": {
-            "rotate": {
-              "$ref": "#/$defs/bound",
-              "description": "原点を中心とした回転の角度(度，反時計回り)．"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["scale"],
-          "additionalProperties": false,
-          "properties": {
-            "scale": {
-              "$ref": "#/$defs/boundPair",
-              "description": "原点を中心とした拡大縮小の倍率(x，y)．負の数で，その向きに反転する．"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["shear"],
-          "additionalProperties": false,
-          "properties": {
-            "shear": {
-              "$ref": "#/$defs/boundPair",
-              "description": "原点を中心としたせん断の量(x方向がyに，y方向がxに，それぞれ比例して動く量)．"
-            }
-          }
-        }
-      ]
-    },
     "fractal": {
       "type": "object",
       "required": ["id", "type", "base", "transforms", "depth"],
@@ -499,14 +446,10 @@
         },
         "transforms": {
           "type": "array",
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/$defs/transformOp" },
-            "minItems": 1
-          },
+          "items": { "type": "array", "items": { "$ref": "#/$defs/transformStep" }, "minItems": 1 },
           "minItems": 1,
           "maxItems": 12,
-          "description": "変換の並び．各要素は，1つの変換を表す，手順(`transformOp`)の並びである．1つ以上12個以下．"
+          "description": "反復関数系の変換の並び．各要素は，1つの変換を表す，手順(`transformStep`)の並びである．1つ以上12個以下．写像(`map`)は使えない(スキーマでは表せない)．"
         },
         "depth": {
           "type": "integer",
@@ -514,7 +457,12 @@
           "maximum": 10,
           "description": "再帰の深さ．変換の数のこの乗が，図形の数になるので，大きすぎる組み合わせは断られる．"
         },
-        "style": { "$ref": "#/$defs/style" }
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" },
+        "all_depths": {
+          "type": "boolean",
+          "description": "深さ0から`depth`までの図形を，すべて重ねて描くか．既定は，深さ`depth`の図形だけを描く．"
+        }
       }
     },
     "sphere": {
@@ -525,12 +473,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "sphere" },
-        "center": {
-          "type": "array",
-          "items": { "type": "number" },
-          "minItems": 3,
-          "maxItems": 3
-        },
+        "center": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
         "radius": { "type": "number", "exclusiveMinimum": 0 },
         "style": { "$ref": "#/$defs/style" },
         "wireframe": {
@@ -624,7 +567,8 @@
         "control_net": {
           "$ref": "#/$defs/style",
           "description": "ベジエ曲面の，制御点の網(行と列を結ぶ折れ線)．`bezier`があるときだけ使える．この項目があれば描き，スタイルとして使う(`{}`でもよい)．省くと描かない．"
-        }
+        },
+        "transform": { "$ref": "#/$defs/transform" }
       }
     },
     "cut": {
@@ -706,12 +650,7 @@
         "vertices": {
           "type": "array",
           "description": "頂点の座標．3個ずつ(x，y，z)．3個以上64個以下．",
-          "items": {
-            "type": "array",
-            "items": { "type": "number" },
-            "minItems": 3,
-            "maxItems": 3
-          },
+          "items": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
           "minItems": 3,
           "maxItems": 64
         },
@@ -727,14 +666,15 @@
           "minItems": 1,
           "maxItems": 64
         },
-        "style": { "$ref": "#/$defs/style" }
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" }
       }
     },
     "polyhedron": {
       "type": "object",
       "required": ["id", "type", "solid", "center", "radius"],
       "additionalProperties": false,
-      "description": "正多面体．種類と，中心と，半径(中心から頂点までの距離)だけで書き，頂点と面はエンジンが決める．空間の図でだけ使える．同じ頂点と面の複体(`complex`)と同じように描き，隠す．向きは種類ごとに決まっている(立方体は，面が座標軸に垂直)．",
+      "description": "正多面体．種類と，中心と，半径(中心から頂点までの距離)だけで書き，頂点と面はエンジンが決める．空間の図でだけ使える．同じ頂点と面の複体(`complex`)と同じように描き，隠す．基準の向きは種類ごとに決まっていて(立方体は，面が座標軸に垂直)，ほかの向きは変換(`transform`)の回転で作る．",
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "polyhedron" },
@@ -742,22 +682,219 @@
           "enum": ["tetrahedron", "cube", "octahedron", "dodecahedron", "icosahedron"],
           "description": "種類．正4面体，正6面体(立方体)，正8面体，正12面体，正20面体．"
         },
-        "center": {
-          "type": "array",
-          "items": { "type": "number" },
-          "minItems": 3,
-          "maxItems": 3
-        },
+        "center": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
         "radius": {
           "type": "number",
           "exclusiveMinimum": 0,
           "description": "中心から頂点までの距離(外接球の半径)．"
         },
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" }
+      }
+    },
+    "transformStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "変換の手順の1つ．操作(`translate`，`rotate`，`scale`，`reflect`，`shear`，`map`)をちょうど1つ書く．数は，数か，媒介変数と定数を使う式で書く．座標の数(平面の図では2個，空間の図では3個)が合うか，`axis`が空間の図の回転にだけあるか，`center`が回転・拡大縮小・対称移動・せん断にだけあるかは，スキーマでは表せない．",
+      "oneOf": [
+        { "required": ["translate"] },
+        { "required": ["rotate"] },
+        { "required": ["scale"] },
+        { "required": ["reflect"] },
+        { "required": ["shear"] },
+        { "required": ["map"] }
+      ],
+      "dependentRequired": { "axis": ["rotate"] },
+      "properties": {
+        "translate": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/bound" },
+          "minItems": 2,
+          "maxItems": 3,
+          "description": "平行移動の量．"
+        },
+        "rotate": {
+          "$ref": "#/$defs/bound",
+          "description": "回転の角度(度)．平面の図では反時計回り，空間の図では`axis`の向きに右ねじの向き．"
+        },
+        "axis": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/bound" },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "回転の軸の向き．空間の図の回転に要る．0でないベクトルにする．"
+        },
+        "scale": {
+          "description": "拡大縮小の倍率．1つの数なら全方向に同じ倍率，並びなら方向ごとの倍率．負の数で反転する．",
+          "oneOf": [
+            { "$ref": "#/$defs/bound" },
+            { "type": "array", "items": { "$ref": "#/$defs/bound" }, "minItems": 2, "maxItems": 3 }
+          ]
+        },
+        "reflect": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/bound" },
+          "minItems": 2,
+          "maxItems": 3,
+          "description": "対称移動の鏡．平面の図では鏡にする直線の向き(`[1, 0]`でx軸，`[1, 1]`で直線y = x)，空間の図では鏡にする平面の法線(`[0, 0, 1]`でxy平面)．0でないベクトルにする．"
+        },
+        "shear": {
+          "$ref": "#/$defs/boundPair",
+          "description": "せん断の量(xがyに，yがxに，それぞれ比例して動く量)．平面の図でだけ使える．"
+        },
+        "map": {
+          "$ref": "#/$defs/identifier",
+          "description": "写像(`map`オブジェクト)の`id`．線分・ベクトル・複体・正多面体とフラクタルの`transforms`には使えない(スキーマでは表せない)．"
+        },
+        "center": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/bound" },
+          "minItems": 2,
+          "maxItems": 3,
+          "description": "回転・拡大縮小・対称移動・せん断で動かない点．なければ原点．"
+        }
+      }
+    },
+    "transform": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/transformStep" },
+      "maxItems": 16,
+      "description": "変換．手順を，書いた順に施す(最初の手順が，点に最初にかかる)．"
+    },
+    "polygon": {
+      "type": "object",
+      "required": ["id", "type"],
+      "additionalProperties": false,
+      "description": "多角形．辺(閉じた折れ線)と，塗った面(`fill`)でできる．平面の図でだけ使える．正多角形は辺の数(`sides`)と中心(`center`)と半径(`radius`，中心から頂点まで)で書き，底辺が水平になる向きに置く．ほかの多角形は，頂点(`vertices`)を周に沿って並べる．どちらか一方で書く．",
+      "oneOf": [
+        { "required": ["sides", "center", "radius"], "not": { "required": ["vertices"] } },
+        {
+          "required": ["vertices"],
+          "not": {
+            "anyOf": [
+              { "required": ["sides"] },
+              { "required": ["center"] },
+              { "required": ["radius"] }
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "polygon" },
+        "sides": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 64,
+          "description": "正多角形の辺の数．"
+        },
+        "center": { "$ref": "#/$defs/boundPair", "description": "正多角形の中心．" },
+        "radius": {
+          "$ref": "#/$defs/positiveNumberOrExpression",
+          "description": "正多角形の，中心から頂点までの距離．"
+        },
+        "vertices": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/position" },
+          "minItems": 3,
+          "maxItems": 64,
+          "description": "頂点．座標か，点の式(`\"A\"`など)で，周に沿って並べる．"
+        },
+        "fill": {
+          "$ref": "#/$defs/fill",
+          "description": "面を塗る色と不透明度．なければ塗らない．"
+        },
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" }
+      }
+    },
+    "function": {
+      "type": "object",
+      "required": ["id", "type", "vars", "expr"],
+      "additionalProperties": false,
+      "description": "式から呼べる関数．描かない．`id`が関数の名前になり，どのオブジェクトの式からも`f(x)`の形で呼べる．本体は，媒介変数と，先に置いた関数を使える(合成`f(g(x))`もできる)．",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "function" },
+        "vars": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/identifier" },
+          "minItems": 1,
+          "maxItems": 3,
+          "description": "引数の名前．"
+        },
+        "expr": { "$ref": "#/$defs/nonBlankString", "description": "本体の式．" }
+      }
+    },
+    "map": {
+      "type": "object",
+      "required": ["id", "type", "vars", "expr"],
+      "additionalProperties": false,
+      "description": "写像．点の座標を，同じ数の座標に写す．描かない．変換の手順`{\"map\": \"<id>\"}`で使う．変数と式の数は，平面の図では2個，空間の図では3個にする(スキーマでは表せない)．",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "map" },
+        "vars": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/identifier" },
+          "minItems": 2,
+          "maxItems": 3,
+          "description": "座標の変数の名前．"
+        },
+        "expr": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonBlankString" },
+          "minItems": 2,
+          "maxItems": 3,
+          "description": "写した先の座標の式．"
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "required": ["id", "type", "of", "transform"],
+      "additionalProperties": false,
+      "description": "別のオブジェクトを変換した像．元のオブジェクトはそのまま残る．元にできるのは，先に置いた点・線分・ベクトル・グラフ・曲線・多角形・フラクタル・格子・曲面・複体・正多面体である(スキーマでは表せない)．",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "image" },
+        "of": { "$ref": "#/$defs/identifier", "description": "元のオブジェクトの`id`．" },
+        "transform": { "$ref": "#/$defs/transform" },
+        "label": { "type": "string", "description": "点の像の名前の式(TeX)．点の像にだけ書ける．" },
+        "style": {
+          "$ref": "#/$defs/style",
+          "description": "書けば元のスタイルの代わりに使い，書かなければ元のスタイルを使う．"
+        }
+      }
+    },
+    "taylor": {
+      "type": "object",
+      "required": ["id", "type", "of", "at", "order"],
+      "additionalProperties": false,
+      "description": "グラフのテイラー展開を，`order`次で打ち切った多項式のグラフ．平面の図でだけ使える．展開するグラフの式は，特殊関数を含まず，中心で微分できなければならない(スキーマでは表せない)．",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "taylor" },
+        "of": {
+          "$ref": "#/$defs/identifier",
+          "description": "展開するグラフ(`graph`)の`id`．変換したグラフは使えない．"
+        },
+        "at": { "$ref": "#/$defs/bound", "description": "展開の中心．" },
+        "order": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30,
+          "description": "打ち切る次数．"
+        },
+        "domain": {
+          "$ref": "#/$defs/boundPair",
+          "description": "描く範囲．なければ，グラフの定義域．"
+        },
         "style": { "$ref": "#/$defs/style" }
       }
     },
     "object": {
-      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`grid`，`region`，`tangent_line`，`fractal`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
+      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },
@@ -777,7 +914,12 @@
         { "$ref": "#/$defs/intersection" },
         { "$ref": "#/$defs/tangent_plane" },
         { "$ref": "#/$defs/complex" },
-        { "$ref": "#/$defs/polyhedron" }
+        { "$ref": "#/$defs/polyhedron" },
+        { "$ref": "#/$defs/polygon" },
+        { "$ref": "#/$defs/function" },
+        { "$ref": "#/$defs/map" },
+        { "$ref": "#/$defs/image" },
+        { "$ref": "#/$defs/taylor" }
       ]
     }
   }

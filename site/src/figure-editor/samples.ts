@@ -33,7 +33,7 @@ const EDITOR_SAMPLES: readonly SceneTemplate[] = [
   articleSample('vectors', 'ベクトルの和', 'vector-addition'),
   articleSample('region', '2つのグラフの間の領域', 'sine-cosine-region'),
   articleSample('tangentLine', '接線', 'tangent-line-on-parabola'),
-  articleSample('fractal', 'フラクタル', 'sierpinski-triangle'),
+  articleSample('sierpinski', 'シェルピンスキーの三角形', 'sierpinski-triangle'),
   ...PLANE_SAMPLE_SCENES,
   articleSample('sphere', '球と座標軸', 'sphere-with-axes'),
   articleSample('paraboloid', '放物面と座標軸', 'paraboloid-with-axes'),

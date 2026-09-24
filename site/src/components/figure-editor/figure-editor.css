@@ -44,6 +44,16 @@
   min-width: 12rem;
 }
 
+/* フォームの幅は狭いので，変換の手順の選択では，名前とボタンの文字を折り返さず，選択欄を縮める． */
+.fe-step-picker span,
+.fe-step-picker button {
+  white-space: nowrap;
+}
+
+.fe-step-picker .fe-field select {
+  min-width: 0;
+}
+
 .figure-editor button {
   padding: 0.25rem 0.7rem;
   border: 1px solid var(--sl-color-gray-4);

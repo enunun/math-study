@@ -30,6 +30,12 @@ const PLANE_TYPES = [
   'vector',
   'segment',
   'region',
+  'polygon',
+  'vertexPolygon',
+  'taylor',
+  'function',
+  'map',
+  'image',
 ];
 
 const SPACE_TYPES = [
@@ -50,6 +56,11 @@ const SPACE_TYPES = [
   'curve',
   'bezierCurve',
   'splineCurve',
+  'grid',
+  'polyhedron',
+  'function',
+  'map',
+  'image',
 ];
 
 /** 種類を順に，初期値で追加した図． */

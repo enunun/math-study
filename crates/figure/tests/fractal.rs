@@ -221,3 +221,29 @@ fn closedにすると_最後の点から最初の点への線も引かれる() {
         "{last:?}"
     );
 }
+
+#[test]
+fn all_depthsにすると_途中の深さの図形も重ねて描く() {
+    let objects = format!(
+        r#"{{ "id": "f", "type": "fractal", {SEGMENT},
+            "transforms": [
+                [{{ "scale": [0.4, 0.4] }}, {{ "translate": [0, 0] }}],
+                [{{ "scale": [0.4, 0.4] }}, {{ "translate": [2, 0] }}]
+            ], "depth": 2, "all_depths": true }}"#
+    );
+    let figure = plane_figure_of(&objects);
+    assert_eq!(
+        paths(&figure).len(),
+        1 + 2 + 4,
+        "深さ0，1，2の図形をすべて描く"
+    );
+}
+
+#[test]
+fn 全体の変換は_展開したあとの図形に施す() {
+    let objects = r#"{ "id": "f", "type": "fractal", "base": [[0, 0], [1, 0]],
+        "transforms": [[{ "translate": [0, 0] }]], "depth": 0,
+        "transform": [{ "rotate": 90 }] }"#;
+    let figure = plane_figure_of(objects);
+    assert!(has_point(paths(&figure)[0], [0.0, 1.0]));
+}

@@ -4,29 +4,31 @@ use std::collections::HashMap;
 
 use crate::arrow::Stealth;
 use crate::bezier::bezier_curve_point;
-use crate::clip::clip_polyline;
+use crate::clip::{clip_polygon, clip_polyline};
 use crate::compile::{
     Compiled, CurvePlot, FractalPlot, GraphPlot, GridPlot, LabelPlot, LinkPlot, Plot, PointPlot,
-    TangentLinePlot, TickPlot, compile,
+    PolygonPlot, TangentLinePlot, TaylorPlot, TickPlot, compile,
 };
-use crate::derivative::{central_difference, central_difference_point};
+use crate::derivative::central_difference_point;
 use crate::error::Error;
-use crate::figure::{ArrowHead, Bounds, DotItem, Figure, Item, LabelItem, Path, Stroke};
+use crate::figure::{ArrowHead, Bounds, DotItem, Figure, FillItem, Item, LabelItem, Path, Stroke};
+use crate::image::expand_images;
 use crate::region::region_items;
 use crate::sample::sample;
 use crate::scene::{
-    Anchor, Arrow, Axis, CM_PER_PT, Direction, Fractal, Label, Line, Object, PlaneView, Point,
-    Scene, Style, TangentLine, View,
+    Anchor, Arrow, Axis, CM_PER_PT, Curve, Direction, Fractal, Graph, Label, Line, Object,
+    PlaneView, Point, Polygon, Scene, Style, TangentLine, Taylor, View,
 };
 use crate::space::render_space;
 use crate::spline::catmull_rom_point;
+use crate::transform::Transform;
 
 /// 軸の線幅(pt)．`TikZ`の`semithick`である．
 pub const AXIS_WIDTH: f64 = 0.6;
 /// 曲線の線幅(pt)．`TikZ`の`thick`である．
 pub const CURVE_WIDTH: f64 = 0.8;
 /// 格子の線幅(pt)．目盛と軸より細い．
-const GRID_WIDTH: f64 = 0.3;
+pub const GRID_WIDTH: f64 = 0.3;
 /// 刻みの倍数の位置を，範囲の端に含めるための，割った値の許容．
 const GRID_EPSILON: f64 = 1e-9;
 /// 目盛の線の，軸から片側への長さ(pt)．
@@ -53,10 +55,11 @@ impl Scale {
 ///
 /// 式の誤りがあると，誤りを返す．
 pub fn render(scene: &Scene) -> Result<Figure, Error> {
-    let compiled = compile(scene)?;
+    let scene = expand_images(scene)?;
+    let compiled = compile(&scene)?;
     match &scene.view {
-        View::Plane(view) => render_plane(scene, view, &compiled),
-        View::Space(view) => Ok(render_space(scene, view, &compiled)),
+        View::Plane(view) => render_plane(&scene, view, &compiled),
+        View::Space(view) => Ok(render_space(&scene, view, &compiled)),
     }
 }
 
@@ -65,85 +68,27 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Result<
         x: view.unit.x.to_cm(),
         y: view.unit.y.to_cm(),
     };
-    // グラフと曲線は，見える範囲で切り取る．
-    let window = [
-        scale.point(view.x[0], view.y[0]),
-        scale.point(view.x[1], view.y[1]),
-    ];
-    // 領域が挟むグラフと，接線が接する対象は，`id`から引く．
-    let (graphs, curves) = graphs_and_curves_of(scene, compiled);
+    let context = PlaneContext {
+        view,
+        scale,
+        // グラフと曲線は，見える範囲で切り取る．
+        window: [
+            scale.point(view.x[0], view.y[0]),
+            scale.point(view.x[1], view.y[1]),
+        ],
+        // 領域が挟むグラフと，接線が接する対象は，`id`から引く．
+        graphs: graphs_of(scene, compiled),
+        curves: plane_curves_of(scene, compiled),
+        compiled,
+    };
     let mut items = Vec::new();
-    for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
-        match object {
-            Object::Region(region) => {
-                if let Plot::Region(placed) = plot {
-                    let unit = [scale.x, scale.y];
-                    items.extend(region_items(
-                        region,
-                        placed,
-                        &graphs,
-                        &compiled.parameters,
-                        unit,
-                        window,
-                    )?);
-                }
-            }
-            Object::Axis(axis) => {
-                let ticks = match plot {
-                    Plot::Axis(axis_plot) => axis_plot.ticks.as_slice(),
-                    _ => &[],
-                };
-                items.extend(axis_items(axis, ticks, view, scale));
-            }
-            Object::Label(label) => {
-                if let Plot::Label(placed) = plot {
-                    items.extend(label_item(label, placed, scale).map(Item::Label));
-                }
-            }
-            Object::Graph(_) | Object::Curve(_) => {
-                items.extend(plot_items(object, plot, compiled, scale, window));
-            }
-            Object::TangentLine(tangent) => {
-                if let Plot::TangentLine(placed) = plot {
-                    items.extend(tangent_line_items(
-                        tangent, placed, &graphs, &curves, compiled, scale, window,
-                    ));
-                }
-            }
-            Object::Grid(grid) => {
-                if let Plot::Grid(grid_plot) = plot {
-                    items.extend(grid_items(&grid.style, grid_plot, view, scale));
-                }
-            }
-            Object::Point(point) => {
-                if let Plot::Point(placed) = plot {
-                    items.extend(point_items(point, placed, scale));
-                }
-            }
-            Object::Vector(vector) => {
-                if let Plot::Link(link) = plot {
-                    items.extend(link_item(&vector.style, vector.arrow, link, scale));
-                }
-            }
-            Object::Segment(segment) => {
-                if let Plot::Link(link) = plot {
-                    items.extend(link_item(&segment.style, Arrow::None, link, scale));
-                }
-            }
-            Object::Fractal(fractal) => {
-                if let Plot::Fractal(placed) = plot {
-                    items.extend(fractal_items(fractal, placed, scale, window));
-                }
-            }
-            Object::Parameter(_)
-            | Object::Sphere(_)
-            | Object::Surface(_)
-            | Object::Cut(_)
-            | Object::Intersection(_)
-            | Object::TangentPlane(_)
-            | Object::Complex(_)
-            | Object::Polyhedron(_) => {}
-        }
+    for ((object, plot), transform) in scene
+        .objects
+        .iter()
+        .zip(&compiled.plots)
+        .zip(&compiled.transforms)
+    {
+        items.extend(object_items(object, plot, transform, &context)?);
     }
     Ok(Figure {
         description: scene.description.clone(),
@@ -161,15 +106,93 @@ fn render_plane(scene: &Scene, view: &PlaneView, compiled: &Compiled) -> Result<
     })
 }
 
-/// グラフと曲線を，`id`から引けるようにする．領域が挟むグラフと，接線が接する対象を探すために使う．
-fn graphs_and_curves_of<'a>(
-    scene: &'a Scene,
+/// 平面の図の，オブジェクトによらない描き方．
+struct PlaneContext<'a> {
+    view: &'a PlaneView,
+    scale: Scale,
+    /// 見える範囲(cm)．
+    window: [[f64; 2]; 2],
+    /// グラフの`id`から，グラフ．
+    graphs: HashMap<&'a str, &'a GraphPlot>,
+    /// グラフと曲線の`id`から，媒介変数の関数として見たもの．
+    curves: HashMap<&'a str, PlaneCurve<'a>>,
     compiled: &'a Compiled,
-) -> (
-    HashMap<&'a str, &'a GraphPlot>,
-    HashMap<&'a str, &'a CurvePlot>,
-) {
-    let graphs = scene
+}
+
+/// オブジェクト1つの，描く要素．
+fn object_items(
+    object: &Object,
+    plot: &Plot,
+    transform: &Transform,
+    context: &PlaneContext,
+) -> Result<Vec<Item>, Error> {
+    let PlaneContext {
+        view,
+        scale,
+        window,
+        compiled,
+        ..
+    } = *context;
+    Ok(match (object, plot) {
+        (Object::Region(region), Plot::Region(placed)) => region_items(
+            region,
+            placed,
+            &context.graphs,
+            &compiled.parameters,
+            [scale.x, scale.y],
+            window,
+        )?,
+        (Object::Axis(axis), _) => {
+            let ticks = match plot {
+                Plot::Axis(axis_plot) => axis_plot.ticks.as_slice(),
+                _ => &[],
+            };
+            axis_items(axis, ticks, view, scale)
+        }
+        (Object::Label(label), Plot::Label(placed)) => label_item(label, placed, scale)
+            .map(Item::Label)
+            .into_iter()
+            .collect(),
+        (Object::Graph(Graph { id, style, .. }) | Object::Curve(Curve { id, style, .. }), _) => {
+            context
+                .curves
+                .get(id.as_str())
+                .map(|curve| plot_items(curve, *style, compiled, scale, window))
+                .unwrap_or_default()
+        }
+        (Object::TangentLine(tangent), Plot::TangentLine(placed)) => {
+            tangent_line_items(tangent, placed, &context.curves, compiled, scale, window)
+        }
+        (Object::Grid(grid), Plot::Grid(grid_plot)) => {
+            grid_items(&grid.style, grid_plot, transform, scale, window)
+        }
+        (Object::Point(point), Plot::Point(placed)) => point_items(point, placed, scale),
+        (Object::Vector(vector), Plot::Link(link)) => {
+            link_item(&vector.style, vector.arrow, link, scale)
+                .into_iter()
+                .collect()
+        }
+        (Object::Segment(segment), Plot::Link(link)) => {
+            link_item(&segment.style, Arrow::None, link, scale)
+                .into_iter()
+                .collect()
+        }
+        (Object::Fractal(fractal), Plot::Fractal(placed)) => {
+            fractal_items(fractal, placed, scale, window)
+        }
+        (Object::Polygon(polygon), Plot::Polygon(placed)) => {
+            polygon_items(polygon, placed, transform, scale, window)
+        }
+        (Object::Taylor(taylor), Plot::Taylor(placed)) => {
+            taylor_items(taylor, placed, scale, window)
+        }
+        _ => Vec::new(),
+    })
+}
+
+/// グラフを，`id`から引けるようにする．領域が挟むグラフを探すために使う．
+fn graphs_of<'a>(scene: &'a Scene, compiled: &'a Compiled) -> HashMap<&'a str, &'a GraphPlot> {
+    scene
         .objects
         .iter()
         .zip(&compiled.plots)
@@ -177,17 +200,76 @@ fn graphs_and_curves_of<'a>(
             (Object::Graph(graph), Plot::Graph(placed)) => Some((graph.id.as_str(), placed)),
             _ => None,
         })
-        .collect();
-    let curves = scene
+        .collect()
+}
+
+/// 平面の図のグラフか曲線を，変換まで含めて，媒介変数の関数として見たもの．グラフ`y = f(x)`は，
+/// 曲線`(t, f(t))`として扱う．
+struct PlaneCurve<'a> {
+    shape: Shape<'a>,
+    transform: &'a Transform,
+    /// 媒介変数(グラフでは変数)の範囲．
+    domain: [f64; 2],
+}
+
+enum Shape<'a> {
+    Graph(&'a GraphPlot),
+    Curve(&'a CurvePlot),
+}
+
+impl PlaneCurve<'_> {
+    /// 媒介変数`t`の点(数学の座標)．変換を施してある．
+    fn at(&self, t: f64, parameters: &[f64]) -> Option<[f64; 2]> {
+        let point = match self.shape {
+            Shape::Graph(graph) => [t, graph.expr.eval(&with_variable(t, parameters))],
+            Shape::Curve(curve) => curve_point(curve, t, parameters)?,
+        };
+        self.transform.apply2(point)
+    }
+}
+
+/// グラフと曲線を，`id`から引けるようにする．接線が接する対象を探すためにも使う．
+fn plane_curves_of<'a>(
+    scene: &'a Scene,
+    compiled: &'a Compiled,
+) -> HashMap<&'a str, PlaneCurve<'a>> {
+    scene
         .objects
         .iter()
         .zip(&compiled.plots)
-        .filter_map(|(object, plot)| match (object, plot) {
-            (Object::Curve(curve), Plot::Curve(placed)) => Some((curve.id.as_str(), placed)),
-            _ => None,
+        .zip(&compiled.transforms)
+        .filter_map(|((object, plot), transform)| {
+            let (shape, domain) = match plot {
+                Plot::Graph(graph) => (Shape::Graph(graph), graph.domain),
+                Plot::Curve(curve) => (Shape::Curve(curve), curve.domain),
+                _ => return None,
+            };
+            Some((
+                object.id(),
+                PlaneCurve {
+                    shape,
+                    transform,
+                    domain,
+                },
+            ))
         })
-        .collect();
-    (graphs, curves)
+        .collect()
+}
+
+/// 曲線の，媒介変数`t`の点(数学の座標)．変換は施さない．
+fn curve_point(plot: &CurvePlot, t: f64, parameters: &[f64]) -> Option<[f64; 2]> {
+    let point = if let Some(net) = &plot.net {
+        bezier_curve_point(net, t)?
+    } else if let Some(points) = &plot.spline {
+        catmull_rom_point(points, t)?
+    } else {
+        let values = with_variable(t, parameters);
+        plot.exprs.iter().map(|expr| expr.eval(&values)).collect()
+    };
+    match point.as_slice() {
+        [x, y] => Some([*x, *y]),
+        _ => None,
+    }
 }
 
 fn label_item(label: &Label, placed: &LabelPlot, scale: Scale) -> Option<LabelItem> {
@@ -298,29 +380,140 @@ fn axis_items(axis: &Axis, ticks: &[TickPlot], view: &PlaneView, scale: Scale) -
     items
 }
 
-/// 格子の線．見える範囲を，原点から数えた刻みの倍数の位置で区切る．縦の線，横の線の順に並ぶ．
-fn grid_items(style: &Style, grid: &GridPlot, view: &PlaneView, scale: Scale) -> Vec<Item> {
+/// 格子の線．範囲を，原点から数えた刻みの倍数の位置で区切る．縦の線，横の線の順に並ぶ．
+/// 変換があれば，各線を変換し，見える範囲で切り取る．
+fn grid_items(
+    style: &Style,
+    grid: &GridPlot,
+    transform: &Transform,
+    scale: Scale,
+    window: [[f64; 2]; 2],
+) -> Vec<Item> {
     let stroke = stroke_of(style, Line::Dotted, GRID_WIDTH);
-    let make = |points: [[f64; 2]; 2]| {
-        Item::Path(Path {
-            points: points.to_vec(),
-            stroke,
-            arrow: None,
+    let [x_low, x_high] = grid.x_range;
+    let [y_low, y_high] = grid.y_range;
+    let vertical = grid
+        .x_step
+        .into_iter()
+        .flat_map(|step| multiples(step, grid.x_range).map(move |x| ([x, y_low], [x, y_high])));
+    let horizontal = grid
+        .y_step
+        .into_iter()
+        .flat_map(|step| multiples(step, grid.y_range).map(move |y| ([x_low, y], [x_high, y])));
+    let [min, max] = window;
+    vertical
+        .chain(horizontal)
+        .flat_map(|(from, to)| transformed_segment(from, to, transform, scale))
+        .flat_map(|points| clip_polyline(&points, min, max))
+        .map(|points| {
+            Item::Path(Path {
+                points,
+                stroke,
+                arrow: None,
+            })
         })
-    };
-    let vertical = grid.x_step.into_iter().flat_map(|step| {
-        multiples(step, view.x)
-            .map(|x| make([scale.point(x, view.y[0]), scale.point(x, view.y[1])]))
-    });
-    let horizontal = grid.y_step.into_iter().flat_map(|step| {
-        multiples(step, view.y)
-            .map(|y| make([scale.point(view.x[0], y), scale.point(view.x[1], y)]))
-    });
-    vertical.chain(horizontal).collect()
+        .collect()
+}
+
+/// 線分を変換した線(cm)．アフィン変換なら両端を写すだけで，写像なら曲がるので，標本化する．
+fn transformed_segment(
+    from: [f64; 2],
+    to: [f64; 2],
+    transform: &Transform,
+    scale: Scale,
+) -> Vec<Vec<[f64; 2]>> {
+    if let Some(affine) = transform.as_affine() {
+        let ([x0, y0], [x1, y1]) = (affine.apply2(from), affine.apply2(to));
+        return vec![vec![scale.point(x0, y0), scale.point(x1, y1)]];
+    }
+    sample(
+        |t| {
+            let point = [
+                from[0] + (to[0] - from[0]) * t,
+                from[1] + (to[1] - from[1]) * t,
+            ];
+            let [x, y] = transform.apply2(point)?;
+            Some(scale.point(x, y))
+        },
+        0.0,
+        1.0,
+    )
+}
+
+/// 多角形の面(塗り)と辺．辺は，変換した各辺をつないだ，閉じた折れ線である．面は，辺の下に敷く．
+/// 写像で辺が途切れたときは，面を塗らない．
+fn polygon_items(
+    polygon: &Polygon,
+    placed: &PolygonPlot,
+    transform: &Transform,
+    scale: Scale,
+    window: [[f64; 2]; 2],
+) -> Vec<Item> {
+    let count = placed.vertices.len();
+    let mut pieces: Vec<Vec<[f64; 2]>> = Vec::new();
+    let mut broken = false;
+    for (index, from) in placed.vertices.iter().enumerate() {
+        let next = index
+            .saturating_add(1)
+            .checked_rem(count)
+            .unwrap_or_default();
+        let Some(to) = placed.vertices.get(next) else {
+            continue;
+        };
+        let edge = transformed_segment(*from, *to, transform, scale);
+        broken |= edge.len() != 1;
+        pieces.extend(edge);
+    }
+    let [min, max] = window;
+    let mut items = Vec::new();
+    if !broken {
+        let mut boundary: Vec<[f64; 2]> = Vec::new();
+        for piece in &pieces {
+            // 前の辺の終わりと，次の辺の始まりは，同じ頂点である．
+            let skip = usize::from(!boundary.is_empty());
+            boundary.extend(piece.iter().skip(skip));
+        }
+        if let Some(fill) = &polygon.fill {
+            // 塗りの多角形は閉じているとみなすので，最初の頂点に戻る点は除く．
+            let open = boundary.split_last().map_or(&[][..], |(_, rest)| rest);
+            let points = clip_polygon(open, min, max);
+            if !points.is_empty() {
+                items.push(Item::Fill(FillItem {
+                    points,
+                    color: fill.color.or(polygon.style.color),
+                    opacity: fill.opacity,
+                }));
+            }
+        }
+        pieces = vec![boundary];
+    }
+    items.extend(
+        pieces
+            .iter()
+            .flat_map(|points| clip_polyline(points, min, max))
+            .map(|points| Item::Path(curve_path(points, polygon.style))),
+    );
+    items
+}
+
+/// テイラー展開の多項式のグラフ．グラフと同じに標本化し，見える範囲で切り取る．
+fn taylor_items(
+    taylor: &Taylor,
+    placed: &TaylorPlot,
+    scale: Scale,
+    window: [[f64; 2]; 2],
+) -> Vec<Item> {
+    let [start, end] = placed.domain;
+    let [min, max] = window;
+    sample(|x| Some(scale.point(x, placed.value(x))), start, end)
+        .iter()
+        .flat_map(|points| clip_polyline(points, min, max))
+        .map(|points| Item::Path(curve_path(points, taylor.style)))
+        .collect()
 }
 
 /// 範囲の中にある，`step`の整数倍．範囲の端も含む．
-fn multiples(step: f64, [low, high]: [f64; 2]) -> impl Iterator<Item = f64> {
+pub fn multiples(step: f64, [low, high]: [f64; 2]) -> impl Iterator<Item = f64> {
     let first = (low / step - GRID_EPSILON).ceil();
     let last = (high / step + GRID_EPSILON).floor();
     std::iter::successors(Some(first), move |k| (k + 1.0 <= last).then_some(k + 1.0))
@@ -392,53 +585,21 @@ pub fn arrow_head(
 
 /// グラフや曲線を標本化して，見える範囲で切り取った，折れ線．線が切れるか，範囲を出ると，折れ線が分かれる．
 fn plot_items(
-    object: &Object,
-    plot: &Plot,
+    curve: &PlaneCurve,
+    style: Style,
     compiled: &Compiled,
     scale: Scale,
     window: [[f64; 2]; 2],
 ) -> Vec<Item> {
-    let (paths, style) = match (object, plot) {
-        (Object::Graph(graph), Plot::Graph(plot)) => {
-            let [start, end] = plot.domain;
-            let paths = sample(
-                |t| {
-                    let y = plot.expr.eval(&with_variable(t, &compiled.parameters));
-                    Some(scale.point(t, y))
-                },
-                start,
-                end,
-            );
-            (paths, graph.style)
-        }
-        (Object::Curve(curve), Plot::Curve(plot)) => {
-            let [start, end] = plot.domain;
-            let at = |t: f64| -> Option<[f64; 2]> {
-                if let Some(net) = &plot.net {
-                    let point = bezier_curve_point(net, t)?;
-                    let [x, y] = point.as_slice() else {
-                        return None;
-                    };
-                    return Some(scale.point(*x, *y));
-                }
-                if let Some(points) = &plot.spline {
-                    let point = catmull_rom_point(points, t)?;
-                    let [x, y] = point.as_slice() else {
-                        return None;
-                    };
-                    return Some(scale.point(*x, *y));
-                }
-                let values = with_variable(t, &compiled.parameters);
-                let [x_expr, y_expr] = plot.exprs.as_slice() else {
-                    return None;
-                };
-                Some(scale.point(x_expr.eval(&values), y_expr.eval(&values)))
-            };
-            let paths = sample(at, start, end);
-            (paths, curve.style)
-        }
-        _ => return Vec::new(),
-    };
+    let [start, end] = curve.domain;
+    let paths = sample(
+        |t| {
+            let [x, y] = curve.at(t, &compiled.parameters)?;
+            Some(scale.point(x, y))
+        },
+        start,
+        end,
+    );
     let [min, max] = window;
     paths
         .iter()
@@ -447,64 +608,33 @@ fn plot_items(
         .collect()
 }
 
-/// 接線の，接する点と向き(数学の座標)．グラフなら`(1, f'(x0))`，曲線なら媒介変数の微分`(dx/dt, dy/dt)`．
+/// 接線の，接する点と向き(数学の座標)．曲線(グラフは`(t, f(t))`)を，変換まで含めて微分する．
 /// 対象が見つからないか，微分が求められなければ，`None`を返す．
 fn tangent_of(
     tangent: &TangentLine,
     placed: &TangentLinePlot,
-    graphs: &HashMap<&str, &GraphPlot>,
-    curves: &HashMap<&str, &CurvePlot>,
+    curves: &HashMap<&str, PlaneCurve>,
     compiled: &Compiled,
 ) -> Option<([f64; 2], [f64; 2])> {
-    let t0 = placed.at;
-    if let Some(graph) = graphs.get(tangent.of.as_str()) {
-        let eval = |x: f64| graph.expr.eval(&with_variable(x, &compiled.parameters));
-        let width = graph.domain[1] - graph.domain[0];
-        let y0 = eval(t0);
-        let slope = central_difference(eval, t0, width);
-        return (y0.is_finite() && slope.is_finite()).then_some(([t0, y0], [1.0, slope]));
-    }
     let curve = curves.get(tangent.of.as_str())?;
-    let at = |t: f64| -> Option<[f64; 2]> {
-        if let Some(net) = &curve.net {
-            let point = bezier_curve_point(net, t)?;
-            let [x, y] = point.as_slice() else {
-                return None;
-            };
-            return Some([*x, *y]);
-        }
-        if let Some(points) = &curve.spline {
-            let point = catmull_rom_point(points, t)?;
-            let [x, y] = point.as_slice() else {
-                return None;
-            };
-            return Some([*x, *y]);
-        }
-        let values = with_variable(t, &compiled.parameters);
-        let [x_expr, y_expr] = curve.exprs.as_slice() else {
-            return None;
-        };
-        Some([x_expr.eval(&values), y_expr.eval(&values)])
-    };
-    let point = at(t0)?;
+    let at = |t: f64| curve.at(t, &compiled.parameters);
+    let point = at(placed.at)?;
     let width = curve.domain[1] - curve.domain[0];
-    let direction = central_difference_point(at, t0, width)?;
-    Some((point, direction))
+    let direction = central_difference_point(at, placed.at, width)?;
+    (point.iter().chain(&direction).all(|c| c.is_finite())).then_some((point, direction))
 }
 
 /// 接線を，接する点を通り，見える範囲いっぱいに引いた線分として描く．向きが求められないか，
 /// 長さが0になれば(垂直接線を除く定義域の端など)，何も描かない．
-#[allow(clippy::too_many_arguments)]
 fn tangent_line_items(
     tangent: &TangentLine,
     placed: &TangentLinePlot,
-    graphs: &HashMap<&str, &GraphPlot>,
-    curves: &HashMap<&str, &CurvePlot>,
+    curves: &HashMap<&str, PlaneCurve>,
     compiled: &Compiled,
     scale: Scale,
     window: [[f64; 2]; 2],
 ) -> Vec<Item> {
-    let Some((point, direction)) = tangent_of(tangent, placed, graphs, curves, compiled) else {
+    let Some((point, direction)) = tangent_of(tangent, placed, curves, compiled) else {
         return Vec::new();
     };
     let point = scale.point(point[0], point[1]);

@@ -4,10 +4,12 @@ use std::collections::HashSet;
 
 use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
+use crate::image::{expand_images, transform_of};
 use crate::scene::{
-    Axis, Bound, CM_PER_PT, Complex, Curve, Cut, Direction, Fractal, Graph, Grid, Intersection,
-    Label, MAX_WIDTH_PT, Object, Point, Position, Region, Scene, SpaceView, Sphere, Style, Surface,
-    TangentPlane, View,
+    Axis, Bound, CM_PER_PT, Complex, Curve, Cut, Direction, Fill, Fractal, FunctionDef, Graph,
+    Grid, Intersection, Label, MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object, Point, Polygon,
+    Position, Region, Scene, SpaceView, Sphere, Style, Surface, TangentPlane, Taylor,
+    TransformStep, View,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -24,38 +26,6 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
         return Err(Error::new(ErrorKind::EmptyText("description")));
     }
     check_view(&scene.view)?;
-    let points: HashSet<&str> = scene
-        .objects
-        .iter()
-        .filter_map(|object| match object {
-            Object::Point(point) => Some(point.id.as_str()),
-            _ => None,
-        })
-        .collect();
-    let graphs: HashSet<&str> = scene
-        .objects
-        .iter()
-        .filter_map(|object| match object {
-            Object::Graph(graph) => Some(graph.id.as_str()),
-            _ => None,
-        })
-        .collect();
-    let curves: HashSet<&str> = scene
-        .objects
-        .iter()
-        .filter_map(|object| match object {
-            Object::Curve(curve) => Some(curve.id.as_str()),
-            _ => None,
-        })
-        .collect();
-    let surfaces: HashSet<&str> = scene
-        .objects
-        .iter()
-        .filter_map(|object| match object {
-            Object::Surface(surface) => Some(surface.id.as_str()),
-            _ => None,
-        })
-        .collect();
     let mut seen = HashSet::new();
     for object in &scene.objects {
         let id = object.id();
@@ -65,15 +35,68 @@ pub fn validate(scene: &Scene) -> Result<(), Error> {
         if !seen.insert(id) {
             return Err(Error::in_object(id, ErrorKind::DuplicateId(id.to_owned())));
         }
-        validate_object(object, &scene.view).map_err(|kind| Error::in_object(id, kind))?;
-        check_endpoints(object, &points).map_err(|kind| Error::in_object(id, kind))?;
-        check_graphs(object, &graphs).map_err(|kind| Error::in_object(id, kind))?;
-        check_surface(object, &surfaces).map_err(|kind| Error::in_object(id, kind))?;
-        check_tangent_target(object, &graphs, &curves)
-            .map_err(|kind| Error::in_object(id, kind))?;
+        if let Object::Image(image) = object {
+            check_transform_steps(&image.transform, true)
+                .map_err(|kind| Error::in_object(id, kind))?;
+        }
+    }
+    // 像は，元のオブジェクトの複製に置き換えてから，ほかのオブジェクトと同じに確かめる．
+    let scene = expand_images(scene)?;
+    let ids_of = |wanted: fn(&Object) -> bool| -> HashSet<&str> {
+        scene
+            .objects
+            .iter()
+            .filter(|object| wanted(object))
+            .map(Object::id)
+            .collect()
+    };
+    let points = ids_of(|object| matches!(object, Object::Point(_)));
+    let graphs = ids_of(|object| matches!(object, Object::Graph(_)));
+    let transformed_graphs =
+        ids_of(|object| matches!(object, Object::Graph(graph) if !graph.transform.is_empty()));
+    let curves = ids_of(|object| matches!(object, Object::Curve(_)));
+    let surfaces = ids_of(|object| matches!(object, Object::Surface(_)));
+    for object in &scene.objects {
+        let id = object.id();
+        let fail = |kind| Error::in_object(id, kind);
+        validate_object(object, &scene.view).map_err(fail)?;
+        check_object_transform(object).map_err(fail)?;
+        check_endpoints(object, &points).map_err(fail)?;
+        check_graphs(object, &graphs, &transformed_graphs).map_err(fail)?;
+        check_surface(object, &surfaces).map_err(fail)?;
+        check_tangent_target(object, &graphs, &curves).map_err(fail)?;
     }
     // 式の構文，名前，定義域は，型では確かめられないので，式を読んで確かめる．
-    compile(scene).map(drop)
+    compile(&scene).map(drop)
+}
+
+/// 変換(`transform`)の手順の数と，写像を使えるかを確かめる．線分・ベクトル・複体・正多面体は，
+/// 直線や平らな面が曲がらないように，アフィン変換(写像以外)だけを使える．
+fn check_object_transform(object: &Object) -> Result<(), ErrorKind> {
+    let Some(steps) = transform_of(object) else {
+        return Ok(());
+    };
+    let allows_map = !matches!(
+        object,
+        Object::Segment(_) | Object::Vector(_) | Object::Complex(_) | Object::Polyhedron(_)
+    );
+    check_transform_steps(steps, allows_map)
+}
+
+fn check_transform_steps(steps: &[TransformStep], allows_map: bool) -> Result<(), ErrorKind> {
+    if steps.len() > MAX_TRANSFORM_STEPS {
+        return Err(ErrorKind::Invalid(format!(
+            "変換(`transform`)の手順は，{MAX_TRANSFORM_STEPS}個以下にする．"
+        )));
+    }
+    if !allows_map && steps.iter().any(|step| step.map.is_some()) {
+        return Err(ErrorKind::Invalid(
+            "線分・ベクトル・複体・正多面体の変換には，写像(`map`)は使えない(直線が曲がるため)．\
+             写像で写すときは，曲線(`curve`)で書く．"
+                .to_owned(),
+        ));
+    }
+    Ok(())
 }
 
 fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
@@ -89,7 +112,7 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         // 数か式(`Bound`)なので，ここで確かめることはない．
         Object::TangentLine(_) => plane_only("tangent_line", view),
         Object::Sphere(sphere) => space_only("sphere", view).and_then(|()| validate_sphere(sphere)),
-        Object::Grid(grid) => plane_only("grid", view).and_then(|()| validate_grid(grid)),
+        Object::Grid(grid) => validate_grid(grid),
         Object::Point(point) => validate_point(point, view),
         Object::Region(region) => plane_only("region", view).and_then(|()| validate_region(region)),
         Object::Fractal(fractal) => {
@@ -117,7 +140,14 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
                 ))
             }
         }),
-        Object::Vector(_) | Object::Segment(_) | Object::Parameter(_) => Ok(()),
+        Object::Polygon(polygon) => {
+            plane_only("polygon", view).and_then(|()| validate_polygon(polygon))
+        }
+        Object::Function(function) => validate_function(function),
+        Object::Map(map) => validate_map(map),
+        Object::Taylor(taylor) => plane_only("taylor", view).and_then(|()| validate_taylor(taylor)),
+        // 像は，検査の前に，元のオブジェクトの複製に置き換えてある．
+        Object::Image(_) | Object::Vector(_) | Object::Segment(_) | Object::Parameter(_) => Ok(()),
     }
 }
 
@@ -140,7 +170,10 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::TangentPlane(o) => Some(&o.style),
         Object::Complex(o) => Some(&o.style),
         Object::Polyhedron(o) => Some(&o.style),
-        Object::Label(_) | Object::Parameter(_) => None,
+        Object::Polygon(o) => Some(&o.style),
+        Object::Image(o) => Some(&o.style),
+        Object::Taylor(o) => Some(&o.style),
+        Object::Label(_) | Object::Parameter(_) | Object::Function(_) | Object::Map(_) => None,
     }
 }
 
@@ -353,13 +386,7 @@ fn validate_region(region: &Region) -> Result<(), ErrorKind> {
             "`between`には，グラフの`id`を1つか2つ書く．".to_owned(),
         ));
     }
-    if let Some(fill) = &region.fill
-        && !(fill.opacity > 0.0 && fill.opacity <= 1.0)
-    {
-        return Err(ErrorKind::Invalid(
-            "塗りの不透明度(`opacity`)は，0より大きく1以下にする．".to_owned(),
-        ));
-    }
+    check_fill(region.fill.as_ref())?;
     check_domain(&region.domain)
 }
 
@@ -394,7 +421,11 @@ fn validate_fractal(fractal: &Fractal) -> Result<(), ErrorKind> {
             Fractal::MAX_DEPTH
         )));
     }
-    let instances = fractal.transforms.len().checked_pow(fractal.depth);
+    // 描く図形の数は，深さ`depth`だけなら変換の数の`depth`乗，`all_depths`なら，0乗からの和である．
+    let first_depth = if fractal.all_depths { 0 } else { fractal.depth };
+    let instances = (first_depth..=fractal.depth).try_fold(0_usize, |sum, depth| {
+        sum.checked_add(fractal.transforms.len().checked_pow(depth)?)
+    });
     if instances.is_none_or(|count| count > Fractal::MAX_INSTANCES) {
         return Err(ErrorKind::Invalid(format!(
             "フラクタルの図形の数(変換の数の{}乗)が多すぎる．`depth`を減らすか，\
@@ -405,14 +436,26 @@ fn validate_fractal(fractal: &Fractal) -> Result<(), ErrorKind> {
     Ok(())
 }
 
-/// 領域が挟むグラフは，`graph`オブジェクトの`id`でなければならない．
-fn check_graphs(object: &Object, graphs: &HashSet<&str>) -> Result<(), ErrorKind> {
-    let Object::Region(region) = object else {
-        return Ok(());
+/// 領域が挟むグラフと，テイラー展開するグラフは，`graph`オブジェクトの`id`でなければならない．
+/// 変換したグラフは，関数のグラフではなくなるので，使えない．
+fn check_graphs(
+    object: &Object,
+    graphs: &HashSet<&str>,
+    transformed: &HashSet<&str>,
+) -> Result<(), ErrorKind> {
+    let names: Vec<&String> = match object {
+        Object::Region(region) => region.between.iter().collect(),
+        Object::Taylor(taylor) => vec![&taylor.of],
+        _ => return Ok(()),
     };
-    for name in &region.between {
+    for name in names {
         if !graphs.contains(name.as_str()) {
             return Err(ErrorKind::UnknownGraph(name.clone()));
+        }
+        if transformed.contains(name.as_str()) {
+            return Err(ErrorKind::Invalid(format!(
+                "グラフ「{name}」は変換(`transform`)してあるので，領域やテイラー展開には使えない．"
+            )));
         }
     }
     Ok(())
@@ -433,7 +476,106 @@ fn validate_grid(grid: &Grid) -> Result<(), ErrorKind> {
             )));
         }
     }
+    for (field, range) in [("x_range", grid.x_range), ("y_range", grid.y_range)] {
+        if let Some(range) = range
+            && !is_increasing(range)
+        {
+            return Err(ErrorKind::InvalidRange(field));
+        }
+    }
     Ok(())
+}
+
+/// 塗りの不透明度は，0より大きく1以下である．
+fn check_fill(fill: Option<&Fill>) -> Result<(), ErrorKind> {
+    match fill {
+        Some(fill) if !(fill.opacity > 0.0 && fill.opacity <= 1.0) => Err(ErrorKind::Invalid(
+            "塗りの不透明度(`opacity`)は，0より大きく1以下にする．".to_owned(),
+        )),
+        _ => Ok(()),
+    }
+}
+
+/// 多角形は，正多角形の形(`sides`，`center`，`radius`)か，頂点の並び(`vertices`)の，どちらか一方で書く．
+fn validate_polygon(polygon: &Polygon) -> Result<(), ErrorKind> {
+    check_fill(polygon.fill.as_ref())?;
+    let range = Polygon::MIN_VERTICES..=Polygon::MAX_VERTICES;
+    let regular = polygon.sides.is_some() || polygon.center.is_some() || polygon.radius.is_some();
+    match (regular, polygon.vertices.is_empty()) {
+        (true, true) => {
+            let sides = polygon.sides.unwrap_or_default();
+            if !range.contains(&sides) {
+                return Err(ErrorKind::Invalid(format!(
+                    "正多角形の辺の数(`sides`)は，{}以上{}以下にする．",
+                    Polygon::MIN_VERTICES,
+                    Polygon::MAX_VERTICES
+                )));
+            }
+            if polygon
+                .center
+                .as_ref()
+                .is_none_or(|center| center.len() != 2)
+                || polygon.radius.is_none()
+            {
+                return Err(ErrorKind::Invalid(
+                    "正多角形には，中心(`center`，2個の数)と半径(`radius`)を書く．".to_owned(),
+                ));
+            }
+            Ok(())
+        }
+        (false, false) => {
+            if range.contains(&polygon.vertices.len()) {
+                Ok(())
+            } else {
+                Err(ErrorKind::Invalid(format!(
+                    "多角形の頂点(`vertices`)は，{}個以上{}個以下にする．",
+                    Polygon::MIN_VERTICES,
+                    Polygon::MAX_VERTICES
+                )))
+            }
+        }
+        _ => Err(ErrorKind::Invalid(
+            "多角形は，正多角形(`sides`，`center`，`radius`)か，頂点の並び(`vertices`)の，\
+             どちらか一方で書く．"
+                .to_owned(),
+        )),
+    }
+}
+
+fn validate_function(function: &FunctionDef) -> Result<(), ErrorKind> {
+    if !(1..=FunctionDef::MAX_VARS).contains(&function.vars.len()) {
+        return Err(ErrorKind::Invalid(format!(
+            "関数の引数(`vars`)は，1個以上{}個以下にする．",
+            FunctionDef::MAX_VARS
+        )));
+    }
+    for var in &function.vars {
+        check_variable(var)?;
+    }
+    non_empty("expr", &function.expr)
+}
+
+fn validate_map(map: &Map) -> Result<(), ErrorKind> {
+    for var in &map.vars {
+        check_variable(var)?;
+    }
+    for expr in &map.expr {
+        non_empty("expr", expr)?;
+    }
+    Ok(())
+}
+
+fn validate_taylor(taylor: &Taylor) -> Result<(), ErrorKind> {
+    if taylor.order > Taylor::MAX_ORDER {
+        return Err(ErrorKind::Invalid(format!(
+            "テイラー展開の次数(`order`)は，{}以下にする．",
+            Taylor::MAX_ORDER
+        )));
+    }
+    match &taylor.domain {
+        Some(domain) => check_domain(domain),
+        None => Ok(()),
+    }
 }
 
 /// 平面の図でだけ使えるオブジェクトを，空間の図に置いていないか．

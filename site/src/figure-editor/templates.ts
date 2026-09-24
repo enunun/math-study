@@ -1,7 +1,7 @@
 import { BEZIER_SPLINE_TEMPLATES, BEZIER_SURFACE_TEMPLATES } from './bezier-templates';
 import { CONIC_TEMPLATES, PLANE_CURVE_TEMPLATES, SPACE_CURVE_TEMPLATES } from './curve-templates';
+import { FRACTAL_TEMPLATES } from './fractal-templates';
 import { FUNCTION_TEMPLATES } from './function-templates';
-import { regularPolygonObjects } from './regular-shapes';
 import { OTHER_SURFACE_TEMPLATES, QUADRIC_TEMPLATES } from './surface-templates';
 import type { ObjectTemplate, ObjectTemplateGroup } from './template-types';
 
@@ -23,11 +23,18 @@ const POLYGON_SPECS: readonly { n: number; label: string }[] = [
   { n: DODECAGON_SIDES, label: '正十二角形' },
 ];
 
+/** 正多角形の既定の半径(中心から頂点までの距離)． */
+const POLYGON_RADIUS = 2;
+
+/**
+ * 正多角形は，辺の数と中心と半径だけを持つ`polygon`で書く．頂点はエンジンが決め，底辺を水平に置く．
+ * 向きを変えるときは，変換(`transform`)の回転を足す．
+ */
 const POLYGON_TEMPLATES: readonly ObjectTemplate[] = POLYGON_SPECS.map(({ n, label }) => ({
   id: `polygon${n}`,
   label,
   kind: 'plane',
-  objects: regularPolygonObjects(n),
+  objects: [{ id: 'p', type: 'polygon', sides: n, center: [0, 0], radius: POLYGON_RADIUS }],
 }));
 
 /** 正多面体の既定の半径(中心から頂点までの距離)． */
@@ -62,6 +69,7 @@ const OBJECT_TEMPLATE_GROUPS: readonly ObjectTemplateGroup[] = [
   { label: '2次曲線', templates: CONIC_TEMPLATES },
   { label: '平面曲線', templates: PLANE_CURVE_TEMPLATES },
   { label: '関数のグラフ', templates: FUNCTION_TEMPLATES },
+  { label: 'フラクタル', templates: FRACTAL_TEMPLATES },
   { label: 'ベジエ曲線・スプライン曲線', templates: BEZIER_SPLINE_TEMPLATES },
   { label: '空間曲線', templates: SPACE_CURVE_TEMPLATES },
   { label: '正多面体', templates: POLYHEDRON_TEMPLATES },

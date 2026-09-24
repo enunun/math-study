@@ -12,13 +12,6 @@ fn step(domain_width: f64) -> f64 {
     (domain_width.abs() * STEP_FRACTION).max(MIN_STEP)
 }
 
-/// `f`の，`t`における中心差分．`domain_width`は，`f`が定義された範囲の幅で，刻みの大きさを決めるために使う．
-#[must_use]
-pub fn central_difference(f: impl Fn(f64) -> f64, t: f64, domain_width: f64) -> f64 {
-    let h = step(domain_width);
-    (f(t + h) - f(t - h)) / (2.0 * h)
-}
-
 /// 座標の並びを返す`f`の，`t`における中心差分．曲線の向きや，曲面の偏微分を求めるために使う．
 /// `f`が，`t + h`か`t - h`で`None`を返せば，`None`を返す．
 #[must_use]

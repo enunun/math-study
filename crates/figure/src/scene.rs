@@ -128,7 +128,7 @@ pub enum Object {
     TangentLine(TangentLine),
     /// 球．空間の図でだけ使える．
     Sphere(Sphere),
-    /// 格子．平面の図でだけ使える．
+    /// 格子．
     Grid(Grid),
     /// 点．座標は，あとの式から`<id>_x`と`<id>_y`(空間の図では`<id>_z`も)で参照できる．
     Point(Point),
@@ -152,6 +152,16 @@ pub enum Object {
     Complex(Complex),
     /// 正多面体(種類と中心と半径で書く複体)．空間の図でだけ使える．
     Polyhedron(Polyhedron),
+    /// 多角形(辺と，塗った面)．正多角形は辺の数と中心と半径で，ほかは頂点の並びで書く．平面の図でだけ使える．
+    Polygon(Polygon),
+    /// 式から呼べる関数．描かない．
+    Function(FunctionDef),
+    /// 写像．変換(`transform`)の手順として使う．描かない．
+    Map(Map),
+    /// 別のオブジェクトを変換した像．
+    Image(Image),
+    /// グラフのテイラー展開を，途中の次数で打ち切った多項式のグラフ．平面の図でだけ使える．
+    Taylor(Taylor),
 }
 
 /// 軸の向き．
@@ -407,6 +417,9 @@ pub struct Point {
     /// スタイル．`color`が，点の印の色になる．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 // serdeの`skip_serializing_if`は，参照を受け取る関数を要る．
@@ -431,6 +444,9 @@ pub struct Vector {
     /// スタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 /// 線分．矢じりのない，2点を結ぶ線である．
@@ -446,6 +462,9 @@ pub struct Segment {
     /// スタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 /// 2つの曲面の交線．
@@ -511,7 +530,7 @@ pub enum Solid {
 
 /// 正多面体．種類と，中心と，半径(中心から頂点までの距離)だけで書く．空間の図でだけ使える．
 /// 頂点と面はエンジンが決め(`polyhedron.rs`)，同じ頂点と面を持つ複体(`Complex`)と同じように描いて隠す．
-/// 向きは種類ごとに決まっている(立方体は，面が座標軸に垂直になる向き)．
+/// 基準の向きは種類ごとに決まっている(立方体は，面が座標軸に垂直になる向き)．ほかの向きは，変換(`transform`)の回転で作る．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Polyhedron {
@@ -526,6 +545,9 @@ pub struct Polyhedron {
     /// 稜のスタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 /// 複体．頂点と，面(頂点の番号を周に沿って並べたもの，3個以上)でできた図形．空間の図でだけ使える．
@@ -544,6 +566,9 @@ pub struct Complex {
     /// 稜のスタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 impl Complex {
@@ -570,14 +595,21 @@ pub struct Fractal {
     /// 基本図形を閉じるか(最後の点から最初の点へも線を引く)．既定は閉じない．
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub closed: bool,
-    /// 変換の並び．各要素は，1つの変換を表す，変換の手順(`TransformOp`)の並びである．
-    /// 1つ以上12個以下．
-    pub transforms: Vec<Vec<TransformOp>>,
+    /// 反復関数系の変換の並び．各要素は，1つの変換を表す，変換の手順(`TransformStep`)の並びである．
+    /// 手順は，平行移動・回転・拡大縮小・対称移動・せん断に限る(写像は使えない)．1つ以上12個以下．
+    pub transforms: Vec<Vec<TransformStep>>,
     /// 再帰の深さ．
     pub depth: u32,
+    /// 深さ0から`depth`までの図形を，すべて重ねて描くか．既定は，深さ`depth`の図形だけを描く．
+    /// ピタゴラスの木のように，途中の段も図形の一部であるときに使う．
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub all_depths: bool,
     /// スタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 impl Fractal {
@@ -594,31 +626,169 @@ impl Fractal {
     pub const MAX_INSTANCES: usize = 20_000;
 }
 
-/// フラクタルの1つの変換を作る，手順の1つ．並びの順に施す(最初に書いた手順が，点に最初にかかる)．
-/// 並進・回転・拡大縮小・せん断を組み合わせれば，平面のどんなアフィン変換も作れる．
+/// 変換(`transform`)の手順の1つ．図形を動かす操作を，1つだけ書く．手順の並びは，書いた順に施す
+/// (最初に書いた手順が，点に最初にかかる)．
+///
+/// 操作は，平行移動(`translate`)，回転(`rotate`，度，反時計回り．空間の図では`axis`の向きのまわりに，
+/// 右ねじの向き)，拡大縮小(`scale`，1つの数か各方向の倍率)，対称移動(`reflect`，平面の図では鏡にする
+/// 直線の向き，空間の図では鏡にする平面の法線)，せん断(`shear`，平面の図だけ)，写像(`map`，`map`
+/// オブジェクトの`id`)である．回転・拡大縮小・対称移動・せん断は，`center`(なければ原点)を動かさない．
+/// 数は，数か，媒介変数と定数を使う式で書く．
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TransformStep {
+    /// 平行移動の量(平面の図では2個，空間の図では3個)．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub translate: Option<Vec<Bound>>,
+    /// 回転の角度(度)．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rotate: Option<Bound>,
+    /// 回転の軸の向き(3個)．空間の図の回転に要る．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub axis: Option<Vec<Bound>>,
+    /// 拡大縮小の倍率．1つの数なら全方向に同じ倍率で，並びなら方向ごとの倍率である．負の数で反転する．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scale: Option<Factor>,
+    /// 対称移動の鏡．平面の図では，鏡にする直線の向き(2個)，空間の図では，鏡にする平面の法線(3個)である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reflect: Option<Vec<Bound>>,
+    /// せん断の量(2個．xがyに，yがxに，それぞれ比例して動く量)．平面の図だけで使える．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shear: Option<Vec<Bound>>,
+    /// 写像(`map`オブジェクト)の`id`．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub map: Option<String>,
+    /// 回転・拡大縮小・対称移動・せん断で動かない点．なければ原点である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub center: Option<Vec<Bound>>,
+}
+
+/// 拡大縮小の倍率．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(untagged, deny_unknown_fields)]
-pub enum TransformOp {
-    /// 平行移動．数か式，2個(x，y方向)．
-    Translate {
-        /// 平行移動の量．
-        translate: [Bound; 2],
-    },
-    /// 原点を中心とした回転．度，反時計回り．数か式．
-    Rotate {
-        /// 回転の角度(度)．
-        rotate: Bound,
-    },
-    /// 原点を中心とした拡大縮小．数か式，2個(x，y方向)．負の数で，その向きに反転する．
-    Scale {
-        /// 拡大縮小の倍率．
-        scale: [Bound; 2],
-    },
-    /// 原点を中心としたせん断．数か式，2個(x方向がyに，y方向がxに，それぞれ比例して動く量)．
-    Shear {
-        /// せん断の量．
-        shear: [Bound; 2],
-    },
+#[serde(untagged)]
+pub enum Factor {
+    /// 全方向に同じ倍率．
+    Uniform(Bound),
+    /// 方向ごとの倍率(平面の図では2個，空間の図では3個)．
+    PerAxis(Vec<Bound>),
+}
+
+/// 変換の手順の並びの上限．
+pub const MAX_TRANSFORM_STEPS: usize = 16;
+
+/// 多角形．辺(閉じた折れ線)と，塗った面(`fill`)でできる．平面の図でだけ使える．
+///
+/// 正多角形は，辺の数(`sides`)と，中心(`center`)と，半径(`radius`，中心から頂点までの距離)で書き，
+/// 底辺が水平になる向きに置く．ほかの多角形は，頂点(`vertices`)を周に沿って並べて書く．どちらか一方で書く．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Polygon {
+    /// 識別子．
+    pub id: String,
+    /// 正多角形の辺の数．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sides: Option<usize>,
+    /// 正多角形の中心の座標(2個の，数か式)．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub center: Option<Vec<Bound>>,
+    /// 正多角形の半径(中心から頂点までの距離)．数か式．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub radius: Option<Bound>,
+    /// 頂点．座標の並びか，点の式(`"A"`など)で，周に沿って並べる．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub vertices: Vec<Position>,
+    /// 面を塗る色と不透明度．なければ，塗らない．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fill: Option<Fill>,
+    /// 辺のスタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+    /// 変換．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
+}
+
+impl Polygon {
+    /// 頂点(辺)の数の下限．
+    pub const MIN_VERTICES: usize = 3;
+    /// 頂点(辺)の数の上限．
+    pub const MAX_VERTICES: usize = 64;
+}
+
+/// 式から呼べる関数．`f(x) = x^2`なら，`id`が`f`，`vars`が`["x"]`，`expr`が`"x^2"`である．
+/// 本体は，媒介変数と，先に置いた関数を使える．どのオブジェクトの式からも呼べ，合成(`f(g(x))`)もできる．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FunctionDef {
+    /// 識別子．式の中の関数の名前になる．
+    pub id: String,
+    /// 引数の名前(1個から3個)．
+    pub vars: Vec<String>,
+    /// 本体の式．
+    pub expr: String,
+}
+
+impl FunctionDef {
+    /// 引数の数の上限．
+    pub const MAX_VARS: usize = 3;
+}
+
+/// 写像．点の座標(平面の図では2個，空間の図では3個)を，同じ数の座標に写す．`transform`の手順
+/// `{"map": id}`で使う．式は，媒介変数と関数を使える．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Map {
+    /// 識別子．
+    pub id: String,
+    /// 座標の変数の名前(平面の図では2個，空間の図では3個)．
+    pub vars: Vec<String>,
+    /// 写した先の座標の式(`vars`と同じ数)．
+    pub expr: Vec<String>,
+}
+
+/// 別のオブジェクト(`of`)を，`transform`で変換した像．元のオブジェクトはそのまま残り，像が加わる．
+/// 元のオブジェクトを直せば，像も変わる．スタイルは，書けば元のものの代わりに使い，書かなければ元のものを使う．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Image {
+    /// 識別子．
+    pub id: String,
+    /// 変換する，先に置いたオブジェクトの`id`．
+    pub of: String,
+    /// 変換．元のオブジェクトの変換のあとに施す．
+    pub transform: Vec<TransformStep>,
+    /// 点の像の名前．点の像にだけ書ける．なければ，名前を置かない．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
+/// グラフ(`of`)のテイラー展開を，`order`次で打ち切った多項式のグラフ．平面の図でだけ使える．
+/// 係数は，グラフの式から，べき級数の計算で正確に求める(特殊関数を含む式は展開できない)．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Taylor {
+    /// 識別子．
+    pub id: String,
+    /// 展開するグラフ(`graph`)の`id`．
+    pub of: String,
+    /// 展開の中心．数か式．
+    pub at: Bound,
+    /// 打ち切る次数(0以上`MAX_ORDER`以下)．
+    pub order: usize,
+    /// 描く範囲．なければ，グラフの定義域である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domain: Option<[Bound; 2]>,
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
+impl Taylor {
+    /// 次数の上限．
+    pub const MAX_ORDER: usize = 30;
 }
 
 /// 曲面の，平面による切り口．平面は，法線と定数で`normal・p = offset`と書く．
@@ -681,6 +851,9 @@ pub struct Surface {
     /// ベジエ曲面の，制御点の網(行と列を結ぶ折れ線)．なければ描かない．`bezier`があるときだけ使える．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub control_net: Option<Style>,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 impl Surface {
@@ -796,7 +969,8 @@ fn is_default_gap(gap: &Length) -> bool {
     *gap == default_gap()
 }
 
-/// 格子．見える範囲を，原点から数えた刻みの倍数の位置の線で区切る．
+/// 格子．範囲(平面の図では，なければ見える範囲)を，原点から数えた刻みの倍数の位置の線で区切る．
+/// 空間の図では，xy平面(z = 0)の上に引く．ほかの平面には，変換(`transform`)で動かす．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Grid {
@@ -808,9 +982,18 @@ pub struct Grid {
     /// y方向の刻み．なければ，横の線を引かない．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub y_step: Option<Bound>,
+    /// 線を引くxの範囲．平面の図では，なければ見える範囲である．空間の図では，必要である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub x_range: Option<[f64; 2]>,
+    /// 線を引くyの範囲．平面の図では，なければ見える範囲である．空間の図では，必要である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub y_range: Option<[f64; 2]>,
     /// スタイル．線の種類の既定は点線で，線は，目盛と軸より細い．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 /// 球．
@@ -846,6 +1029,9 @@ pub struct Graph {
     /// スタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 /// 媒介変数表示の曲線．式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)か，
@@ -876,6 +1062,9 @@ pub struct Curve {
     /// スタイル．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
 }
 
 impl Curve {
@@ -909,6 +1098,11 @@ impl Object {
             Self::TangentPlane(o) => &o.id,
             Self::Complex(o) => &o.id,
             Self::Polyhedron(o) => &o.id,
+            Self::Polygon(o) => &o.id,
+            Self::Function(o) => &o.id,
+            Self::Map(o) => &o.id,
+            Self::Image(o) => &o.id,
+            Self::Taylor(o) => &o.id,
         }
     }
 
@@ -935,6 +1129,11 @@ impl Object {
             Self::TangentPlane(_) => "tangent_plane",
             Self::Complex(_) => "complex",
             Self::Polyhedron(_) => "polyhedron",
+            Self::Polygon(_) => "polygon",
+            Self::Function(_) => "function",
+            Self::Map(_) => "map",
+            Self::Image(_) => "image",
+            Self::Taylor(_) => "taylor",
         }
     }
 }

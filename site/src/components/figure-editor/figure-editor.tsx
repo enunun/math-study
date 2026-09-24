@@ -147,9 +147,6 @@ function FigureEditor(): ReactElement {
         message={message}
         onMessage={setMessage}
         onLoad={replace}
-        onNew={() => {
-          replace({ ...draft, objects: [] });
-        }}
         onInsert={insert}
       />
       <Body

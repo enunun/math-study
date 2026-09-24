@@ -12,13 +12,14 @@ use std::f64::consts::TAU;
 
 use crate::bezier::{bezier_curve_point, bezier_point};
 use crate::compile::{
-    Compiled, CurvePlot, CutPlot, LabelPlot, LinkPlot, Plot, PointPlot, SurfacePlot,
+    Compiled, CurvePlot, CutPlot, GridPlot, LabelPlot, LinkPlot, Plot, PointPlot, SurfacePlot,
     TangentPlanePlot,
 };
 use crate::derivative::central_difference_point;
 use crate::figure::{Bounds, DotItem, Figure, Item, LabelItem, Path, Stroke};
 use crate::render::{
-    AXIS_WIDTH, CURVE_WIDTH, DOT_RADIUS, MARGIN, arrow_head, stroke_of, with_variable,
+    AXIS_WIDTH, CURVE_WIDTH, DOT_RADIUS, GRID_WIDTH, MARGIN, arrow_head, multiples, stroke_of,
+    with_variable,
 };
 use crate::sample::{sample, sample_with_parameters};
 use crate::scene::{
@@ -27,6 +28,7 @@ use crate::scene::{
 };
 use crate::spline::catmull_rom_point;
 use crate::surface::{Frame, Mesh, Rim};
+use crate::transform::Transform;
 
 /// 空間の点．
 type Point3 = [f64; 3];
@@ -47,6 +49,13 @@ const SPHERE_PARALLELS: usize = 3;
 
 fn lerp(low: f64, high: f64, t: f64) -> f64 {
     low + (high - low) * t
+}
+
+/// 2点`from`，`to`を結ぶ線分の，割合`t`の点．
+fn lerp3(from: Point3, to: Point3, t: f64) -> Point3 {
+    let [x0, y0, z0] = from;
+    let [x1, y1, z1] = to;
+    [lerp(x0, x1, t), lerp(y0, y1, t), lerp(z0, z1, t)]
 }
 
 /// `0`から`count + 1`等分した，内側の`count`個の位置(両端は含めない)．
@@ -191,9 +200,14 @@ impl Space<'_> {
 }
 
 /// 曲面の式の関数．2つの変数から，点を返す．値が有限でなければ，`None`を返す．ベジエ曲面では，制御点の網から求める．
-fn surface_map<'a>(plot: &'a SurfacePlot, compiled: &'a Compiled) -> SurfaceMap<'a> {
+/// 曲面の変換(`transform`)は，ここで施すので，切り口・交線・接平面も，変換した曲面の上に求まる．
+fn surface_map<'a>(
+    plot: &'a SurfacePlot,
+    compiled: &'a Compiled,
+    transform: &'a Transform,
+) -> SurfaceMap<'a> {
     if let Some(net) = &plot.net {
-        return Box::new(move |u: f64, v: f64| bezier_point(net, u, v));
+        return Box::new(move |u: f64, v: f64| transform.apply3(bezier_point(net, u, v)?));
     }
     Box::new(move |u: f64, v: f64| {
         let mut values = vec![u, v];
@@ -202,7 +216,11 @@ fn surface_map<'a>(plot: &'a SurfacePlot, compiled: &'a Compiled) -> SurfaceMap<
             return None;
         };
         let point = [x.eval(&values), y.eval(&values), z.eval(&values)];
-        point.iter().all(|c| c.is_finite()).then_some(point)
+        if point.iter().all(|c| c.is_finite()) {
+            transform.apply3(point)
+        } else {
+            None
+        }
     })
 }
 
@@ -214,13 +232,28 @@ fn fan_triangles(face: &[usize]) -> impl Iterator<Item = [usize; 3]> + '_ {
     seconds.zip(thirds).map(move |(b, c)| [first, b, c])
 }
 
-/// 複体として描くオブジェクト(複体と正多面体)の，複体．ほかのオブジェクトなら`None`．
-fn as_complex(object: &Object) -> Option<Cow<'_, Complex>> {
-    match object {
-        Object::Complex(complex) => Some(Cow::Borrowed(complex)),
-        Object::Polyhedron(polyhedron) => Some(Cow::Owned(polyhedron.to_complex())),
-        _ => None,
+/// 複体として描くオブジェクト(複体と正多面体)の，変換(アフィン変換に限る)を施した複体．ほかのオブジェクト
+/// なら`None`．対称移動のように向きが裏返る変換では，面の頂点の並びを逆にして，面の向きを外向きに保つ．
+fn as_complex<'a>(object: &'a Object, transform: &Transform) -> Option<Cow<'a, Complex>> {
+    let complex = match object {
+        Object::Complex(complex) => Cow::Borrowed(complex),
+        Object::Polyhedron(polyhedron) => Cow::Owned(polyhedron.to_complex()),
+        _ => return None,
+    };
+    if transform.is_identity() {
+        return Some(complex);
     }
+    let affine = transform.as_affine()?;
+    let mut moved = complex.into_owned();
+    for vertex in &mut moved.vertices {
+        *vertex = affine.apply3(*vertex);
+    }
+    if affine.determinant() < 0.0 {
+        for face in &mut moved.faces {
+            face.reverse();
+        }
+    }
+    Some(Cow::Owned(moved))
 }
 
 /// 複体の面を三角形分割して，ほかのオブジェクトを隠すための網にする．
@@ -236,23 +269,24 @@ fn complex_mesh(complex: &Complex, frame: Frame) -> Mesh {
 /// 図全体(投影と，点を隠す球と曲面)を組み立てる．
 fn build_space<'a>(scene: &'a Scene, view: &SpaceView, compiled: &'a Compiled) -> Space<'a> {
     let camera = Camera::new(view);
-    let placed_surfaces: Vec<(&Surface, &SurfacePlot)> = scene
+    let placed_surfaces: Vec<(&Surface, &SurfacePlot, &Transform)> = scene
         .objects
         .iter()
         .zip(&compiled.plots)
-        .filter_map(|(object, plot)| match (object, plot) {
-            (Object::Surface(surface), Plot::Surface(placed)) => Some((surface, placed)),
+        .zip(&compiled.transforms)
+        .filter_map(|((object, plot), transform)| match (object, plot) {
+            (Object::Surface(surface), Plot::Surface(placed)) => Some((surface, placed, transform)),
             _ => None,
         })
         .collect();
     let surfaces: Vec<SurfaceMap> = placed_surfaces
         .iter()
-        .map(|(_, placed)| surface_map(placed, compiled))
+        .map(|(_, placed, transform)| surface_map(placed, compiled, transform))
         .collect();
     let meshes = placed_surfaces
         .iter()
         .zip(&surfaces)
-        .map(|((surface, placed), map)| {
+        .map(|((surface, placed, _), map)| {
             Mesh::build(map.as_ref(), placed.domain, surface.mesh, camera.frame())
         })
         .collect();
@@ -268,13 +302,14 @@ fn build_space<'a>(scene: &'a Scene, view: &SpaceView, compiled: &'a Compiled) -
         .collect();
     let surface_domains: HashMap<String, [[f64; 2]; 2]> = placed_surfaces
         .iter()
-        .map(|(surface, placed)| (surface.id.clone(), placed.domain))
+        .map(|(surface, placed, _)| (surface.id.clone(), placed.domain))
         .collect();
     let complex_meshes: Vec<Mesh> = scene
         .objects
         .iter()
-        .filter_map(|object| {
-            as_complex(object).map(|complex| complex_mesh(&complex, camera.frame()))
+        .zip(&compiled.transforms)
+        .filter_map(|(object, transform)| {
+            as_complex(object, transform).map(|complex| complex_mesh(&complex, camera.frame()))
         })
         .collect();
     Space {
@@ -305,8 +340,13 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
     let mut meshes = space.meshes.iter();
     let mut maps = space.surfaces.iter();
     let mut complex_meshes = space.complex_meshes.iter();
-    for (object, plot) in scene.objects.iter().zip(&compiled.plots) {
-        if let Some(complex) = as_complex(object) {
+    for ((object, plot), transform) in scene
+        .objects
+        .iter()
+        .zip(&compiled.plots)
+        .zip(&compiled.transforms)
+    {
+        if let Some(complex) = as_complex(object, transform) {
             if let Some(mesh) = complex_meshes.next() {
                 items.extend(complex_items(&complex, mesh, &space));
             }
@@ -317,7 +357,7 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
                 if let (Some(mesh), Some(map)) = (meshes.next(), maps.next()) {
                     items.extend(surface_items(surface, mesh, &space));
                     items.extend(surface_wireframe_items(surface, placed, map, &space));
-                    items.extend(control_net_items(surface, placed, &space));
+                    items.extend(control_net_items(surface, placed, transform, &space));
                 }
             }
             (Object::Point(point), Plot::Point(placed)) => {
@@ -347,7 +387,10 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
                 items.extend(sphere_wireframe_items(sphere, &space));
             }
             (Object::Curve(curve), Plot::Curve(plot)) => {
-                items.extend(curve_items(curve.style, plot, compiled, &space));
+                items.extend(curve_items(curve.style, plot, compiled, transform, &space));
+            }
+            (Object::Grid(grid), Plot::Grid(placed)) => {
+                items.extend(grid_items(&grid.style, placed, transform, &space));
             }
             _ => {}
         }
@@ -504,45 +547,115 @@ fn anchor_beyond([x, y]: [f64; 2]) -> Anchor {
     }
 }
 
-/// 曲線の線と，隠れた部分の線．
-fn curve_items(style: Style, plot: &CurvePlot, compiled: &Compiled, space: &Space) -> Vec<Item> {
+/// 曲線の線と，隠れた部分の線．変換があれば，曲線の点に施す．
+fn curve_items(
+    style: Style,
+    plot: &CurvePlot,
+    compiled: &Compiled,
+    transform: &Transform,
+    space: &Space,
+) -> Vec<Item> {
     let stroke = stroke_of(&style, Line::Solid, CURVE_WIDTH);
     let at = |t: f64| -> Option<Point3> {
-        if let Some(net) = &plot.net {
-            let point = bezier_curve_point(net, t)?;
-            let [x, y, z] = point.as_slice() else {
-                return None;
-            };
-            return Some([*x, *y, *z]);
-        }
-        if let Some(points) = &plot.spline {
-            let point = catmull_rom_point(points, t)?;
-            let [x, y, z] = point.as_slice() else {
-                return None;
-            };
-            return Some([*x, *y, *z]);
-        }
-        let values = with_variable(t, &compiled.parameters);
-        let [x, y, z] = plot.exprs.as_slice() else {
-            return None;
+        let point = if let Some(net) = &plot.net {
+            bezier_curve_point(net, t)?
+        } else if let Some(points) = &plot.spline {
+            catmull_rom_point(points, t)?
+        } else {
+            let values = with_variable(t, &compiled.parameters);
+            plot.exprs.iter().map(|expr| expr.eval(&values)).collect()
         };
-        let point = [x.eval(&values), y.eval(&values), z.eval(&values)];
-        point.iter().all(|c| c.is_finite()).then_some(point)
+        let point = point3(&point)?;
+        if point.iter().all(|c| c.is_finite()) {
+            transform.apply3(point)
+        } else {
+            None
+        }
     };
     let [start, end] = plot.domain;
-    let lines = sample_with_parameters(
-        |t| at(t).map(|point| space.camera.project(point)),
-        start,
-        end,
-    );
+    traced_items(stroke, style.hidden, &at, start, end, space)
+}
+
+/// パラメータ`t`が`start`から`end`まで動く線を，隠れ方に分けて描く．画面での滑らかさに合わせて刻み，
+/// 隠れ方が変わる点を二分法で詰める．値のない所で，線は切れる．
+fn traced_items(
+    stroke: Stroke,
+    hidden: Hidden,
+    at: &dyn Fn(f64) -> Option<Point3>,
+    start: f64,
+    end: f64,
+    space: &Space,
+) -> Vec<Item> {
+    let point = |t: f64| at(t).unwrap_or([f64::NAN; 3]);
+    let lines = sample_with_parameters(|t| at(t).map(|p| space.camera.project(p)), start, end);
     let mut items = Vec::new();
     for line in lines {
         let steps: Vec<f64> = line.iter().map(|(t, _)| *t).collect();
-        let point = |t: f64| at(t).unwrap_or([f64::NAN; 3]);
         let pieces = split_by_visibility(&steps, &point, &|t| space.hidden(point(t)));
-        items.extend(piece_items(&pieces, stroke, style.hidden, &space.camera));
+        items.extend(piece_items(&pieces, stroke, hidden, &space.camera));
     }
     items
+}
+
+/// 両端`from`，`to`の線分を，隠れ方に分けて描く．まっすぐなので，各部分は両端だけで描く．
+fn straight_items(
+    from: Point3,
+    to: Point3,
+    stroke: Stroke,
+    hidden: Hidden,
+    space: &Space,
+) -> Vec<Item> {
+    let at = |t: f64| lerp3(from, to, t);
+    let steps: Vec<f64> = (0..=AXIS_STEPS)
+        .map(|step| f64::from(step) / f64::from(AXIS_STEPS))
+        .collect();
+    let pieces = split_by_visibility(&steps, &at, &|t| space.hidden(at(t)));
+    let ends: Vec<Piece> = pieces
+        .into_iter()
+        .filter_map(|piece| {
+            let (first, last) = (*piece.points.first()?, *piece.points.last()?);
+            Some(Piece {
+                hidden: piece.hidden,
+                points: vec![first, last],
+            })
+        })
+        .collect();
+    piece_items(&ends, stroke, hidden, &space.camera)
+}
+
+/// 空間の図の格子．xy平面(z = 0)の上に，範囲を刻みの倍数の位置で区切る線を引き，変換で動かす．
+/// 線は，曲面や球や複体に隠れる．写像で写すと線が曲がるので，そのときは標本化する．
+fn grid_items(style: &Style, grid: &GridPlot, transform: &Transform, space: &Space) -> Vec<Item> {
+    let stroke = stroke_of(style, Line::Dotted, GRID_WIDTH);
+    let [x_low, x_high] = grid.x_range;
+    let [y_low, y_high] = grid.y_range;
+    let vertical = grid.x_step.into_iter().flat_map(|step| {
+        multiples(step, grid.x_range).map(move |x| ([x, y_low, 0.0], [x, y_high, 0.0]))
+    });
+    let horizontal = grid.y_step.into_iter().flat_map(|step| {
+        multiples(step, grid.y_range).map(move |y| ([x_low, y, 0.0], [x_high, y, 0.0]))
+    });
+    let affine = transform.as_affine();
+    vertical
+        .chain(horizontal)
+        .flat_map(|(from, to)| match affine {
+            Some(affine) => straight_items(
+                affine.apply3(from),
+                affine.apply3(to),
+                stroke,
+                style.hidden,
+                space,
+            ),
+            None => traced_items(
+                stroke,
+                style.hidden,
+                &|t| transform.apply3(lerp3(from, to, t)),
+                0.0,
+                1.0,
+                space,
+            ),
+        })
+        .collect()
 }
 
 /// 曲面の輪郭と，縁(`boundary`)の線．隠れた部分は，隠れた部分の線の種類で描く．
@@ -594,15 +707,7 @@ fn wireframe_line(
     space: &Space,
 ) -> Vec<Item> {
     let stroke = stroke_of(style, default_line, CURVE_WIDTH);
-    let point = |t: f64| at(t).unwrap_or([f64::NAN; 3]);
-    let lines = sample_with_parameters(|t| at(t).map(|p| space.camera.project(p)), start, end);
-    let mut items = Vec::new();
-    for line in lines {
-        let steps: Vec<f64> = line.iter().map(|(t, _)| *t).collect();
-        let pieces = split_by_visibility(&steps, &point, &|t| space.hidden(point(t)));
-        items.extend(piece_items(&pieces, stroke, style.hidden, &space.camera));
-    }
-    items
+    traced_items(stroke, style.hidden, at, start, end, space)
 }
 
 /// 曲面のワイヤーフレーム．`u`一定・`v`一定の断面を，`plot.wireframe`(刻みから`compile.rs`が求めた値)
@@ -643,7 +748,12 @@ fn surface_wireframe_items(
 }
 
 /// ベジエ曲面の制御点の網(行と列を結ぶ折れ線)．曲面自身と同じく，ほかの曲面や球に隠れる．
-fn control_net_items(surface: &Surface, plot: &SurfacePlot, space: &Space) -> Vec<Item> {
+fn control_net_items(
+    surface: &Surface,
+    plot: &SurfacePlot,
+    transform: &Transform,
+    space: &Space,
+) -> Vec<Item> {
     let (Some(style), Some(net)) = (&surface.control_net, &plot.net) else {
         return Vec::new();
     };
@@ -655,7 +765,14 @@ fn control_net_items(surface: &Surface, plot: &SurfacePlot, space: &Space) -> Ve
                 lerp(a[2], b[2], t),
             ]
         };
-        wireframe_line(style, Line::Dotted, &|t| Some(mix(t)), 0.0, 1.0, space)
+        wireframe_line(
+            style,
+            Line::Dotted,
+            &|t| transform.apply3(mix(t)),
+            0.0,
+            1.0,
+            space,
+        )
     };
     let mut items = Vec::new();
     for row in net {

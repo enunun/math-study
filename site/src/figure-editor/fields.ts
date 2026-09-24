@@ -1,37 +1,9 @@
-import { listedType } from './create';
+import { listedType, TRANSFORMABLE } from './create';
 import type { ViewKind } from './draft';
 import { ANCHORS, ARROWS, PLANE_DIRECTIONS, SOLIDS, SPACE_DIRECTIONS } from './field-options';
-import type { Option } from './field-options';
+import type { FieldSpec } from './field-spec';
+import { stringOf } from './json';
 import type { JsonObject } from './json';
-
-/** 項目の入力欄の種類と，内容． */
-type FieldSpec =
-  | { kind: 'text'; key: string; label: string; optional?: boolean }
-  | { kind: 'number'; key: string; label: string; optional?: boolean }
-  | { kind: 'bound'; key: string; label: string; optional?: boolean }
-  /** 数か式を並べる．`count`が`'dimension'`なら，平面で2個，空間で3個である． */
-  | {
-      kind: 'list';
-      key: string;
-      label: string;
-      item: 'text' | 'number' | 'bound';
-      count: number | 'dimension';
-      optional?: boolean;
-    }
-  /** 2つの変数の範囲(`[[下端, 上端], [下端, 上端]]`)． */
-  | { kind: 'domain2'; key: string; label: string }
-  | { kind: 'select'; key: string; label: string; options: readonly Option[]; optional?: boolean }
-  | { kind: 'checkbox'; key: string; label: string; initial: boolean }
-  /** 座標(数か式の並び)か，点の式(`A + B`など)． */
-  | { kind: 'position'; key: string; label: string }
-  /** 別のオブジェクトの識別子． */
-  | { kind: 'reference'; key: string; label: string; of: readonly string[] }
-  | { kind: 'references'; key: string; label: string; of: readonly string[]; count: number }
-  /** JSONの値を，そのまま書く． */
-  | { kind: 'json'; key: string; label: string; optional?: boolean; hint: string }
-  | { kind: 'style' }
-  /** あれば描く，スタイルつきの項目(曲面のワイヤーフレームなど)．チェックボックスで有無を選ぶ． */
-  | { kind: 'toggleStyle'; key: string; label: string };
 
 /** 座標の成分の名前． */
 const COORDINATE_NAMES = { plane: ['x', 'y'], space: ['x', 'y', 'z'] } as const;
@@ -81,6 +53,20 @@ const WIREFRAME_STEP: FieldSpec = {
   count: PAIR,
   optional: true,
 };
+/**
+ * 変換(平行移動・回転・拡大縮小・対称移動・せん断・写像)．変換できる種類(`create.ts`の`TRANSFORMABLE`)は，
+ * どれも最後にこの項目を持つ．
+ */
+const TRANSFORM: FieldSpec = { kind: 'transform', key: 'transform', label: '変換' };
+/** 塗り(色と不透明度)．領域と多角形で共通． */
+const FILL: FieldSpec = {
+  kind: 'json',
+  key: 'fill',
+  label: '塗りつぶし',
+  optional: true,
+  hint: '{"color": "blue", "opacity": 0.25}',
+};
+
 /** ベジエ曲面だけの，制御点の網の項目． */
 const CONTROL_NET: FieldSpec = {
   kind: 'toggleStyle',
@@ -143,6 +129,8 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
   grid: [
     { kind: 'bound', key: 'x_step', label: 'x方向の間隔', optional: true },
     { kind: 'bound', key: 'y_step', label: 'y方向の間隔', optional: true },
+    { kind: 'list', key: 'x_range', label: 'xの範囲', item: 'number', count: PAIR, optional: true },
+    { kind: 'list', key: 'y_range', label: 'yの範囲', item: 'number', count: PAIR, optional: true },
   ],
   point: [
     { kind: 'position', key: 'at', label: '位置' },
@@ -165,13 +153,17 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     { kind: 'checkbox', key: 'hatch', label: '斜線で埋める', initial: true },
     { kind: 'number', key: 'angle', label: '斜線の角度(度)', optional: true },
     { kind: 'text', key: 'gap', label: '斜線の間隔(2mmなど)', optional: true },
-    {
-      kind: 'json',
-      key: 'fill',
-      label: '塗りつぶし',
-      optional: true,
-      hint: '{"color": "blue", "opacity": 0.25}',
-    },
+    FILL,
+  ],
+  polygon: [
+    { kind: 'number', key: 'sides', label: '辺の数' },
+    { kind: 'list', key: 'center', label: '中心', item: 'bound', count: PAIR },
+    { kind: 'bound', key: 'radius', label: '半径(中心から頂点まで)' },
+    FILL,
+  ],
+  vertexPolygon: [
+    { kind: 'json', key: 'vertices', label: '頂点(座標か点の名前)', hint: '[[0,0],[3,0],"A"]' },
+    FILL,
   ],
   fractal: [
     {
@@ -184,10 +176,30 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     {
       kind: 'json',
       key: 'transforms',
-      label: '変換',
+      label: '反復の変換(反復関数系)',
       hint: '[[{"scale":[0.5,0.5]},{"translate":[1,0]}]]',
     },
     { kind: 'number', key: 'depth', label: '再帰の深さ' },
+    { kind: 'checkbox', key: 'all_depths', label: '途中の深さも重ねて描く', initial: false },
+  ],
+  taylor: [
+    { kind: 'reference', key: 'of', label: '展開するグラフ', of: ['graph'] },
+    { kind: 'bound', key: 'at', label: '展開の中心' },
+    { kind: 'number', key: 'order', label: '次数' },
+    { kind: 'list', key: 'domain', label: '描く範囲', item: 'bound', count: PAIR, optional: true },
+  ],
+  function: [
+    { kind: 'json', key: 'vars', label: '引数の名前', hint: '["x"]' },
+    { kind: 'text', key: 'expr', label: '式' },
+  ],
+  map: [
+    { kind: 'list', key: 'vars', label: '座標の変数の名前', item: 'text', count: 'dimension' },
+    { kind: 'list', key: 'expr', label: '写した先の座標の式', item: 'text', count: 'dimension' },
+  ],
+  image: [
+    { kind: 'reference', key: 'of', label: '元のオブジェクト', of: TRANSFORMABLE },
+    { kind: 'text', key: 'label', label: '名前(点の像だけ)', optional: true },
+    TRANSFORM,
   ],
   sphere: [
     { kind: 'list', key: 'center', label: '中心', item: 'number', count: TRIPLE },
@@ -246,7 +258,7 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
 };
 
 /** スタイルを持たない種類． */
-const UNSTYLED = new Set(['label', 'parameter']);
+const UNSTYLED = new Set(['label', 'parameter', 'function', 'map']);
 
 const ID: FieldSpec = { kind: 'text', key: 'id', label: '識別子' };
 const STYLE: FieldSpec = { kind: 'style' };
@@ -260,11 +272,12 @@ function directionField(kind: ViewKind): FieldSpec {
   };
 }
 
-/** オブジェクトの項目．識別子で始まり，スタイルで終わる． */
+/** オブジェクトの項目．識別子で始まり，変換できる種類なら変換，スタイルで終わる． */
 function fieldsFor(object: JsonObject, kind: ViewKind): readonly FieldSpec[] {
   const type = listedType(object);
   const first = type === 'axis' ? [ID, directionField(kind)] : [ID];
-  const last = UNSTYLED.has(type) ? [] : [STYLE];
+  const transform = TRANSFORMABLE.includes(stringOf(object, 'type')) ? [TRANSFORM] : [];
+  const last = [...transform, ...(UNSTYLED.has(type) ? [] : [STYLE])];
   return [...first, ...(SPECS[type] ?? []), ...last];
 }
 
@@ -278,4 +291,4 @@ function listNames(spec: Extract<FieldSpec, { kind: 'list' }>, kind: ViewKind): 
 }
 
 export { COORDINATE_NAMES, fieldsFor, listNames };
-export type { FieldSpec };
+export type { FieldSpec } from './field-spec';

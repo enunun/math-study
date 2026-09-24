@@ -2,8 +2,12 @@
 
 use std::ops::Range;
 
+mod functions;
 mod lexer;
 mod parser;
+mod taylor;
+
+pub use functions::Functions;
 
 /// 入力の中の範囲．バイトではなく，文字(Unicodeのスカラー値)の番号で数える．
 pub type Span = Range<usize>;
@@ -29,6 +33,15 @@ pub enum ExprErrorKind {
     TooLong,
     /// 括弧や記号の入れ子が深すぎる．
     TooDeep,
+    /// 利用者が定義した関数の，引数の数が合わない．
+    ArgumentCount {
+        /// 関数の名前．
+        name: String,
+        /// 定義の引数の数．
+        expected: usize,
+        /// 呼び出しの引数の数．
+        found: usize,
+    },
 }
 
 /// 式の中の位置を持つ誤り．
@@ -236,18 +249,49 @@ impl Expr {
     ///
     /// 構文の誤り，使えない名前，長さや深さの上限の超過があると，誤りを返す．
     pub fn compile(source: &str, names: &[&str]) -> Result<Self, ExprError> {
-        let chars: Vec<char> = source.chars().collect();
-        if chars.len() > MAX_INPUT_CHARS {
-            return Err(ExprError {
-                kind: ExprErrorKind::TooLong,
-                span: 0..chars.len(),
-            });
-        }
-        let tokens = lexer::tokenize(&chars)?;
-        let root = parser::parse(&tokens, names)?;
+        Self::compile_with(source, names, &Functions::default())
+    }
+
+    /// 式を読み，構文木にする．`functions`にある関数も呼べる．呼び出しは，関数の本体に引数を埋め込んで
+    /// 展開するので，できた構文木は，組み込みの関数と四則演算だけでできている．
+    ///
+    /// # Errors
+    ///
+    /// 構文の誤り，使えない名前，引数の数の違い，長さや深さの上限の超過があると，誤りを返す．
+    pub fn compile_with(
+        source: &str,
+        names: &[&str],
+        functions: &Functions,
+    ) -> Result<Self, ExprError> {
+        let root = parse_source(source, names, functions)?;
         Ok(Self { root })
     }
 
+    /// 変数`var`(`compile`に渡した名前の番号)について，`values`の値のまわりのテイラー係数を，
+    /// 0次から`order`次まで返す．`k`番目は，`k`次の導関数の値を`k!`で割ったものである．
+    ///
+    /// べき級数の四則演算と，初等関数の級数の漸化式で求める(数値微分はしない)．特殊関数(ガンマ関数など)と，
+    /// 展開の中心で微分できない所(`log(0)`，`abs(0)`など)では，`None`を返す．
+    #[must_use]
+    pub fn taylor(&self, var: usize, values: &[f64], order: usize) -> Option<Vec<f64>> {
+        taylor::coefficients(&self.root, var, values, order)
+    }
+}
+
+/// 式の文字列を，構文木の根にする．関数の本体を読むときにも使う．
+fn parse_source(source: &str, names: &[&str], functions: &Functions) -> Result<Node, ExprError> {
+    let chars: Vec<char> = source.chars().collect();
+    if chars.len() > MAX_INPUT_CHARS {
+        return Err(ExprError {
+            kind: ExprErrorKind::TooLong,
+            span: 0..chars.len(),
+        });
+    }
+    let tokens = lexer::tokenize(&chars)?;
+    parser::parse(&tokens, names, functions)
+}
+
+impl Expr {
     /// 式が，点(ベクトル)の式として正しいかを調べ，値が点なら`Some(true)`，数なら`Some(false)`を返す．
     /// `is_point`は，`compile`に渡した名前の番号が，点の名前かを答える．
     ///

@@ -23,6 +23,8 @@ pub enum TokenKind {
     OpenParen,
     /// `)`．
     CloseParen,
+    /// `,`．利用者が定義した関数の，引数の区切り．
+    Comma,
     /// 式の終わり．
     End,
 }
@@ -75,6 +77,7 @@ fn symbol(c: char, position: usize) -> Result<Token, ExprError> {
         '^' => TokenKind::Caret,
         '(' => TokenKind::OpenParen,
         ')' => TokenKind::CloseParen,
+        ',' => TokenKind::Comma,
         other => {
             return Err(ExprError {
                 kind: ExprErrorKind::UnexpectedCharacter(other),

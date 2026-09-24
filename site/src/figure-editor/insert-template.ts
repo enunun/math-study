@@ -1,11 +1,39 @@
 import { uniqueId } from './draft';
 import type { SceneDraft, ViewKind } from './draft';
 import { fieldsFor } from './fields';
-import { stringOf } from './json';
-import type { JsonObject } from './json';
+import type { FieldSpec } from './fields';
+import { isJsonObject, stringOf, toJsonObject, withField } from './json';
+import type { Json, JsonObject } from './json';
+
+/** 変換の手順の写像(`map`)を，付け替えた識別子に書き換える． */
+function remapStep(step: Json, remap: ReadonlyMap<string, string>): Json {
+  const map = isJsonObject(step) ? remap.get(stringOf(step, 'map')) : undefined;
+  return map === undefined ? step : withField(toJsonObject(step), 'map', map);
+}
+
+/** 1つの項目の中の参照を，付け替えた識別子に書き換えた値．参照でない項目は，そのまま返す． */
+function remapField(
+  object: JsonObject,
+  spec: FieldSpec,
+  remap: ReadonlyMap<string, string>,
+): Json | undefined {
+  if (!('key' in spec)) {
+    return undefined;
+  }
+  const value = object[spec.key];
+  if (spec.kind === 'reference' && typeof value === 'string') {
+    return remap.get(value) ?? value;
+  }
+  if ((spec.kind === 'references' || spec.kind === 'transform') && Array.isArray(value)) {
+    return spec.kind === 'transform'
+      ? value.map((step) => remapStep(step, remap))
+      : value.map((item) => (typeof item === 'string' ? (remap.get(item) ?? item) : item));
+  }
+  return value;
+}
 
 /**
- * テンプレートの中の参照(`from`・`to`・`of`など)を，付け替えた識別子に書き換える．
+ * テンプレートの中の参照(`from`・`to`・`of`など，変換の手順の写像`map`も)を，付け替えた識別子に書き換える．
  * グループの外を指す参照(既存の点を指すときなど)は，`remap`にないので，そのまま残す．
  */
 function rewriteReferences(
@@ -15,18 +43,9 @@ function rewriteReferences(
 ): JsonObject {
   const next: JsonObject = { ...object };
   for (const spec of fieldsFor(object, kind)) {
-    if (spec.kind === 'reference') {
-      const mapped = remap.get(stringOf(next, spec.key));
-      if (mapped !== undefined) {
-        next[spec.key] = mapped;
-      }
-    } else if (spec.kind === 'references') {
-      const value = next[spec.key];
-      if (Array.isArray(value)) {
-        next[spec.key] = value.map((item) =>
-          typeof item === 'string' ? (remap.get(item) ?? item) : item,
-        );
-      }
+    const value = remapField(object, spec, remap);
+    if (value !== undefined && 'key' in spec) {
+      next[spec.key] = value;
     }
   }
   return next;

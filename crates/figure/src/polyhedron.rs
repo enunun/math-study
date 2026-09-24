@@ -172,6 +172,7 @@ impl Polyhedron {
             vertices,
             faces,
             style: self.style,
+            transform: self.transform.clone(),
         }
     }
 }

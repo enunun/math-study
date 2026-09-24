@@ -110,6 +110,21 @@ test.describe('曲面・球・曲線の制御点', () => {
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
 
+  test('変換の手順を選んで足すと，正多角形が回り，JSONに手順が入る', async ({ page }) => {
+    await addObject(page, '正多角形');
+    const before = await outputPreview(page).innerHTML();
+    const transform = editor(page).getByRole('group', { name: '変換' });
+    await transform
+      .getByRole('combobox', { name: '手順', exact: true })
+      .selectOption({ label: '回転(原点のまわり)' });
+    await transform.getByRole('button', { name: '手順を足す' }).click();
+    await expect(transform.getByLabel('手順(JSON，上から順に施す)')).toHaveValue(/"rotate":90/u);
+    await expect(async () => {
+      expect(await outputPreview(page).innerHTML()).not.toBe(before);
+    }).toPass();
+    await expect(editor(page).getByRole('alert')).toHaveCount(0);
+  });
+
   test('接線は，グラフを選んで接する点を決めると描ける', async ({ page }) => {
     await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
     const before = await preview(page).locator('path').count();

@@ -17,13 +17,12 @@ const STEM = 'figure';
 interface Props {
   kind: ViewKind;
   onLoad: (draft: SceneDraft) => void;
-  onNew: () => void;
   onInsert: (objects: readonly JsonObject[]) => void;
   onMessage: (message: string) => void;
 }
 
-/** 見本(そのまま使える完成した図)と，空の図の選択．見本は，今の図を置き換える． */
-function Samples({ onLoad, onNew }: Pick<Props, 'onLoad' | 'onNew'>): ReactElement {
+/** 見本(そのまま使える完成した図)の選択．見本は，今の図を置き換える． */
+function Samples({ onLoad }: Pick<Props, 'onLoad'>): ReactElement {
   return (
     <div className="fe-buttons" role="group" aria-label="見本">
       <span>見本：</span>
@@ -38,9 +37,6 @@ function Samples({ onLoad, onNew }: Pick<Props, 'onLoad' | 'onNew'>): ReactEleme
           {sample.label}
         </button>
       ))}
-      <button type="button" onClick={onNew}>
-        空の図
-      </button>
     </div>
   );
 }
@@ -103,7 +99,7 @@ function ObjectTemplates({
   );
 }
 
-/** 図のテンプレート(座標軸だけの図など)．中身のない出発点で，選ぶと，今の図を置き換える． */
+/** 図のテンプレート(空の図，座標軸だけの図など)．中身のない出発点で，選ぶと，今の図を置き換える． */
 function SceneTemplates({ onLoad }: Pick<Props, 'onLoad'>): ReactElement {
   return (
     <div className="fe-buttons" role="group" aria-label="図のテンプレート">
@@ -231,7 +227,7 @@ function Toolbar({
 }: Props & ExportProps & { message: string }): ReactElement {
   return (
     <div className="fe-toolbar">
-      <Samples onLoad={actions.onLoad} onNew={actions.onNew} />
+      <Samples onLoad={actions.onLoad} />
       <ObjectTemplates kind={actions.kind} onInsert={actions.onInsert} />
       <SceneTemplates onLoad={actions.onLoad} />
       <div className="fe-buttons" role="group" aria-label="ファイル">

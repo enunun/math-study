@@ -51,3 +51,28 @@ describe('テンプレートのオブジェクトの挿入', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 });
+
+describe('像と写像を含むテンプレートの挿入', () => {
+  it('像の元(of)と，変換の手順の写像(map)を，付け替えた識別子に書き換える', () => {
+    const draft = {
+      ...emptyDraft('plane'),
+      objects: [{ id: 'map1', type: 'map', vars: ['x', 'y'], expr: ['x', 'y'] }],
+    };
+    const inserted = insertObjects(draft, 'plane', [
+      { id: 'F', type: 'map', vars: ['x', 'y'], expr: ['2*x', 'y'] },
+      { id: 'c', type: 'curve', var: 't', expr: ['t', '0'], domain: [0, 1] },
+      { id: 'd', type: 'image', of: 'c', transform: [{ rotate: 90 }, { map: 'F' }] },
+    ]);
+    const [, map, curve, image] = inserted.objects;
+    expect(map?.id).toBe('map2');
+    expect(image?.of).toBe(curve?.id);
+    expect(image?.transform).toEqual([{ rotate: 90 }, { map: 'map2' }]);
+  });
+
+  it('変換を持たないオブジェクトに，空の変換を足さない', () => {
+    const inserted = insertObjects(emptyDraft('plane'), 'plane', [
+      { id: 'p', type: 'point', at: [0, 0] },
+    ]);
+    expect(inserted.objects[0]).not.toHaveProperty('transform');
+  });
+});

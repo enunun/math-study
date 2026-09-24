@@ -82,6 +82,14 @@ function readJsonField(text: string, optional: boolean): JsonEdit {
     : { kind: 'keep', message: parsed.message };
 }
 
+/** 変換の手順の並びを，1行に1つの手順を書いたJSONの文字列にする．空の並びは，空の文字列にする． */
+function stepsToText(steps: readonly Json[]): string {
+  if (steps.length === 0) {
+    return '';
+  }
+  return `[\n${steps.map((step) => `  ${JSON.stringify(step)}`).join(',\n')}\n]`;
+}
+
 export {
   boundFromText,
   boundToText,
@@ -91,5 +99,6 @@ export {
   parseItem,
   readJsonField,
   setItem,
+  stepsToText,
 };
 export type { FieldUpdate, ItemKind, ItemUpdate, JsonEdit };

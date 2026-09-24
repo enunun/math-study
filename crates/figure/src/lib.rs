@@ -23,6 +23,7 @@ pub mod expr;
 pub mod figure;
 mod fractal;
 pub mod hatch;
+mod image;
 mod parse;
 mod polyhedron;
 mod refine;
@@ -34,6 +35,7 @@ mod space;
 pub mod spline;
 pub mod surface;
 pub mod tikz;
+pub mod transform;
 mod validate;
 pub mod version;
 

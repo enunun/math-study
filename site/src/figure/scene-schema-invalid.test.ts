@@ -211,4 +211,58 @@ describe('シーンのJSON Schemaは，構造の誤りを断る', () => {
       }),
     ).toBe(true);
   });
+
+  it('変換の手順に，操作が2つあれば断る', () => {
+    expect(
+      invalid({
+        ...plane,
+        objects: [
+          { id: 'p', type: 'point', at: [0, 0], transform: [{ rotate: 30, translate: [1, 0] }] },
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  it('回転のない手順に，軸(axis)があれば断る', () => {
+    expect(
+      invalid({
+        ...space,
+        objects: [
+          { id: 'p', type: 'point', at: [0, 0, 0], transform: [{ scale: 2, axis: [0, 0, 1] }] },
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  it('多角形が，正多角形の形と頂点の並びの両方を持てば断る', () => {
+    expect(
+      invalid({
+        ...plane,
+        objects: [
+          {
+            id: 'p',
+            type: 'polygon',
+            sides: 3,
+            center: [0, 0],
+            radius: 1,
+            vertices: [
+              [0, 0],
+              [1, 0],
+              [0, 1],
+            ],
+          },
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  it('像に変換(transform)がなければ断る', () => {
+    expect(invalid({ ...plane, objects: [{ id: 'i', type: 'image', of: 'p' }] })).toBe(true);
+  });
+
+  it('テイラー展開の次数が，上限(30)を超えれば断る', () => {
+    expect(
+      invalid({ ...plane, objects: [{ id: 't', type: 'taylor', of: 'f', at: 0, order: 31 }] }),
+    ).toBe(true);
+  });
 });
