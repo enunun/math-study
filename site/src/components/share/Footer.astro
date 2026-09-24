@@ -1,0 +1,9 @@
+---
+// Starlightのページ下部に，SNSへの共有ボタンを足す．
+import Default from '@astrojs/starlight/components/Footer.astro';
+
+import ShareButtons from './ShareButtons.astro';
+---
+
+<ShareButtons />
+<Default><slot /></Default>

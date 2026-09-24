@@ -56,6 +56,7 @@ Astro と Starlight … レイアウト，サイドバー，検索，ダーク�
 | MathJaxの呼び出し，CSSとフォントの配信，マクロ       | `site/src/math/`，`site/src/integrations/mathjax.ts`，`site/src/plugins/rehype-mathjax.ts` | 自作                                     |
 | 定義，定理，式の番号と参照                           | `site/src/plugins/rehype-statements.ts`，`site/src/plugins/statements/` | 自作                                     |
 | 折り畳み，補足，定理の見た目                         | `site/src/components/fold/`，`site/src/components/statement/`        | 自作                                     |
+| ページ下部のSNSへの共有ボタン                        | `site/src/components/share/`(StarlightのFooterを差し替える)          | 自作                                     |
 | 検査                                                 | oxlint，remark-lint，markdownlint，textlint，Vitest，Playwright      | 既存の道具に，自作の設定                 |
 | 公開                                                 | GitHub Actions，GitHub Pages                                         | 既存の道具に，自作の設定                 |
 | 多項式の計算機(式の解析と計算，ブラウザでの表示)     | `crates/`(Rust)，`site/src/calculator/`，`site/src/components/calculator/` | 自作                                     |
@@ -151,6 +152,12 @@ remark-mathは，式に番号を付けない．MathJaxの自動採番は，式�
 - 印刷するとき．
 
 折り畳みの中の定理や式も，ハッシュで指せば，その折り畳みが自動で開く．
+
+## 共有ボタンのしくみ
+
+各ページの下部に，X，Bluesky，Facebook，LINE，はてなブックマークへの共有ボタンを置く．Starlightの`components`の設定で，`Footer`を`site/src/components/share/Footer.astro`に差し替えている．差し替えたFooterは，元のFooterの前に`ShareButtons.astro`を置く．
+
+ボタンは，各SNSの共有画面へのただのリンクで，外部のスクリプトは読み込まない．リンクのURLは，`share-links.ts`が，ページの題名と公開先のURLから作る．題名は「ページ名 | サイト名」で，ホームはサイト名だけにする．SNSを足すときは，`share-links.ts`の一覧に足す．
 
 ## 計算機のしくみ
 
