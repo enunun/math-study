@@ -34,8 +34,8 @@ const MOBIUS_WIDTH_STEP = 0.5;
 
 /**
  * メビウスの帯．帯の中心の半径2，帯の幅1の，パラメータ表示の曲面．`u`が帯に沿った角度，`v`が幅方向．
- * `u`の端(継ぎ目)は本当の縁ではないので`boundary`は使わず，ただ1本の縁を，`v = 1`の線を
- * 帯に沿って2周させた曲線で描く(1周すると`v = -1`の側に移る)．
+ * `boundary`は，継ぎ目の`u`の端を除いて，`v = ±1`の2本の辺を描く．2本は継ぎ目でつながり，
+ * ただ1本の縁になる．
  */
 const MOBIUS_STRIP_SCENE: SceneDraft = {
   version: SCENE_VERSION,
@@ -54,15 +54,9 @@ const MOBIUS_STRIP_SCENE: SceneDraft = {
         'v / 2 * sin(u / 2)',
       ],
       domain: [ANGLE_DOMAIN, [-1, 1]],
+      boundary: true,
       wireframe: {},
       wireframe_step: [ANGLE_STEP, MOBIUS_WIDTH_STEP],
-    },
-    {
-      id: 'edge',
-      type: 'curve',
-      var: 't',
-      expr: ['(2 + cos(t / 2) / 2) * cos(t)', '(2 + cos(t / 2) / 2) * sin(t)', 'sin(t / 2) / 2'],
-      domain: ['-pi', '3*pi'],
     },
   ],
 };
@@ -117,7 +111,7 @@ const TORUS_Z_AXIS = 2;
 /** 管を回る方向の刻み．裏側の断面も点線で描くので，60度ごとに減らす． */
 const TORUS_TUBE_STEP = 'pi/3';
 
-/** トーラス．閉じた曲面なので，定義域の端はどれも継ぎ目で，縁を描かない． */
+/** トーラス．閉じた曲面なので，定義域の端はどれも継ぎ目で，`boundary`を指定しても縁は描かれない． */
 const TORUS_SCENE: SceneDraft = {
   version: SCENE_VERSION,
   description:
@@ -131,6 +125,7 @@ const TORUS_SCENE: SceneDraft = {
       vars: ['u', 'v'],
       expr: ['(2 + 0.7*cos(v))*cos(u)', '(2 + 0.7*cos(v))*sin(u)', '0.7*sin(v)'],
       domain: [ANGLE_DOMAIN, ANGLE_DOMAIN],
+      boundary: true,
       wireframe: {},
       wireframe_step: [ANGLE_STEP, TORUS_TUBE_STEP],
     },
@@ -147,7 +142,7 @@ const CYLINDER_Z_AXIS_MAX = 4;
 const CYLINDER_HEIGHT = 3;
 const CYLINDER_HEIGHT_STEP = 1;
 
-/** 円柱の曲面(側面)．角度の端は継ぎ目なので`boundary`を使わず，上下の縁を曲線で描く． */
+/** 円柱の曲面(側面)．角度の端は継ぎ目なので，`boundary`は上下の縁だけを描く． */
 function cylinderObjects(): JsonObject[] {
   return [
     {
@@ -156,22 +151,9 @@ function cylinderObjects(): JsonObject[] {
       vars: ['t', 'z'],
       expr: ['1.5*cos(t)', '1.5*sin(t)', 'z'],
       domain: [ANGLE_DOMAIN, [0, CYLINDER_HEIGHT]],
+      boundary: true,
       wireframe: {},
       wireframe_step: [ANGLE_STEP, CYLINDER_HEIGHT_STEP],
-    },
-    {
-      id: 'bottom_rim',
-      type: 'curve',
-      var: 't',
-      expr: ['1.5*cos(t)', '1.5*sin(t)', '0'],
-      domain: ANGLE_DOMAIN,
-    },
-    {
-      id: 'top_rim',
-      type: 'curve',
-      var: 't',
-      expr: ['1.5*cos(t)', '1.5*sin(t)', `${CYLINDER_HEIGHT}`],
-      domain: ANGLE_DOMAIN,
     },
   ];
 }

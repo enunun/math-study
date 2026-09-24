@@ -1,4 +1,6 @@
 import { parseDraft } from './draft';
+import type { SceneDraft } from './draft';
+import type { JsonObject } from './json';
 import { PLANE_SAMPLE_SCENES, SPACE_SAMPLE_SCENES } from './sample-scenes';
 import type { SceneTemplate } from './template-types';
 
@@ -9,8 +11,26 @@ const files = import.meta.glob<string>('../figures/*.json', {
 });
 
 /**
+ * 曲面には縁(`boundary`)とワイヤーフレームを，球にはワイヤーフレームを描かせる．見本で，
+ * どちらの項目も有効な状態から始められるようにするためである．すでにある指定は変えない．
+ */
+function withSurfaceAids(object: JsonObject): JsonObject {
+  if (object.type === 'surface') {
+    return { ...object, boundary: true, wireframe: object.wireframe ?? {} };
+  }
+  if (object.type === 'sphere') {
+    return { ...object, wireframe: object.wireframe ?? {} };
+  }
+  return object;
+}
+
+function withAllSurfaceAids(scene: SceneDraft): SceneDraft {
+  return { ...scene, objects: scene.objects.map(withSurfaceAids) };
+}
+
+/**
  * 記事の図(`site/src/figures/*.json`)を，見本として読む．記事の図を作った手順を見せるため，
- * 記事と同じファイルを，手を加えずに使う．
+ * 記事と同じファイルを使い，曲面と球の縁とワイヤーフレームだけを足す(`withSurfaceAids`)．
  */
 function articleSample(id: string, label: string, file: string): SceneTemplate {
   const json = files[`../figures/${file}.json`];
@@ -21,7 +41,7 @@ function articleSample(id: string, label: string, file: string): SceneTemplate {
   if (!parsed.ok) {
     throw new Error(`図の見本を読めない：${file}：${parsed.message}`);
   }
-  return { id, label, scene: parsed.draft };
+  return { id, label, scene: withAllSurfaceAids(parsed.draft) };
 }
 
 /**

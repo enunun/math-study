@@ -45,8 +45,28 @@ describe('見本は，そのまま描ける', () => {
   });
 });
 
-// 記事の図の見本は，記事と同じファイルを使うので，ここでは確かめない．
-describe('テンプレートと，ここで書いた見本の曲面は，ワイヤーフレームと刻みを持つ', () => {
+describe('テンプレートと見本の曲面と球は，縁とワイヤーフレームを描く', () => {
+  const objects = [
+    ...OBJECT_TEMPLATE_GROUPS.flatMap((group) =>
+      group.templates.flatMap((template) => template.objects),
+    ),
+    ...EDITOR_SAMPLES.flatMap((sample) => sample.scene.objects),
+  ];
+  const surfaces = objects.filter((object) => object.type === 'surface');
+  const spheres = objects.filter((object) => object.type === 'sphere');
+
+  it.each(surfaces)('曲面$idは，boundaryとwireframeを持つ', (surface) => {
+    expect(surface).toHaveProperty('boundary', true);
+    expect(surface).toHaveProperty('wireframe');
+  });
+
+  it.each(spheres)('球$idは，wireframeを持つ', (sphere) => {
+    expect(sphere).toHaveProperty('wireframe');
+  });
+});
+
+// 記事の図の見本は，記事と同じファイルを使うので，刻みは確かめない．
+describe('テンプレートと，ここで書いた見本の曲面は，ワイヤーフレームの刻みを持つ', () => {
   const surfaces = [
     ...OBJECT_TEMPLATE_GROUPS.flatMap((group) =>
       group.templates.flatMap((template) => template.objects),
@@ -54,8 +74,7 @@ describe('テンプレートと，ここで書いた見本の曲面は，ワイ�
     ...[...PLANE_SAMPLE_SCENES, ...SPACE_SAMPLE_SCENES].flatMap((sample) => sample.scene.objects),
   ].filter((object) => object.type === 'surface');
 
-  it.each(surfaces)('曲面$idは，wireframeとwireframe_stepを持つ', (surface) => {
-    expect(surface).toHaveProperty('wireframe');
+  it.each(surfaces)('曲面$idは，wireframe_stepを持つ', (surface) => {
     expect(surface).toHaveProperty('wireframe_step');
   });
 });

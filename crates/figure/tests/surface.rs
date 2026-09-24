@@ -658,3 +658,53 @@ fn 磨いても_閉じた切り口は閉じたまま_始めと終わりが同じ
         .hypot(first[2] - last[2]);
     assert!(gap < 1e-6, "{gap}");
 }
+
+// ---- 縁と継ぎ目 ----
+
+/// 管の中心の半径2，管の半径0.5のトーラス．
+#[allow(clippy::unnecessary_wraps)]
+fn torus_point(u: f64, v: f64) -> Option<[f64; 3]> {
+    let r = 2.0 + 0.5 * v.cos();
+    Some([r * u.cos(), r * u.sin(), 0.5 * v.sin()])
+}
+
+/// メビウスの帯．`u = -pi`の辺と`u = pi`の辺は，向きを逆にして重なる．
+#[allow(clippy::unnecessary_wraps)]
+fn mobius_point(u: f64, v: f64) -> Option<[f64; 3]> {
+    let r = 2.0 + v / 2.0 * (u / 2.0).cos();
+    Some([r * u.cos(), r * u.sin(), v / 2.0 * (u / 2.0).sin()])
+}
+
+const PI: f64 = std::f64::consts::PI;
+
+#[test]
+fn 継ぎ目の辺は縁にならず_円柱の縁は上下の円だけである() {
+    let cylinder = build(&cylinder_point, CYLINDER_DOMAIN, 32);
+    let lines = cylinder.boundary();
+    assert_eq!(lines.len(), 2);
+    for line in &lines {
+        let z = line[0][2];
+        assert!((z.abs() - 3.0).abs() < 1e-12, "{z}");
+        assert!(line.iter().all(|p| (p[2] - z).abs() < 1e-12));
+    }
+}
+
+#[test]
+fn 閉じた曲面には縁がない() {
+    let torus = build(&torus_point, [[-PI, PI], [-PI, PI]], 32);
+    assert!(torus.boundary().is_empty());
+}
+
+#[test]
+fn 向きを逆にして重なる辺も継ぎ目であり_メビウスの帯の縁は幅の端の2本である() {
+    let band = build(&mobius_point, [[-PI, PI], [-1.0, 1.0]], 32);
+    let lines = band.boundary();
+    assert_eq!(lines.len(), 2);
+    // 幅の端(v = ±1)の線は，帯の中心の円から0.5離れている．
+    for line in &lines {
+        for p in line {
+            let off = (p[0].hypot(p[1]) - 2.0).hypot(p[2]);
+            assert!((off - 0.5).abs() < 1e-9, "{off}");
+        }
+    }
+}

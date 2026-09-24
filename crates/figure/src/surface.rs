@@ -595,7 +595,8 @@ impl Mesh {
         (chain_ids(&links), positions)
     }
 
-    /// 定義域の縁の線．4つの辺のうち，1点に縮んでいない辺の，空間の折れ線である．
+    /// 定義域の縁の線．4つの辺のうち，1点に縮んでおらず，継ぎ目でもない辺の，空間の折れ線である．
+    /// 向かい合う2つの辺が(向きを逆にしても)点ごとに重なるなら，そこは継ぎ目なので，どちらも描かない．
     #[must_use]
     pub fn boundary(&self) -> Vec<Vec<Point3>> {
         let rows = self.points.len().checked_div(self.columns).unwrap_or(0);
@@ -611,9 +612,15 @@ impl Mesh {
                 .map(|i| vertex(i, last_column, self.columns))
                 .collect(),
         ];
+        let seams = [
+            self.is_seam(&edges[0], &edges[1]),
+            self.is_seam(&edges[2], &edges[3]),
+        ];
         edges
             .iter()
-            .filter_map(|edge| {
+            .enumerate()
+            .filter(|(at, _)| !seams.get(at / 2).copied().unwrap_or(false))
+            .filter_map(|(_, edge)| {
                 let line: Option<Vec<Point3>> = edge.iter().map(|k| self.point(*k)).collect();
                 let line = line?;
                 let length: f64 = line
@@ -626,6 +633,21 @@ impl Mesh {
                 (length > 1e-9 * self.scale).then_some(line)
             })
             .collect()
+    }
+
+    /// 向かい合う2つの辺が，同じ向きか逆の向きで，点ごとに重なるか(継ぎ目か)．
+    fn is_seam(&self, first: &[usize], second: &[usize]) -> bool {
+        let tolerance = 1e-7 * self.scale;
+        let close = |a: &usize, b: &usize| match (self.point(*a), self.point(*b)) {
+            (Some(p), Some(q)) => distance(p, q) <= tolerance,
+            _ => false,
+        };
+        let same = first.iter().zip(second).all(|(a, b)| close(a, b));
+        let reversed = first
+            .iter()
+            .zip(second.iter().rev())
+            .all(|(a, b)| close(a, b));
+        !first.is_empty() && (same || reversed)
     }
 }
 

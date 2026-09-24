@@ -26,7 +26,7 @@ test.describe('曲面・球・曲線の制御点', () => {
     await expect(preview(page)).toBeVisible();
   });
 
-  test('曲面のフォームで，ワイヤーフレームを選ぶと，編集中の図とプレビュー，どちらにも線が増える', async ({
+  test('見本の曲面はワイヤーフレームがオンで，外すと，編集中の図とプレビュー，どちらからも線が減る', async ({
     page,
   }) => {
     await editor(page).getByRole('button', { name: '放物面と座標軸', exact: true }).click();
@@ -34,14 +34,17 @@ test.describe('曲面・球・曲線の制御点', () => {
       .getByRole('list', { name: 'オブジェクトの一覧' })
       .getByRole('button', { name: /曲面/u })
       .click();
+    const toggle = editor(page).getByLabel('ワイヤーフレームを表示');
+    await expect(toggle).toBeChecked();
+    await expect(editor(page).getByLabel('縁を描く')).toBeChecked();
     const editBefore = await preview(page).locator('path').count();
     const outputBefore = await outputPreview(page).locator('path').count();
-    await editor(page).getByLabel('ワイヤーフレームを表示').check();
+    await toggle.uncheck();
     await expect(async () => {
-      expect(await preview(page).locator('path').count()).toBeGreaterThan(editBefore);
+      expect(await preview(page).locator('path').count()).toBeLessThan(editBefore);
     }).toPass();
     await expect(async () => {
-      expect(await outputPreview(page).locator('path').count()).toBeGreaterThan(outputBefore);
+      expect(await outputPreview(page).locator('path').count()).toBeLessThan(outputBefore);
     }).toPass();
   });
 
