@@ -100,7 +100,7 @@ Known limits:
 
 Flow: `site/src/plugins/rehype-statements.ts` runs on each MDX page before the MathJax plugin. It reads the JSX nodes that MDX passes through to the rehype tree, numbers the statement elements, and rewrites `<Ref>` and `<Proof of>`.
 
-- A label is built from the kind, the page identifier, and the sequence number within the page (`定理abs-3`). Definitions, lemmas, propositions, theorems, and corollaries share one counter. There is no space between the Japanese kind and the Latin identifier, following the writing rules for Japanese text.
+- A label is built from the kind, the page identifier, and the sequence number within the page (`定理abs-3`). Definitions, lemmas, propositions, theorems, corollaries, examples, problems, and answers share one counter. Examples, problems, and answers were added for the transcribed articles, whose originals number them alongside theorems (`例`, `問題`, `解答`). There is no space between the Japanese kind and the Latin identifier, following the writing rules for Japanese text.
 - A page identifier uses letters, digits, hyphens, and underscores. It comes from the frontmatter `pageId` (also validated by the content schema in `content.config.ts`) or the file name, and is unique across the site. Labels are therefore unique without a chapter structure.
 - References are written by identifier. An identifier is optional on a statement; without one, the anchor is the label and the statement cannot be referenced. With one, the anchor stays stable when statements are inserted or reordered.
 - A reference to another page needs that page's numbering while a different page is being rendered. Astro renders pages concurrently and a plugin sees one page at a time, so `plugins/statements/catalog.ts` scans `content/docs/**/*.mdx` with remark-parse, remark-mdx, and remark-frontmatter, and caches the result by file modification time, so the dev server picks up edits. Pages that fail to parse are skipped there; their own build reports the error. Pages without statements are not registered, so their identifiers need not be unique.
@@ -131,6 +131,7 @@ What is automated, and what was decided not to be:
 - Visual regression is not automated. Screenshot comparison depends on fonts and rendering, needs images in the repository, and needs a pinned environment. Specific bugs are guarded with layout assertions instead.
 - Only Chromium is tested.
 - Speech quality of the `aria-label` strings, Japanese screen reader output, and real printing are manual (see the `verify-site` skill).
+- Transcriptions of the author's earlier PDFs (`topics/locus.mdx`, `topics/recurrence-guess.mdx`, `topics/trigonometric-functions.mdx`) are listed in `.textlintignore`. Their text must match the original word for word, and the original breaks the writing rules (ですます in one sentence, long sentences, many commas, the quoted "。"), so no rule could pass without changing the text. remark-lint, the build, and the E2E checks still cover them. textlint honours `.textlintignore` for files passed explicitly, so the pre-commit hook skips them too.
 
 ## Spacing between Japanese and other text (implemented)
 

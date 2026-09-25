@@ -1,0 +1,139 @@
+{
+  "version": "0.1.0",
+  "description": "単位円の第1象限の点P．弧APを太線で示し，Pのy座標をsin(θ(y))と示す．",
+  "view": {
+    "x": [-1.35, 1.35],
+    "y": [-1.35, 1.35],
+    "unit": {
+      "x": "2.2cm",
+      "y": "2.2cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "arrow": "stealth",
+      "label": "x"
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y",
+      "arrow": "stealth",
+      "label": "y"
+    },
+    {
+      "id": "circle",
+      "type": "curve",
+      "var": "t",
+      "expr": ["cos(t)", "sin(t)"],
+      "domain": [0, "2*pi"]
+    },
+    {
+      "id": "O",
+      "type": "point",
+      "at": [0, 0],
+      "label": "O",
+      "anchor": "north east"
+    },
+    {
+      "id": "A",
+      "type": "point",
+      "at": [1, 0],
+      "label": "A",
+      "anchor": "south west"
+    },
+    {
+      "id": "arc",
+      "type": "curve",
+      "var": "t",
+      "expr": ["cos(t)", "sin(t)"],
+      "domain": ["0", "pi/3"],
+      "style": {
+        "width": "2pt"
+      }
+    },
+    {
+      "id": "P",
+      "type": "point",
+      "at": ["cos(pi/3)", "sin(pi/3)"],
+      "label": "P",
+      "anchor": "south west"
+    },
+    {
+      "id": "OP",
+      "type": "segment",
+      "from": "O",
+      "to": "P"
+    },
+    {
+      "id": "drop_foot",
+      "type": "point",
+      "at": [0, "sin(pi/3)"]
+    },
+    {
+      "id": "drop",
+      "type": "segment",
+      "from": "P",
+      "to": "drop_foot",
+      "style": {
+        "line": "dotted"
+      }
+    },
+    {
+      "id": "angle",
+      "type": "curve",
+      "var": "t",
+      "expr": ["0.28*cos(t)", "0.28*sin(t)"],
+      "domain": ["0", "pi/3"]
+    },
+    {
+      "id": "angle_s",
+      "type": "point",
+      "at": ["0.28*cos((pi/3)-0.12/0.28)", "0.28*sin((pi/3)-0.12/0.28)"]
+    },
+    {
+      "id": "angle_e",
+      "type": "point",
+      "at": ["0.28*cos(pi/3)", "0.28*sin(pi/3)"]
+    },
+    {
+      "id": "angle_head",
+      "type": "vector",
+      "from": "angle_s",
+      "to": "angle_e"
+    },
+    {
+      "id": "theta",
+      "type": "label",
+      "at": [0.34, 0.12],
+      "anchor": "west",
+      "tex": "$\\theta$"
+    },
+    {
+      "id": "sine_from",
+      "type": "point",
+      "at": [-0.55, 0.3]
+    },
+    {
+      "id": "sine_to",
+      "type": "point",
+      "at": [-0.08, 0.8]
+    },
+    {
+      "id": "sine",
+      "type": "vector",
+      "from": "sine_from",
+      "to": "sine_to"
+    },
+    {
+      "id": "sine_label",
+      "type": "label",
+      "at": [-0.55, 0.3],
+      "anchor": "north east",
+      "tex": "$\\sin(\\theta(y))$"
+    }
+  ]
+}

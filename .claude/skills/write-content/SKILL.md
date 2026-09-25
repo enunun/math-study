@@ -57,7 +57,7 @@ Math is rendered at build time by MathJax 4. Write inline math as `$…$` and di
 
 ## Definitions and theorems
 
-Import the kinds you use, right after the frontmatter: `import { Definition, Lemma, Proposition, Theorem, Corollary } from '@/components/statement';`. Put blank lines before and after the tags so that the content is parsed as Markdown.
+Import the kinds you use, right after the frontmatter: `import { Definition, Lemma, Proposition, Theorem, Corollary } from '@/components/statement';`. `Example` (例), `Problem` (問題), and `Answer` (解答) are also available and share the same counter. Put blank lines before and after the tags so that the content is parsed as Markdown.
 
 - Each element gets a label at build time: kind + page identifier + sequence number (`定理abs-3`). The counter is per page and shared by all kinds.
 - `name="…"` adds a phrase to the heading. `id="…"` gives a stable identifier for references and the anchor. Without `id`, the anchor is the label, which changes when a statement is inserted before it.
@@ -99,6 +99,15 @@ pnpm exec textlint --fix site/src/content README.md
 - A new component in MDX needs no lint configuration. `lint:mdx` is remark-lint (`.remarkrc.mjs`), not markdownlint; remark parses MDX the same way the build does, so an unclosed tag or a broken `{…}` expression fails at commit time, with the file position. Keep its remark plugins (`remark-mdx`, `remark-math`) in step with `astro.config.ts` — without `remark-math`, `{…}` inside `$$…$$` is read as a JSX expression. `remark-cli` prints a re-serialized copy of a file to stdout and rewrites some text (`[x]` becomes `\[x]`), so always pass `--no-stdout` and never use `--output`.
 - Headings must be unique within a page (`no-duplicate-heading`), so give repeated section names a distinguishing word.
 - To change the writing rules, edit `.textlintrc.yml` and `.textlint-prh.yml`. Give each `prh` rule `specs` with before and after examples.
+
+## Transcriptions
+
+A transcription reproduces an existing document (such as the author's PDFs on GitHub) as a page. The existing ones are `topics/locus.mdx`, `topics/recurrence-guess.mdx`, and `topics/trigonometric-functions.mdx`.
+
+- Start the page with an `<Aside title="書き起こしについて">` that names the source repository and file, the original author and date, and what was changed.
+- Copy the prose and formulas exactly, typos included. Heading style, numbering, the notation of references, and the drawing of figures may change. Write custom LaTeX macros of the original out in standard or site macros (`\apply{f}{x}` becomes `f(x)`). Footnotes become `<Detail>`, citations link to a 参考文献 section, and figures are redrawn as scenes in `site/src/figures/`.
+- Add the file to `.textlintignore`: the original text breaks the writing rules, and fixing it would change the text. The rules still apply to text you write yourself (the Aside, the description, the home card).
+- `\ref` inside a figure caption cannot be a `<Ref />`, so write the label as text and check it against the rendered page.
 
 ## Writing examples
 

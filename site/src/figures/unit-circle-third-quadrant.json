@@ -1,0 +1,211 @@
+{
+  "version": "0.1.0",
+  "description": "単位円の第3象限の点P．弧APの符号付き長さはθ(y)+πであり，Pのy座標は-sin(θ(y))である．",
+  "view": {
+    "x": [-1.35, 1.35],
+    "y": [-1.35, 1.35],
+    "unit": {
+      "x": "2.2cm",
+      "y": "2.2cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "arrow": "stealth",
+      "label": "x"
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y",
+      "arrow": "stealth",
+      "label": "y"
+    },
+    {
+      "id": "circle",
+      "type": "curve",
+      "var": "t",
+      "expr": ["cos(t)", "sin(t)"],
+      "domain": [0, "2*pi"]
+    },
+    {
+      "id": "O",
+      "type": "point",
+      "at": [0, 0],
+      "label": "O",
+      "anchor": "north west"
+    },
+    {
+      "id": "A",
+      "type": "point",
+      "at": [1, 0],
+      "label": "A",
+      "anchor": "south west"
+    },
+    {
+      "id": "arc",
+      "type": "curve",
+      "var": "t",
+      "expr": ["cos(t)", "sin(t)"],
+      "domain": ["0", "4*pi/3"],
+      "style": {
+        "width": "2pt"
+      }
+    },
+    {
+      "id": "P",
+      "type": "point",
+      "at": ["cos(4*pi/3)", "sin(4*pi/3)"],
+      "label": "P",
+      "anchor": "north east"
+    },
+    {
+      "id": "Q",
+      "type": "point",
+      "at": ["cos(pi/3)", "sin(pi/3)"]
+    },
+    {
+      "id": "PQ",
+      "type": "segment",
+      "from": "P",
+      "to": "Q"
+    },
+    {
+      "id": "dropP_foot",
+      "type": "point",
+      "at": [0, "sin(4*pi/3)"]
+    },
+    {
+      "id": "dropP",
+      "type": "segment",
+      "from": "P",
+      "to": "dropP_foot",
+      "style": {
+        "line": "dotted"
+      }
+    },
+    {
+      "id": "dropQ_foot",
+      "type": "point",
+      "at": [0, "sin(pi/3)"]
+    },
+    {
+      "id": "dropQ",
+      "type": "segment",
+      "from": "Q",
+      "to": "dropQ_foot",
+      "style": {
+        "line": "dotted"
+      }
+    },
+    {
+      "id": "outer",
+      "type": "curve",
+      "var": "t",
+      "expr": ["0.22*cos(t)", "0.22*sin(t)"],
+      "domain": ["0", "4*pi/3"]
+    },
+    {
+      "id": "outer_s",
+      "type": "point",
+      "at": ["0.22*cos((4*pi/3)-0.12/0.22)", "0.22*sin((4*pi/3)-0.12/0.22)"]
+    },
+    {
+      "id": "outer_e",
+      "type": "point",
+      "at": ["0.22*cos(4*pi/3)", "0.22*sin(4*pi/3)"]
+    },
+    {
+      "id": "outer_head",
+      "type": "vector",
+      "from": "outer_s",
+      "to": "outer_e"
+    },
+    {
+      "id": "outer_label",
+      "type": "label",
+      "at": [-0.12, 0.3],
+      "anchor": "south east",
+      "tex": "$\\theta(y) + \\pi$"
+    },
+    {
+      "id": "inner",
+      "type": "curve",
+      "var": "t",
+      "expr": ["0.3*cos(t)", "0.3*sin(t)"],
+      "domain": ["0", "pi/3"]
+    },
+    {
+      "id": "inner_s",
+      "type": "point",
+      "at": ["0.3*cos((pi/3)-0.12/0.3)", "0.3*sin((pi/3)-0.12/0.3)"]
+    },
+    {
+      "id": "inner_e",
+      "type": "point",
+      "at": ["0.3*cos(pi/3)", "0.3*sin(pi/3)"]
+    },
+    {
+      "id": "inner_head",
+      "type": "vector",
+      "from": "inner_s",
+      "to": "inner_e"
+    },
+    {
+      "id": "inner_label",
+      "type": "label",
+      "at": [0.36, 0.3],
+      "anchor": "west",
+      "tex": "$\\theta(y)$"
+    },
+    {
+      "id": "upper_from",
+      "type": "point",
+      "at": [-0.55, 1.1]
+    },
+    {
+      "id": "upper_to",
+      "type": "point",
+      "at": [-0.12, 0.9]
+    },
+    {
+      "id": "upper",
+      "type": "vector",
+      "from": "upper_from",
+      "to": "upper_to"
+    },
+    {
+      "id": "upper_label",
+      "type": "label",
+      "at": [-0.55, 1.1],
+      "anchor": "south east",
+      "tex": "$\\sin(\\theta(y))$"
+    },
+    {
+      "id": "lower_from",
+      "type": "point",
+      "at": [0.72, -0.95]
+    },
+    {
+      "id": "lower_to",
+      "type": "point",
+      "at": [0.12, -0.84]
+    },
+    {
+      "id": "lower",
+      "type": "vector",
+      "from": "lower_from",
+      "to": "lower_to"
+    },
+    {
+      "id": "lower_label",
+      "type": "label",
+      "at": [0.72, -0.95],
+      "anchor": "north west",
+      "tex": "$-\\sin(\\theta(y))$"
+    }
+  ]
+}

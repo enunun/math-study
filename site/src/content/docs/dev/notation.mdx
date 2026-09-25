@@ -288,10 +288,10 @@ $$
 
 ### 定理の読み込み
 
-定義，補題，命題，定理，系は，それぞれ`Definition`，`Lemma`，`Proposition`，`Theorem`，`Corollary`である．使うものを，フロントマターの直後に読み込む．参照の`Ref`は，読み込まずに使える．
+定義，補題，命題，定理，系，例，問題，解答は，それぞれ`Definition`，`Lemma`，`Proposition`，`Theorem`，`Corollary`，`Example`，`Problem`，`Answer`である．使うものを，フロントマターの直後に読み込む．参照の`Ref`は，読み込まずに使える．
 
 ```mdx
-import { Definition, Lemma, Proposition, Theorem, Corollary } from '@/components/statement';
+import { Answer, Corollary, Definition, Example, Lemma, Problem, Proposition, Theorem } from '@/components/statement';
 ```
 
 ### 番号と参照
@@ -344,8 +344,8 @@ import { Definition, Lemma, Proposition, Theorem, Corollary } from '@/components
 
 | 要素                    | 属性   | 説明                                                                                             |
 | ----------------------- | ------ | ------------------------------------------------------------------------------------------------ |
-| `Definition`などの5種類 | `name` | 見出しに添える語句．括弧に入れて表示する．                                                       |
-| `Definition`などの5種類 | `id`   | 参照とアンカーに使う識別子．省略すると，アンカーは連番のラベルになる．                           |
+| `Definition`などの8種類 | `name` | 見出しに添える語句．括弧に入れて表示する．                                                       |
+| `Definition`などの8種類 | `id`   | 参照とアンカーに使う識別子．省略すると，アンカーは連番のラベルになる．                           |
 | `Ref`                   | `to`   | 参照する定義，定理，式の`id`．                                                                   |
 | `Ref`，`Proof`          | `page` | ほかのページを指すときの，ページの識別子．省略すると，同じページを指す．                         |
 | `Proof`                 | `of`   | 証明する定理の`id`．指定すると，証明の題名が「定理abs-3」になる．`title`とは同時に指定できない． |

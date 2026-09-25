@@ -48,6 +48,15 @@ describe('rehypeStatements: 番号', () => {
     expect(labelsOf(tree).map(([label]) => label)).toEqual(['定理abs-1', '補題abs-2', '系abs-3']);
   });
 
+  it('例，問題，解答も，定義や定理と共通の連番で数える', async () => {
+    const site = await createSite();
+    const tree = await site.transform(
+      'abs.mdx',
+      ['<Example>a</Example>', '<Problem>b</Problem>', '<Answer>c</Answer>'].join('\n\n'),
+    );
+    expect(labelsOf(tree).map(([label]) => label)).toEqual(['例abs-1', '問題abs-2', '解答abs-3']);
+  });
+
   it('frontmatterのpageIdを，ファイル名より優先する', async () => {
     const site = await createSite();
     const tree = await site.transform('abs.mdx', '<Theorem>a</Theorem>', {

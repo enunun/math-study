@@ -112,7 +112,7 @@ MathJax 4には`\csname`がなく，マクロでは，引数の値から別の�
 MDXの`<Theorem>`などの要素は，rehypeの構文木に，そのまま残る．`rehypeStatements`は，その要素と，数式の`\label`を読み，次の順に処理する．
 
 1. ページの識別子を決める．frontmatterの`pageId`があればそれを，なければファイル名を使う．
-2. `Definition`，`Lemma`，`Proposition`，`Theorem`，`Corollary`を，文書の順に数え，「定理abs-3」のラベルと，リンクの飛び先(アンカー)を決める．要素には，`label`と`anchor`の属性として渡す．見た目は，Astroのコンポーネントが作る．
+2. `Definition`，`Lemma`，`Proposition`，`Theorem`，`Corollary`，`Example`，`Problem`，`Answer`を，文書の順に数える．数えた順から，「定理abs-3」のラベルと，リンクの飛び先(アンカー)を決める．要素には，`label`と`anchor`の属性として渡す．見た目は，Astroのコンポーネントが作る．
 3. `\label{識別子}`のある別行立ての式に，連番を付ける．`\label`を取り除いて，MathJaxの`\tag{abs-1}`を加え，式を包む要素に`id`を付ける．番号の描画は，MathJaxが行う．
 4. `<Ref />`を，ラベルの文字を持つリンク(`<a>`)に置き換える．`<Proof of="…">`の題名を，その定理のラベルにする．
 5. 別のページの定理や式を参照するときは，`catalog.ts`が作る一覧を引く．
@@ -352,6 +352,8 @@ Rustの核は，ブラウザにも，Astroにも依存しない．そのため�
 `mise run check`は，CIと同じ内容である．コミットのときは，lefthookが，ステージしたファイルだけを検査する．`main`にpushすると，GitHub Actionsが`check`とE2Eを実行し，どちらも成功すると，GitHub Pagesへ公開する．E2Eが失敗すると，公開されない．
 
 MDXの検査には，ビルドと同じ構文木で読むremark-lintを使う．閉じていないタグや，式の誤りは，コミットのときに見つかる．
+
+PDFの書き起こしのページは，原文の文章をそのまま写すので，`.textlintignore`でtextlintの対象から外している．文体の規則に合わせると，原文と違う文章になるからである．remark-lint，ビルド，E2Eの検査は，ほかのページと同じく受ける．
 
 ### ブラウザでの自動検査
 

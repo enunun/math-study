@@ -3,13 +3,16 @@ import path from 'node:path';
 import { collectJsxElements, DocumentError, findAttribute, readStringAttribute } from './tree';
 import type { JsxElement, TreeNode } from './tree';
 
-/** 番号を付ける要素の名前と，ラベルの先頭に付く種類の名前．定義，補題，命題，定理，系は，共通の連番を使う． */
+/** 番号を付ける要素の名前と，ラベルの先頭に付く種類の名前．定義，補題，命題，定理，系，例，問題，解答は，共通の連番を使う． */
 const STATEMENT_KINDS: Readonly<Record<string, string>> = {
   Definition: '定義',
   Lemma: '補題',
   Proposition: '命題',
   Theorem: '定理',
   Corollary: '系',
+  Example: '例',
+  Problem: '問題',
+  Answer: '解答',
 };
 
 /** 番号を付ける図の要素の名前．`id`を持つ図だけに，番号を付ける． */

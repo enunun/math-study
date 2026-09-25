@@ -1,6 +1,14 @@
 ---
 interface Props {
-  kind: 'definition' | 'lemma' | 'proposition' | 'theorem' | 'corollary';
+  kind:
+    | 'definition'
+    | 'lemma'
+    | 'proposition'
+    | 'theorem'
+    | 'corollary'
+    | 'example'
+    | 'problem'
+    | 'answer';
   /** 「定理abs-3」のようなラベル．ビルド時のプラグインが付ける． */
   label: string;
   /** 要素のidとリンクの飛び先．ビルド時のプラグインが付ける． */
@@ -31,7 +39,9 @@ const headingId = `${anchor}-heading`;
     scroll-margin-block-start: calc(var(--sl-nav-height) + 1rem);
   }
 
-  .statement-definition {
+  .statement-definition,
+  .statement-example,
+  .statement-answer {
     border-inline-start-color: var(--sl-color-gray-3);
   }
 
