@@ -29,6 +29,15 @@ const CATEGORIES = [
   },
 ] as const;
 
+// 著書は，カテゴリに属さない1ページで，新しい本を上に並べる．
+const BOOKS = [
+  '統計学は最強の学問ではない',
+  '0から始める数理論理学入門',
+  '構造化マークアップ志向のLaTeX入門',
+  '記号論理から始める集合論超入門',
+  '電磁気学を学ぶための物理数学',
+] as const;
+
 test.describe('トップページ', () => {
   for (const { name, pages } of CATEGORIES) {
     for (const [title, path] of pages) {
@@ -79,6 +88,18 @@ test.describe('トップページ', () => {
       }
     });
   }
+
+  test('「著書」の見出しの下とサイドバーから，著書のページを開ける', async ({ page }) => {
+    await page.goto('');
+    await expect(page.locator('main').getByRole('heading', { name: '著書' })).toBeVisible();
+    await expect(page.locator('nav[aria-label="メイン"] a[href$="/books/"]')).toHaveText('著書');
+    await page
+      .locator('main')
+      .getByRole('link', { name: /著書の紹介/u })
+      .click();
+    await expect(page).toHaveURL(/\/books\/$/u);
+    await expect(page.locator('main h2')).toHaveText([...BOOKS]);
+  });
 
   test('ページ下部に，「前へ」「次へ」のリンクを出さない', async ({ page }) => {
     await page.goto('topics/figure-fill/');

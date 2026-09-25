@@ -61,6 +61,8 @@ export default defineConfig({
         'index',
         { label: '単発ネタ', items: [{ autogenerate: { directory: 'topics' } }] },
         { label: 'ツール', items: [{ autogenerate: { directory: 'tools' } }] },
+        // 著書は，カテゴリではない1ページである．
+        'books',
       ],
       head: [
         {
