@@ -10,6 +10,7 @@ use serde_json::Value;
 
 /// 図のシーン．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Scene {
     /// シーンを書いたアプリケーションの版．
@@ -24,6 +25,7 @@ pub struct Scene {
 
 /// 図の見え方．平面の図は，見える範囲と1単位の実寸で，空間の図は，見る向きと1単位の実寸で決める．
 #[derive(Debug, Clone, PartialEq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(untagged)]
 pub enum View {
     /// 平面の図．
@@ -34,6 +36,7 @@ pub enum View {
 
 /// 平面の図の，見える範囲と，1単位の実寸．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct PlaneView {
     /// x方向の範囲．
@@ -48,6 +51,7 @@ pub struct PlaneView {
 ///
 /// カメラは，原点から`(cos e cos a, cos e sin a, sin e)`の向き(`a`は方位角，`e`は仰角)にあり，原点を見る．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct SpaceView {
     /// 方位角(度)．z軸のまわりに，x軸からy軸の向きに測る．
@@ -78,6 +82,7 @@ impl<'de> Deserialize<'de> for View {
 
 /// 各方向の，1単位の実寸．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Unit {
     /// x方向．
@@ -102,6 +107,7 @@ pub enum LengthUnit {
 
 /// 単位つきの長さ．JSONでは，`"2.5mm"`のような文字列で書く．
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(try_from = "String", into = "String")]
 pub struct Length {
     /// 数値．
@@ -112,6 +118,7 @@ pub struct Length {
 
 /// 図を作るオブジェクト．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Object {
     /// 座標軸．
@@ -166,6 +173,7 @@ pub enum Object {
 
 /// 軸の向き．
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Direction {
     /// x軸．
@@ -178,6 +186,7 @@ pub enum Direction {
 
 /// 矢じりの形．
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Arrow {
     /// `TikZ`の`Stealth`．
@@ -189,6 +198,7 @@ pub enum Arrow {
 
 /// 座標軸．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Axis {
     /// 識別子．
@@ -214,6 +224,7 @@ pub struct Axis {
 
 /// 軸の目盛．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Tick {
     /// 軸の上の位置．数か，媒介変数と定数を使える式．
@@ -228,6 +239,7 @@ pub struct Tick {
 
 /// ラベルの位置の基準．TikZのアンカーと同じ名前を使う．
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum Anchor {
     /// 中央．
     #[default]
@@ -261,6 +273,7 @@ pub enum Anchor {
 
 /// 数式を置くラベル．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Label {
     /// 識別子．
@@ -280,6 +293,7 @@ pub struct Label {
 
 /// 式から名前で参照する数．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Parameter {
     /// 識別子．式の中の名前になる．
@@ -290,6 +304,7 @@ pub struct Parameter {
 
 /// 定義域の端．数か式．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(untagged)]
 pub enum Bound {
     /// 数．
@@ -300,6 +315,7 @@ pub enum Bound {
 
 /// 線の種類．
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Line {
     /// 実線．
@@ -313,6 +329,7 @@ pub enum Line {
 
 /// 不透明な面に隠れた部分の線．
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Hidden {
     /// 点線．
@@ -330,6 +347,7 @@ pub enum Hidden {
 ///
 /// 名前は，明るい背景と暗い背景の両方で見やすい色に，`SVG`で置き換える．`TikZ`では，`xcolor`の名前にする．
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Color {
     /// 灰色．
@@ -351,6 +369,7 @@ pub const MAX_WIDTH_PT: f64 = 10.0;
 
 /// 線のスタイル．省いた項目は，オブジェクトの種類ごとの既定になる(線の種類は，格子が点線，ほかは実線)．
 #[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields, default)]
 pub struct Style {
     /// 線の種類．
@@ -404,6 +423,7 @@ impl Hidden {
 /// 点の式は，点の`id`を，原点からの位置ベクトルとして，和と差，数(媒介変数を含む)の倍で書く．
 /// 例：`"B + C - A"`(平行四辺形の頂点)，`"(A + B) / 2"`(中点)，`"A + t * (B - A)"`(線分の上の点)．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(untagged)]
 pub enum Position {
     /// 点の式．
@@ -414,6 +434,7 @@ pub enum Position {
 
 /// 点．座標は，数か，媒介変数と，先に置いた点の座標を使う式で書く．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Point {
     /// 識別子．座標は，式の中で`<id>_x`と`<id>_y`の名前になる．
@@ -445,6 +466,7 @@ const fn is_false(value: &bool) -> bool {
 
 /// 向きのある線分．始点から終点へ，矢じりを付ける．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Vector {
     /// 識別子．
@@ -466,6 +488,7 @@ pub struct Vector {
 
 /// 線分．矢じりのない，2点を結ぶ線である．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Segment {
     /// 識別子．
@@ -484,6 +507,7 @@ pub struct Segment {
 
 /// 2つの曲面の交線．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Intersection {
     /// 識別子．
@@ -500,6 +524,7 @@ pub struct Intersection {
 
 /// グラフか曲線の接線．平面の図でだけ使える．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct TangentLine {
     /// 識別子．
@@ -518,6 +543,7 @@ pub struct TangentLine {
 
 /// 曲面の接平面．空間の図でだけ使える．接する点での，2つの偏微分の向きに張る平行四辺形として描く．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct TangentPlane {
     /// 識別子．
@@ -538,6 +564,7 @@ pub struct TangentPlane {
 
 /// 正多面体の種類．
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Solid {
     /// 正4面体．
@@ -556,6 +583,7 @@ pub enum Solid {
 /// 頂点と面はエンジンが決め(`polyhedron.rs`)，同じ頂点と面を持つ複体(`Complex`)と同じように描いて隠す．
 /// 基準の向きは種類ごとに決まっている(立方体は，面が座標軸に垂直になる向き)．ほかの向きは，変換(`transform`)の回転で作る．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Polyhedron {
     /// 識別子．
@@ -579,6 +607,7 @@ pub struct Polyhedron {
 /// 面は，向き(頂点の並ぶ順)がすべて外向きになるように書く：稜を隠すかどうかは，その稜に隣接する
 /// 2つの面の法線の向きで決まるので，向きが逆だと隠れ方が逆になる．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Complex {
     /// 識別子．
@@ -610,6 +639,7 @@ impl Complex {
 /// 深さ0は，`base`をそのまま描く．深さ`n`は，深さ`n - 1`の図形全体に，`transforms`のそれぞれの
 /// 変換を施したものをすべて集めたものである(標準の，IFSのアトラクターを求める反復計算)．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Fractal {
     /// 識別子．
@@ -659,6 +689,7 @@ impl Fractal {
 /// オブジェクトの`id`)である．回転・拡大縮小・対称移動・せん断は，`center`(なければ原点)を動かさない．
 /// 数は，数か，媒介変数と定数を使う式で書く．
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct TransformStep {
     /// 平行移動の量(平面の図では2個，空間の図では3個)．
@@ -689,6 +720,7 @@ pub struct TransformStep {
 
 /// 拡大縮小の倍率．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(untagged)]
 pub enum Factor {
     /// 全方向に同じ倍率．
@@ -705,6 +737,7 @@ pub const MAX_TRANSFORM_STEPS: usize = 16;
 /// 正多角形は，辺の数(`sides`)と，中心(`center`)と，半径(`radius`，中心から頂点までの距離)で書き，
 /// 底辺が水平になる向きに置く．ほかの多角形は，頂点(`vertices`)を周に沿って並べて書く．どちらか一方で書く．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Polygon {
     /// 識別子．
@@ -742,6 +775,7 @@ impl Polygon {
 /// 式から呼べる関数．`f(x) = x^2`なら，`id`が`f`，`vars`が`["x"]`，`expr`が`"x^2"`である．
 /// 本体は，媒介変数と，先に置いた関数を使える．どのオブジェクトの式からも呼べ，合成(`f(g(x))`)もできる．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct FunctionDef {
     /// 識別子．式の中の関数の名前になる．
@@ -760,6 +794,7 @@ impl FunctionDef {
 /// 写像．点の座標(平面の図では2個，空間の図では3個)を，同じ数の座標に写す．`transform`の手順
 /// `{"map": id}`で使う．式は，媒介変数と関数を使える．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Map {
     /// 識別子．
@@ -773,6 +808,7 @@ pub struct Map {
 /// 別のオブジェクト(`of`)を，`transform`で変換した像．元のオブジェクトはそのまま残り，像が加わる．
 /// 元のオブジェクトを直せば，像も変わる．スタイルは，書けば元のものの代わりに使い，書かなければ元のものを使う．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Image {
     /// 識別子．
@@ -792,6 +828,7 @@ pub struct Image {
 /// グラフ(`of`)のテイラー展開を，`order`次で打ち切った多項式のグラフ．平面の図でだけ使える．
 /// 係数は，グラフの式から，べき級数の計算で正確に求める(特殊関数を含む式は展開できない)．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Taylor {
     /// 識別子．
@@ -820,6 +857,7 @@ impl Taylor {
 
 /// 曲面の，平面による切り口．平面は，法線と定数で`normal・p = offset`と書く．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Cut {
     /// 識別子．
@@ -843,6 +881,7 @@ pub struct Cut {
 /// 曲面は不透明な殻で，ほかのオブジェクトの線を隠す．輪郭は，視線が曲面に接する所である．
 /// 式で書くときは`vars`，`expr`，`domain`を，ベジエ曲面で書くときは`bezier`を使う．両方は書けない．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Surface {
     /// 識別子．
@@ -914,6 +953,7 @@ fn is_default_mesh(mesh: &[usize; 2]) -> bool {
 
 /// 領域．2つのグラフ(かグラフとx軸)の間を，定義域の中で，平行な斜線で埋める．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Region {
     /// 識別子．
@@ -944,6 +984,7 @@ pub struct Region {
 
 /// 領域の塗り．
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Fill {
     /// 塗る色．なければ，文字の色である．
@@ -1005,6 +1046,7 @@ fn is_default_gap(gap: &Length) -> bool {
 /// 格子．範囲(平面の図では，なければ見える範囲)を，原点から数えた刻みの倍数の位置の線で区切る．
 /// 空間の図では，xy平面(z = 0)の上に引く．ほかの平面には，変換(`transform`)で動かす．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Grid {
     /// 識別子．
@@ -1031,6 +1073,7 @@ pub struct Grid {
 
 /// 球．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Sphere {
     /// 識別子．
@@ -1052,6 +1095,7 @@ pub struct Sphere {
 
 /// 関数のグラフ．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Graph {
     /// 識別子．
@@ -1073,6 +1117,7 @@ pub struct Graph {
 /// 媒介変数表示の曲線．式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)か，
 /// スプライン曲線が通る点(`spline`)の，どれか1つで書く．2つ以上は書けない．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Curve {
     /// 識別子．

@@ -14,3 +14,12 @@ puruspe = "0.4"
 semver = { version = "1", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# JSON Schemaの骨格を生成する．手書きのスキーマと型が合っているかを確かめるテストだけが使う．
+schemars = { version = "1", optional = true, features = ["semver1"] }
+
+[features]
+schema = ["dep:schemars"]
+
+[dev-dependencies]
+# テストでは，schemaを有効にした自分自身を使う．
+figure = { path = ".", features = ["schema"] }
