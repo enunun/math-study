@@ -1,0 +1,151 @@
+---
+title: numbersetsパッケージ
+description: 自然数全体や実数全体などの数の集合を，書体ではなく意味を表すコマンドで書くためのLaTeXパッケージである．CTANとTeX Liveに収録されている．
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside title="この記事について">
+
+このページは，作者がQiitaに書いた記事[numbersetsパッケージで\mathbb\{R\}と書くのをやめる(利用者編)](https://qiita.com/Nmatician/items/bd02033d796d6ba197a4)をもとに，Claude Codeがまとめたパッケージの紹介である．
+
+</Aside>
+
+`numbersets`は，数の集合を書くためのLaTeXパッケージである．CTANに登録してあり，TeX Liveにも収録されている．ソースは[enunun/numbersets](https://github.com/enunun/numbersets)で公開しており，要望や不具合の報告はそのIssuesで受け付ける．この記事の内容は，v0.2.0に基づく．
+
+## 意味を表すコマンド
+
+数学では，自然数全体の集合や実数全体の集合のようによく使う集合に，特別な書体を割り当てる．黒板太字で$\NaturalNumbers$と書いたり，太字で$\NaturalNumbers[bfup]$と書いたりする．
+
+LaTeXでは`\mathbb{N}`や`\mathbf{N}`と書くことが多いが，これは好ましくない．`\mathbb`や`\mathbf`が伝えるのは「黒板太字である」という見た目だけで，「自然数全体の集合」という意図は伝わらないからである．意図を伝えるには，次のようにコマンドを定義して，本文では`\NaturalNumbers`と書く．
+
+```latex
+\NewDocumentCommand\NaturalNumbers{}{\mathbb{N}}
+```
+
+こうしておくと，書体を`\mathbf`に変えたくなったときにも，直すのは定義の1か所で済む．`numbersets`は，このような定義のための簡単なインターフェースと，よく使う集合のプリセットを提供する．すぐに使いたいなら，パッケージオプションとプリセットだけを知っていれば足りる．
+
+## パッケージの読み込み
+
+ほかのパッケージと同じく，プリアンブルで読み込む．
+
+```latex
+\usepackage{unicode-math}
+\usepackage{numbersets}
+```
+
+既定の書体は，`unicode-math`パッケージのコマンドを使う．`numbersets`は`unicode-math`を読み込まないので，文書の側で読み込む．`unicode-math`を使わない文書の設定は，後の[unicode-mathを使わない文書](#unicode-mathを使わない文書)で述べる．
+
+パッケージオプション`style`で，集合に使う書体を選ぶ．`style=bfit`のように，`key=value`の形で書く．指定しなければ`bb`になる．
+
+| 値     | 書体       | 等価なコマンド | 出力                   |
+| :----- | :--------- | :------------- | :--------------------- |
+| `bb`   | 黒板太字   | `\symbb`       | $\RealNumbers[bb]$     |
+| `bfup` | 立体の太字 | `\symbfup`     | $\RealNumbers[bfup]$   |
+| `bfit` | 斜体の太字 | `\symbfit`     | $\RealNumbers[bfit]$   |
+
+読み込んだ後で既定の書体を変えるには，`\SetupNumberSetsOptions`を使う．
+
+```latex
+% 既定の書体を斜体の太字にする
+\SetupNumberSetsOptions{style=bfit}
+```
+
+## 数の集合のプリセット
+
+よく使う数の集合には，コマンドが定義してある．
+
+| 集合             | コマンド           | 既定の出力         |
+| :--------------- | :----------------- | :----------------- |
+| 自然数全体の集合 | `\NaturalNumbers`  | $\NaturalNumbers$  |
+| 整数全体の集合   | `\Integers`        | $\Integers$        |
+| 有理数全体の集合 | `\RationalNumbers` | $\RationalNumbers$ |
+| 実数全体の集合   | `\RealNumbers`     | $\RealNumbers$     |
+| 複素数全体の集合 | `\ComplexNumbers`  | $\ComplexNumbers$  |
+
+どのコマンドも，任意引数でその場所だけ書体を変えられる．`\RealNumbers[style=bfit]`は$\RealNumbers[bfit]$になる．
+
+## 基礎のコマンド
+
+プリセットの土台は`\NumberSet`である．必須引数の文字に，決められた書体を当てて出力する．書体は既定のものか，任意引数で指定したものになる．
+
+```latex
+% 既定の書体
+\NumberSet{A}
+
+% その場所だけ立体の太字
+\NumberSet[style=bfup]{A}
+```
+
+`\NumberSet`は，数の集合を表すことは伝わるが，どの集合を表すかは伝わらない．プリセットにない集合は，次の方法でコマンドを定義して使うのがよい．
+
+## 新しい数の集合のコマンド
+
+`\DeclareNumberSetCommand`は，数の集合を表すコマンドを定義する．定義するコマンドと，使う文字を渡す．
+
+```latex
+\DeclareNumberSetCommand{<control sequence>}{<symbol>}
+```
+
+たとえば四元数全体の集合を表す`\Quaternions`は，次のように定義する．`\Quaternions`は`\NumberSet{H}`を表し，プリセットと同じく`\Quaternions[style=bb]`のように書体も指定できる．
+
+```latex
+\DeclareNumberSetCommand{\Quaternions}{H}
+```
+
+任意引数があるので，四元数係数の多項式環のつもりで`\Quaternions[X]`を書けば，エラーになる．`X`という書体の指定はないからである．多項式環には，専用のコマンドを定義するのがよい．入力の意図を明示するという，このパッケージの趣旨にも合う．
+
+```latex
+% プリアンブル
+\NewDocumentCommand{\polynomialring}{mm}{
+    #1\mathopen{}\left[#2\right]\mathclose{}
+}
+
+% 本文
+\polynomialring{\Quaternions}{X}
+```
+
+`\mathopen{}`と`\mathclose{}`で囲むのは，`\left`と`\right`が挿入する余分な空白を抑えるためである．
+
+## 新しい書体規則
+
+用意された書体で足りなければ，`\DeclareNumberSetStyle`で書体規則を定義する．最初の引数は規則の名前で，次の引数は規則を当てたときに実行するコマンドである．
+
+```latex
+\DeclareNumberSetStyle{<style name>}{<command>}
+```
+
+たとえば太字のサンセリフを使うなら，次のように定義する．定義した後は，`style=boldsans`を`bb`や`bfup`と同じように使える．
+
+```latex
+\DeclareNumberSetStyle{boldsans}{\symbfsfup}
+```
+
+2番目の引数には，制御綴を1つだけ書ける．`{\overline\symbb}`のような組み合わせを使いたいときは，先に1つのコマンドとして定義しておく．
+
+```latex
+\NewDocumentCommand\bbline{m}{\overline{\symbb{#1}}}
+\DeclareNumberSetStyle{bbline}{\bbline}
+```
+
+## unicode-mathを使わない文書
+
+`\DeclareNumberSetStyle`は，`bb`や`bfup`のような既定の規則も上書きできる．`unicode-math`を使わない文書では，この方法で既定の規則を書き換える．次は，`amssymb`パッケージと`bm`パッケージを使う例である．
+
+```latex
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{numbersets}
+\DeclareNumberSetStyle{bb}{\mathbb}
+\DeclareNumberSetStyle{bfit}{\bm}
+
+% 本文
+\NumberSet{N}             % \mathbb{N}と同じ
+\NumberSet[style=bfit]{N} % \bm{N}と同じ
+```
+
+書き換えるのは，実際に使う規則だけでよい．この例で使わない`bfup`は，書き換えなくても問題は起きない．
+
+## このサイトの数式
+
+このサイトの数式も，同じ名前のマクロで数の集合を書いている．ただし書体は，`\RealNumbers[bfit]`のように値だけで指定する．

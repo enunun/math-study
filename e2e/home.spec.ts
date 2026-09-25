@@ -20,7 +20,13 @@ const CATEGORIES = [
       ['平面の図の塗りつぶし', 'topics/figure-fill/'],
     ],
   },
-  { name: 'ツール', pages: [['図の作成', 'tools/figure-editor/']] },
+  {
+    name: 'ツール',
+    pages: [
+      ['図の作成', 'tools/figure-editor/'],
+      ['numbersetsパッケージ', 'tools/numbersets/'],
+    ],
+  },
 ] as const;
 
 test.describe('トップページ', () => {
