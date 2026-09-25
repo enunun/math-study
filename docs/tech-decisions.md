@@ -131,7 +131,7 @@ What is automated, and what was decided not to be:
 - Visual regression is not automated. Screenshot comparison depends on fonts and rendering, needs images in the repository, and needs a pinned environment. Specific bugs are guarded with layout assertions instead.
 - Only Chromium is tested.
 - Speech quality of the `aria-label` strings, Japanese screen reader output, and real printing are manual (see the `verify-site` skill).
-- Transcriptions of the author's earlier PDFs (`topics/locus.mdx`, `topics/recurrence-guess.mdx`, `topics/trigonometric-functions.mdx`) are listed in `.textlintignore`. Their text must match the original word for word, and the original breaks the writing rules (ですます in one sentence, long sentences, many commas, the quoted "。"), so no rule could pass without changing the text. remark-lint, the build, and the E2E checks still cover them. textlint honours `.textlintignore` for files passed explicitly, so the pre-commit hook skips them too.
+- No page is excluded from textlint. The transcriptions of the author's earlier PDFs were rewritten until they passed. `max-kanji-continuous-len` allows 15 kanji in a row, because mathematical terms (狭義単調増加連続関数) and document titles (高等学校学習指導要領解説) are long.
 
 ## Spacing between Japanese and other text (implemented)
 

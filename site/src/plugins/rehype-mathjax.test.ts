@@ -78,6 +78,11 @@ $$`);
     expect(html).toContain('the absolute value of a');
   });
 
+  it('半開区間の丸括弧のマクロを展開する', async () => {
+    const html = await render(String.raw`$\lparen a,b] \cup [c,d\rparen$`);
+    expect(html).toContain('<mjx-container');
+  });
+
   it('bussproofsの導出木を描画する', async () => {
     const html = await render(
       String.raw`$$

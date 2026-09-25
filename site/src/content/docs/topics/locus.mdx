@@ -1,6 +1,6 @@
 ---
 title: 高校数学Ⅱの軌跡を完全に理解するためのn問
-description: 軌跡の定義から，軌跡を求める問題の解答で何を示すべきかを，問題形式で説明する．リポジトリにあるPDFの書き起こしである．
+description: 軌跡の定義から，軌跡を求める問題の解答で何を示すべきかを，問題形式で説明する．PDFでアップロードした記事の，Claude Codeによる書き起こしである．
 pageId: locus
 ---
 
@@ -11,23 +11,23 @@ import { Answer, Definition, Example, Problem } from '@/components/statement';
 
 <Aside title="書き起こしについて">
 
-このページは，GitHubのリポジトリ[enunun/locus](https://github.com/enunun/locus)にあるPDF(`locus.pdf`)をWebページに書き起こしたものである．見出しの書式と，定義や式の番号の付け方は原文と異なる．本文は原文のとおりに写している．原文の著者は野口匠で，日付は2021年6月15日である．
+このページは，GitHubのリポジトリ[enunun/locus](https://github.com/enunun/locus)にPDFでアップロードした記事の，Claude Codeによる書き起こしである．
 
 </Aside>
 
-この記事はMath Advent Calendar 2019([https://adventar.org/calendars/4297](https://adventar.org/calendars/4297))の19日目の記事です．（2021/06/15修正）
+この記事は，[Math Advent Calendar 2019](https://adventar.org/calendars/4297)の19日目の記事である（2021年6月15日修正）．
 
 ## 準備
 
 この記事では，以下のような表記法を採用する．なお，高校の教科書における流儀とは異なる部分が多数見られるので注意せよ．
 
-- 点を表す記号は高校の教科書ではローマン体で$\mathrm{A}, \mathrm{B}, \dotsc$のように書かれることが多いが，この記事では通常の変数と同じく$A,B, \dotsc$のようにイタリック体で表記する．
+- 点を表す記号は，高校の教科書ではローマン体で$\mathrm{A}, \mathrm{B}, \dotsc$のように書かれることが多い．この記事では，通常の変数と同じく$A,B, \dotsc$のようにイタリック体で表記する．
 - なんらかの対象に関する条件$\varphi$に対し，対象$x$が条件$\varphi$を満たすという主張を$\varphi(x)$と表す．
-- 集合$S$と条件$\varphi$に対し，$\varphi$を満たす$S$の元全体の集合を$\set{\, x \in S \mid \varphi(x) \,}$と表す．
+- 集合$S$と条件$\varphi$に対し，$\varphi$を満たす$S$の元全体の集合を$\set{x \in S \mid \varphi(x)}$と表す．
 - 平面上の点$A,B$に対し，線分$AB$の長さを$\overline{AB}$と表す．$\overline{AB}$は$A,B$の距離に相当する．
 - 実数全体の集合を$\RealNumbers$で，（ユークリッド）平面を$\RealNumbers ^2$でそれぞれ表す．$x \in \RealNumbers$は$x$が実数であることを，$P \in \RealNumbers ^2$は$P$が平面上の点であることをそれぞれ表す．
 - 「座標が$(a,b)$であるような点$P$」を高校の教科書ではよく「点$P(a,b)$」などと表すようであるが，この記事では「$P = (a,b)$」と表すこととする．
-- 2つの主張$\varphi, \psi$について，$\varphi$が真であるならば必ず$\psi$も真であること，および$\varphi$と$\psi$が同値であることをそれぞれ$\varphi \implies \psi$と$\varphi \Longleftrightarrow \psi$で表す．
+- 2つの主張$\varphi$と$\psi$を考える．$\varphi$が真であるならば必ず$\psi$も真であることを$\varphi \implies \psi$で表す．$\varphi$と$\psi$が同値であることを$\varphi \Longleftrightarrow \psi$で表す．
 - $x < y$または$x = y$であることを表す不等号として$x \leq y$を用いる．
 - この記事では，特に断らない限り「平面上の点」を単に「点」と表すことがある．
 - 集合と写像に関する基本的な知識や記法は既知とする．また，写像$f$の値域を$\operatorname{Im} f$と表す．
@@ -38,14 +38,12 @@ import { Answer, Definition, Example, Problem } from '@/components/statement';
 
 <Definition id="locus">
 
-平面$\RealNumbers ^2$上の点に関する条件$\varphi$が与えられたとする．このとき，$\varphi$を満たす点全体の集合，すなわち，集合
+平面$\RealNumbers ^2$上の点に関する条件$\varphi$が与えられたとする．このとき，$\varphi$を満たす点全体の集合を，（平面上における）$\varphi$を満たす点の**軌跡**という．<Detail>「$\varphi(P)$を満たす点$P$の軌跡」などと表記することもある．</Detail>すなわち，軌跡は次の集合である．
 
 $$
-\set{\, P \in \RealNumbers ^2 \mid \varphi(P) \,}
+\set{P \in \RealNumbers ^2 \mid \varphi(P)}
 \label{eq-locus}
 $$
-
-を（平面上における）$\varphi$を満たす点の**軌跡**<Detail>「$\varphi(P)$を満たす点$P$の軌跡」などと表記することもある．</Detail>という．
 
 </Definition>
 
@@ -67,68 +65,68 @@ $$
 
 <Answer id="ans-apollonius">
 
-$\overline{AP} : \overline{BP} = 2 : 1$を満たす平面上の任意の点$P = (x,y)$に対し，$\overline{AP}^2 = 4 \overline{BP}^2$だから
+平面上の点$P = (x,y)$が$\overline{AP} : \overline{BP} = 2 : 1$を満たすとする．このとき$\overline{AP}^2 = 4 \overline{BP}^2$だから，次の式が成り立つ．
 
 $$
 (x + 2)^2 + y^2 = 4\left((x - 4)^2 + y^2\right)
 $$
 
-より
+よって次の式が成り立つ．
 
 $$
 (x - 6)^2 + y^2 = 16
 \label{eq-apollonius}
 $$
 
-が成り立つ．また，<Ref to="eq-apollonius" />を満たす任意の点$P = (x,y)$は上の計算を逆にたどることによって$\overline{AP} : \overline{BP} = 2 : 1$を満たすことがわかる．ゆえに$\overline{AP} : \overline{BP} = 2 : 1$を満たす点$P$の軌跡は点$(6,0)$を中心とする半径4の円である．
+また，<Ref to="eq-apollonius" />を満たす任意の点$P = (x,y)$は，上の計算を逆にたどることによって$\overline{AP} : \overline{BP} = 2 : 1$を満たすことがわかる．ゆえに$\overline{AP} : \overline{BP} = 2 : 1$を満たす点$P$の軌跡は，点$(6,0)$を中心とする半径4の円である．
 
 </Answer>
 
-<Ref to="apollonius" />にあるような条件が与えられたとしても，その条件を満たす点の軌跡がどのようなものであるかはすぐにはわからない．そこでまずは$\overline{AP} : \overline{BP} = 2 : 1$であると仮定したら何が起こるかを考えるという指針で議論を進めたのが<Ref to="ans-apollonius" />である．その結果，$\overline{AP} : \overline{BP} = 2 : 1$を満たすような点$P = (x,y)$は必ず$(x - 6) + y^2 = 16$を満たさなければならないということがわかったのであった．これは，平面上の任意の点$P = (x,y)$が
+<Ref to="apollonius" />にあるような条件が与えられたとしても，その条件を満たす点の軌跡がどのようなものであるかはすぐにはわからない．そこでまずは，$\overline{AP} : \overline{BP} = 2 : 1$であると仮定したら何が起こるかを考えた．この指針で議論を進めたのが<Ref to="ans-apollonius" />である．その結果，$\overline{AP} : \overline{BP} = 2 : 1$を満たす点$P = (x,y)$は必ず$(x - 6)^2 + y^2 = 16$を満たすとわかった．これは，平面上の任意の点$P = (x,y)$が次の条件を満たすことに相当する．
 
 $$
 \overline{AP} : \overline{BP} = 2 : 1 \implies (x - 6)^2 + y^2 = 16
 \label{eq-apolloniusimplies}
 $$
 
-を満たすことに相当する．このことから，
+ここから，次の包含関係がわかる．
 
 $$
-\set{\, P \in \RealNumbers ^2 \mid \overline{AP} : \overline{BP} = 2 : 1 \,} \subset
-\set{\, (x,y) \in \RealNumbers^2 \mid (x - 6)^2 + y^2 = 16 \,}
+\set{P \in \RealNumbers ^2 \mid \overline{AP} : \overline{BP} = 2 : 1} \subset
+\set{(x,y) \in \RealNumbers^2 \mid (x - 6)^2 + y^2 = 16}
 \label{eq-apolloniussubset}
 $$
 
-であることがわかる．次に考えなければならないのは，<Ref to="eq-apolloniussubset" />を逆にした
+次に考えなければならないのは，<Ref to="eq-apolloniussubset" />を逆にした次の包含関係が成り立つかどうかである．
 
 $$
-\set{\, (x,y) \in \RealNumbers^2 \mid (x - 6)^2 + y^2 = 16 \,} \subset
-\set{\, P \in \RealNumbers ^2 \mid \overline{AP} : \overline{BP} = 2 : 1 \,}
+\set{(x,y) \in \RealNumbers^2 \mid (x - 6)^2 + y^2 = 16} \subset
+\set{P \in \RealNumbers ^2 \mid \overline{AP} : \overline{BP} = 2 : 1}
 \label{eq-apolloniussubsetinv}
 $$
 
-が成り立つかどうかである．<Ref to="eq-apolloniussubsetinv" />を示すためには平面上の任意の点$P = (x,y)$に対して
+<Ref to="eq-apolloniussubsetinv" />を示すには，平面上の任意の点$P = (x,y)$に対して次の条件を示せばよい．
 
 $$
 (x - 6)^2 + y^2 = 16 \implies \overline{AP} : \overline{BP} = 2 : 1
 \label{eq-aplloniusimpliesinv}
 $$
 
-を示せばよい．すなわち，$(x - 6)^2 + y^2 = 16$である点$P = (x, y)$がつねに$\overline{AP} : \overline{BP} = 2 : 1$を満たすことを示せばよい．これは<Ref to="eq-apolloniussubset" />を示すときに行った計算をそのまま逆にたどればすぐにわかる．以上をもって
+すなわち，$(x - 6)^2 + y^2 = 16$である点$P = (x, y)$がつねに$\overline{AP} : \overline{BP} = 2 : 1$を満たすことを示せばよい．これは，<Ref to="eq-apolloniussubset" />を示すときに行った計算をそのまま逆にたどればすぐにわかる．以上をもって，次の等式の成立がわかった．
 
 $$
-\set{\, (x,y) \in \RealNumbers^2 \mid (x - 6)^2 + y^2 = 16 \,} =
-\set{\, P \in \RealNumbers ^2 \mid \overline{AP} : \overline{BP} = 2 : 1 \,}
+\set{(x,y) \in \RealNumbers^2 \mid (x - 6)^2 + y^2 = 16} =
+\set{P \in \RealNumbers ^2 \mid \overline{AP} : \overline{BP} = 2 : 1}
 \label{eq-apolloniusequal}
 $$
 
-が成り立つことがわかったので，$\overline{AP} : \overline{BP} = 2 : 1$を満たす点$P$の軌跡は点$(6, 0)$を中心とする半径$4$の円であることが結論されるのである．
+よって，$\overline{AP} : \overline{BP} = 2 : 1$を満たす点$P$の軌跡は，点$(6, 0)$を中心とする半径$4$の円であることが結論されるのである．
 
-<Ref to="ans-apollonius" />では，<Ref to="eq-aplloniusimpliesinv" />を示すのは<Ref to="eq-apolloniusimplies" />の導出で行った計算過程を逆にたどるだけで終わったのであった．このことに着目すれば，次のようにして解答を大幅に省略できる．
+<Ref to="ans-apollonius" />では，<Ref to="eq-apolloniusimplies" />の導出で行った計算過程を逆にたどるだけで，<Ref to="eq-aplloniusimpliesinv" />を示せたのであった．このことに着目すれば，次のようにして解答を短くできる．
 
 <Answer id="ans-aplloniusomit">
 
-平面上の任意の点$P = (x,y)$に対し，
+平面上の任意の点$P = (x,y)$に対して次の同値が成り立つ．
 
 $$
 \begin{aligned}
@@ -139,7 +137,7 @@ $$
 \end{aligned}
 $$
 
-であるから，$\overline{AP} : \overline{BP} = 2 : 1$を満たす点$P$の軌跡は点$(6, 0)$を中心とする半径$4$の円である．
+よって，$\overline{AP} : \overline{BP} = 2 : 1$を満たす点$P$の軌跡は，点$(6, 0)$を中心とする半径$4$の円である．
 
 </Answer>
 
@@ -153,18 +151,18 @@ $$
 
 <Answer id="ans-vertbisector">
 
-線分$OA$の垂直二等分線上の任意の点$P = (x, y)$に対し，$\overline{OP} = \overline{AP}$が成り立つから$\overline{OP}^2 = \overline{AP}^2$より
+線分$OA$の垂直二等分線上の任意の点$P = (x, y)$に対し，$\overline{OP} = \overline{AP}$が成り立つ．よって$\overline{OP}^2 = \overline{AP}^2$から次の式が成り立つ．
 
 $$
 x + y - 2 = 0
 \label{eq-vertbisector}
 $$
 
-が成り立つ．また，<Ref to="eq-vertbisector" />を満たす任意の点$P = (x, y)$に対し，上の計算を逆にたどることによって$\overline{OP} = \overline{AP}$が成り立つことがわかる．ゆえに，$P$は線分$OA$の中点であるか，さもなくば$\triangle OAP$が$\overline{OP} = \overline{OA}$の二等辺三角形であるかのいずれかであり，いずれにせよ点$P$は線分$OA$の垂直二等分線上の点である．従って線分$OA$の垂直二等分線の方程式は<Ref to="eq-vertbisector" />で与えられる．
+また，<Ref to="eq-vertbisector" />を満たす任意の点$P = (x, y)$に対し，上の計算を逆にたどることによって$\overline{OP} = \overline{AP}$の成立がわかる．ゆえに，$P$は線分$OA$の中点であるか，さもなくば$\triangle OAP$が$\overline{OP} = \overline{AP}$の二等辺三角形である．いずれにせよ，点$P$は線分$OA$の垂直二等分線上の点である．従って，線分$OA$の垂直二等分線の方程式は<Ref to="eq-vertbisector" />で与えられる．
 
 </Answer>
 
-<Ref to="ans-vertbisector" />の議論の進め方が<Ref to="ans-apollonius" />とまったく同じであることはいうまでもない<Detail>そこそこ有名な大学受験対策サイトに「『軌跡を求めよ』ではなく『方程式を求めよ』なのだから逆の確認（<Ref to="ans-vertbisector" />での「または」からの部分）はしなくてもよい」などと書いてあったのだが，もちろんそんなことはない．</Detail>．もちろん<Ref to="ans-aplloniusomit" />のような形式の解答も述べることができるが，いちいち書く必要はないだろう．
+<Ref to="ans-vertbisector" />の議論の進め方が<Ref to="ans-apollonius" />とまったく同じであることは，いうまでもない．<Detail>ある受験対策サイトには，方程式を求める問題なら逆の確認は不要とあったが，もちろんそんなことはない．</Detail>もちろん<Ref to="ans-aplloniusomit" />のような形式の解答も述べることができるが，いちいち書く必要はないだろう．
 
 もう少し状況を複雑にして考えてみよう．このあたりから市販の参考書に間違いが多くなってくる．
 
@@ -176,14 +174,14 @@ $$
 
 <Answer id="ans-varpoint">
 
-$C$と直線$OA$の交点は2点$O, A$である．これ以外の$C$上の任意の点$Q = (s, t)$に対し，
+$C$と直線$OA$の交点は2点$O, A$である．これ以外の$C$上の任意の点$Q = (s, t)$に対し，次の式が成り立つ．
 
 $$
 (s - 2)^2 + t^2 = 4
 \label{eq-varcond}
 $$
 
-が成り立つ．いま，$\triangle OAQ$の重心を$P = (x, y)$とおくと，
+いま，$\triangle OAQ$の重心を$P = (x, y)$とおくと，次の式が成り立つ．
 
 $$
 \begin{aligned}
@@ -193,7 +191,7 @@ y & = \frac{t}{3}
 \label{eq-varpoint}
 $$
 
-であるから
+よって次の式が成り立つ．
 
 $$
 \begin{aligned}
@@ -203,41 +201,43 @@ t & = 3y
 \label{eq-varpointinv}
 $$
 
-であり，これを<Ref to="eq-varcond" />に代入して
+これを<Ref to="eq-varcond" />に代入して，次の式を得る．
 
 $$
 (x - 2)^2 + y^2 = \frac{4}{9}
 \label{eq-varpointlocus}
 $$
 
-を得る．また，$Q$は$O,A$のいずれとも異なる点であるから，<Ref to="eq-varpoint" />より$P$は2点$(4/3, 0), (8/3, 0)$のいずれとも異ならなければならない．
+また，$Q$は$O,A$のいずれとも異なる点である．だから<Ref to="eq-varpoint" />より，$P$は2点$(4/3, 0)$と$(8/3, 0)$のいずれとも異ならなければならない．
 
-逆に，<Ref to="eq-varpointlocus" />を満たす2点$(4/3, 0), (8/3, 0)$のいずれとも異なる任意の点$P = (x,y)$に対し，<Ref to="eq-varpointinv" />で定められる点$Q = (s, t)$は2点$O, A$のいずれとも異なる$C$上の点であって3点$O,A,Q$は三角形をなし，$P$はその重心である．
+逆に，<Ref to="eq-varpointlocus" />を満たし，2点$(4/3, 0)$と$(8/3, 0)$のいずれとも異なる任意の点$P = (x,y)$を考える．<Ref to="eq-varpointinv" />で定められる点$Q = (s, t)$は，2点$O, A$のいずれとも異なる$C$上の点である．このとき3点$O,A,Q$は三角形をなし，$P$はその重心である．
 
-以上より，$Q$が3点$O,A,Q$が三角形をなすような$C$上の点全体を動くとき，$\triangle OAQ$の重心の軌跡は点$(2, 0)$を中心とする半径$4/9$の円から2点$(4/3, 0), (8/3, 0)$を除いた部分である．
+以上より，求める重心の軌跡は，点$(2, 0)$を中心とする半径$2/3$の円から2点$(4/3, 0)$と$(8/3, 0)$を除いた部分である．
 
 </Answer>
 
 <Ref to="ans-varpoint" />の「逆に」からの部分をサボる解説を非常によく見るのだが，明確な間違いであることはいうまでもない．
 
-さて，<Ref to="ans-varpoint" />の各部分が何をしているのかを整理しよう．今回求めたのは，「$P$が$\triangle OAQ$の重心となる，3点$O,A,Q$が一直線上にないような$C$上の点$Q$が存在する」という条件を満たす点$P$の軌跡である．ゆえに問題文でも「軌跡」という用語を用いている．ゆえに前半では，上の条件を満たす点$Q$がうまくとれたことを前提にして議論を進めた．その結果そのような点$P$は<Ref to="eq-varpointlocus" />を満たし，かつ2点$(4/3, 0), (8/3, 0)$のいずれとも異ならなければならないということがわかったのであった．後半では，<Ref to="eq-varpointlocus" />を満たす2点$(4/3, 0), (8/3, 0)$のいずれとも異なる点$P$すべてが「$P$が$\triangle OAQ$の重心となる，3点$O,A,Q$が一直線上にないような$C$上の点$Q$が存在する」という条件を満たすことを確かめるため，そのような点$Q$を実際に構成してみせた．どのようにして構成すればよいかは前半の議論でほとんど明らかになっているため，それをトレースするのみである．
+さて，<Ref to="ans-varpoint" />の各部分が何をしているのかを整理しよう．今回求めたのは，次の条件を満たす点$P$の軌跡である．「$P$が$\triangle OAQ$の重心となる，3点$O,A,Q$が一直線上にないような$C$上の点$Q$が存在する．」だから問題文でも「軌跡」という用語を用いている．
 
-写像の言葉を用いれば上記の議論をもっとすっきりと記述できる．3点$O,A,Q$が三角形をなすような$C$上の点$Q$全体の集合を$X$とし，$Q \in X$に対して$\triangle OAQ$の重心を対応させるような$\RealNumbers^2$への写像を$f \colon X \to \RealNumbers^2$とすれば，<Ref to="varpoint" />は$f$の値域$\operatorname{Im} f$を求めよという問題にほかならない．$\operatorname{Im} f = Y$を示すためには，すべての対象$P$に対して
+そこで前半では，上の条件を満たす点$Q$がうまくとれたことを前提にして議論を進めた．その結果，そのような点$P$は<Ref to="eq-varpointlocus" />を満たし，かつ2点$(4/3, 0)$と$(8/3, 0)$のいずれとも異ならなければならないとわかった．後半では，<Ref to="eq-varpointlocus" />を満たし2点$(4/3, 0)$と$(8/3, 0)$のいずれとも異なる点$P$を考えた．そのような点$P$すべてが上の条件を満たすことを確かめるため，条件にある点$Q$を実際に構成してみせた．どのようにして構成すればよいかは前半の議論でほとんど明らかになっているため，それをトレースするのみである．
+
+写像の言葉を用いれば，上記の議論をもっとすっきりと記述できる．3点$O,A,Q$が三角形をなすような$C$上の点$Q$全体の集合を$X$とする．$Q \in X$に対して$\triangle OAQ$の重心を対応させる写像を$f \colon X \to \RealNumbers^2$とする．すると，<Ref to="varpoint" />は$f$の値域$\operatorname{Im} f$を求めよという問題にほかならない．$\operatorname{Im} f = Y$を示すには，すべての対象$P$に対して次の同値を示せばよいのであった．
 
 $$
 P \in \operatorname{Im} f \Longleftrightarrow P \in Y
 \label{eq-imageiquiv}
 $$
 
-を示せばよいのであった．解答を考え始める段階では$Y$がどのような集合であるかはわからないのだから，まずは$P \in \operatorname{Im} f$を仮定するのはごく自然であろう．それさえわかればあとはほとんど単純作業である．
+解答を考え始める段階では，$Y$がどのような集合であるかはわからない．だから，まずは$P \in \operatorname{Im} f$を仮定するのはごく自然であろう．それさえわかれば，あとはほとんど単純作業である．
 
-なお，<Ref to="ans-varpoint" />を<Ref to="ans-aplloniusomit" />のように前半と後半の議論を同時に行うことはできなくもないがやたら記述が複雑になるのでオススメしない．
+なお，<Ref to="ans-varpoint" />でも，<Ref to="ans-aplloniusomit" />のように前半と後半の議論を同時に行うことはできる．しかし，やたら記述が複雑になるのでオススメしない．
 
 ## 逆像法とパラメータ表示
 
-最後に，受験業界でよく「逆像法」と呼ばれている手法と（曲線の）パラメータ表示に関して少しだけ議論することとする．実は<Ref to="ans-varpoint" />の後半の議論はよく受験業界で「逆像法」と呼ばれているものとほとんど同じ議論の進め方をしている．
+最後に，受験業界でよく「逆像法」と呼ばれている手法と，（曲線の）パラメータ表示に関して少しだけ議論する．実は，<Ref to="ans-varpoint" />の後半は，受験業界でよく「逆像法」と呼ばれているものとほとんど同じ議論の進め方をしている．
 
-まずはいわゆる「逆像法」について解説する．筆者個人としては「逆像法」などという名前が必要だとは思えなかったので何が逆像法なのかは解説しない．
+まずはいわゆる「逆像法」について解説する．筆者個人としては「逆像法」などという名前が必要だとは思えなかったので，何が逆像法なのかは解説しない．
 
 <Problem id="invimage">
 
@@ -247,17 +247,17 @@ $$
 
 <Answer id="ans-invimage">
 
-平面上の任意の点$(x,y)$に対し，$x = X + Y$と$y = XY$をともに満たす点$(X,Y)$が存在するためには，$u$の2次方程式$u^2 - xu + y = 0$が実数解をもつこと，すなわち$u$の2次多項式$u^2 - xu + y$の判別式$D = x^2 - 4y$が負でないことが必要十分である．これが成り立つのは$y \leq x^2/4$のときである．ゆえに点$(x, y)$が平面上の点全体を動くとき，点$(x+y, xy)$の軌跡は放物線$y = x^2/4$上の点とその下側の点全体である．
+平面上の任意の点$(x,y)$を考える．$x = X + Y$と$y = XY$をともに満たす点$(X,Y)$が存在するための必要十分条件は，$u$の2次方程式$u^2 - xu + y = 0$が実数解をもつことである．すなわち，$u$の2次多項式$u^2 - xu + y$の判別式$D = x^2 - 4y$が負でないことである．これが成り立つのは$y \leq x^2/4$のときである．ゆえに，点$(x, y)$が平面上の点全体を動くときの点$(x+y, xy)$の軌跡は，放物線$y = x^2/4$上の点とその下側の点全体である．
 
 </Answer>
 
-<Ref to="ans-invimage" />は<Ref to="ans-aplloniusomit" />と同じ議論の進め方をしている．これくらい単純な議論で済む場合にはこの型で議論を進めた方が簡潔でわかりやすいであろう．
+<Ref to="ans-invimage" />は<Ref to="ans-aplloniusomit" />と同じ議論の進め方をしている．これくらい単純な議論で済む場合には，この型で議論を進めた方が簡潔でわかりやすいであろう．
 
 最後に（曲線の）パラメータ表示を一例だけ扱おう．
 
 <Problem id="parameter">
 
-$t$が実数全体を動くとき，
+$t$が実数全体を動くとき，次の式を満たす点$(x, y)$の軌跡を求めよ．
 
 $$
 \begin{aligned}
@@ -267,35 +267,36 @@ y & = \frac{2t}{1 + t^2}
 \label{eq-parameter}
 $$
 
-を満たす点$(x, y)$の軌跡を求めよ．
-
 </Problem>
 
 <Answer id="ans-parameter">
 
-平面上の任意の点$(x, y)$に対し，<Ref to="eq-parameter" />を満たす実数$t$が存在したとする．このとき，$x = (1 - t^2)/(1 + t^2)$より$x \neq -1$でなければならず，さらに$t^2 = (1 - x)/(1 + x)$である．ゆえに$y = (2t)/(1 + t^2)$から
+平面上の任意の点$(x, y)$に対し，<Ref to="eq-parameter" />を満たす実数$t$が存在したとする．このとき，$x = (1 - t^2)/(1 + t^2)$より$x \neq -1$でなければならず，さらに$t^2 = (1 - x)/(1 + x)$である．ゆえに$y = (2t)/(1 + t^2)$から，次の式を得る．
 
 $$
 t = \frac{y}{1 + x}
 \label{eq-parametert}
 $$
 
-を得る．これと$t^2 = (1 - x)/(1 + x)$より
+これと$t^2 = (1 - x)/(1 + x)$より，次の式が成り立つ．
 
 $$
 x^2 + y^2 = 1
 \label{eq-parametercurve}
 $$
 
-が成り立つ．
+また，$x \neq -1$と<Ref to="eq-parametercurve" />を満たす任意の点$(x, y)$に対し，実数$t$を<Ref to="eq-parametert" />によって定める．このとき次の式が成り立つ．
 
-また，$x \neq -1$と<Ref to="eq-parametercurve" />を満たす任意の点$(x, y)$に対し，実数$t$を<Ref to="eq-parametert" />によって定めれば，$t^2 = y^2/(1 + x)^2 = (1 - x^2)/(1 + x)^2 = (1 - x)/(1 + x)$より$x = (1 - t^2)/(1 + t^2)$が成り立ち，さらに$y = t (1 + x) = (2t)/(1 + t^2)$だから<Ref to="eq-parameter" />が成り立っていることがわかる．
+$$
+t^2 = \frac{y^2}{(1 + x)^2} = \frac{1 - x^2}{(1 + x)^2} = \frac{1 - x}{1 + x}
+$$
+
+よって$x = (1 - t^2)/(1 + t^2)$が成り立つ．さらに$y = t (1 + x) = (2t)/(1 + t^2)$だから，<Ref to="eq-parameter" />が成り立っていることがわかる．
 
 以上の議論により，$t$が実数全体を動くとき，<Ref to="eq-parameter" />を満たす点$(x,y)$は円$x^2 + y^2 = 1$から点$(-1, 0)$を除いた部分である．
 
 </Answer>
 
-この逆の議論をすっぽかしている参考書が非常に多い．主にある条件を満たす点や実数の存在によって規定される点の軌跡を求める際に間違える参考書が多いようである．
+この逆の議論をすっぽかしている参考書が非常に多い．主に，ある条件を満たす点や実数の存在によって規定される点の軌跡を求める際に，間違える参考書が多いようである．
 
-なお，<Ref to="parameter" />も$\RealNumbers$から$\RealNumbers^2$へのある写像の値域を求める問題と考えることができる<Detail>微分積分が絡む文脈では，むしろこう考えるほうが自然である．</Detail>．
-
+なお，<Ref to="parameter" />も，$\RealNumbers$から$\RealNumbers^2$へのある写像の値域を求める問題と考えることができる．<Detail>微分積分の絡む文脈では，むしろこう考えるほうが自然である．</Detail>

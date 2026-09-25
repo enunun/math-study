@@ -102,12 +102,12 @@ pnpm exec textlint --fix site/src/content README.md
 
 ## Transcriptions
 
-A transcription reproduces an existing document (such as the author's PDFs on GitHub) as a page. The existing ones are `topics/locus.mdx`, `topics/recurrence-guess.mdx`, and `topics/trigonometric-functions.mdx`.
+A transcription reproduces one of the author's own earlier articles (such as the PDFs in their GitHub repositories) as a page. The existing ones are `topics/locus.mdx`, `topics/recurrence-guess.mdx`, and `topics/trigonometric-functions.mdx`.
 
-- Start the page with an `<Aside title="書き起こしについて">` that names the source repository and file, the original author and date, and what was changed.
-- Copy the prose and formulas exactly, typos included. Heading style, numbering, the notation of references, and the drawing of figures may change. Write custom LaTeX macros of the original out in standard or site macros (`\apply{f}{x}` becomes `f(x)`). Footnotes become `<Detail>`, citations link to a 参考文献 section, and figures are redrawn as scenes in `site/src/figures/`.
-- Add the file to `.textlintignore`: the original text breaks the writing rules, and fixing it would change the text. The rules still apply to text you write yourself (the Aside, the description, the home card).
-- `\ref` inside a figure caption cannot be a `<Ref />`, so write the label as text and check it against the rendered page.
+- Start the page with `<Aside title="書き起こしについて">` saying only that the page is a Claude Code transcription of the article uploaded as a PDF to the named repository ("…にPDFでアップロードした記事の，Claude Codeによる書き起こしである．"). The `description` and the home card say the same, so that the use of AI is explicit.
+- Keep the content and the argument. Fix obvious typos and mistakes, and rewrite sentences until they pass textlint like any other page; never exclude a page from textlint. Around display math, end the sentence before the formula ("次の式が成り立つ．") instead of continuing it after the formula.
+- Write custom LaTeX macros of the original out in standard or site macros (`\apply{f}{x}` becomes `f(x)`). Write half-open intervals with `\lparen`, `\rparen`, `\lbrack`, or `\rbrack` (`\lparen a,b]`), because textlint checks bracket pairs in math too. Footnotes become `<Detail>` after the sentence's period, citations link to a 参考文献 section, and figures are redrawn as scenes in `site/src/figures/`.
+- textlint counts half-width commas inside math toward the three-comma limit (`\set{\, … \,}` counts two), and the text inside one `<Detail>` as a single sentence.
 
 ## Writing examples
 

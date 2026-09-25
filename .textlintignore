@@ -1,4 +1,0 @@
-# PDFの書き起こしは，原文の文章をそのまま写すため，文体の検査から外す．
-site/src/content/docs/topics/locus.mdx
-site/src/content/docs/topics/recurrence-guess.mdx
-site/src/content/docs/topics/trigonometric-functions.mdx

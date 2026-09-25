@@ -56,7 +56,7 @@ Build-time pipeline: MDX → remark (`remark-math`) → rehype (`rehypeStatement
 - `site/src/plugins/rehype-autospace.ts` and `site/src/styles/typesetting.css`: see the `math-pipeline` skill.
 - `site/src/components/share/`: the SNS share links under every page. `Footer.astro` overrides Starlight's `Footer` (`components` in `site/astro.config.ts`) and puts `ShareButtons.astro` before the default footer. `share-links.ts` builds plain share URLs and loads no third-party scripts. To add a service, add it there.
 - `site/src/plugins/rehype-focusable-tables.ts`: gives tables `tabindex="0"` so a horizontally scrolling table is keyboard-accessible.
-- `e2e/`: Playwright specs and helpers (`routes.ts` lists every page in `site/dist` for the all-pages checks). `.remarkrc.mjs`, `.textlintrc.yml`, `.textlintignore` (the transcribed pages; see "Transcriptions" in the `write-content` skill), `.oxlintrc.jsonc`, `lefthook.yml`, `mise.toml`: lint and task configuration.
+- `e2e/`: Playwright specs and helpers (`routes.ts` lists every page in `site/dist` for the all-pages checks). `.remarkrc.mjs`, `.textlintrc.yml`, `.oxlintrc.jsonc`, `lefthook.yml`, `mise.toml`: lint and task configuration.
 
 ## Skills
 

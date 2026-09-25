@@ -10,6 +10,9 @@ filters:
 rules:
   # 技術文書の文体(文の長さ，読点の数，常体の統一，弱い表現など)．
   preset-ja-technical-writing:
+    # 数学の用語(狭義単調増加連続関数など)や文書名は漢字が長く続くので，15文字まで許す．
+    max-kanji-continuous-len:
+      max: 15
     # 本文と箇条書きを，常体(である調)にそろえる．見出しは指定しない．
     no-mix-dearu-desumasu:
       preferInHeader: ''
