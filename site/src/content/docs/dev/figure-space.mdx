@@ -82,4 +82,4 @@ head:
 
 ## 使い方
 
-シーンの`view`に，`azimuth`と`elevation`(度)，`unit`(1単位の実寸)を書くと，空間の図になる．隠れた線の種類は，`style`の`hidden`で選ぶ(`dotted`が既定で，`dashed`と`none`も選べる)．シーンの形式は，`docs/graph-design.md`にある．
+シーンの`view`に，`azimuth`と`elevation`(度)，`unit`(1単位の実寸)を書くと，空間の図になる．隠れた線の種類は，`style`の`hidden`で選ぶ(`dotted`が既定で，`dashed`と`none`も選べる)．`hidden`を`visible`にしたオブジェクトは，陰線処理をせず，隠れた部分も見える部分と同じ線で描く．`style`の`crossing_gap`に長さ(`"4pt"`など)を書くと，その線がほかの線の奥を通る所に切れ目が入る．シーンの形式は，`docs/graph-design.md`にある．

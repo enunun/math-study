@@ -15,16 +15,17 @@ use crate::compile::{
     Compiled, CurvePlot, CutPlot, GridPlot, LabelPlot, LinkPlot, Plot, PointPlot, SurfacePlot,
     TangentPlanePlot,
 };
+use crate::crossing::{Drawn, Traced, break_crossings};
 use crate::derivative::central_difference_point;
-use crate::figure::{Bounds, DotItem, Figure, Item, LabelItem, Path, Stroke};
+use crate::figure::{ArrowHead, Bounds, DotItem, Figure, Item, LabelItem, Path, Stroke};
 use crate::render::{
     AXIS_WIDTH, CURVE_WIDTH, DOT_RADIUS, GRID_WIDTH, MARGIN, arrow_head, multiples, stroke_of,
     with_variable,
 };
 use crate::sample::{sample, sample_with_parameters};
 use crate::scene::{
-    Anchor, Arrow, Axis, Complex, Cut, Direction, Hidden, Intersection, Label, Line, Object, Point,
-    Scene, SpaceView, Sphere, Style, Surface, TangentPlane,
+    Anchor, Arrow, Axis, Complex, Cut, Direction, Hidden, Intersection, Label, Length, Line,
+    Object, Point, Scene, SpaceView, Sphere, Style, Surface, TangentPlane,
 };
 use crate::spline::catmull_rom_point;
 use crate::surface::{Frame, Mesh, Rim};
@@ -100,6 +101,30 @@ impl Camera {
             dot(point, self.right) * self.unit,
             dot(point, self.up) * self.unit,
         ]
+    }
+
+    /// 空間の点の，奥行き(cm)．大きいほどカメラに近い．
+    fn depth(&self, point: Point3) -> f64 {
+        dot(point, self.toward) * self.unit
+    }
+
+    /// 空間の折れ線を，奥行きつきの画面の折れ線にする．`gap`は，ほかの線の奥を通る所で切る長さである．
+    fn line(
+        &self,
+        points: &[Point3],
+        stroke: Stroke,
+        arrow: Option<ArrowHead>,
+        gap: Option<f64>,
+    ) -> Drawn {
+        Drawn::Line(Traced {
+            path: Path {
+                points: points.iter().map(|point| self.project(*point)).collect(),
+                stroke,
+                arrow,
+            },
+            depths: points.iter().map(|point| self.depth(*point)).collect(),
+            gap,
+        })
     }
 }
 
@@ -380,7 +405,10 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
             }
             (Object::Axis(axis), _) => items.extend(axis_items(axis, &space)),
             (Object::Label(label), Plot::Label(placed)) => {
-                items.extend(label_item(label, placed, &space.camera).map(Item::Label));
+                items.extend(
+                    label_item(label, placed, &space.camera)
+                        .map(|label| Drawn::Other(Item::Label(label))),
+                );
             }
             (Object::Sphere(sphere), _) => {
                 items.push(outline(sphere, &space.camera));
@@ -395,6 +423,7 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
             _ => {}
         }
     }
+    let items = break_crossings(items);
     Figure {
         description: scene.description.clone(),
         bounds: bounds_of(&items),
@@ -415,17 +444,13 @@ fn label_item(label: &Label, placed: &LabelPlot, camera: &Camera) -> Option<Labe
     })
 }
 
-/// 隠れた部分の線の種類．描かないときは`None`．
-const fn hidden_line(hidden: Hidden) -> Option<Line> {
-    match hidden {
-        Hidden::Dotted => Some(Line::Dotted),
-        Hidden::Dashed => Some(Line::Dashed),
-        Hidden::None => None,
-    }
+/// ほかの線の奥を通る所で切る長さ(cm)．なければ切らない．
+fn gap_of(style: &Style) -> Option<f64> {
+    style.crossing_gap.map(Length::to_cm)
 }
 
 /// 球の輪郭．中心の投影を中心とする，半径の円である．
-fn outline(sphere: &Sphere, camera: &Camera) -> Item {
+fn outline(sphere: &Sphere, camera: &Camera) -> Drawn {
     let center = camera.project(sphere.center);
     let radius = sphere.radius * camera.unit;
     let mut paths = sample(
@@ -440,15 +465,21 @@ fn outline(sphere: &Sphere, camera: &Camera) -> Item {
     {
         *last = first;
     }
-    Item::Path(Path {
-        points,
-        stroke: stroke_of(&sphere.style, Line::Solid, CURVE_WIDTH),
-        arrow: None,
+    // 輪郭は，中心を通り視線に垂直な平面の上にあるので，奥行きは中心と同じである．
+    let depths = vec![camera.depth(sphere.center); points.len()];
+    Drawn::Line(Traced {
+        path: Path {
+            points,
+            stroke: stroke_of(&sphere.style, Line::Solid, CURVE_WIDTH),
+            arrow: None,
+        },
+        depths,
+        gap: gap_of(&sphere.style),
     })
 }
 
 /// 軸の線，先端の矢じり，軸の名前．
-fn axis_items(axis: &Axis, space: &Space) -> Vec<Item> {
+fn axis_items(axis: &Axis, space: &Space) -> Vec<Drawn> {
     let Some([low, high]) = axis.range else {
         return Vec::new();
     };
@@ -463,7 +494,8 @@ fn axis_items(axis: &Axis, space: &Space) -> Vec<Item> {
             }
         })
         .collect();
-    let pieces = split_by_visibility(&steps, &at, &|t| space.hidden(at(t)));
+    let tested = axis.style.hidden.is_tested();
+    let pieces = split_by_visibility(&steps, &at, &|t| tested && space.hidden(at(t)));
     let direction = normalized(space.camera.project(unit_vector));
     let end = space.camera.project(at(high));
     let last = pieces.len().saturating_sub(1);
@@ -483,21 +515,19 @@ fn axis_items(axis: &Axis, space: &Space) -> Vec<Item> {
             }
             _ => None,
         };
-        items.push(Item::Path(Path {
-            points: vec![
-                space.camera.project(*first),
-                space.camera.project(*final_point),
-            ],
-            stroke: Stroke { line, ..stroke },
+        items.push(space.camera.line(
+            &[*first, *final_point],
+            Stroke { line, ..stroke },
             arrow,
-        }));
+            gap_of(&axis.style),
+        ));
     }
     if let Some(text) = &axis.label {
-        items.push(Item::Label(LabelItem {
+        items.push(Drawn::Other(Item::Label(LabelItem {
             at: end,
             anchor: direction.map_or(Anchor::South, anchor_beyond),
             tex: format!("${text}$"),
-        }));
+        })));
     }
     items
 }
@@ -554,7 +584,7 @@ fn curve_items(
     compiled: &Compiled,
     transform: &Transform,
     space: &Space,
-) -> Vec<Item> {
+) -> Vec<Drawn> {
     let stroke = stroke_of(&style, Line::Solid, CURVE_WIDTH);
     let at = |t: f64| -> Option<Point3> {
         let point = if let Some(net) = &plot.net {
@@ -573,26 +603,28 @@ fn curve_items(
         }
     };
     let [start, end] = plot.domain;
-    traced_items(stroke, style.hidden, &at, start, end, space)
+    traced_items(stroke, &style, &at, start, end, space)
 }
 
 /// パラメータ`t`が`start`から`end`まで動く線を，隠れ方に分けて描く．画面での滑らかさに合わせて刻み，
 /// 隠れ方が変わる点を二分法で詰める．値のない所で，線は切れる．
 fn traced_items(
     stroke: Stroke,
-    hidden: Hidden,
+    style: &Style,
     at: &dyn Fn(f64) -> Option<Point3>,
     start: f64,
     end: f64,
     space: &Space,
-) -> Vec<Item> {
+) -> Vec<Drawn> {
     let point = |t: f64| at(t).unwrap_or([f64::NAN; 3]);
     let lines = sample_with_parameters(|t| at(t).map(|p| space.camera.project(p)), start, end);
     let mut items = Vec::new();
     for line in lines {
         let steps: Vec<f64> = line.iter().map(|(t, _)| *t).collect();
-        let pieces = split_by_visibility(&steps, &point, &|t| space.hidden(point(t)));
-        items.extend(piece_items(&pieces, stroke, hidden, &space.camera));
+        let pieces = split_by_visibility(&steps, &point, &|t| {
+            style.hidden.is_tested() && space.hidden(point(t))
+        });
+        items.extend(piece_items(&pieces, stroke, style, &space.camera));
     }
     items
 }
@@ -602,14 +634,16 @@ fn straight_items(
     from: Point3,
     to: Point3,
     stroke: Stroke,
-    hidden: Hidden,
+    style: &Style,
     space: &Space,
-) -> Vec<Item> {
+) -> Vec<Drawn> {
     let at = |t: f64| lerp3(from, to, t);
     let steps: Vec<f64> = (0..=AXIS_STEPS)
         .map(|step| f64::from(step) / f64::from(AXIS_STEPS))
         .collect();
-    let pieces = split_by_visibility(&steps, &at, &|t| space.hidden(at(t)));
+    let pieces = split_by_visibility(&steps, &at, &|t| {
+        style.hidden.is_tested() && space.hidden(at(t))
+    });
     let ends: Vec<Piece> = pieces
         .into_iter()
         .filter_map(|piece| {
@@ -620,12 +654,12 @@ fn straight_items(
             })
         })
         .collect();
-    piece_items(&ends, stroke, hidden, &space.camera)
+    piece_items(&ends, stroke, style, &space.camera)
 }
 
 /// 空間の図の格子．xy平面(z = 0)の上に，範囲を刻みの倍数の位置で区切る線を引き，変換で動かす．
 /// 線は，曲面や球や複体に隠れる．写像で写すと線が曲がるので，そのときは標本化する．
-fn grid_items(style: &Style, grid: &GridPlot, transform: &Transform, space: &Space) -> Vec<Item> {
+fn grid_items(style: &Style, grid: &GridPlot, transform: &Transform, space: &Space) -> Vec<Drawn> {
     let stroke = stroke_of(style, Line::Dotted, GRID_WIDTH);
     let [x_low, x_high] = grid.x_range;
     let [y_low, y_high] = grid.y_range;
@@ -639,16 +673,12 @@ fn grid_items(style: &Style, grid: &GridPlot, transform: &Transform, space: &Spa
     vertical
         .chain(horizontal)
         .flat_map(|(from, to)| match affine {
-            Some(affine) => straight_items(
-                affine.apply3(from),
-                affine.apply3(to),
-                stroke,
-                style.hidden,
-                space,
-            ),
+            Some(affine) => {
+                straight_items(affine.apply3(from), affine.apply3(to), stroke, style, space)
+            }
             None => traced_items(
                 stroke,
-                style.hidden,
+                style,
                 &|t| transform.apply3(lerp3(from, to, t)),
                 0.0,
                 1.0,
@@ -659,8 +689,9 @@ fn grid_items(style: &Style, grid: &GridPlot, transform: &Transform, space: &Spa
 }
 
 /// 曲面の輪郭と，縁(`boundary`)の線．隠れた部分は，隠れた部分の線の種類で描く．
-fn surface_items(surface: &Surface, mesh: &Mesh, space: &Space) -> Vec<Item> {
+fn surface_items(surface: &Surface, mesh: &Mesh, space: &Space) -> Vec<Drawn> {
     let stroke = stroke_of(&surface.style, Line::Solid, CURVE_WIDTH);
+    let tested = surface.style.hidden.is_tested();
     let indices = |count: usize| -> Vec<f64> {
         (0..count)
             .map(|k| f64::from(u32::try_from(k).unwrap_or(u32::MAX)))
@@ -670,26 +701,18 @@ fn surface_items(surface: &Surface, mesh: &Mesh, space: &Space) -> Vec<Item> {
     for line in &mesh.silhouette() {
         let at = |t: f64| polyline_at(line, t);
         let pieces = split_by_visibility(&indices(line.len()), &|t| at(t).0, &|t| {
-            space.rim_hidden(at(t), mesh)
+            tested && space.rim_hidden(at(t), mesh)
         });
-        items.extend(piece_items(
-            &pieces,
-            stroke,
-            surface.style.hidden,
-            &space.camera,
-        ));
+        items.extend(piece_items(&pieces, stroke, &surface.style, &space.camera));
     }
     if surface.boundary {
         for line in &mesh.boundary() {
             let rims: Vec<Rim> = line.iter().map(|p| (*p, [0.0; 3])).collect();
             let at = |t: f64| polyline_at(&rims, t).0;
-            let pieces = split_by_visibility(&indices(line.len()), &at, &|t| space.hidden(at(t)));
-            items.extend(piece_items(
-                &pieces,
-                stroke,
-                surface.style.hidden,
-                &space.camera,
-            ));
+            let pieces = split_by_visibility(&indices(line.len()), &at, &|t| {
+                tested && space.hidden(at(t))
+            });
+            items.extend(piece_items(&pieces, stroke, &surface.style, &space.camera));
         }
     }
     items
@@ -705,9 +728,9 @@ fn wireframe_line(
     start: f64,
     end: f64,
     space: &Space,
-) -> Vec<Item> {
+) -> Vec<Drawn> {
     let stroke = stroke_of(style, default_line, CURVE_WIDTH);
-    traced_items(stroke, style.hidden, at, start, end, space)
+    traced_items(stroke, style, at, start, end, space)
 }
 
 /// 曲面のワイヤーフレーム．`u`一定・`v`一定の断面を，`plot.wireframe`(刻みから`compile.rs`が求めた値)
@@ -717,7 +740,7 @@ fn surface_wireframe_items(
     plot: &SurfacePlot,
     map: &SurfaceMap,
     space: &Space,
-) -> Vec<Item> {
+) -> Vec<Drawn> {
     let Some(style) = &surface.wireframe else {
         return Vec::new();
     };
@@ -753,11 +776,11 @@ fn control_net_items(
     plot: &SurfacePlot,
     transform: &Transform,
     space: &Space,
-) -> Vec<Item> {
+) -> Vec<Drawn> {
     let (Some(style), Some(net)) = (&surface.control_net, &plot.net) else {
         return Vec::new();
     };
-    let link = |a: Point3, b: Point3| -> Vec<Item> {
+    let link = |a: Point3, b: Point3| -> Vec<Drawn> {
         let mix = |t: f64| {
             [
                 lerp(a[0], b[0], t),
@@ -797,7 +820,7 @@ fn control_net_items(
 
 /// 球のワイヤーフレーム(経線と緯線)．経線は，方位角`theta`を一定にして，仰角`phi`を動かす．
 /// 緯線は，`phi`を一定にして，`theta`を動かす．両極を通る経線どうしが重なることは気にしない．
-fn sphere_wireframe_items(sphere: &Sphere, space: &Space) -> Vec<Item> {
+fn sphere_wireframe_items(sphere: &Sphere, space: &Space) -> Vec<Drawn> {
     let Some(style) = &sphere.wireframe else {
         return Vec::new();
     };
@@ -846,31 +869,32 @@ fn point3(values: &[f64]) -> Option<Point3> {
 
 /// 点の印と，点の名前．曲面や球に隠れた点の印は，描かない(塗った丸は，点線にできない)．
 /// 名前は，隠れていても，描く．
-fn point_items(point: &Point, placed: &PointPlot, space: &Space) -> Vec<Item> {
+fn point_items(point: &Point, placed: &PointPlot, space: &Space) -> Vec<Drawn> {
     let Some(position) = point3(&placed.at) else {
         return Vec::new();
     };
     let at = space.camera.project(position);
     let mut items = Vec::new();
-    if point.dot && !space.hidden(position) {
-        items.push(Item::Dot(DotItem {
+    let hidden = point.style.hidden.is_tested() && space.hidden(position);
+    if point.dot && !hidden {
+        items.push(Drawn::Other(Item::Dot(DotItem {
             at,
             radius: DOT_RADIUS,
             color: point.style.color,
-        }));
+        })));
     }
     if let Some(text) = &point.label {
-        items.push(Item::Label(LabelItem {
+        items.push(Drawn::Other(Item::Label(LabelItem {
             at,
             anchor: point.anchor.unwrap_or(Anchor::SouthWest),
             tex: format!("${text}$"),
-        }));
+        })));
     }
     items
 }
 
 /// ベクトルか線分の線．隠れた部分は，隠れた部分の線で描く．矢じりは，終点が見えるときだけ付く．
-fn link_items(style: &Style, arrow: Arrow, link: &LinkPlot, space: &Space) -> Vec<Item> {
+fn link_items(style: &Style, arrow: Arrow, link: &LinkPlot, space: &Space) -> Vec<Drawn> {
     let (Some(from), Some(to)) = (point3(&link.from), point3(&link.to)) else {
         return Vec::new();
     };
@@ -895,7 +919,9 @@ fn link_items(style: &Style, arrow: Arrow, link: &LinkPlot, space: &Space) -> Ve
             }
         })
         .collect();
-    let pieces = split_by_visibility(&steps, &at, &|t| space.hidden(at(t)));
+    let pieces = split_by_visibility(&steps, &at, &|t| {
+        style.hidden.is_tested() && space.hidden(at(t))
+    });
     let last = pieces.len().saturating_sub(1);
     let mut items = Vec::new();
     for (index, piece) in pieces.iter().enumerate() {
@@ -911,17 +937,15 @@ fn link_items(style: &Style, arrow: Arrow, link: &LinkPlot, space: &Space) -> Ve
         } else {
             None
         };
-        items.push(Item::Path(Path {
-            points: vec![
-                space.camera.project(*first),
-                space.camera.project(*final_point),
-            ],
-            stroke: Stroke {
+        items.push(space.camera.line(
+            &[*first, *final_point],
+            Stroke {
                 line: kind,
                 ..stroke
             },
-            arrow: head,
-        }));
+            head,
+            gap_of(style),
+        ));
     }
     items
 }
@@ -965,8 +989,9 @@ fn complex_edges(complex: &Complex) -> BTreeMap<(usize, usize), Vec<Point3>> {
 
 /// 複体の稜．稜の両側の面が2つともカメラを向いていなければ，複体自身に隠れているとする(凸体なら
 /// 正確に決まる)．そうでなければ，ほかのオブジェクト(球，曲面，ほかの複体)に隠れているかを調べる．
-fn complex_items(complex: &Complex, mesh: &Mesh, space: &Space) -> Vec<Item> {
+fn complex_items(complex: &Complex, mesh: &Mesh, space: &Space) -> Vec<Drawn> {
     let stroke = stroke_of(&complex.style, Line::Solid, CURVE_WIDTH);
+    let tested = complex.style.hidden.is_tested();
     let mut items = Vec::new();
     for ((from_index, to_index), normals) in complex_edges(complex) {
         let (Some(from), Some(to)) = (
@@ -990,7 +1015,7 @@ fn complex_items(complex: &Complex, mesh: &Mesh, space: &Space) -> Vec<Item> {
             })
             .collect();
         let pieces = split_by_visibility(&steps, &at, &|t| {
-            hidden_by_own_faces || space.hidden_by_others(at(t), mesh)
+            tested && (hidden_by_own_faces || space.hidden_by_others(at(t), mesh))
         });
         for piece in &pieces {
             let Some(kind) = piece_line(piece.hidden, stroke.line, complex.style.hidden) else {
@@ -1000,24 +1025,22 @@ fn complex_items(complex: &Complex, mesh: &Mesh, space: &Space) -> Vec<Item> {
             else {
                 continue;
             };
-            items.push(Item::Path(Path {
-                points: vec![
-                    space.camera.project(*first),
-                    space.camera.project(*final_point),
-                ],
-                stroke: Stroke {
+            items.push(space.camera.line(
+                &[*first, *final_point],
+                Stroke {
                     line: kind,
                     ..stroke
                 },
-                arrow: None,
-            }));
+                None,
+                gap_of(&complex.style),
+            ));
         }
     }
     items
 }
 
 /// 2つの曲面の交線．曲面の上にあるので，曲面に隠れる部分は，隠れた部分の線で描く．
-fn intersection_items(found: &Intersection, transform: &Transform, space: &Space) -> Vec<Item> {
+fn intersection_items(found: &Intersection, transform: &Transform, space: &Space) -> Vec<Drawn> {
     // 曲面の名前から，網と，式の関数．
     let surface_for = |name: &String| {
         let index = *space.mesh_of.get(name)?;
@@ -1032,6 +1055,7 @@ fn intersection_items(found: &Intersection, transform: &Transform, space: &Space
         return Vec::new();
     };
     let stroke = stroke_of(&found.style, Line::Solid, CURVE_WIDTH);
+    let tested = found.style.hidden.is_tested();
     let mut items = Vec::new();
     for line in &first.intersection(second, first_map.as_ref(), second_map.as_ref()) {
         let line = &moved_line(line, transform);
@@ -1039,13 +1063,8 @@ fn intersection_items(found: &Intersection, transform: &Transform, space: &Space
             .map(|k| f64::from(u32::try_from(k).unwrap_or(u32::MAX)))
             .collect();
         let at = |t: f64| polyline_at(line, t).0;
-        let pieces = split_by_visibility(&steps, &at, &|t| space.hidden(at(t)));
-        items.extend(piece_items(
-            &pieces,
-            stroke,
-            found.style.hidden,
-            &space.camera,
-        ));
+        let pieces = split_by_visibility(&steps, &at, &|t| tested && space.hidden(at(t)));
+        items.extend(piece_items(&pieces, stroke, &found.style, &space.camera));
     }
     items
 }
@@ -1062,7 +1081,7 @@ fn moved_line(line: &[Rim], transform: &Transform) -> Vec<Rim> {
 }
 
 /// 曲面の切り口の線．曲面の上にあるので，曲面に隠れる部分は，隠れた部分の線で描く．
-fn cut_items(cut: &Cut, placed: &CutPlot, transform: &Transform, space: &Space) -> Vec<Item> {
+fn cut_items(cut: &Cut, placed: &CutPlot, transform: &Transform, space: &Space) -> Vec<Drawn> {
     let Some((mesh, map)) = space
         .mesh_of
         .get(&cut.surface)
@@ -1071,6 +1090,7 @@ fn cut_items(cut: &Cut, placed: &CutPlot, transform: &Transform, space: &Space) 
         return Vec::new();
     };
     let stroke = stroke_of(&cut.style, Line::Solid, CURVE_WIDTH);
+    let tested = cut.style.hidden.is_tested();
     let mut items = Vec::new();
     for line in &mesh.cut(placed.normal, placed.offset, map.as_ref()) {
         let line = &moved_line(line, transform);
@@ -1078,13 +1098,8 @@ fn cut_items(cut: &Cut, placed: &CutPlot, transform: &Transform, space: &Space) 
             .map(|k| f64::from(u32::try_from(k).unwrap_or(u32::MAX)))
             .collect();
         let at = |t: f64| polyline_at(line, t).0;
-        let pieces = split_by_visibility(&steps, &at, &|t| space.hidden(at(t)));
-        items.extend(piece_items(
-            &pieces,
-            stroke,
-            cut.style.hidden,
-            &space.camera,
-        ));
+        let pieces = split_by_visibility(&steps, &at, &|t| tested && space.hidden(at(t)));
+        items.extend(piece_items(&pieces, stroke, &cut.style, &space.camera));
     }
     items
 }
@@ -1097,7 +1112,7 @@ fn tangent_plane_items(
     placed: &TangentPlanePlot,
     transform: &Transform,
     space: &Space,
-) -> Vec<Item> {
+) -> Vec<Drawn> {
     let Some((map, domain)) = space.mesh_of.get(&tangent.of).and_then(|index| {
         Some((
             space.surfaces.get(*index)?,
@@ -1181,30 +1196,31 @@ fn polyline_at(points: &[Rim], t: f64) -> Rim {
 }
 
 /// 隠れ方の同じ部分を，線にする．隠れた部分は，`hidden`の種類で描き，`none`なら描かない．
-fn piece_items(pieces: &[Piece], stroke: Stroke, hidden: Hidden, camera: &Camera) -> Vec<Item> {
+fn piece_items(pieces: &[Piece], stroke: Stroke, style: &Style, camera: &Camera) -> Vec<Drawn> {
     pieces
         .iter()
         .filter_map(|piece| {
-            let line = piece_line(piece.hidden, stroke.line, hidden)?;
-            Some(Item::Path(Path {
-                points: piece
-                    .points
-                    .iter()
-                    .map(|point| camera.project(*point))
-                    .collect(),
-                stroke: Stroke { line, ..stroke },
-                arrow: None,
-            }))
+            let line = piece_line(piece.hidden, stroke.line, style.hidden)?;
+            Some(camera.line(
+                &piece.points,
+                Stroke { line, ..stroke },
+                None,
+                gap_of(style),
+            ))
         })
         .collect()
 }
 
 /// 見える部分と隠れた部分の線の種類．描かないときは`None`．
 const fn piece_line(hidden: bool, visible: Line, when_hidden: Hidden) -> Option<Line> {
-    if hidden {
-        hidden_line(when_hidden)
-    } else {
-        Some(visible)
+    if !hidden {
+        return Some(visible);
+    }
+    match when_hidden {
+        Hidden::Dotted => Some(Line::Dotted),
+        Hidden::Dashed => Some(Line::Dashed),
+        Hidden::None => None,
+        Hidden::Visible => Some(visible),
     }
 }
 

@@ -77,8 +77,8 @@
     "line": { "type": "string", "enum": ["solid", "dotted", "dashed"] },
     "hidden": {
       "type": "string",
-      "enum": ["dotted", "dashed", "none"],
-      "description": "空間の図で，不透明な面に隠れた部分の線の描き方．"
+      "enum": ["dotted", "dashed", "none", "visible"],
+      "description": "空間の図で，不透明な面に隠れた部分の線の描き方．既定は`dotted`(点線)．`none`は描かない．`visible`は陰線処理をせず，隠れた部分も見える部分と同じ線で描く(点の印も隠さない)．"
     },
     "arrow": { "type": "string", "enum": ["stealth", "none"] },
     "direction": {
@@ -94,7 +94,11 @@
         "line": { "$ref": "#/$defs/line" },
         "hidden": { "$ref": "#/$defs/hidden" },
         "color": { "$ref": "#/$defs/color" },
-        "width": { "$ref": "#/$defs/length" }
+        "width": { "$ref": "#/$defs/length" },
+        "crossing_gap": {
+          "$ref": "#/$defs/length",
+          "description": "空間の図で，この線がほかの線の奥を通る所に入れる切れ目の長さ．交点を中心に，線に沿ってこの長さだけ描かないので，線どうしが交わらずにすれ違っていることがわかる．手前の線は，どのオブジェクトの線でもよく，同じ線の別の部分でもよい．省くと切らない．平面の図では使わない．"
+        }
       }
     },
     "tick": {

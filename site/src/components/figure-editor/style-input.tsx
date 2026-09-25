@@ -25,6 +25,7 @@ const HIDDEN = [
   ['dotted', '点線'],
   ['dashed', '破線'],
   ['none', '描かない'],
+  ['visible', '隠さない(陰線処理をしない)'],
 ] as const;
 
 function textOf(style: JsonObject, key: string): string {
@@ -47,18 +48,27 @@ interface SetterProps {
   set: (key: string, value: string) => void;
 }
 
-/** 隠れた部分の描き方の入力欄．空間の図でだけ出す． */
+/** 陰線処理の入力欄(隠れた部分の描き方と，奥を通る所の切れ目)．空間の図でだけ出す． */
 function HiddenInput({ style, set }: SetterProps): ReactElement {
   return (
-    <SelectInput
-      label="隠れた部分"
-      value={textOf(style, 'hidden')}
-      options={HIDDEN}
-      empty="既定"
-      onChange={(value) => {
-        set('hidden', value);
-      }}
-    />
+    <>
+      <SelectInput
+        label="隠れた部分"
+        value={textOf(style, 'hidden')}
+        options={HIDDEN}
+        empty="既定"
+        onChange={(value) => {
+          set('hidden', value);
+        }}
+      />
+      <TextInput
+        label="奥を通る所の切れ目(2ptなど)"
+        value={textOf(style, 'crossing_gap')}
+        onChange={(value) => {
+          set('crossing_gap', value);
+        }}
+      />
+    </>
   );
 }
 

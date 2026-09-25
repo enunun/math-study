@@ -17,6 +17,7 @@ pub mod arrow;
 pub mod bezier;
 pub mod clip;
 mod compile;
+mod crossing;
 mod derivative;
 pub mod error;
 pub mod expr;

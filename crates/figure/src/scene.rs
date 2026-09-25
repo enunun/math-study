@@ -322,6 +322,8 @@ pub enum Hidden {
     Dashed,
     /// 描かない．
     None,
+    /// 陰線処理をしない．隠れた部分も，見える部分と同じ線で描く．
+    Visible,
 }
 
 /// 線の色．決まった名前から選ぶ．色を省くと，文字の色になる．
@@ -363,6 +365,10 @@ pub struct Style {
     /// 線の太さ．なければ，オブジェクトの種類ごとの既定である．
     #[serde(skip_serializing_if = "Option::is_none")]
     pub width: Option<Length>,
+    /// ほかの線の奥を通る所で，この線を切る長さ．交わる点を中心に，線に沿ってこの長さだけ描かない．
+    /// なければ切らない．空間の図でだけ使う．
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub crossing_gap: Option<Length>,
 }
 
 impl Style {
@@ -384,6 +390,12 @@ impl Hidden {
     #[must_use]
     pub const fn is_default(&self) -> bool {
         matches!(self, Self::Dotted)
+    }
+
+    /// 隠れているかを調べるか．`visible`なら調べない．
+    #[must_use]
+    pub const fn is_tested(self) -> bool {
+        !matches!(self, Self::Visible)
     }
 }
 

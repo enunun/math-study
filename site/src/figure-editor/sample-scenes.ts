@@ -200,6 +200,33 @@ const HELIX_SCENE: SceneDraft = {
   ],
 };
 
+/** 結び目の図を見る仰角．真上に近い所から見て，3つの交差を離して見せる． */
+const TREFOIL_ELEVATION = 60;
+/** 結び目の線の太さと，奥を通る所の切れ目の長さ．切れ目は，手前の線の太さの数倍にする． */
+const TREFOIL_WIDTH = '1pt';
+const TREFOIL_GAP = '5pt';
+
+/**
+ * 三葉結び目．閉じた空間曲線で，平面に映すと3か所で交差する．どの交差でも，奥を通る側の線を
+ * `crossing_gap`で切り，線が交わらずにすれ違っていることを示す．曲面がないので，陰線は生じない．
+ */
+const TREFOIL_SCENE: SceneDraft = {
+  version: SCENE_VERSION,
+  description:
+    '三葉結び目．3か所の交差のそれぞれで，奥を通る線に切れ目を入れ，どちらの線が手前にあるかを示す．',
+  view: { azimuth: SPACE_AZIMUTH, elevation: TREFOIL_ELEVATION, unit: SPACE_UNIT },
+  objects: [
+    {
+      id: 'trefoil',
+      type: 'curve',
+      var: 't',
+      expr: ['sin(t) + 2*sin(2*t)', 'cos(t) - 2*cos(2*t)', '-sin(3*t)'],
+      domain: [0, '2*pi'],
+      style: { color: 'blue', width: TREFOIL_WIDTH, crossing_gap: TREFOIL_GAP },
+    },
+  ],
+};
+
 /** 記事の図とは別に，ここで書いた見本．`samples.ts`が，記事の図の見本と並べる． */
 const PLANE_SAMPLE_SCENES: readonly SceneTemplate[] = [
   { id: 'ellipseFoci', label: '楕円と焦点', scene: ELLIPSE_FOCI_SCENE },
@@ -211,6 +238,7 @@ const SPACE_SAMPLE_SCENES: readonly SceneTemplate[] = [
   { id: 'helix', label: '円柱の上のらせん', scene: HELIX_SCENE },
   { id: 'torus', label: 'トーラス', scene: TORUS_SCENE },
   { id: 'mobius', label: 'メビウスの帯', scene: MOBIUS_STRIP_SCENE },
+  { id: 'trefoil', label: '三葉結び目', scene: TREFOIL_SCENE },
 ];
 
 export { PLANE_SAMPLE_SCENES, SPACE_SAMPLE_SCENES };
