@@ -118,8 +118,8 @@
       },
     },
     {
-      // 単体テストは，describeに多数のテストをまとめる．期待値には数値を書き，Wasmは，同期で読み込む．
-      "files": ["**/*.test.ts"],
+      // 単体テストと，その補助(test-support.ts)は，describeに多数のテストをまとめる．期待値には数値を書き，Wasmは，同期で読み込む．
+      "files": ["**/*.test.ts", "**/test-support.ts"],
       "rules": {
         "max-lines-per-function": "off",
         "max-statements": "off",

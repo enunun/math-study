@@ -100,32 +100,4 @@ test.describe('多項式の計算機', () => {
     );
     expect(spaced).toEqual([]);
   });
-
-  test('読み込みでエラーが出ない', async ({ page }) => {
-    const problems: string[] = [];
-    page.on('console', (message) => {
-      if (message.type() === 'error') {
-        problems.push(message.text());
-      }
-    });
-    page.on('pageerror', (error) => problems.push(String(error)));
-    page.on('requestfailed', (request) => problems.push(request.url()));
-    page.on('response', (response) => {
-      if (response.status() >= 400) {
-        problems.push(`${response.status()} ${response.url()}`);
-      }
-    });
-    await page.reload();
-    await expect(page.locator('.math-view mjx-container').first()).toBeVisible();
-    // フォントは，数式を組んだあとで要求されるため，読み込みが終わるまで待つ．
-    await page.evaluate(() => document.fonts.ready);
-    const loaded = await page.evaluate(
-      () =>
-        [...document.fonts].filter(
-          (font) => font.family.startsWith('MJX') && font.status === 'loaded',
-        ).length,
-    );
-    expect(loaded).toBeGreaterThan(0);
-    expect(problems).toEqual([]);
-  });
 });

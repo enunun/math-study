@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
+// 図の線の本数，線の種類，太さ，ラベルの位置とアンカーは，site/src/figure/article-figures-{plane,space}.test.tsで確かめる．
+// ここでは，ブラウザでしか分からない，ラベルの箱の置き方，実寸，画面の幅，色を確かめる．
 const PAGE = 'dev/figure-first/';
 const TOLERANCE = 3;
 
@@ -26,21 +28,6 @@ test.describe('シーンから描いた図', () => {
     await expect(page.locator('.figure-label mjx-container')).toHaveCount(44);
   });
 
-  test('SVGは，画像として説明を持ち，線と矢じりがある', async ({ page }) => {
-    const svg = first(page).locator('svg');
-    await expect(svg).toHaveAttribute('role', 'img');
-    await expect(svg).toHaveAttribute('aria-label', /sin x のグラフ/u);
-    // 軸2本と曲線2本，軸の矢じり2つ．
-    await expect(svg.locator('path')).toHaveCount(4);
-    await expect(svg.locator('polygon')).toHaveCount(2);
-  });
-
-  test('実線と点線は，線の種類が違う', async ({ page }) => {
-    const paths = first(page).locator('svg path');
-    await expect(paths.nth(2)).not.toHaveAttribute('stroke-dasharray', /.+/u);
-    await expect(paths.nth(3)).toHaveAttribute('stroke-dasharray', /^[\d.]+ [\d.]+$/u);
-  });
-
   test('xの名前は，x軸の右の端の，右にある', async ({ page }) => {
     const axis = await box(first(page).locator('svg path').nth(0));
     const label = await box(first(page).locator('.figure-label').nth(0));
@@ -49,26 +36,6 @@ test.describe('シーンから描いた図', () => {
     expect(Math.abs(label.y + label.height / 2 - (axis.y + axis.height / 2))).toBeLessThan(
       TOLERANCE,
     );
-  });
-
-  test('yの名前は，y軸の上の端の，上にあり，軸の上に揃う', async ({ page }) => {
-    const axis = await box(first(page).locator('svg path').nth(1));
-    const label = await box(first(page).locator('.figure-label').nth(1));
-    expect(label.y + label.height).toBeLessThanOrEqual(axis.y + TOLERANCE);
-    expect(Math.abs(label.x + label.width / 2 - (axis.x + axis.width / 2))).toBeLessThan(TOLERANCE);
-  });
-
-  test('Oの名前は，原点の右下に置く', async ({ page }) => {
-    const xAxis = await box(first(page).locator('svg path').nth(0));
-    const yAxis = await box(first(page).locator('svg path').nth(1));
-    const origin = {
-      x: yAxis.x + yAxis.width / 2,
-      y: xAxis.y + xAxis.height / 2,
-    };
-    const label = await box(first(page).locator('.figure-label').nth(2));
-    // 箱の左上の角が，原点に合う．
-    expect(Math.abs(label.x - origin.x)).toBeLessThan(TOLERANCE);
-    expect(Math.abs(label.y - origin.y)).toBeLessThan(TOLERANCE);
   });
 
   test('図の実寸は，幅15.2cmで，1cmは，画面の37.8pxである', async ({ page }) => {
@@ -93,32 +60,26 @@ test.describe('シーンから描いた図', () => {
   });
 
   for (const scheme of ['light', 'dark'] as const) {
-    test(`図の色は，文字の色に従う(${scheme})`, async ({ page }) => {
+    test(`色のない線は文字の色に従い，色の名前は背景に合わせた色になる(${scheme})`, async ({
+      page,
+    }) => {
       await page.emulateMedia({ colorScheme: scheme });
-      const [stroke, text] = await page.evaluate(() => {
-        const path = document.querySelector('.figure svg path');
-        const body = document.querySelector('.figure');
-        return [
-          path === null ? '' : getComputedStyle(path).stroke,
-          body === null ? '' : getComputedStyle(body).color,
-        ];
-      });
-      expect(stroke).not.toBe('');
-      expect(stroke).toBe(text);
+      // 3つ目の図(parabola-on-grid)の，放物線は青，接線は赤，格子は灰色，軸は色の指定がない．
+      const paths = page.locator('.figure').nth(2).locator('svg path');
+      const stroke = (index: number): Promise<string> =>
+        paths.nth(index).evaluate((element) => getComputedStyle(element).stroke);
+      const expected =
+        scheme === 'light'
+          ? { blue: 'rgb(21, 101, 192)', red: 'rgb(198, 40, 40)', gray: 'rgb(138, 143, 152)' }
+          : { blue: 'rgb(130, 177, 255)', red: 'rgb(255, 138, 128)', gray: 'rgb(154, 160, 166)' };
+      await expect.poll(() => stroke(16)).toBe(expected.blue);
+      expect(await stroke(17)).toBe(expected.red);
+      expect(await stroke(0)).toBe(expected.gray);
+      const text = await page
+        .locator('.figure')
+        .nth(2)
+        .evaluate((element) => getComputedStyle(element).color);
+      expect(await stroke(14)).toBe(text);
     });
   }
-
-  test('読み込みでエラーが出ない', async ({ page }) => {
-    const problems: string[] = [];
-    page.on('console', (message) => {
-      if (message.type() === 'error') {
-        problems.push(message.text());
-      }
-    });
-    page.on('pageerror', (error) => problems.push(String(error)));
-    page.on('requestfailed', (request) => problems.push(request.url()));
-    await page.reload();
-    await expect(page.locator('.figure-label mjx-container')).toHaveCount(44);
-    expect(problems).toEqual([]);
-  });
 });

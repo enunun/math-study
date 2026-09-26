@@ -1,9 +1,10 @@
-import type { Element, ElementContent } from 'hast';
+import type { Element } from 'hast';
 import { describe, expect, it } from 'vitest';
 
 import type { Figure } from '@/wasm/figure';
 
 import { figureToHast } from './svg';
+import { all, classes } from './test-support';
 
 const FIGURE: Figure = {
   description: '試験の図',
@@ -50,31 +51,6 @@ const FIGURE: Figure = {
     { type: 'label', at: [1, 1], anchor: 'west', tex: String.raw`Graph of $y=\sin x$` },
   ],
 };
-
-/** 木の中から，指定した名前の要素をすべて集める． */
-function all(root: Element, tagName: string): Element[] {
-  const found: Element[] = [];
-  const walk = (node: ElementContent): void => {
-    if (node.type !== 'element') {
-      return;
-    }
-    if (node.tagName === tagName) {
-      found.push(node);
-    }
-    for (const child of node.children) {
-      walk(child);
-    }
-  };
-  for (const child of root.children) {
-    walk(child);
-  }
-  return found;
-}
-
-function classes(element: Element): string[] {
-  const { className } = element.properties;
-  return Array.isArray(className) ? className.map(String) : [];
-}
 
 function textOf(element: Element): string {
   return element.children.map((child) => (child.type === 'text' ? child.value : '')).join('');

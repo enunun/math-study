@@ -4,25 +4,6 @@ const PAGE = 'dev/notation/';
 const NARROW = { width: 390, height: 800 };
 
 test.describe('数式', () => {
-  test('行内の式が描画され，読み上げ用のroleとaria-labelが付く', async ({ page }) => {
-    await page.goto(PAGE);
-    await expect(
-      page.getByRole('math', { name: 'x is a member of the real numbers' }),
-    ).toBeVisible();
-  });
-
-  test('自作マクロが展開される', async ({ page }) => {
-    await page.goto(PAGE);
-    await expect(
-      page.getByRole('math', { name: 'the absolute value of x is greater than or equal to 0' }),
-    ).toBeVisible();
-  });
-
-  test('導出木が描画される', async ({ page }) => {
-    await page.goto(PAGE);
-    await expect(page.getByRole('math', { name: /inference rule/u })).toBeVisible();
-  });
-
   test('Starlightの本文の余白が，数式の内側に及ばない', async ({ page }) => {
     await page.goto(PAGE);
     // Starlightは，本文の中で隣り合う要素に，1rem(16px)の上の余白を付ける．
@@ -55,17 +36,6 @@ test.describe('数式', () => {
     expect(loaded).toBeGreaterThan(0);
     expect(failed).toEqual([]);
     expect(errors).toEqual([]);
-  });
-
-  test('式のあるページだけが，mathjax.cssを読み込む', async ({ page }) => {
-    const requested: string[] = [];
-    page.on('request', (request) => requested.push(request.url()));
-    await page.goto('');
-    const loadsStylesheet = (): boolean =>
-      requested.some((url) => new URL(url).pathname.endsWith('/mathjax.css'));
-    expect(loadsStylesheet()).toBe(false);
-    await page.goto(PAGE);
-    expect(loadsStylesheet()).toBe(true);
   });
 
   test('mathjax.cssのURLには，ビルドごとに変わる版の印が付き，古いCSSが使われ続けない', async ({

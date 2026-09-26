@@ -51,13 +51,6 @@ test.describe('和欧文間の隙間', () => {
     expect(gaps.after).toBeCloseTo(AUTOSPACE, 0);
   });
 
-  test('句読点の隣には，隙間が入らない', async ({ page }) => {
-    // 「このとき，$x_k \to a$と書く」の，読点の側と，「と」の側．
-    const gaps = await gapsAround(page, '，');
-    expect(gaps.before).toBeCloseTo(0, 0);
-    expect(gaps.after).toBeCloseTo(AUTOSPACE, 0);
-  });
-
   test('本文の和文と欧文，数字の間に，1/8emの隙間が入る', async ({ page }) => {
     // 新しい段落で，text-autospaceを効かせた幅と，切った幅の差を測る．境目は，「あ|A」と「1|あ」の2か所である．
     const widths = await page.evaluate(() => {

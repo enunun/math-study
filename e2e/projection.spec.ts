@@ -72,27 +72,6 @@ test.describe('投影の図(方位角と仰角を動かす)', () => {
     }).toPass();
   });
 
-  test('読み込みでエラーが出ない', async ({ page }) => {
-    const problems: string[] = [];
-    page.on('console', (message) => {
-      if (message.type() === 'error') {
-        problems.push(message.text());
-      }
-    });
-    page.on('pageerror', (error) => problems.push(String(error)));
-    page.on('requestfailed', (request) => problems.push(request.url()));
-    page.on('response', (response) => {
-      if (response.status() >= 400) {
-        problems.push(`${response.status()} ${response.url()}`);
-      }
-    });
-    await page.reload();
-    await explorer(page).scrollIntoViewIfNeeded();
-    await expect(explorer(page).locator('.math-view mjx-container')).toHaveCount(2);
-    await page.evaluate(() => document.fonts.ready);
-    expect(problems).toEqual([]);
-  });
-
   test('スライダーは，キーボードで動かせて，アクセシビリティの違反がない', async ({ page }) => {
     await azimuth(page).focus();
     await page.keyboard.press('ArrowRight');

@@ -49,15 +49,14 @@ TeX Live (the official `install-tl`, scheme infraonly plus LaTeX, LuaLaTeX, pgf,
 
 ## Automated browser checks
 
-`mise run e2e` runs three kinds of tests, and CI runs them in the `build` job before `deploy`, so a failure blocks publishing.
+`mise run e2e` runs two kinds of tests, and CI runs them in the `build` job before `deploy`, so a failure blocks publishing.
 
 - Behavior specs (`fold`, `detail`, `math`, `statements`, `home`, `typesetting`, `calculator`): what each feature does. `calculator.spec.ts` also runs axe on the result and the error states, which the all-pages axe check cannot reach because the results appear after the page loads.
-- `accessibility.spec.ts`: axe on every page, in the light and dark themes, at 1280px and 390px, with all folds opened. Any violation fails.
-- `site.spec.ts`: every page opens without console errors, page errors, failed requests, or 4xx/5xx responses, and every internal link (including `#hash` targets) resolves.
+- `site.spec.ts`: every page, in the light and dark themes, opens without console errors, page errors, failed requests, or 4xx/5xx responses (waiting for `networkidle`, so Wasm and fonts requested after load are included), and then passes axe with all folds opened. Any violation fails. It also checks that every internal link (including `#hash` targets) resolves. axe runs only at the default 1280px width: the 390px run found nothing the wide run did not and doubled the suite's time, and overflow at 390px is checked by the feature specs (`math`, `statements`, `figure`).
 
 Pages are enumerated from `site/dist` (`e2e/routes.ts`), so a new page is covered without editing the tests. Only Chromium is used.
 
-When axe reports a violation, fix the cause. If it is in third-party markup you cannot change, exclude that one element or rule in `accessibility.spec.ts` (`AxeBuilder#exclude`, `#disableRules`) with a comment that says why. Do not loosen the check for every page.
+When axe reports a violation, fix the cause. If it is in third-party markup you cannot change, exclude that one element or rule in `site.spec.ts` (`AxeBuilder#exclude`, `#disableRules`) with a comment that says why. Do not loosen the check for every page.
 
 Scrollable regions must be keyboard-focusable (axe rule `scrollable-region-focusable`). This site handles it in three places: display math gets `tabindex="0"` in `rehype-mathjax.ts`, tables get it in `rehype-focusable-tables.ts`, and code blocks wrap (`expressiveCode.defaultProps.wrap`) so they do not scroll. A new component that scrolls horizontally needs the same treatment.
 
@@ -76,7 +75,7 @@ Find the run whose `head_sha` matches the local commit and read its `status` and
 
 ## Adding E2E tests
 
-- E2E is for what only a real browser can show: layout, computed style, focus, drag, accessibility, console errors. When a feature's correctness or its error messages can be checked without a browser, check them in the Rust tests (`crates/figure/tests/`) or the Vitest unit tests (`site/src/**/*.test.ts`, including `wasm.test.ts`, which calls the Wasm module directly) instead, and add at most one E2E test per feature to confirm it is wired into the page — rendered, or an error surfaces as `role="alert"` — rather than one E2E test per case. `e2e/figure-scene.spec.ts`'s error tests follow this: one test checks the full error-display wiring, and one loops over the remaining sample buttons checking only that an alert appears, because the wording of each error is already covered in `crates/figure/tests/` and `wasm.test.ts`.
+- E2E is for what only a real browser can show: layout, computed style, focus, drag, accessibility, console errors. When a feature's correctness or its error messages can be checked without a browser, check them in the Rust tests (`crates/figure/tests/`) or the Vitest unit tests (`site/src/**/*.test.ts`, including `wasm.test.ts`, which calls the Wasm module directly) instead, and add at most one E2E test per feature to confirm it is wired into the page — rendered, or an error surfaces as `role="alert"` — rather than one E2E test per case. Do not add a per-page "no errors on load" test: `site.spec.ts` already opens every page and waits for `networkidle`. Figure geometry (path counts, dash patterns, widths, colours as `var(--figure-*)`, label positions and anchors) belongs in `site/src/figure/article-figures-{plane,space}.test.ts`, which render the real `site/src/figures/*.json` through Wasm and `figureToHast`; `e2e/figure.spec.ts` keeps only what CSS decides (one label box against its axis, physical size, 390px, computed colours). `e2e/figure-scene.spec.ts`'s error tests follow this: one test checks the full error-display wiring, and one loops over the remaining sample buttons checking only that an alert appears, because the wording of each error is already covered in `crates/figure/tests/` and `wasm.test.ts`.
 - During iteration, run a single spec file (`pnpm exec playwright test e2e/<file>.spec.ts`) instead of the full `mise run e2e`; run the full suite once before committing.
 - Put tests in `e2e/*.spec.ts`. Helpers that are not specs (such as `routes.ts`) must not end in `.spec.ts`. Open pages by a path relative to the base path (`page.goto('dev/notation/')`).
 - Find elements by what the user sees (`getByRole`, and so on). Compare visible text with `toHaveText(…, { useInnerText: true })`, which excludes text in hidden elements.
@@ -100,7 +99,7 @@ Check these by hand, in a local browser or with assistive technology.
 ## Troubleshooting
 
 - Browser missing or wrong version: run `mise run browsers`. The Playwright browsers live in `/opt/ms-playwright`; this drifts when the `@playwright/test` version in `package.json` changes without a matching reinstall.
-- Measuring figure geometry: Playwright's `boundingBox()` of an SVG path adds the stroke width times the miter limit (4), so a 1.6 cm circle measures 4 px too wide. Measure with `getBoundingClientRect()` inside `evaluate` instead (`geometry()` in `e2e/figure-space.spec.ts`).
+- Measuring figure geometry: Playwright's `boundingBox()` of an SVG path adds the stroke width times the miter limit (4), so a 1.6 cm circle measures 4 px too wide. Measure with `getBoundingClientRect()` inside `evaluate` instead. Better still, check the geometry without a browser, on the SVG tree in cm, as `site/src/figure/article-figures-{plane,space}.test.ts` does.
 - `astro preview` exits immediately: in agent environments it runs as a background server by design. Check it with `astro preview status` and stop it with `astro preview stop`. E2E tests use their own server (`e2e/serve.ts`).
 - Port 4322 is in use: stop the existing process. Playwright reuses an existing server.
 - E2E shows stale content: `mise run e2e` builds first. Running `pnpm exec playwright test` directly may serve an old `site/dist`.

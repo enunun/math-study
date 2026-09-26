@@ -118,18 +118,4 @@ test.describe('図のシーンの確認', () => {
       expect(failed.violations.map(({ id }) => id)).toEqual([]);
     });
   }
-
-  test('読み込みでエラーが出ない', async ({ page }) => {
-    const problems: string[] = [];
-    page.on('console', (message) => {
-      if (message.type() === 'error') {
-        problems.push(message.text());
-      }
-    });
-    page.on('pageerror', (error) => problems.push(String(error)));
-    page.on('requestfailed', (request) => problems.push(request.url()));
-    await page.reload();
-    await expect(page.getByText('シーンを読み込めた．')).toBeVisible();
-    expect(problems).toEqual([]);
-  });
 });
