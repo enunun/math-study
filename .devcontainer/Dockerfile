@@ -33,6 +33,10 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
 RUN mise exec -- npx --yes playwright@${PLAYWRIGHT_VERSION} install --with-deps --only-shell chromium \
 	&& rm -rf /var/lib/apt/lists/* /root/.npm /mise/cache /tmp/mise-bootstrap
 
+# rtkのhookを有効化する．
+RUN mkdir -p /root/.claude \
+	&& rtk init -g --hook-only
+
 # 起動後は，リポジトリのmise.tomlをグローバル設定として読む．
 # これにより，/workspacesの外のディレクトリでも同じツールを使える．
 # グローバル設定のルートも/workspacesにして，タスクをリポジトリ直下で実行させる
