@@ -136,12 +136,24 @@ What is automated, and what was decided not to be:
 
 ## Spacing between Japanese and other text (implemented)
 
-The source has no spaces between Japanese and Latin letters, digits, inline code, or math. Typesetting inserts a gap, like TeX's `\xkanjiskip`, and it is 1/8em.
+The source has no spaces between Japanese and Latin letters, digits, inline code, or math. Typesetting inserts a gap, like TeX's `\xkanjiskip`, of 1/4em, the pLaTeX default (`0.25\zw`). The 1/8em of CSS `text-autospace` is narrower than TeX output and was replaced.
 
-- CSS `text-autospace: normal` inserts 1/8em between an ideograph and a Latin letter or digit, also across an inline element boundary such as `<code>`, and never next to punctuation. Measured in Chromium 153: 2.5px at 20px for text, 5px around inline code. MDN lists the property as Baseline 2025 (newly available). Only Chromium was checked here.
-- The gap does not appear next to inline math, because MathJax's inline `mjx-container` is an atomic box (measured gap 0 on the built page, with the property on and off). `rehype-autospace.ts` therefore looks at the neighboring characters at build time and adds classes, and the CSS turns them into a 0.125em margin. It looks through inline wrappers (links, emphasis) but stops at block boundaries and `<br>`, and only Han, Hiragana, Katakana, and `ー` count as Japanese, so punctuation and brackets never get a gap.
-- Nothing is added to the text, so copy and paste, search, and speech are unchanged. Inserting real spaces or thin-space characters at build time was rejected for that reason.
-- Code blocks and the inside of math (`\text{…}`) are `no-autospace`, to keep the monospace grid and the math typesetting.
+- CSS `text-autospace: normal` inserts 1/8em between an ideograph and a Latin letter or digit, also across an inline element boundary such as `<code>`, and never next to punctuation. The width is fixed by the spec and cannot be changed. Measured in Chromium 153: 2.5px at 20px for text, 5px around inline code. It does not apply next to inline math, because MathJax's inline `mjx-container` is an atomic box (measured gap 0).
+- So the body text does not use `text-autospace` (`.sl-markdown-content` is `no-autospace`). `rehype-autospace.ts` looks at the characters at build time and marks the non-Japanese side: a run of Latin letters or digits next to Japanese is wrapped in a `<span>`, and inline math and inline code get the class on their own element. The classes are `autospace-before`/`autospace-after`, and the CSS turns them into a margin. The rules (in `site/src/typesetting/autospace.ts`): only Han, Hiragana, Katakana, and `ー` count as Japanese, and only letters and digits count as Latin, so punctuation and brackets never get a gap; full-width alphanumerics, Roman numerals (Ⅲ), and circled numbers (①) are not Latin, as in TeX. It looks through inline wrappers (links, emphasis) but stops at block boundaries, `<br>`, and display math.
+- The margin is `var(--autospace)`, a registered `<length>` custom property (`@property`) set to `0.25em` on every element except `code` and `mjx-container`. A registered length is computed to px where it is declared, so inline code (smaller font) and math inherit 1/4em of the surrounding text rather than of their own font size. A plain `0.25em` margin on `<code>` measured 3.25px instead of 4px.
+- Text that Astro components print from props (statement labels such as 定義cont-1 and their names) is not in the rehype tree; `components/typesetting/Autospaced.astro` applies the same segmentation to a string.
+- Outside the body (sidebar, page title, table of contents) `text-autospace: normal` still applies, so those get 1/8em. Covering them would need overriding more Starlight components.
+- Nothing is added to the text, so copy and paste, search, and speech are unchanged. Inserting real spaces or thin-space characters at build time was rejected for that reason. A margin at a line break is not dropped the way TeX drops glue, so a line can start or end with a 1/4em blank.
+- Code blocks and the inside of math (`\text{…}`) are left alone, to keep the monospace grid and the math typesetting.
+
+## Fractions in inline math (implemented)
+
+Inline math writes `\frac` as a slash, so that stacked fractions do not shrink the text and spread the lines. `site/src/math/inline-fraction.ts` rewrites the TeX of each inline formula before MathJax renders it (`rehype-mathjax.ts`); display math keeps stacked fractions. The source keeps `\frac`, so the same formula moves between inline and display without edits.
+
+- Parentheses are added only where needed: a numerator that is not a product of factors (`(a+b)/2`, `(\sin x)/x`), a denominator that is not a single factor (`1/(2x)`), and a whole fraction followed by a factor or a script (`(1/2)x`, `(a/b)^2`). A factor is a letter, a number, a symbol command (Greek letters, `\infty`), a root or font command with its argument, a parenthesized part, or a group holding one factor, each with optional scripts. A command starting with an uppercase letter (the site's macros such as `\Integers`) counts as a factor when it follows a fraction.
+- `\dfrac` and `\tfrac` are not rewritten. A malformed `\frac` (missing argument, unclosed group) is passed through unchanged, so MathJax still reports the syntax error.
+- Redefining `\frac` as a MathJax macro was not used: a macro cannot tell inline from display, and it cannot decide where parentheses are needed.
+- Figure labels (math inside `span.figure-label`) keep stacked fractions, although they pass through `rehype-mathjax.ts` as inline math: the TikZ export, the `mise run tikz` comparison, and the editor preview (browser MathJax) all show `\frac` stacked. Figure captions are text and are rewritten.
 
 ## Rust and WebAssembly calculator (implemented)
 

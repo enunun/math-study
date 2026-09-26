@@ -1,6 +1,6 @@
 ---
 name: math-pipeline
-description: How math (MathJax 4) is rendered, at build time and in the browser, and the pitfalls specific to that pipeline (the Worker, the shared CSS file and its cache-busting, the Starlight/not-content interaction, autospacing between Japanese and Latin text). Use before touching site/src/plugins/rehype-mathjax.ts, site/src/plugins/rehype-autospace.ts, site/src/math/, or site/src/integrations/mathjax.ts.
+description: How math (MathJax 4) is rendered, at build time and in the browser, and the pitfalls specific to that pipeline (the Worker, the shared CSS file and its cache-busting, the Starlight/not-content interaction, autospacing between Japanese and Latin text, slashed inline fractions). Use before touching site/src/plugins/rehype-mathjax.ts, site/src/plugins/rehype-autospace.ts, site/src/typesetting/, site/src/styles/typesetting.css, site/src/math/, or site/src/integrations/mathjax.ts.
 ---
 
 # math-pipeline
@@ -25,7 +25,13 @@ Starlight adds `margin-top: 1rem` to every element that follows a sibling inside
 
 ## Autospacing
 
-Source text has no spaces between Japanese and Latin letters, digits, inline code, or math (textlint enforces it; see the `write-content` skill); typesetting adds a 1/8em gap, like TeX's `\xkanjiskip`, without changing the DOM text. `site/src/styles/typesetting.css` sets `text-autospace: normal` for text and inline code (no gap next to punctuation). Inline math is an atomic box that `text-autospace` ignores (measured: gap 0), so `rehype-autospace.ts`, which runs after `rehypeMathjax`, adds `autospace-before`/`autospace-after` to an inline `mjx-container` when its neighbor is Han, Hiragana, Katakana, or `ー`, and the CSS gives those classes a 0.125em margin. Code blocks and the inside of math are `no-autospace`. `e2e/typesetting.spec.ts` measures the gaps.
+Source text has no spaces between Japanese and Latin letters, digits, inline code, or math (textlint enforces it; see the `write-content` skill); typesetting adds a 1/4em gap, the pLaTeX default for `\xkanjiskip`, without changing the DOM text. CSS `text-autospace` cannot do this: its width is fixed at 1/8em and it ignores inline math (an atomic box). So `.sl-markdown-content` is `no-autospace`, and `rehype-autospace.ts`, which runs after `rehypeMathjax`, marks the non-Japanese side of each boundary with `autospace-before`/`autospace-after`: a Latin run inside a text node is wrapped in a `<span>`, and inline `mjx-container` and inline `code` get the class on the element itself. Which characters count as Japanese or Latin, and the segmentation, are in `site/src/typesetting/autospace.ts` (shared with `components/typesetting/Autospaced.astro`, which spaces strings that components print from props, such as statement labels). It walks into MDX component nodes, looks through inline wrappers (links, emphasis), and skips `pre`, `svg`, and the inside of math.
+
+`typesetting.css` gives the classes a margin of `var(--autospace)`, a registered `<length>` (`@property`) set to `0.25em` on every element except `code` and `mjx-container`, so those inherit the surrounding text's 1/4em instead of using their own smaller font size. Outside the body (sidebar, page title, TOC), `text-autospace: normal` still applies (1/8em). `e2e/typesetting.spec.ts` measures the gaps.
+
+## Inline fractions
+
+`rehype-mathjax.ts` passes the TeX of inline formulas through `slashFractions` (`site/src/math/inline-fraction.ts`, tokenizer in `tex-tokens.ts`) before rendering, turning `\frac{a}{b}` into `a/b` with parentheses only where needed. Display math and figure labels (math inside `span.figure-label`, kept stacked to match the TikZ export and the editor) are not rewritten. The rules and the rejected alternative (redefining `\frac`) are in `docs/tech-decisions.md`. A malformed `\frac` is passed through unchanged so MathJax still reports the error; keep it that way, because the error message shows the source TeX, not the rewritten one.
 
 ## Macros
 

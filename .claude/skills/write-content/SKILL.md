@@ -12,7 +12,7 @@ Rules and notation for the site content (`site/src/content/**`) and `README.md`,
 - Use the plain form (である調). This covers body text and list items; headings are unconstrained.
 - Use the full-width comma "，" (U+FF0C) and the full-width period "．" (U+FF0E). Never use "、" or "。".
 - Put no space between Japanese and Latin text, digits, or inline code. Write "MDXの記法" and "`mise run dev`を実行". Do not write "MDX の記法".
-- Do not type spaces between Japanese and Latin text, digits, inline code, or math. The page adds a 1/8em gap when it is typeset (`text-autospace` and `rehype-autospace.ts`).
+- Do not type spaces between Japanese and Latin text, digits, inline code, or math. The page adds a 1/4em gap when it is typeset (`rehype-autospace.ts`; see the `math-pipeline` skill).
 - Use a full-width colon "：" after Japanese text, with no space after it ("公開先：`/x`"). Colons after Latin text stay half-width.
 - Avoid AI-sounding writing: bold-prefix bullet lists ("**Item**：description"), hype, and emphasis in ordinary sentences.
 - Write headings as names (noun phrases), not as sentences, clauses, questions, or verb phrases: "隠れる部分と見える部分の分割", not "曲線を隠れる部分と見える部分に分ける". Read the list of headings alone; every entry should read as a name. When a heading is renamed, check the links and tests that use its anchor.
@@ -42,7 +42,7 @@ import { Detail, Proof, Remark } from '@/components/fold';
 
 ## Math
 
-Math is rendered at build time by MathJax 4. Write inline math as `$…$` and display math as `$$…$$`. The details and the rendered examples are on the test page (`site/src/content/docs/dev/notation.mdx`).
+Math is rendered at build time by MathJax 4. Write inline math as `$…$` and display math as `$$…$$`. The details and the rendered examples are on the test page (`site/src/content/docs/dev/notation.mdx`). In inline math, write fractions as `\frac` too: the build turns them into slashed fractions and adds parentheses where needed (`$\frac{a+b}{2}$` shows as (a+b)/2), while display math keeps them stacked. Do not type `a/b` by hand just for the inline look.
 
 - Set the names of points and variables in italic everywhere, in prose (`$O$`, not a bare `O`) and in figure labels (`"tex": "$O$"`). A plain-text label is set in roman as text, so use it only for words. Use roman (`\mathrm{…}`) only for things that are conventionally upright, such as operator names.
 - Write a vector as a bold italic letter (`\boldsymbol{d}`, not the upright `\mathbf{d}`). Write its components as a square-bracket matrix, `\begin{bmatrix} … \end{bmatrix}`, a column vector by default. A row vector separates its entries with `&` and has no commas. Points and coordinates follow the same rule; keep round brackets for intervals, function arguments, and pairs of parameters.
