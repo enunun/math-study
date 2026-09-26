@@ -1,4 +1,6 @@
 ---
+import Autospaced from '@/components/typesetting/Autospaced.astro';
+
 interface Props {
   kind:
     | 'definition'
@@ -23,8 +25,8 @@ const headingId = `${anchor}-heading`;
 
 <div class:list={['statement', `statement-${kind}`]} id={anchor} role="group" aria-labelledby={headingId}>
   <p class="statement-heading" id={headingId}>
-    <span class="statement-label">{label}</span>
-    {name && <span class="statement-name">（{name}）</span>}
+    <span class="statement-label"><Autospaced text={label} /></span>
+    {name && <span class="statement-name">（<Autospaced text={name} />）</span>}
   </p>
   <div class="statement-body"><slot /></div>
 </div>

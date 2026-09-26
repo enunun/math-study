@@ -1,0 +1,18 @@
+---
+// コンポーネントの属性から出す文字列に，本文と同じ和欧文間の隙間を付ける．
+// 本文の文字は，ビルド時のrehype-autospace.tsが扱うが，属性の文字列は，その対象にならない．
+import { autospaceClasses, segmentAutospace } from '@/typesetting/autospace';
+
+interface Props {
+  text: string;
+}
+
+const segments = segmentAutospace(Astro.props.text);
+---
+
+{
+  segments.map((segment) => {
+    const classes = autospaceClasses(segment);
+    return classes.length === 0 ? segment.text : <span class:list={classes}>{segment.text}</span>;
+  })
+}

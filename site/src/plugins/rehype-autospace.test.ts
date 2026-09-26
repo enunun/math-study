@@ -131,3 +131,61 @@ describe('rehypeAutospace', () => {
     expect(await classesOf(target, text('点'), target, text('と'))).toEqual(['MathJax']);
   });
 });
+
+describe('rehypeAutospace(本文の文字とコード)', () => {
+  /** 段落の中身から木を作り，変換した後の段落の中身を返す． */
+  async function transform(...paragraph: ElementContent[]): Promise<ElementContent[]> {
+    const p = element('p', paragraph);
+    await unified()
+      .use(rehypeAutospace)
+      .run({ type: 'root', children: [p] });
+    return p.children;
+  }
+
+  const spaced = (value: string, ...classes: string[]): Element =>
+    element('span', [text(value)], { className: classes });
+
+  it('和文の隣の欧文と数字を，クラスを付けたspanで包む', async () => {
+    expect(await transform(text('MDXの記法は1.5倍'))).toEqual([
+      spaced('MDX', 'autospace-after'),
+      text('の記法は'),
+      spaced('1.5', 'autospace-before', 'autospace-after'),
+      text('倍'),
+    ]);
+  });
+
+  it('要素の外の和文も，隣の文字として見る', async () => {
+    const link = element('a', [text('MDX')]);
+    await transform(text('の'), link, text('を'));
+    expect(link.children).toEqual([spaced('MDX', 'autospace-before', 'autospace-after')]);
+  });
+
+  it('句読点の隣と，欧文だけの文字列は，変えない', async () => {
+    expect(await transform(text('とA，B'))).toEqual([
+      text('と'),
+      spaced('A，B', 'autospace-before'),
+    ]);
+    expect(await transform(text('plain text'))).toEqual([text('plain text')]);
+  });
+
+  it('インラインコードは，要素にクラスを付け，中身は変えない', async () => {
+    const code = element('code', [text('mise run dev')]);
+    await transform(code, text('を実行'));
+    expect(code).toEqual(
+      element('code', [text('mise run dev')], { className: ['autospace-after'] }),
+    );
+  });
+
+  it('和文で終わるコードには，付けない', async () => {
+    const code = element('code', [text('設定')]);
+    await transform(text('の'), code, text('を'));
+    expect(code.properties.className).toEqual([]);
+  });
+
+  it('コードブロックの中は，変えない', async () => {
+    const code = element('code', [text('の値はA')]);
+    const tree: Root = { type: 'root', children: [element('pre', [code])] };
+    await unified().use(rehypeAutospace).run(tree);
+    expect(code.children).toEqual([text('の値はA')]);
+  });
+});

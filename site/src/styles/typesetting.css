@@ -1,23 +1,40 @@
 /*
- * 和文と，欧文，数字，数式の間の隙間．TeXのxkanjiskipに相当する．
- * 原稿にはスペースを書かず，組版のときに，1/8emの隙間を入れる．文字は増えないため，コピー，検索，読み上げに影響しない．
+ * 和文と，欧文，数字，数式の間の隙間．TeXのxkanjiskipに相当し，pLaTeXの既定と同じ1/4emにする．
+ * 原稿にはスペースを書かず，組版のときに入れる．文字は増えないため，コピー，検索，読み上げに影響しない．
  */
 :root {
-  /* 和文と欧文，和文と数字の間．句読点の隣には入らない． */
+  /* 本文の外(サイドバー，ページの題，目次)は，CSSのtext-autospaceに任せる．その幅は1/8emに決まっていて，変えられない． */
   text-autospace: normal;
 }
 
-/* コードの桁と，数式の内側(\text{…}の和文)の組版は，変えない． */
+/*
+ * 本文は，ビルド時の`rehype-autospace.ts`が，和文の隣の欧文，数式，コードに，クラスを付ける．
+ * text-autospaceの隙間と重ならないよう，本文では切る．コードの桁と，数式の内側の組版も，変えない．
+ */
+.sl-markdown-content,
 pre,
 mjx-container {
   text-autospace: no-autospace;
 }
 
-/* 数式は独立した箱で，text-autospaceの対象にならない．和文の隣の数式にだけ，同じ隙間を付ける． */
-mjx-container.autospace-before {
-  margin-inline-start: 0.125em;
+/*
+ * 隙間の幅．`<length>`として登録すると，emは宣言した要素の文字の大きさで長さに直り，その長さのまま子に受け継がれる．
+ * 文字の小さいコードや，数式の箱は，自分では宣言せず，周りの文の1/4emを受け継ぐ．
+ */
+@property --autospace {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
 }
 
-mjx-container.autospace-after {
-  margin-inline-end: 0.125em;
+:where(:not(code, mjx-container)) {
+  --autospace: 0.25em;
+}
+
+.autospace-before {
+  margin-inline-start: var(--autospace);
+}
+
+.autospace-after {
+  margin-inline-end: var(--autospace);
 }

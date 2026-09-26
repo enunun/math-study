@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 const PAGE = 'dev/continuity/';
-// 本文の文字は16pxで，和欧文間の隙間は，その1/8である．
-const AUTOSPACE = 2;
+// 本文の文字は16pxで，和欧文間の隙間は，その1/4(pLaTeXのxkanjiskipの既定)である．
+const AUTOSPACE = 4;
 
 interface Gaps {
   before: number;
@@ -11,32 +11,38 @@ interface Gaps {
 }
 
 /**
- * 行内の数式の，前後の文字との隙間(px)を測る．
- * `beforeEnds`で終わる文字の直後にある数式を探し，前の文字と数式，数式と次の文字の間を測る．
+ * `selector`に合う要素のうち，`beforeEnds`で終わる文字の直後にあるものを探し，前後の文字との隙間(px)を測る．
  */
-function gapsAround(page: Page, beforeEnds: string): Promise<Gaps> {
-  return page.evaluate((ending) => {
-    const containers = [...document.querySelectorAll('p mjx-container:not([display])')];
-    const math = containers.find(
-      (element) => element.previousSibling?.textContent?.endsWith(ending) === true,
-    );
-    const previous = math?.previousSibling;
-    const next = math?.nextSibling;
-    if (!math || !previous || !next) {
-      throw new Error(`「${ending}」の直後の数式が見つからない．`);
-    }
-    const lastChar = document.createRange();
-    lastChar.setStart(previous, (previous.textContent ?? '').length - 1);
-    lastChar.setEnd(previous, (previous.textContent ?? '').length);
-    const firstChar = document.createRange();
-    firstChar.setStart(next, 0);
-    firstChar.setEnd(next, 1);
-    const box = math.getBoundingClientRect();
-    return {
-      before: box.left - lastChar.getBoundingClientRect().right,
-      after: firstChar.getBoundingClientRect().left - box.right,
-    };
-  }, beforeEnds);
+function gapsAround(page: Page, selector: string, beforeEnds: string): Promise<Gaps> {
+  return page.evaluate(
+    ([query, ending]) => {
+      const targets = [...document.querySelectorAll(query)];
+      const target = targets.find(
+        (element) => element.previousSibling?.textContent?.endsWith(ending) === true,
+      );
+      const previous = target?.previousSibling;
+      const next = target?.nextSibling;
+      if (!target || !previous || !next) {
+        throw new Error(`「${ending}」の直後の${query}が見つからない．`);
+      }
+      const lastChar = document.createRange();
+      lastChar.setStart(previous, (previous.textContent ?? '').length - 1);
+      lastChar.setEnd(previous, (previous.textContent ?? '').length);
+      const firstChar = document.createRange();
+      firstChar.setStart(next, 0);
+      firstChar.setEnd(next, 1);
+      // 包んだ要素の外枠ではなく，中の文字の端から測る．余白は，外枠の外にあるためである．
+      const inner = document.createRange();
+      inner.selectNodeContents(target);
+      const box =
+        target.tagName === 'SPAN' ? inner.getBoundingClientRect() : target.getBoundingClientRect();
+      return {
+        before: box.left - lastChar.getBoundingClientRect().right,
+        after: firstChar.getBoundingClientRect().left - box.right,
+      };
+    },
+    [selector, beforeEnds] as const,
+  );
 }
 
 test.describe('和欧文間の隙間', () => {
@@ -45,43 +51,55 @@ test.describe('和欧文間の隙間', () => {
     await page.evaluate(() => document.fonts.ready);
   });
 
-  test('和文の間にある行内の数式の前後に，1/8emの隙間が入る', async ({ page }) => {
-    const gaps = await gapsAround(page, '点');
+  test('和文の間にある行内の数式の前後に，1/4emの隙間が入る', async ({ page }) => {
+    const gaps = await gapsAround(page, 'p mjx-container:not([display])', '点');
     expect(gaps.before).toBeCloseTo(AUTOSPACE, 0);
     expect(gaps.after).toBeCloseTo(AUTOSPACE, 0);
   });
 
-  test('本文の和文と欧文，数字の間に，1/8emの隙間が入る', async ({ page }) => {
-    // 新しい段落で，text-autospaceを効かせた幅と，切った幅の差を測る．境目は，「あ|A」と「1|あ」の2か所である．
-    const widths = await page.evaluate(() => {
-      const host = document.querySelector('.sl-markdown-content');
-      const measure = (autospace: string): number => {
-        const paragraph = document.createElement('p');
-        paragraph.textContent = 'あA1あ';
-        paragraph.style.cssText = `width:max-content;text-autospace:${autospace}`;
-        host?.append(paragraph);
-        const { width } = paragraph.getBoundingClientRect();
-        paragraph.remove();
-        return width;
-      };
-      const inherited = document.createElement('p');
-      host?.append(inherited);
-      const value = getComputedStyle(inherited).textAutospace;
-      inherited.remove();
-      return { inherited: value, normal: measure('normal'), none: measure('no-autospace') };
-    });
-    expect(widths.inherited).toBe('normal');
-    expect(widths.normal - widths.none).toBeCloseTo(AUTOSPACE * 2, 0);
+  test('本文の和文と欧文，数字，インラインコードの間に，1/4emの隙間が入る', async ({ page }) => {
+    // 記事の本文には，和文に挟まれた欧文とコードが少ないため，記法のページで測る．
+    await page.goto('dev/notation/');
+    await page.evaluate(() => document.fonts.ready);
+    const word = await gapsAround(
+      page,
+      '.sl-markdown-content span.autospace-before.autospace-after',
+      'して',
+    );
+    expect(word.before).toBeCloseTo(AUTOSPACE, 0);
+    expect(word.after).toBeCloseTo(AUTOSPACE, 0);
+    const code = await gapsAround(
+      page,
+      '.sl-markdown-content code.autospace-before.autospace-after',
+      'と',
+    );
+    expect(code.before).toBeCloseTo(AUTOSPACE, 0);
+    expect(code.after).toBeCloseTo(AUTOSPACE, 0);
   });
 
-  test('コードブロックと数式の内側には，適用しない', async ({ page }) => {
-    // 記事にはコードブロックがないため，コードブロックのある，記法のページで測る．
+  test('本文，コードブロック，数式の内側では，text-autospaceを切る', async ({ page }) => {
+    // 本文の隙間はビルド時のクラスが入れるため，text-autospaceの隙間が重ならないようにする．
     await page.goto('dev/notation/');
-    const values = await page.evaluate(() => ({
-      pre: getComputedStyle(document.querySelector('pre') ?? document.body).textAutospace,
-      math: getComputedStyle(document.querySelector('mjx-container') ?? document.body)
-        .textAutospace,
-    }));
-    expect(values).toEqual({ pre: 'no-autospace', math: 'no-autospace' });
+    const selectors = {
+      content: '.sl-markdown-content p',
+      pre: 'pre',
+      math: 'mjx-container',
+      title: 'h1',
+    };
+    const values = await page.evaluate((queries) => {
+      const entries = Object.entries(queries).map(([name, selector]): [string, string] => [
+        name,
+        getComputedStyle(document.querySelector(selector) ?? document.body).getPropertyValue(
+          'text-autospace',
+        ),
+      ]);
+      return Object.fromEntries(entries);
+    }, selectors);
+    expect(values).toEqual({
+      content: 'no-autospace',
+      pre: 'no-autospace',
+      math: 'no-autospace',
+      title: 'normal',
+    });
   });
 });
