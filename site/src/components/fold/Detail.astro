@@ -20,6 +20,16 @@ const { open = false } = Astro.props;
 </span>
 
 <style>
+  /* 補足の本文は，文字を小さく淡くし，背景を付けて，地の文と区別する．行をまたいでも，行ごとに背景の端を丸める． */
+  .detail-body {
+    padding-inline: 0.25em;
+    border-radius: 0.25em;
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-2);
+    font-size: 0.9em;
+    box-decoration-break: clone;
+  }
+
   /* JavaScriptが無効なとき(htmlにjsクラスがないとき)は，補足を常に表示し，切り替えボタンを隠す． */
   .detail-toggle {
     display: none;

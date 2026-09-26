@@ -59,6 +59,23 @@ test.describe('補足(Detail)', () => {
     await expect(detail).not.toHaveClass(/is-open/u);
   });
 
+  test('開いた本文は，地の文より文字が小さく，背景が付く', async ({ page }) => {
+    await page.getByRole('button', { name: '補足' }).first().click();
+    const styles = await page
+      .locator('.detail .detail-body')
+      .first()
+      .evaluate((element) => {
+        const body = getComputedStyle(element);
+        const text = getComputedStyle(element.closest('p') ?? element);
+        return {
+          smaller:
+            Number(body.fontSize.replace('px', '')) < Number(text.fontSize.replace('px', '')),
+          background: body.backgroundColor !== text.backgroundColor,
+        };
+      });
+    expect(styles).toEqual({ smaller: true, background: true });
+  });
+
   test('切り替えボタンは，本文の後ろにある', async ({ page }) => {
     const classes = await page
       .locator('.detail')
