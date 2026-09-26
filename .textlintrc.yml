@@ -19,6 +19,9 @@ rules:
       preferInBody: である
       preferInList: である
       strict: false
+    # 半角のカンマの数は見ない．数式の中の組(x,y,z)や集合のカンマまで数えてしまうため．
+    # 読点「，」の数はmax-tenで見る．
+    max-comma: false
     # 読点は「，」，句点は「．」を使う．
     max-ten:
       touten: '，'

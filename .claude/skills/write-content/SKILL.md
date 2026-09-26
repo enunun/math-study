@@ -107,7 +107,7 @@ A transcription reproduces one of the author's own earlier articles (such as the
 - Start the page with `<Aside title="書き起こしについて">` saying only that the page is a Claude Code transcription of the article uploaded as a PDF to the named repository ("…にPDFでアップロードした記事の，Claude Codeによる書き起こしである．"). The `description` and the home card say the same, so that the use of AI is explicit.
 - Keep the content and the argument. Fix obvious typos and mistakes, and rewrite sentences until they pass textlint like any other page; never exclude a page from textlint. Around display math, end the sentence before the formula ("次の式が成り立つ．") instead of continuing it after the formula.
 - Write custom LaTeX macros of the original out in standard or site macros (`\apply{f}{x}` becomes `f(x)`). Write half-open intervals with `\lparen`, `\rparen`, `\lbrack`, or `\rbrack` (`\lparen a,b]`), because textlint checks bracket pairs in math too. Footnotes become `<Detail>` after the sentence's period, citations link to a 参考文献 section, and figures are redrawn as scenes in `site/src/figures/`.
-- textlint counts half-width commas inside math toward the three-comma limit (`\set{\, … \,}` counts two), and the text inside one `<Detail>` as a single sentence.
+- textlint counts the text inside one `<Detail>` as a single sentence. The three-comma limit counts only the full-width "，" (`max-ten`); `max-comma`, which also counted half-width commas inside math such as `(x,y,z)=(3,2,4)`, is turned off in `.textlintrc.yml`.
 
 ## Writing examples
 
