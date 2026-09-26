@@ -168,7 +168,24 @@ $$
 A \Longrightarrow B \Longrightarrow X \Longrightarrow A
 $$
 
-仮定から始まった一方向の推論が，検算で出発点に戻ってくる．輪が閉じるので，$A$と$X$は同値である．<Detail>途中の$B$も，$B \Longrightarrow X \Longrightarrow A$より$A$と同値になる．</Detail>自然な計算の流れのままで，<Ref to="eq-solve" />の両方の向きが示される．
+仮定から始まった一方向の推論が，検算で出発点に戻ってくる．この解法が論理的に完全であることは，次の事実による．
+
+<Proposition id="prop-cycle" name="含意の輪">
+
+$P_1$から$P_n$までの$n$個の命題について，次の$n$個の含意がすべて成り立つとする．
+
+$$
+\begin{gathered}
+P_1 \Longrightarrow P_2, \quad P_2 \Longrightarrow P_3, \quad \ldots, \\
+P_{n-1} \Longrightarrow P_n, \quad P_n \Longrightarrow P_1
+\end{gathered}
+$$
+
+このとき，$P_1$から$P_n$まではどの2つも同値である．
+
+</Proposition>
+
+$P_1$を$A$，$P_2$を$B$，$P_3$を$X$として<Ref to="prop-cycle" />を使えば，$A$と$X$は同値である．途中の$B$も$A$と同値になる．自然な計算の流れのままで，<Ref to="eq-solve" />の両方の向きが示される．
 
 候補が複数あるときは，候補ごとに検算して解でないものを除く．
 
