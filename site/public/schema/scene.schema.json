@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://enunun.github.io/math-study/schema/scene.schema.json",
   "title": "図のシーン",
-  "description": "数学の学習サイトの図が読み書きする，シーンのJSONの形式．図の作成ページ(/math-study/tools/figure-editor/)の「JSON」タブで編集するものと同じである．",
+  "description": "えぬちゃんらんどの図が読み書きする，シーンのJSONの形式．図の作成ページ(/math-study/tools/figure-editor/)の「JSON」タブで編集するものと同じである．",
   "type": "object",
   "required": ["version", "description", "view", "objects"],
   "additionalProperties": false,

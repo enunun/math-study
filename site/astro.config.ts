@@ -44,7 +44,7 @@ export default defineConfig({
     // 計算機など，ブラウザで動く部品は，Reactで書く．
     react(),
     starlight({
-      title: '数学の学習サイト',
+      title: 'えぬちゃんらんど',
       // コードブロックは折り返す．横にスクロールする領域は，キーボードで操作できない．
       expressiveCode: { defaultProps: { wrap: true } },
       // 和文と欧文，数式の間の隙間と，図．

@@ -9,7 +9,7 @@ test.describe('共有ボタン', () => {
     const x = new URL((await share.getByRole('link', { name: 'X' }).getAttribute('href')) ?? '');
     expect(x.origin + x.pathname).toBe('https://x.com/intent/post');
     expect(x.searchParams.get('url')).toBe(`${SITE}dev/notation/`);
-    expect(x.searchParams.get('text')).toMatch(/ \| 数学の学習サイト$/u);
+    expect(x.searchParams.get('text')).toMatch(/ \| えぬちゃんらんど$/u);
   });
 
   test('ホームでは，サイト名とトップのURLを渡す', async ({ page }) => {
@@ -19,7 +19,7 @@ test.describe('共有ボタン', () => {
       .getByRole('link', { name: 'X' });
     const x = new URL((await link.getAttribute('href')) ?? '');
     expect(x.searchParams.get('url')).toBe(SITE);
-    expect(x.searchParams.get('text')).toBe('数学の学習サイト');
+    expect(x.searchParams.get('text')).toBe('えぬちゃんらんど');
   });
 
   test('X，Bluesky，Facebook，LINE，はてなブックマークへのリンクを，新しいタブで開く', async ({

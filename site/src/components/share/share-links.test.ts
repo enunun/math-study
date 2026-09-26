@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { shareLinks, shareTitle } from './share-links';
 
 const PAGE_URL = 'https://enunun.github.io/math-study/topics/a/';
-const TITLE = '連続性 & 極限 | 数学の学習サイト';
+const TITLE = '連続性 & 極限 | えぬちゃんらんど';
 
 describe('shareLinks', () => {
   const links = shareLinks(TITLE, PAGE_URL);
@@ -33,10 +33,10 @@ describe('shareLinks', () => {
 
 describe('shareTitle', () => {
   it('ページ名とサイト名をつなぐ', () => {
-    expect(shareTitle('連続性', '数学の学習サイト')).toBe('連続性 | 数学の学習サイト');
+    expect(shareTitle('連続性', 'えぬちゃんらんど')).toBe('連続性 | えぬちゃんらんど');
   });
 
   it('ホームのように，ページ名がサイト名と同じときはサイト名だけにする', () => {
-    expect(shareTitle('数学の学習サイト', '数学の学習サイト')).toBe('数学の学習サイト');
+    expect(shareTitle('えぬちゃんらんど', 'えぬちゃんらんど')).toBe('えぬちゃんらんど');
   });
 });

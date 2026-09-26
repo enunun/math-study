@@ -1,4 +1,4 @@
-# 数学の学習サイト
+# えぬちゃんらんど
 
 数学の内容を一方的に配信する学習サイトである．公開先は[https://enunun.github.io/math-study/](https://enunun.github.io/math-study/)である．
 
