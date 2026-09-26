@@ -1,3 +1,4 @@
+import type { Root } from 'hast';
 import rehypeStringify from 'rehype-stringify';
 import remarkMath from 'remark-math';
 import remarkParse from 'remark-parse';
@@ -71,6 +72,37 @@ $$`);
     await expect(render(String.raw`$\RealNumbers[unknown]$`)).rejects.toThrow(
       /Unknown environment 'numbersetstyleunknown'/u,
     );
+  });
+
+  it('行内の式の分数は斜線にし，別行立ての式の分数は縦に積む', async () => {
+    expect(await render(String.raw`$\frac{a+b}{2}$`)).toBe(await render('$(a+b)/2$'));
+    const display = await render(String.raw`$$
+\frac{a+b}{2}
+$$`);
+    expect(display).toContain('<mjx-mfrac');
+  });
+
+  it('図のラベルの分数は，TikZの出力とそろえるため，縦に積む', async () => {
+    const tree: Root = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'span',
+          properties: { className: ['figure-label'] },
+          children: [
+            {
+              type: 'element',
+              tagName: 'code',
+              properties: { className: ['language-math', 'math-inline'] },
+              children: [{ type: 'text', value: String.raw`\frac{h}{2}` }],
+            },
+          ],
+        },
+      ],
+    };
+    await unified().use(rehypeMathjax, options).run(tree);
+    expect(JSON.stringify(tree)).toContain('"tagName":"mjx-mfrac"');
   });
 
   it('引数を取る自作マクロを展開する', async () => {

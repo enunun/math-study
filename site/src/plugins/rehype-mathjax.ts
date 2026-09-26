@@ -3,6 +3,7 @@ import type { Plugin } from 'unified';
 import { visit } from 'unist-util-visit';
 import type { VFile } from 'vfile';
 
+import { slashFractions } from '../math/inline-fraction';
 import { getRenderer } from '../math/renderer';
 import type { Renderer, RendererOptions } from '../math/renderer';
 
@@ -20,6 +21,8 @@ interface MathSite {
   target: Element;
   tex: string;
   display: boolean;
+  /** 分数を斜線にするか．本文の行内の式だけで，別行立ての式と，図のラベルは，縦に積んだままにする． */
+  slash: boolean;
   /** 文書の中の位置．エラーの表示に使う． */
   place: Point | undefined;
 }
@@ -44,6 +47,8 @@ function collectSites(tree: Root): MathSite[] {
       target,
       tex,
       display,
+      // 図のラベルは，TikZの出力や，図のエディタの表示とそろえるため，書き換えない．
+      slash: !display && !(parent?.type === 'element' && hasClass(parent, 'figure-label')),
       // 別行立ての式の位置は，包む<pre>にだけ付く．
       place: (target.position ?? node.position)?.start,
     });
@@ -94,7 +99,9 @@ async function renderSites(
     return;
   }
   try {
-    replace(site.target, await renderer.render(site.tex, site.display));
+    // 本文の行内の式の分数は，行の高さを乱さないよう，斜線にする．エラーの表示には，原稿のTeXを使う．
+    const tex = site.slash ? slashFractions(site.tex) : site.tex;
+    replace(site.target, await renderer.render(tex, site.display));
   } catch (error) {
     fail(file, site, error);
   }
