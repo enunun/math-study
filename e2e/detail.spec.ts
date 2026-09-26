@@ -1,5 +1,10 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
+
+import { listRoutes, routeName } from './routes';
 
 const PAGE = 'dev/notation/';
 const SENTENCE = '実数の二乗は0以上である．';
@@ -108,4 +113,33 @@ test.describe('補足(Detail)，JavaScriptが無効なとき', () => {
     await expect(paragraph(page)).toHaveText(new RegExp(`^${SENTENCE}${BODY}$`, 'u'), INNER_TEXT);
     await expect(page.getByRole('button', { name: '補足' })).toHaveCount(0);
   });
+});
+
+/** ビルドしたHTMLに補足を含むページ．ほかの折り畳みを使わないページも，ここに入る． */
+const routesWithDetail = (): string[] =>
+  listRoutes().filter((route) =>
+    readFileSync(
+      path.join('site/dist', route === '' || route.endsWith('/') ? `${route}index.html` : route),
+      'utf8',
+    ).includes('class="detail '),
+  );
+
+test.describe('補足(Detail)を含むすべてのページ', () => {
+  for (const route of routesWithDetail()) {
+    test(`${routeName(route)}の補足は，すべて開ける`, async ({ page }) => {
+      await page.goto(route);
+      // 証明などの折り畳みの中にある補足も押せるよう，先に折り畳みを開く．
+      await page.evaluate(() => {
+        for (const fold of document.querySelectorAll('details')) {
+          fold.open = true;
+        }
+      });
+      const details = page.locator('.detail');
+      for (const detail of await details.all()) {
+        await detail.locator(':scope > .detail-toggle').click();
+        await expect(detail).toHaveClass(/is-open/u);
+        await expect(detail.locator(':scope > .detail-body')).toBeVisible();
+      }
+    });
+  }
 });

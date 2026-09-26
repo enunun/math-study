@@ -54,8 +54,11 @@ export default defineConfig({
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/enunun/math-study' }],
       // ページは，カテゴリから自由に選んで読む．一続きに読むものではないので，ページ下部の「前へ」「次へ」は出さない．
       pagination: false,
-      // ページ下部に，SNSへの共有ボタンを足す．
-      components: { Footer: './src/components/share/Footer.astro' },
+      // 本文には折り畳みと補足の開閉スクリプトを，ページ下部にはSNSへの共有ボタンを足す．
+      components: {
+        MarkdownContent: './src/components/fold/MarkdownContent.astro',
+        Footer: './src/components/share/Footer.astro',
+      },
       // カテゴリは，content/docsのディレクトリ1つに対応する．カテゴリを足したときは，ホームの一覧にも足す．
       sidebar: [
         'index',

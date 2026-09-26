@@ -1,0 +1,13 @@
+---
+// Starlightの本文の枠に，折り畳みと補足を開閉するスクリプトを足す．
+// 本文ごとに1回読み込むので，ページがどの折り畳みのコンポーネントを使うかによらず働く．
+import Default from '@astrojs/starlight/components/MarkdownContent.astro';
+---
+
+<Default><slot /></Default>
+
+<script>
+  import { installAutoOpen } from './auto-open';
+
+  installAutoOpen();
+</script>

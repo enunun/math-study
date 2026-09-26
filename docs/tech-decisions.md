@@ -38,6 +38,7 @@ The technical decisions for the mathematics study site, and the facts verified a
 - Astro 7's default Markdown processor is Sätteri. remark and rehype plugins run only when `@astrojs/markdown-remark` is installed and `unified()` is selected. Starlight depends on the same API.
 - `astro check` uses the TypeScript programmatic API. TypeScript 7 does not provide it, so TypeScript stays on 6.x until Astro supports it. Dependabot is configured not to propose `typescript` 7 or later.
 - In agent environments (`CLAUDECODE=1`), `astro preview` starts a background server and the command itself exits. Playwright's `webServer` expects a long-running command, so `e2e/serve.ts` serves the site instead.
+- Astro bundles a component's `<script>` only into pages that render that component. The fold script (`auto-open.ts`) once lived in `Fold.astro`, so a page that used `Detail` but no `Proof` or `Remark` (`topics/locus`) had no click handler, and its `［…］` buttons did nothing while `html.js` hid the text. The script is page-wide behavior (click delegation on `document`, hash targets, search highlights, printing), so it is now loaded by an override of Starlight's `MarkdownContent` (`site/src/components/fold/MarkdownContent.astro`), once on every docs page. `e2e/detail.spec.ts` opens every `Detail` on every built page that has one.
 
 ### Math
 
