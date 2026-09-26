@@ -2,16 +2,6 @@
 
 数学の内容を一方的に配信する学習サイトである．公開先は[https://enunun.github.io/math-study/](https://enunun.github.io/math-study/)である．
 
-## 機能
-
-- サイト：Astro 7とStarlightで作る．公開するページは，カテゴリ(単発ネタ，ツール)ごとに，ホームのカード一覧とサイドバーのグループに並べる．著書の紹介は，カテゴリの外の1ページである．
-- 数式：MathJax 4でビルド時に描画する(自作マクロ，証明図，読み上げ用の`aria-label`)．未定義のマクロと構文の誤りは，ビルドの失敗にする．
-- 定理と式番号：定義，補題，命題，定理，系(`Definition`，`Lemma`，`Proposition`，`Theorem`，`Corollary`)と，別行立ての式の`\label`を自動で採番する．同じページやほかのページから`Ref`で参照できる．
-- 折り畳み：証明や補足を`Proof`，`Detail`，`Remark`で折り畳む．
-- 計算機：Rustで書いた多項式の計算機(式の展開と微分)を，Wasmにしてブラウザで動かす．核は`crates/`にある．
-- 図：図のシーン(JSON)から，SVGの図とTikZの出力を作る．核はRustで書いてWasmにし，ビルド時とブラウザで動かす．図を作るページでは，オブジェクトを足して設定すると記事と同じエンジンが描く．シーンのJSONの読み書きと，TikZのダウンロードもできる．設計は`docs/graph-design.md`にある．
-- 開発基盤：リントと整形，コミット時の検査，E2Eテスト(axeによるアクセシビリティ検査，リンク切れの検査を含む)，GitHub Pagesへの公開．E2Eが失敗すると，公開されない．
-
 サイトの仕組み(どの部品が何をしているか，どこが自作か，どう使うか)は，[仕組みの解説](https://enunun.github.io/math-study/dev/internals/)にある．ソースは`site/src/content/docs/dev/internals.mdx`である．
 
 技術選定の理由と，確認した事実は，[docs/tech-decisions.md](docs/tech-decisions.md)(英語)にまとめてある．
