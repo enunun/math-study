@@ -1,0 +1,32 @@
+---
+// カテゴリのページに，記事の一覧を並べる．小分類があれば，小分類ごとに見出しを立てる．
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+import { getCollection } from 'astro:content';
+
+import { articleGroups, findCategory, pageHref } from './categories';
+
+interface Props {
+  directory: string;
+}
+
+const groups = articleGroups(await getCollection('docs'), findCategory(Astro.props.directory));
+const base = import.meta.env.BASE_URL;
+---
+
+{
+  groups.map(({ section, articles }) => (
+    <>
+      {section && <h2 id={section.directory}>{section.label}</h2>}
+      {section && <p>{section.description}</p>}
+      <CardGrid>
+        {articles.map((article) => (
+          <LinkCard
+            title={article.title}
+            description={article.description}
+            href={pageHref(base, article.id)}
+          />
+        ))}
+      </CardGrid>
+    </>
+  ))
+}

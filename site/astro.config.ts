@@ -6,6 +6,7 @@ import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 import remarkMath from 'remark-math';
 
+import { CATEGORIES, sidebarGroup } from './src/components/category/categories';
 import { mathjaxIntegration } from './src/integrations/mathjax';
 import { FONT_DIRECTORY, STYLESHEET_FILE } from './src/math/constants';
 import { environments, macros } from './src/math/macros';
@@ -59,11 +60,10 @@ export default defineConfig({
         MarkdownContent: './src/components/fold/MarkdownContent.astro',
         Footer: './src/components/share/Footer.astro',
       },
-      // カテゴリは，content/docsのディレクトリ1つに対応する．カテゴリを足したときは，ホームの一覧にも足す．
+      // カテゴリと小分類は，content/docsのディレクトリに対応し，categories.tsの一覧から作る．
       sidebar: [
         'index',
-        { label: '単発ネタ', items: [{ autogenerate: { directory: 'topics' } }] },
-        { label: 'ツール', items: [{ autogenerate: { directory: 'tools' } }] },
+        ...CATEGORIES.map((category) => sidebarGroup(category)),
         // 著書は，カテゴリではない1ページである．
         'books',
       ],

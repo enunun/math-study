@@ -77,10 +77,12 @@
     {
       // Astroのコンポーネントは，PascalCaseのファイル名にする．
       // 先頭のコードブロックは常にモジュールとして扱われる．
+      // このブロックは描画のたびに実行されるので，コンテンツの読み込み(getCollection)をトップレベルのawaitで待ってよい．
       "files": ["**/*.astro"],
       "rules": {
         "unicorn/filename-case": ["error", { "cases": { "kebabCase": true, "pascalCase": true } }],
         "import/unambiguous": "off",
+        "node/no-top-level-await": "off",
       },
     },
     {
@@ -104,8 +106,8 @@
       },
     },
     {
-      // remark-lintの設定は，使うプラグインを並べるため，依存が多くなる．
-      "files": [".remarkrc.mjs"],
+      // remark-lintの設定は使うプラグインを，Astroの設定は統合とサイトの部品を並べるため，依存が多くなる．
+      "files": [".remarkrc.mjs", "site/astro.config.ts"],
       "rules": {
         "import/max-dependencies": "off",
       },

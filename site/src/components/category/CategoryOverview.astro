@@ -1,0 +1,24 @@
+---
+// トップページに，カテゴリごとの見出しと，小分類へのカードを並べる．
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+import { getCollection } from 'astro:content';
+
+import { CATEGORIES, overviewCards } from './categories';
+
+const entries = await getCollection('docs');
+const base = import.meta.env.BASE_URL;
+---
+
+{
+  CATEGORIES.map((category) => (
+    <>
+      <h2 id={category.directory}>{category.label}</h2>
+      <p>{category.description}</p>
+      <CardGrid>
+        {overviewCards(entries, category, base).map((card) => (
+          <LinkCard title={card.title} description={card.description} href={card.href} />
+        ))}
+      </CardGrid>
+    </>
+  ))
+}

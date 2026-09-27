@@ -2,7 +2,7 @@ import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
-const PAGE = 'topics/figure-algorithms/';
+const PAGE = 'graphics/figure-algorithms/';
 
 function explorer(page: Page): Locator {
   return page.locator('.projection-explorer');

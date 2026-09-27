@@ -1,0 +1,60 @@
+---
+title: 開発用のページ
+description: サイトの仕組みと，記法の動作確認のためのページの一覧である．
+tableOfContents: false
+sidebar:
+  hidden: true
+pagefind: false
+head:
+  - tag: meta
+    attrs:
+      name: robots
+      content: noindex
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+サイトの仕組みと，記法の動作確認のためのページである．サイドバーと検索には出さないが，隠してはいない．次のリンクから開ける．
+
+<CardGrid>
+  <LinkCard
+    title="仕組みの解説"
+    description="どの部品が何をしているか，どこが自作か，どう使うか．"
+    href="internals/"
+  />
+  <LinkCard
+    title="記法とテスト"
+    description="折り畳み，数式，定理，式番号の書き方と，動作確認の項目．"
+    href="notation/"
+  />
+  <LinkCard
+    title="多項式の計算機"
+    description="式を入力すると，展開と微分の結果を表示する．核は，RustのWasmで動く．"
+    href="calculator/"
+  />
+  <LinkCard
+    title="図のシーンの確認"
+    description="図のシーン(JSON)を入力すると，読み込みと検査の結果を表示する．核は，RustのWasmで動く．"
+    href="figure-scene/"
+  />
+  <LinkCard
+    title="最初の図"
+    description="シーン(JSON)から，ビルド時に描画した図．矢じりのある座標軸と，曲線．"
+    href="figure-first/"
+  />
+  <LinkCard
+    title="空間の図"
+    description="シーン(JSON)から，ビルド時に描画した空間の図．球に隠れた軸を点線にする．"
+    href="figure-space/"
+  />
+  <LinkCard
+    title="記事の見本"
+    description="連続写像の特徴づけ．すべての記法を使った記事の例．"
+    href="continuity/"
+  />
+  <LinkCard
+    title="参照先の見本"
+    description="絶対値の定義と三角不等式．ほかのページから参照される側の例．"
+    href="abs/"
+  />
+</CardGrid>

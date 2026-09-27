@@ -8,63 +8,17 @@ sidebar:
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
+import { CategoryOverview, RecentArticles } from '@/components/category';
+
 数学を学ぶための解説サイトである．現在，準備を進めている．
 
 記事はカテゴリごとにまとめてあり，どれから読んでもよい．サイドバーからも選べる．
 
-## 単発ネタ
+## 新着記事
 
-1ページで完結する話題である．ほかのページを前提にせず，単独で読める．
+<RecentArticles count={5} />
 
-<CardGrid>
-  <LinkCard
-    title="図を描く数学"
-    description="空間の図形を平面へ描く原理を，定理と証明つきで説明する．"
-    href="topics/figure-algorithms/"
-  />
-  <LinkCard
-    title="平面の図の塗りつぶし"
-    description="斜線を引く範囲の決め方と，表示範囲での切り取りを説明する．"
-    href="topics/figure-fill/"
-  />
-  <LinkCard
-    title="方程式を論理的に正しく解くには検算を使え"
-    description="解であると仮定して候補を導き，検算で確かめる解き方を，教科書の解法や同値変形と比べる．"
-    href="topics/equation-check/"
-  />
-  <LinkCard
-    title="漸化式の解を推測するアレがアレな件"
-    description="一般項を推測して帰納法で示す解法の問題点と，漸化式による帰納的定義の証明．PDFでアップロードした記事の，Claude Codeによる書き起こし．"
-    href="topics/recurrence-guess/"
-  />
-  <LinkCard
-    title="高校数学+αでできる（実）三角関数論の精密化"
-    description="三角関数を積分の逆関数として定め，高校の教科書の流れのまま厳密に展開する．PDFでアップロードした記事の，Claude Codeによる書き起こし．"
-    href="topics/trigonometric-functions/"
-  />
-  <LinkCard
-    title="高校数学Ⅱの軌跡を完全に理解するためのn問"
-    description="軌跡を求める問題の解答で，何をどちらの向きに示すべきか．PDFでアップロードした記事の，Claude Codeによる書き起こし．"
-    href="topics/locus/"
-  />
-</CardGrid>
-
-## ツール
-
-数学の図や文書を作るための道具である．
-
-<CardGrid>
-  <LinkCard
-    title="図の作成"
-    description="座標軸，グラフ，曲線，曲面などを組み合わせて，平面や空間の図を作る．JSON，TikZ，画像として取り出せる．"
-    href="tools/figure-editor/"
-  />
-  <LinkCard
-    title="numbersetsパッケージ"
-    description="数の集合を，書体ではなく意味を表すコマンドで書くためのLaTeXパッケージ．"
-    href="tools/numbersets/"
-  />
-</CardGrid>
+<CategoryOverview />
 
 ## 著書
 
@@ -80,47 +34,12 @@ import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 ## 開発用のページ
 
-サイトの仕組みと，記法の動作確認のためのページである．サイドバーと検索には出さないが，隠してはいない．次のリンクから開ける．
+サイトの仕組みと，記法の動作確認のためのページである．サイドバーと検索には出さない．
 
 <CardGrid>
   <LinkCard
-    title="仕組みの解説"
-    description="どの部品が何をしているか，どこが自作か，どう使うか．"
-    href="dev/internals/"
-  />
-  <LinkCard
-    title="記法とテスト"
-    description="折り畳み，数式，定理，式番号の書き方と，動作確認の項目．"
-    href="dev/notation/"
-  />
-  <LinkCard
-    title="多項式の計算機"
-    description="式を入力すると，展開と微分の結果を表示する．核は，RustのWasmで動く．"
-    href="dev/calculator/"
-  />
-  <LinkCard
-    title="図のシーンの確認"
-    description="図のシーン(JSON)を入力すると，読み込みと検査の結果を表示する．核は，RustのWasmで動く．"
-    href="dev/figure-scene/"
-  />
-  <LinkCard
-    title="最初の図"
-    description="シーン(JSON)から，ビルド時に描画した図．矢じりのある座標軸と，曲線．"
-    href="dev/figure-first/"
-  />
-  <LinkCard
-    title="空間の図"
-    description="シーン(JSON)から，ビルド時に描画した空間の図．球に隠れた軸を点線にする．"
-    href="dev/figure-space/"
-  />
-  <LinkCard
-    title="記事の見本"
-    description="連続写像の特徴づけ．すべての記法を使った記事の例．"
-    href="dev/continuity/"
-  />
-  <LinkCard
-    title="参照先の見本"
-    description="絶対値の定義と三角不等式．ほかのページから参照される側の例．"
-    href="dev/abs/"
+    title="開発用のページの一覧"
+    description="仕組みの解説，記法とテスト，計算機や図の確認，記事の見本．"
+    href="dev/"
   />
 </CardGrid>

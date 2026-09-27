@@ -49,12 +49,11 @@ devcontainerで開く．Dockerfileは，mise公式のDebianイメージを土台
 
 ## 記事の追加
 
-1. カテゴリのディレクトリ(`site/src/content/docs/topics/`や`tools/`)に，MDXファイルを作る．ファイル名がURLになる．frontmatterには，`title`と`description`を書く．ほかのページから定理や式を参照されるなら，短い`pageId`も付ける．`pageId`は，サイト内で重複させない．
+1. カテゴリの小分類のディレクトリ(`site/src/content/docs/topics/exam/`など)に，MDXファイルを作る．ファイル名がURLになる．frontmatterには，`title`と`description`と，公開日の`date`を書く．ほかのページから定理や式を参照されるなら，短い`pageId`も付ける．`pageId`は，サイト内で重複させない．
 2. 本文は，`.claude/skills/write-content/SKILL.md`の規則と，記法のページ(`/math-study/dev/notation/`)の書き方に従う．図は，シーンのJSONを`site/src/figures/`に置き，`<Figure src="…" />`で載せる．PDFなどの既存の記事を書き起こしたページには，冒頭の`Aside`で，Claude Codeによる書き起こしであることを示す．
-3. ホーム(`site/src/content/docs/index.mdx`)のカテゴリの見出しの下に，`LinkCard`を足す．サイドバーはディレクトリから作られるので，変更は要らない．
-4. `mise run check`と`mise run e2e`を通し，`mise run screenshot`で見た目を確かめてから，pushする．
+3. `mise run check`と`mise run e2e`を通し，`mise run screenshot`で見た目を確かめてから，pushする．
 
-新しいカテゴリを作るときは，`site/astro.config.ts`の`sidebar`にグループを足し，ホームに見出しとカードの一覧を足す．開発用のページ(`dev/`)は，frontmatterでサイドバーと検索から外す．そのうえで，ホームの「開発用のページ」にカードを足し，`e2e/home.spec.ts`の`DEV_PAGES`にも加える．
+サイドバー，ホームの新着とカード，カテゴリのページの一覧は，ディレクトリと`date`から作られるので，記事を足すだけでよい．新しいカテゴリや小分類は，`site/src/components/category/categories.ts`の一覧と`e2e/home.spec.ts`に足す．カテゴリなら`index.mdx`も置く．開発用のページ(`dev/`)は，frontmatterでサイドバーと検索から外し，`dev/index.mdx`の一覧にカードを足す．
 
 ## ディレクトリ構成
 
