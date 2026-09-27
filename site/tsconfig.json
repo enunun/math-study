@@ -8,5 +8,8 @@
     "paths": {
       "@/*": ["./src/*"]
     }
+  },
+  "mdx": {
+    "plugins": ["remark-frontmatter", "remark-math"]
   }
 }

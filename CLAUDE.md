@@ -39,6 +39,7 @@ A study site for mathematics (Astro 7, Starlight, MDX). `README.md` (Japanese) g
 - Keep `typescript` on the 6.x line: `astro check` does not support TypeScript 7.
 - pnpm 12 allows dependency build scripts only when listed. Add them to `allowBuilds` in `pnpm-workspace.yaml`.
 - oxfmt does not format `.astro` files. Put logic in `.ts` files and keep `.astro` files thin.
+- A remark plugin that changes how MDX parses (such as `remark-math`) must be listed in `site/astro.config.ts`, `.remarkrc.mjs`, and `mdx.plugins` in `site/tsconfig.json` (read by the VS Code MDX extension). Otherwise the editor or `lint:mdx` reports math such as `\set{a \in C}` as "Could not parse expression with acorn".
 - `mise run test` runs the Vitest unit tests (`site/src/**/*.test.ts`). `mise run check` includes them.
 - Rust/Wasm build environment (toolchain pinning, `gcc` for native `cargo test`, TeX Live for TikZ verification): see the `rust-wasm` skill (the polynomial calculator) or the `figure-engine` skill (the figure engine); both share the same `mise.toml`-pinned toolchain.
 

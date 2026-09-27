@@ -48,13 +48,13 @@ import { Definition, Proposition } from '@/components/statement';
 ベクトルは斜体かつ太字の小文字で書く．成分を並べるときは，角カッコで囲んだ列ベクトルにする．行ベクトルは，成分を空白で区切りカンマは入れない．
 
 $$
-\boldsymbol{p} = \begin{bmatrix} x \\ y \\ z \end{bmatrix}, \qquad \boldsymbol{p}^{\mathsf{T}} = \begin{bmatrix} x & y & z \end{bmatrix}
+\boldsymbol{p} = \begin{bmatrix} x \\ y \\ z \end{bmatrix}, \quad \boldsymbol{p}^{\mathsf{T}} = \begin{bmatrix} x & y & z \end{bmatrix}
 $$
 
 行列$A$の転置は$A^{\mathsf{T}}$と書く．内積，外積，長さの記号は次のとおりである．
 
 $$
-\boldsymbol{a} \cdot \boldsymbol{b}, \qquad \boldsymbol{a} \times \boldsymbol{b}, \qquad \abs{\boldsymbol{a}}
+\boldsymbol{a} \cdot \boldsymbol{b}, \quad \boldsymbol{a} \times \boldsymbol{b}, \quad \abs{\boldsymbol{a}}
 $$
 
 空間の点は，原点から測った位置ベクトルと同じに扱う．
@@ -92,7 +92,7 @@ $$
 右向きの$\colored{orange}{\boldsymbol{r}}$は，水平で$\boldsymbol{d}$と直交する向きである．$\boldsymbol{d}$の水平な成分を反時計回りに90°回した向きである．上向きの$\colored{purple}{\boldsymbol{u}}$は，$\boldsymbol{d}$と$\boldsymbol{r}$の外積である．
 
 $$
-\boldsymbol{r} = \begin{bmatrix} -\sin a \\ \cos a \\ 0 \end{bmatrix}, \qquad \boldsymbol{u} = \boldsymbol{d} \times \boldsymbol{r} = \begin{bmatrix} -\sin e \cos a \\ -\sin e \sin a \\ \cos e \end{bmatrix}
+\boldsymbol{r} = \begin{bmatrix} -\sin a \\ \cos a \\ 0 \end{bmatrix}, \quad \boldsymbol{u} = \boldsymbol{d} \times \boldsymbol{r} = \begin{bmatrix} -\sin e \cos a \\ -\sin e \sin a \\ \cos e \end{bmatrix}
 $$
 
 <Figure
@@ -136,13 +136,13 @@ $$
 $P'$の位置は，$\colored{orange}{\boldsymbol{r}}$の方向の成分$X$と，$\colored{purple}{\boldsymbol{u}}$の方向の成分$Y$で表す．$P$から画面までの距離を奥行き$Z$と呼ぶ．$P$がカメラの側にあれば，$Z$は正である．$P$の位置ベクトルを$\boldsymbol{p}$とする．$\boldsymbol{r}$，$\boldsymbol{u}$，$\boldsymbol{d}$は正規直交なので，各成分は内積で求まる．
 
 $$
-X = \boldsymbol{p} \cdot \boldsymbol{r}, \qquad Y = \boldsymbol{p} \cdot \boldsymbol{u}, \qquad Z = \boldsymbol{p} \cdot \boldsymbol{d}
+X = \boldsymbol{p} \cdot \boldsymbol{r}, \quad Y = \boldsymbol{p} \cdot \boldsymbol{u}, \quad Z = \boldsymbol{p} \cdot \boldsymbol{d}
 $$
 
 3つのベクトルを行に並べた行列を$M$とすると，3つの式は1つの式になる．
 
 $$
-M = \begin{bmatrix} \boldsymbol{r}^{\mathsf{T}} \\ \boldsymbol{u}^{\mathsf{T}} \\ \boldsymbol{d}^{\mathsf{T}} \end{bmatrix}, \qquad \begin{bmatrix} X \\ Y \\ Z \end{bmatrix} = M\boldsymbol{p}
+M = \begin{bmatrix} \boldsymbol{r}^{\mathsf{T}} \\ \boldsymbol{u}^{\mathsf{T}} \\ \boldsymbol{d}^{\mathsf{T}} \end{bmatrix}, \quad \begin{bmatrix} X \\ Y \\ Z \end{bmatrix} = M\boldsymbol{p}
 $$
 
 $M$の行は正規直交なので，$MM^{\mathsf{T}} = I$が成り立ち，$M$は回転を表す．点は回転されたあと，最初の2成分が画面の位置，3番目の成分が奥行きになる．
@@ -226,7 +226,7 @@ $S$には，曲面や，その一部の三角形を取る．曲面が複数あ�
 三角形の頂点$A_i$の像を$s_i$，奥行きを$z_i$とする．ただし$i$は1から3である．画面の点$s$は，次の式を満たす$\lambda_i$を使って，$s = \sum \lambda_i s_i$と書ける．これを$s$の重心座標と呼ぶ．
 
 $$
-\begin{bmatrix} s_2 - s_1 & s_3 - s_1 \end{bmatrix} \begin{bmatrix} \lambda_2 \\ \lambda_3 \end{bmatrix} = s - s_1, \qquad \lambda_1 = 1 - \lambda_2 - \lambda_3
+\begin{bmatrix} s_2 - s_1 & s_3 - s_1 \end{bmatrix} \begin{bmatrix} \lambda_2 \\ \lambda_3 \end{bmatrix} = s - s_1, \quad \lambda_1 = 1 - \lambda_2 - \lambda_3
 $$
 
 左辺の行列は，2本の列ベクトルを並べた2行2列の行列である．その行列式が0でなければ，Cramerの公式で$\lambda_2$と$\lambda_3$が決まる．行列式が0になるのは，三角形が視線に平行で，画面の上で面積を持たない場合である．そのような三角形は何も隠さないものとする．
@@ -256,13 +256,13 @@ $T$の点$\sum \mu_i A_i$（$\mu_i \ge 0$，$\sum \mu_i = 1$）の像は，投�
 例として，頂点の像を次のように置く．
 
 $$
-s_1 = \begin{bmatrix} 0 \\ 0 \end{bmatrix}, \qquad s_2 = \begin{bmatrix} 4 \\ 0 \end{bmatrix}, \qquad s_3 = \begin{bmatrix} 0 \\ 3 \end{bmatrix}
+s_1 = \begin{bmatrix} 0 \\ 0 \end{bmatrix}, \quad s_2 = \begin{bmatrix} 4 \\ 0 \end{bmatrix}, \quad s_3 = \begin{bmatrix} 0 \\ 3 \end{bmatrix}
 $$
 
 <Ref to="fig-bary" />の点$s = \begin{bmatrix} 1 & 1 \end{bmatrix}^{\mathsf{T}}$の重心座標は，次の式で決まる．
 
 $$
-\begin{bmatrix} 4 & 0 \\ 0 & 3 \end{bmatrix} \begin{bmatrix} \lambda_2 \\ \lambda_3 \end{bmatrix} = \begin{bmatrix} 1 \\ 1 \end{bmatrix}, \qquad \lambda_2 = \frac{1}{4}, \quad \lambda_3 = \frac{1}{3}, \quad \lambda_1 = \frac{5}{12}
+\begin{bmatrix} 4 & 0 \\ 0 & 3 \end{bmatrix} \begin{bmatrix} \lambda_2 \\ \lambda_3 \end{bmatrix} = \begin{bmatrix} 1 \\ 1 \end{bmatrix}, \quad \lambda_2 = \frac{1}{4}, \quad \lambda_3 = \frac{1}{3}, \quad \lambda_1 = \frac{5}{12}
 $$
 
 3つとも0以上なので，$s$は三角形の像の内側にある．頂点の奥行きを$z_1 = 1$，$z_2 = 2$，$z_3 = 3$とすると，$\sum \lambda_i z_i = 23/12 \approx 1.92$である．奥行き$z_0 = 1.5$の点は，$1.92 > 1.5$なので隠れる．奥行き$z_0 = 2.5$の点は隠れない．
@@ -276,7 +276,7 @@ $$
 中心$\boldsymbol{c}$，半径$r$の球面を$S$とする．次の量を定める．
 
 $$
-\boldsymbol{q} = \boldsymbol{p} - \boldsymbol{c}, \qquad b = \boldsymbol{q} \cdot \boldsymbol{d}, \qquad \Delta = b^2 - (\abs{\boldsymbol{q}}^2 - r^2)
+\boldsymbol{q} = \boldsymbol{p} - \boldsymbol{c}, \quad b = \boldsymbol{q} \cdot \boldsymbol{d}, \quad \Delta = b^2 - (\abs{\boldsymbol{q}}^2 - r^2)
 $$
 
 点$P$が$S$に隠れるための必要十分条件は，$\Delta > 0$かつ$\sqrt{\Delta} > b$である．
@@ -576,7 +576,7 @@ $$
 曲面$\boldsymbol{S}_A(u, v)$と$\boldsymbol{S}_B(s, t)$の交わりは，次のベクトルの式の解の集合である．
 
 $$
-\boldsymbol{F}(\boldsymbol{x}) = \boldsymbol{S}_A(u, v) - \boldsymbol{S}_B(s, t) = \boldsymbol{0}, \qquad \boldsymbol{x} = \begin{bmatrix} u \\ v \\ s \\ t \end{bmatrix}
+\boldsymbol{F}(\boldsymbol{x}) = \boldsymbol{S}_A(u, v) - \boldsymbol{S}_B(s, t) = \boldsymbol{0}, \quad \boldsymbol{x} = \begin{bmatrix} u \\ v \\ s \\ t \end{bmatrix}
 $$
 
 $\boldsymbol{x}$は，4つの未知数を並べた列ベクトルである．式は3つ，未知数は4つなので，解は一般に1次元の集合，すなわち曲線になる．$\boldsymbol{F}$のヤコビ行列$J$は，3行4列である．
@@ -614,7 +614,7 @@ $$
 したがって交わりは次の2つの曲線である．
 
 $$
-\begin{bmatrix} 1 + \cos t \\ \sin t \\ 2\sin\frac{t}{2} \end{bmatrix}, \qquad \begin{bmatrix} 1 + \cos t \\ \sin t \\ -2\sin\frac{t}{2} \end{bmatrix} \qquad (0 \le t \le 2\pi)
+\begin{bmatrix} 1 + \cos t \\ \sin t \\ 2\sin\frac{t}{2} \end{bmatrix}, \quad \begin{bmatrix} 1 + \cos t \\ \sin t \\ -2\sin\frac{t}{2} \end{bmatrix} \quad (0 \le t \le 2\pi)
 $$
 
 これはVivianiの曲線として知られている．2つの曲線は，$t = 0$と$t = 2\pi$で次の点を通る．
@@ -640,7 +640,7 @@ $$
 $t = \pi/2$の点$\boldsymbol{p}$と，その点での2つの法線の向きは，次のとおりである．
 
 $$
-\boldsymbol{p} = \begin{bmatrix} 1 \\ 1 \\ \sqrt{2} \end{bmatrix}, \qquad \boldsymbol{n}_A = \begin{bmatrix} 1 \\ 1 \\ \sqrt{2} \end{bmatrix}, \qquad \boldsymbol{n}_B = \begin{bmatrix} 0 \\ 1 \\ 0 \end{bmatrix}
+\boldsymbol{p} = \begin{bmatrix} 1 \\ 1 \\ \sqrt{2} \end{bmatrix}, \quad \boldsymbol{n}_A = \begin{bmatrix} 1 \\ 1 \\ \sqrt{2} \end{bmatrix}, \quad \boldsymbol{n}_B = \begin{bmatrix} 0 \\ 1 \\ 0 \end{bmatrix}
 $$
 
 外積は，次のとおりである．
@@ -652,7 +652,7 @@ $$
 一方，曲線を$t$で微分すると，次の式になる．
 
 $$
-\begin{bmatrix} -\sin t \\ \cos t \\ \cos\frac{t}{2} \end{bmatrix} \quad \longrightarrow \quad \begin{bmatrix} -1 \\ 0 \\ \sqrt{2}/2 \end{bmatrix} \qquad (t = \pi/2)
+\begin{bmatrix} -\sin t \\ \cos t \\ \cos\frac{t}{2} \end{bmatrix} \quad \longrightarrow \quad \begin{bmatrix} -1 \\ 0 \\ \sqrt{2}/2 \end{bmatrix} \quad (t = \pi/2)
 $$
 
 これは，外積の$1/\sqrt{2}$倍である．よって，接線の向きは$\boldsymbol{n}_A \times \boldsymbol{n}_B$になる．
@@ -662,7 +662,7 @@ $$
 網から交線を求めるには，2つの網の三角形の組を調べる．三角形$T_1$と$T_2$は，それぞれ次の平面の上にあるとする．
 
 $$
-\boldsymbol{n}_1 \cdot \boldsymbol{x} = c_1, \qquad \boldsymbol{n}_2 \cdot \boldsymbol{x} = c_2
+\boldsymbol{n}_1 \cdot \boldsymbol{x} = c_1, \quad \boldsymbol{n}_2 \cdot \boldsymbol{x} = c_2
 $$
 
 <Proposition id="triangle-meeting" name="三角形どうしの交わり">
