@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { emptyDraft } from './draft';
 import { insertObjects } from './insert-template';
+import type { JsonObject } from './json';
 
 describe('テンプレートのオブジェクトの挿入', () => {
   it('識別子を，今の図と重ならないものへ付け替える', () => {
@@ -74,5 +75,65 @@ describe('像と写像を含むテンプレートの挿入', () => {
       { id: 'p', type: 'point', at: [0, 0] },
     ]);
     expect(inserted.objects[0]).not.toHaveProperty('transform');
+  });
+});
+
+describe('式の中の名前を持つテンプレートの挿入', () => {
+  it('媒介変数と関数は，ぶつからなければ名前をそのまま使い，式も変えない', () => {
+    const inserted = insertObjects(emptyDraft('plane'), 'plane', [
+      { id: 'a', type: 'parameter', value: 1 },
+      { id: 'f', type: 'function', vars: ['x'], expr: 'a*x' },
+      { id: 'g', type: 'graph', var: 'x', expr: 'f(x)', domain: [0, 'a'] },
+    ]);
+    expect(inserted.objects.map((object) => object.id)).toEqual(['a', 'f', 'graph1']);
+    expect(inserted.objects[1]).toMatchObject({ expr: 'a*x' });
+    expect(inserted.objects[2]).toMatchObject({ expr: 'f(x)', domain: [0, 'a'] });
+  });
+
+  it('ぶつかる媒介変数と関数は付け替え，グループの中の式の名前も書き換える', () => {
+    const existing: JsonObject[] = [
+      { id: 'a', type: 'parameter', value: 5 },
+      { id: 'f', type: 'function', vars: ['x'], expr: 'x' },
+    ];
+    const draft = { ...emptyDraft('space'), objects: existing };
+    const inserted = insertObjects(draft, 'space', [
+      { id: 'a', type: 'parameter', value: 1, range: [0, 2] },
+      { id: 'f', type: 'function', vars: ['x'], expr: 'a*x + area' },
+      { id: 'p', type: 'point', at: ['a', 'f(a)', '2*a'], label: '$a$' },
+      { id: 's', type: 'segment', from: 'p', to: 'p', transform: [{ translate: ['a', 0, 0] }] },
+      { id: 'L', type: 'label', at: ['p_x', 'a', 0], tex: '$a$' },
+      { id: 'q', type: 'point', at: '(p + p) / 2' },
+      {
+        id: 'c',
+        type: 'level_curve',
+        vars: ['u', 'v'],
+        expr: ['u', 'v', 'a'],
+        domain: [
+          [0, 'a'],
+          [0, 1],
+        ],
+        level: 'f(u)',
+        values: ['a/2'],
+      },
+    ]);
+    const [a, f, point, segment, label, middle, curve] = inserted.objects.slice(
+      draft.objects.length,
+    );
+    expect(a?.id).toBe('a2');
+    expect(point?.id).toBe('point1');
+    expect(f).toMatchObject({ id: 'f2', expr: 'a2*x + area' });
+    expect(point).toMatchObject({ at: ['a2', 'f2(a2)', '2*a2'], label: '$a$' });
+    expect(segment).toMatchObject({ transform: [{ translate: ['a2', 0, 0] }] });
+    expect(label).toMatchObject({ at: ['point1_x', 'a2', 0], tex: '$a$' });
+    expect(middle).toMatchObject({ at: '(point1 + point1) / 2' });
+    expect(curve).toMatchObject({
+      expr: ['u', 'v', 'a2'],
+      domain: [
+        [0, 'a2'],
+        [0, 1],
+      ],
+      level: 'f2(u)',
+      values: ['a2/2'],
+    });
   });
 });

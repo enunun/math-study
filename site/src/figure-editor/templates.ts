@@ -1,4 +1,5 @@
 import { BEZIER_SPLINE_TEMPLATES, BEZIER_SURFACE_TEMPLATES } from './bezier-templates';
+import { BRAVAIS_TEMPLATES } from './bravais-templates';
 import { CONIC_TEMPLATES, PLANE_CURVE_TEMPLATES, SPACE_CURVE_TEMPLATES } from './curve-templates';
 import { FRACTAL_TEMPLATES } from './fractal-templates';
 import { FUNCTION_TEMPLATES } from './function-templates';
@@ -73,6 +74,7 @@ const OBJECT_TEMPLATE_GROUPS: readonly ObjectTemplateGroup[] = [
   { label: 'ベジエ曲線・スプライン曲線', templates: BEZIER_SPLINE_TEMPLATES },
   { label: '空間曲線', templates: SPACE_CURVE_TEMPLATES },
   { label: '正多面体', templates: POLYHEDRON_TEMPLATES },
+  { label: 'ブラベー格子', templates: BRAVAIS_TEMPLATES },
   { label: '2次曲面', templates: QUADRIC_TEMPLATES },
   { label: 'ベジエ曲面', templates: BEZIER_SURFACE_TEMPLATES },
   { label: 'いろいろな曲面', templates: OTHER_SURFACE_TEMPLATES },
