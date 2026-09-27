@@ -200,7 +200,7 @@ Starlightの`components`の設定で，本文の枠(`MarkdownContent`)を差し�
 1. 利用者が入力欄に式を書くと，Reactの部品(`polynomial-calculator.tsx`)が，Wasmの`calculate`を呼ぶ．
 2. Wasmの中で，Rustの`polynomial`クレートが，字句解析，構文解析，評価をして，展開した多項式にする．そして，変数ごとに微分する．
 3. 結果は，TeXと平文の2通りの文字列で返る．誤りのときは，説明と，入力の中の位置が返る．
-4. Reactの部品が，TeXを，ブラウザのMathJaxで描画する．ビルド時に描画する記事の数式と，同じマクロを使う．
+4. Reactの部品が，TeXを，ブラウザのMathJaxで描画する．ビルド時に描画する記事の数式と，同じマクロを使う．`\boldsymbol`のような拡張のマクロは，使われたときに拡張を読み込む．ブラウザでは，拡張のファイルをパッケージの名前で読み込む(`tex-extensions.ts`)．図のラベルも，同じMathJaxで描画する．
 
 ### 役割分担
 

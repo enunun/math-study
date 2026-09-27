@@ -1,6 +1,8 @@
 import { FONT_DIRECTORY } from '@/math/constants';
 import { environments, macros } from '@/math/macros';
 
+import { loadTexExtension } from './tex-extensions';
+
 /** ブラウザで動くMathJaxの，使う部分だけの型． */
 interface BrowserMathJax {
   startup: { promise: Promise<unknown> };
@@ -27,9 +29,12 @@ function fontUrl(): string {
 /**
  * ビルド時の描画(`worker.ts`)と，同じマクロと，同じ設定を使う．
  * 読み上げの生成，メニュー，意味づけは，ブラウザでは使わない．結果の読み上げには，呼び出し側が，平文のラベルを付ける．
+ * `\boldsymbol`のような拡張のマクロは，MathJaxが拡張を`@mathjax/src/bundle/input/tex/extensions/`から求めるので，
+ * `loadTexExtension`がパッケージの名前で読み込む．
  */
 function configure(): void {
   Reflect.set(globalThis, 'MathJax', {
+    loader: { paths: { mathjax: '@mathjax/src/bundle' }, require: loadTexExtension },
     tex: {
       packages: { '[-]': ['noundefined'] },
       macros,

@@ -202,3 +202,18 @@ test.describe('媒介変数のスライダー', () => {
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
 });
+
+test.describe('ラベル', () => {
+  test(
+    String.raw`見本「エワルド球(断面)」のラベルの，拡張のマクロ(\boldsymbol)も描画される`,
+    async ({ page }) => {
+      // ブラウザのMathJaxは，拡張をその場で読み込む．読み込めないと，式の文字列がそのまま残る．
+      await page.goto(PAGE);
+      await editor(page).getByRole('button', { name: 'エワルド球(断面)', exact: true }).click();
+      const labels = editor(page).locator('.fe-edit-preview .inline-math');
+      await expect(labels.first()).toBeVisible();
+      const count = await labels.count();
+      await expect(labels.filter({ has: page.locator('mjx-container') })).toHaveCount(count);
+    },
+  );
+});
