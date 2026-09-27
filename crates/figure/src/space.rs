@@ -657,21 +657,14 @@ fn straight_items(
     piece_items(&ends, stroke, style, &space.camera)
 }
 
-/// 空間の図の格子．xy平面(z = 0)の上に，範囲を刻みの倍数の位置で区切る線を引き，変換で動かす．
+/// 空間の図の格子．`z_range`がなければxy平面(z = 0)の上に，範囲を刻みの倍数の位置で区切る線を引く．
+/// あれば，直方体の中の3次元の格子で，y方向，x方向，z方向の線の順に引く．どちらも変換で動かす．
 /// 線は，曲面や球や複体に隠れる．写像で写すと線が曲がるので，そのときは標本化する．
 fn grid_items(style: &Style, grid: &GridPlot, transform: &Transform, space: &Space) -> Vec<Drawn> {
     let stroke = stroke_of(style, Line::Dotted, GRID_WIDTH);
-    let [x_low, x_high] = grid.x_range;
-    let [y_low, y_high] = grid.y_range;
-    let vertical = grid.x_step.into_iter().flat_map(|step| {
-        multiples(step, grid.x_range).map(move |x| ([x, y_low, 0.0], [x, y_high, 0.0]))
-    });
-    let horizontal = grid.y_step.into_iter().flat_map(|step| {
-        multiples(step, grid.y_range).map(move |y| ([x_low, y, 0.0], [x_high, y, 0.0]))
-    });
     let affine = transform.as_affine();
-    vertical
-        .chain(horizontal)
+    grid_segments(grid)
+        .into_iter()
         .flat_map(|(from, to)| match affine {
             Some(affine) => {
                 straight_items(affine.apply3(from), affine.apply3(to), stroke, style, space)
@@ -686,6 +679,36 @@ fn grid_items(style: &Style, grid: &GridPlot, transform: &Transform, space: &Spa
             ),
         })
         .collect()
+}
+
+/// 格子の線分(変換する前の両端)．
+fn grid_segments(grid: &GridPlot) -> Vec<(Point3, Point3)> {
+    let levels = |step: Option<f64>, range: [f64; 2]| -> Vec<f64> {
+        step.map(|step| multiples(step, range).collect())
+            .unwrap_or_default()
+    };
+    let xs = levels(grid.x_step, grid.x_range);
+    let ys = levels(grid.y_step, grid.y_range);
+    let [x_low, x_high] = grid.x_range;
+    let [y_low, y_high] = grid.y_range;
+    let Some(z_range) = grid.z_range else {
+        let vertical = xs.iter().map(|&x| ([x, y_low, 0.0], [x, y_high, 0.0]));
+        let horizontal = ys.iter().map(|&y| ([x_low, y, 0.0], [x_high, y, 0.0]));
+        return vertical.chain(horizontal).collect();
+    };
+    let zs = levels(grid.z_step, z_range);
+    let [z_low, z_high] = z_range;
+    let mut segments = Vec::new();
+    for &z in &zs {
+        segments.extend(xs.iter().map(|&x| ([x, y_low, z], [x, y_high, z])));
+    }
+    for &z in &zs {
+        segments.extend(ys.iter().map(|&y| ([x_low, y, z], [x_high, y, z])));
+    }
+    for &x in &xs {
+        segments.extend(ys.iter().map(|&y| ([x, y, z_low], [x, y, z_high])));
+    }
+    segments
 }
 
 /// 曲面の輪郭と，縁(`boundary`)の線．隠れた部分は，隠れた部分の線の種類で描く．

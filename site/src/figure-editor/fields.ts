@@ -1,12 +1,10 @@
+import { COORDINATE_NAMES, gridFields } from './coordinate-fields';
 import { listedType, TRANSFORMABLE } from './create';
 import type { ViewKind } from './draft';
 import { ANCHORS, ARROWS, PLANE_DIRECTIONS, SOLIDS, SPACE_DIRECTIONS } from './field-options';
 import type { FieldSpec } from './field-spec';
 import { stringOf } from './json';
 import type { JsonObject } from './json';
-
-/** 座標の成分の名前． */
-const COORDINATE_NAMES = { plane: ['x', 'y'], space: ['x', 'y', 'z'] } as const;
 
 const PAIR = 2;
 const TRIPLE = 3;
@@ -125,12 +123,6 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
   tangent_line: [
     { kind: 'reference', key: 'of', label: '接する対象', of: ['graph', 'curve'] },
     { kind: 'bound', key: 'at', label: '接する点' },
-  ],
-  grid: [
-    { kind: 'bound', key: 'x_step', label: 'x方向の間隔', optional: true },
-    { kind: 'bound', key: 'y_step', label: 'y方向の間隔', optional: true },
-    { kind: 'list', key: 'x_range', label: 'xの範囲', item: 'number', count: PAIR, optional: true },
-    { kind: 'list', key: 'y_range', label: 'yの範囲', item: 'number', count: PAIR, optional: true },
   ],
   point: [
     { kind: 'position', key: 'at', label: '位置' },
@@ -277,7 +269,8 @@ function fieldsFor(object: JsonObject, kind: ViewKind): readonly FieldSpec[] {
   const first = type === 'axis' ? [ID, directionField(kind)] : [ID];
   const transform = TRANSFORMABLE.includes(stringOf(object, 'type')) ? [TRANSFORM] : [];
   const last = [...transform, ...(UNSTYLED.has(type) ? [] : [STYLE])];
-  return [...first, ...(SPECS[type] ?? []), ...last];
+  const own = type === 'grid' ? gridFields(kind) : (SPECS[type] ?? []);
+  return [...first, ...own, ...last];
 }
 
 /** 並びの入力欄ごとの名前．空間の座標なら成分の名前，そうでなければ「1番目」などである． */
@@ -289,5 +282,5 @@ function listNames(spec: Extract<FieldSpec, { kind: 'list' }>, kind: ViewKind): 
   return Array.from({ length: count }, (_, at) => `${at + 1}番目`);
 }
 
-export { COORDINATE_NAMES, fieldsFor, listNames };
+export { fieldsFor, listNames };
 export type { FieldSpec } from './field-spec';

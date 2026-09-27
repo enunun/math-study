@@ -1044,7 +1044,9 @@ fn is_default_gap(gap: &Length) -> bool {
 }
 
 /// 格子．範囲(平面の図では，なければ見える範囲)を，原点から数えた刻みの倍数の位置の線で区切る．
-/// 空間の図では，xy平面(z = 0)の上に引く．ほかの平面には，変換(`transform`)で動かす．
+/// 空間の図では，`z_range`がなければxy平面(z = 0)の上に引く．ほかの平面には，変換(`transform`)で動かす．
+/// `z_range`があれば，範囲の直方体の中の3次元の格子になる．各方向の線は，ほかの2つの方向の刻みの倍数の
+/// 位置すべてに引くので，刻みのない方向があれば，その方向の位置が要る線は引かない．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1057,12 +1059,18 @@ pub struct Grid {
     /// y方向の刻み．なければ，横の線を引かない．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub y_step: Option<Bound>,
+    /// z方向の刻み．空間の図で，`z_range`があるときだけ使える．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub z_step: Option<Bound>,
     /// 線を引くxの範囲．平面の図では，なければ見える範囲である．空間の図では，必要である．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x_range: Option<[f64; 2]>,
     /// 線を引くyの範囲．平面の図では，なければ見える範囲である．空間の図では，必要である．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub y_range: Option<[f64; 2]>,
+    /// 線を引くzの範囲．空間の図でだけ使える．あれば3次元の格子になり，なければxy平面の格子になる．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub z_range: Option<[f64; 2]>,
     /// スタイル．線の種類の既定は点線で，線は，目盛と軸より細い．
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,

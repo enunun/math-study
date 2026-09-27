@@ -31,6 +31,13 @@ const OBJECTS = [
   { id: 'c', type: 'point' },
 ];
 
+/** 格子の項目のうち，間隔と範囲の名前． */
+function gridKeys(kind: 'plane' | 'space'): string[] {
+  return fieldsFor({ id: 'grid', type: 'grid' }, kind).flatMap((field) =>
+    'key' in field && /_(?:step|range)$/u.test(field.key) ? [field.key] : [],
+  );
+}
+
 describe('図のシーンの操作', () => {
   it('新しい図は，空で，平面か空間かが，viewの形で決まる', () => {
     expect(emptyDraft().objects).toEqual([]);
@@ -112,6 +119,18 @@ describe('新しいオブジェクト', () => {
     const bezier = fieldsFor(createObject('bezier', draft, 'space'), 'space');
     expect(formula.some((field) => 'key' in field && field.key === 'expr')).toBe(true);
     expect(bezier.some((field) => 'key' in field && field.key === 'bezier')).toBe(true);
+  });
+
+  it('格子の項目は，空間の図でだけz方向の間隔と範囲を持つ', () => {
+    expect(gridKeys('plane')).toEqual(['x_step', 'y_step', 'x_range', 'y_range']);
+    expect(gridKeys('space')).toEqual([
+      'x_step',
+      'y_step',
+      'z_step',
+      'x_range',
+      'y_range',
+      'z_range',
+    ]);
   });
 });
 

@@ -112,7 +112,7 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         // 数か式(`Bound`)なので，ここで確かめることはない．
         Object::TangentLine(_) => plane_only("tangent_line", view),
         Object::Sphere(sphere) => space_only("sphere", view).and_then(|()| validate_sphere(sphere)),
-        Object::Grid(grid) => validate_grid(grid),
+        Object::Grid(grid) => validate_grid(grid, view),
         Object::Point(point) => validate_point(point, view),
         Object::Region(region) => plane_only("region", view).and_then(|()| validate_region(region)),
         Object::Fractal(fractal) => {
@@ -461,13 +461,36 @@ fn check_graphs(
     Ok(())
 }
 
-fn validate_grid(grid: &Grid) -> Result<(), ErrorKind> {
-    if grid.x_step.is_none() && grid.y_step.is_none() {
+fn validate_grid(grid: &Grid, view: &View) -> Result<(), ErrorKind> {
+    if matches!(view, View::Plane(_)) && (grid.z_step.is_some() || grid.z_range.is_some()) {
+        return Err(ErrorKind::Invalid(
+            "格子の`z_step`と`z_range`は，空間の図でだけ使える．".to_owned(),
+        ));
+    }
+    if grid.z_range.is_none() && grid.z_step.is_some() {
+        return Err(ErrorKind::Invalid(
+            "格子の`z_step`を使うには，線を引くzの範囲(`z_range`)が要る．".to_owned(),
+        ));
+    }
+    let steps = [
+        ("x_step", &grid.x_step),
+        ("y_step", &grid.y_step),
+        ("z_step", &grid.z_step),
+    ];
+    let given = steps.iter().filter(|(_, step)| step.is_some()).count();
+    if grid.z_range.is_some() && given < 2 {
+        return Err(ErrorKind::Invalid(
+            "3次元の格子(`z_range`がある格子)には，刻みが2つ以上要る．\
+             線は，ほかの2つの方向の刻みの位置に引くからである．"
+                .to_owned(),
+        ));
+    }
+    if given == 0 {
         return Err(ErrorKind::Invalid(
             "格子には，`x_step`か`y_step`の，少なくとも一方が必要である．".to_owned(),
         ));
     }
-    for (field, step) in [("x_step", &grid.x_step), ("y_step", &grid.y_step)] {
+    for (field, step) in steps {
         if let Some(Bound::Number(value)) = step
             && !(value.is_finite() && *value > 0.0)
         {
@@ -476,7 +499,11 @@ fn validate_grid(grid: &Grid) -> Result<(), ErrorKind> {
             )));
         }
     }
-    for (field, range) in [("x_range", grid.x_range), ("y_range", grid.y_range)] {
+    for (field, range) in [
+        ("x_range", grid.x_range),
+        ("y_range", grid.y_range),
+        ("z_range", grid.z_range),
+    ] {
         if let Some(range) = range
             && !is_increasing(range)
         {

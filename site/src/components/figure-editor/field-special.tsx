@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 
+import { COORDINATE_NAMES } from '@/figure-editor/coordinate-fields';
 import type { SceneDraft } from '@/figure-editor/draft';
-import { COORDINATE_NAMES } from '@/figure-editor/fields';
 import { arrayOf, stringOf, withField } from '@/figure-editor/json';
 import type { Json } from '@/figure-editor/json';
 import { boundToText, readJsonField, setItem } from '@/figure-editor/values';

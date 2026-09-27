@@ -338,13 +338,23 @@
       "type": "object",
       "required": ["id", "type"],
       "additionalProperties": false,
-      "description": "格子．範囲を，原点から数えた刻みの倍数の位置の線で区切る．`x_step`と`y_step`は，少なくとも一方が必要である．空間の図では，xy平面(z = 0)の上に引き，範囲(`x_range`，`y_range`)が要る(スキーマでは表せない)．ほかの平面には，変換で動かす．",
-      "anyOf": [{ "required": ["x_step"] }, { "required": ["y_step"] }],
+      "description": "格子．範囲を，原点から数えた刻みの倍数の位置の線で区切る．刻みは，少なくとも1つが必要である．空間の図では範囲(`x_range`，`y_range`)が要り，`z_range`がなければxy平面(z = 0)の上に引く．ほかの平面には，変換で動かす．`z_range`があれば直方体の中の3次元の格子になり，各方向の線を，ほかの2つの方向の刻みの倍数の位置すべてに引く．そのため，刻みが2つ以上要る(スキーマでは表せない)．",
+      "anyOf": [{ "required": ["x_step"] }, { "required": ["y_step"] }, { "required": ["z_step"] }],
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "grid" },
-        "x_step": { "$ref": "#/$defs/positiveNumberOrExpression" },
-        "y_step": { "$ref": "#/$defs/positiveNumberOrExpression" },
+        "x_step": {
+          "$ref": "#/$defs/positiveNumberOrExpression",
+          "description": "x方向の刻み．なければ，x一定の線(平面の図の縦の線)を引かない．"
+        },
+        "y_step": {
+          "$ref": "#/$defs/positiveNumberOrExpression",
+          "description": "y方向の刻み．なければ，y一定の線(平面の図の横の線)を引かない．"
+        },
+        "z_step": {
+          "$ref": "#/$defs/positiveNumberOrExpression",
+          "description": "z方向の刻み．空間の図で，`z_range`があるときだけ使える(スキーマでは表せない)．"
+        },
         "style": { "$ref": "#/$defs/style" },
         "transform": { "$ref": "#/$defs/transform" },
         "x_range": {
@@ -354,6 +364,10 @@
         "y_range": {
           "$ref": "#/$defs/numberPair",
           "description": "線を引くyの範囲．平面の図では，なければ見える範囲．"
+        },
+        "z_range": {
+          "$ref": "#/$defs/numberPair",
+          "description": "線を引くzの範囲．空間の図でだけ使える(スキーマでは表せない)．あれば3次元の格子になる．"
         }
       }
     },

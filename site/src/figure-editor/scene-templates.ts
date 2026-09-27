@@ -8,6 +8,9 @@ const SPACE_AXIS_RANGE = 3;
 /** 格子の刻み． */
 const GRID_STEP = 1;
 const GRID_STYLE: JsonObject = { color: 'gray' };
+/** 3次元の格子を引く範囲(各座標)． */
+const LATTICE_END = 2;
+const LATTICE_RANGE = [0, LATTICE_END];
 
 /** 原点Oの名前．軸の交わる所の右上に置く． */
 function originLabel(kind: ViewKind): JsonObject {
@@ -46,7 +49,8 @@ function sceneOf(kind: ViewKind, description: string, objects: readonly JsonObje
 
 /**
  * 図のテンプレート．中身のない出発点で，選ぶと今の図を置き換える．座標軸のある図は，どれも原点Oを持つ．
- * 格子は，軸の下に敷く(先に置く)．空間の図の格子は，xy平面の上に引く．
+ * 格子は，軸の下に敷く(先に置く)．空間の図の格子には，xy平面の上に引くものと，3次元の格子がある．
+ * 3次元の格子は，軸と同じ範囲に引くと線が重なって灰色の塊に見えるので，x，y，zが0以上の側の立方体に引く．
  */
 const SCENE_TEMPLATES: readonly SceneTemplate[] = [
   { id: 'plane-empty', label: '空の図(平面)', scene: emptyDraft('plane') },
@@ -71,7 +75,7 @@ const SCENE_TEMPLATES: readonly SceneTemplate[] = [
   },
   {
     id: 'space-grid',
-    label: '座標軸と格子(空間)',
+    label: '座標軸と格子(空間，xy平面)',
     scene: sceneOf('space', '座標軸と，xy平面の格子だけの空間の図．', [
       {
         id: 'grid',
@@ -80,6 +84,24 @@ const SCENE_TEMPLATES: readonly SceneTemplate[] = [
         y_step: GRID_STEP,
         x_range: [-SPACE_AXIS_RANGE, SPACE_AXIS_RANGE],
         y_range: [-SPACE_AXIS_RANGE, SPACE_AXIS_RANGE],
+        style: GRID_STYLE,
+      },
+      ...SPACE_AXES,
+    ]),
+  },
+  {
+    id: 'space-grid-3d',
+    label: '座標軸と格子(空間，3次元)',
+    scene: sceneOf('space', '座標軸と，3次元の格子だけの空間の図．', [
+      {
+        id: 'grid',
+        type: 'grid',
+        x_step: GRID_STEP,
+        y_step: GRID_STEP,
+        z_step: GRID_STEP,
+        x_range: LATTICE_RANGE,
+        y_range: LATTICE_RANGE,
+        z_range: LATTICE_RANGE,
         style: GRID_STYLE,
       },
       ...SPACE_AXES,

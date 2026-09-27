@@ -82,10 +82,16 @@ pub struct GridPlot {
     pub x_range: [f64; 2],
     /// 線を引くyの範囲．
     pub y_range: [f64; 2],
+    /// 評価したz方向の刻み．
+    pub z_step: Option<f64>,
+    /// 線を引くzの範囲．あれば3次元の格子で，なければxy平面の格子である．
+    pub z_range: Option<[f64; 2]>,
 }
 
 /// 格子の，方向ごとの線の数の上限．
 const MAX_GRID_LINES: f64 = 200.0;
+/// 3次元の格子の，線の総数の上限．
+const MAX_GRID_LINES_3D: f64 = 2000.0;
 
 /// 式を読んだ後の，点．
 pub struct PointPlot {
@@ -1272,12 +1278,35 @@ fn compile_grid(grid: &Grid, env: &Env, view: &View) -> Result<GridPlot, ErrorKi
         }
         Ok(Some(value))
     };
-    Ok(GridPlot {
+    let plot = GridPlot {
         x_step: step("x_step", &grid.x_step, x_range)?,
         y_step: step("y_step", &grid.y_step, y_range)?,
         x_range,
         y_range,
-    })
+        z_step: match grid.z_range {
+            Some(z_range) => step("z_step", &grid.z_step, z_range)?,
+            None => None,
+        },
+        z_range: grid.z_range,
+    };
+    if let Some(z_range) = plot.z_range {
+        // 方向ごとの位置の数．刻みのない方向は0か所である．
+        let count = |step: Option<f64>, range: [f64; 2]| {
+            step.map_or(0.0, |step| ((range[1] - range[0]) / step).floor() + 1.0)
+        };
+        let [nx, ny, nz] = [
+            count(plot.x_step, x_range),
+            count(plot.y_step, y_range),
+            count(plot.z_step, z_range),
+        ];
+        let lines = ny * nz + nx * nz + nx * ny;
+        if lines > MAX_GRID_LINES_3D {
+            return Err(ErrorKind::Invalid(format!(
+                "刻みが細かすぎる．3次元の格子の線が{lines}本になる(上限は{MAX_GRID_LINES_3D}本)．"
+            )));
+        }
+    }
+    Ok(plot)
 }
 
 /// 目盛の位置を評価し，軸の範囲の中にあることを確かめる．範囲を省いた平面の軸は，見える範囲である．

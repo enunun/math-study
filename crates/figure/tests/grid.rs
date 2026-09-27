@@ -284,3 +284,124 @@ fn 格子の上の放物線の図は_格子14本の点線と_軸と2本の曲線
         (Line::Dashed, Some(Color::Red))
     );
 }
+
+fn space_figure(grid: &str) -> Result<Figure, Error> {
+    let scene = format!(
+        r#"{{ "version": "0.1.0", "description": "a",
+             "view": {{ "azimuth": 30, "elevation": 20, "unit": "1cm" }},
+             "objects": [ {grid} ] }}"#
+    );
+    render(&parse_scene(&scene)?)
+}
+
+/// 描いた線の本数．陰線処理で分かれることはないので，線1本が1つの経路になる．
+fn line_count(figure: &Figure) -> usize {
+    paths(figure).len()
+}
+
+#[test]
+fn 空間の格子は_z方向の範囲があれば3次元の格子になる() {
+    // x: -1から1(3か所)，y: 0から2(3か所)，z: 0から1(2か所)．
+    // y方向の線は3×2本，x方向の線は3×2本，z方向の線は3×3本．
+    let figure = space_figure(
+        r#"{ "id": "grid", "type": "grid", "x_step": 1, "y_step": 1, "z_step": 1,
+             "x_range": [-1, 1], "y_range": [0, 2], "z_range": [0, 1] }"#,
+    )
+    .expect("描画できる");
+    assert_eq!(line_count(&figure), 6 + 6 + 9);
+}
+
+#[test]
+fn 空間の格子の刻みを1つ省くと_その方向の位置が要る線を引かない() {
+    // z_stepがないので，z方向の線(xとyの位置で決まる)だけを引く．
+    let figure = space_figure(
+        r#"{ "id": "grid", "type": "grid", "x_step": 1, "y_step": 1,
+             "x_range": [-1, 1], "y_range": [0, 2], "z_range": [0, 1] }"#,
+    )
+    .expect("描画できる");
+    assert_eq!(line_count(&figure), 9);
+}
+
+#[test]
+fn 空間の格子を真上から見ると_z方向の線は点に潰れ_x方向とy方向の線は重なる() {
+    let scene = r#"{ "version": "0.1.0", "description": "a",
+         "view": { "azimuth": 90, "elevation": 90, "unit": "1cm" },
+         "objects": [ { "id": "grid", "type": "grid", "x_step": 1, "y_step": 1, "z_step": 1,
+                        "x_range": [-1, 1], "y_range": [0, 2], "z_range": [0, 1] } ] }"#;
+    let figure = render(&parse_scene(scene).expect("読める")).expect("描画できる");
+    let lines = paths(&figure);
+    let degenerate = lines
+        .iter()
+        .filter(|path| {
+            let [a, b] = [path.points[0], path.points[path.points.len() - 1]];
+            close(a[0], b[0]) && close(a[1], b[1])
+        })
+        .count();
+    assert_eq!(degenerate, 9, "z方向の線");
+}
+
+#[test]
+fn z方向の刻みだけでは_3次元の格子にならない() {
+    let error = space_figure(
+        r#"{ "id": "grid", "type": "grid", "z_step": 1,
+             "x_range": [-1, 1], "y_range": [0, 2], "z_range": [0, 1] }"#,
+    )
+    .expect_err("誤りになる");
+    assert!(error.to_string().contains("2つ以上"), "{error}");
+}
+
+#[test]
+fn z方向の刻みには_z方向の範囲が要る() {
+    let error = space_figure(
+        r#"{ "id": "grid", "type": "grid", "x_step": 1, "z_step": 1,
+             "x_range": [-1, 1], "y_range": [0, 2] }"#,
+    )
+    .expect_err("誤りになる");
+    assert!(error.to_string().contains("z_range"), "{error}");
+    assert_eq!(error.object.as_deref(), Some("grid"));
+}
+
+#[test]
+fn z方向の範囲は_小さい方から書く() {
+    let error = space_figure(
+        r#"{ "id": "grid", "type": "grid", "x_step": 1, "y_step": 1,
+             "x_range": [-1, 1], "y_range": [0, 2], "z_range": [1, 0] }"#,
+    )
+    .expect_err("誤りになる");
+    assert!(error.to_string().contains("z_range"), "{error}");
+}
+
+#[test]
+fn 平面の図の格子は_z方向を持てない() {
+    for extra in [r#""z_step": 1"#, r#""z_range": [0, 1]"#] {
+        let error = error_of(&format!(
+            r#"{{ "id": "grid", "type": "grid", "x_step": 1, {extra} }}"#
+        ));
+        assert!(error.to_string().contains("空間"), "{extra}: {error}");
+        assert_eq!(error.object.as_deref(), Some("grid"));
+    }
+}
+
+#[test]
+fn 線が多すぎる3次元の格子は_誤りになる() {
+    // 各方向101か所なので，線は3×101×101本になる．
+    let error = space_figure(
+        r#"{ "id": "grid", "type": "grid", "x_step": 0.1, "y_step": 0.1, "z_step": 0.1,
+             "x_range": [-5, 5], "y_range": [-5, 5], "z_range": [-5, 5] }"#,
+    )
+    .expect_err("誤りになる");
+    assert!(error.to_string().contains("本"), "{error}");
+}
+
+#[test]
+fn 立体の格子は_書き出して読み直すと同じになる() {
+    let scene = parse_scene(
+        r#"{ "version": "0.1.0", "description": "a",
+             "view": { "azimuth": 30, "elevation": 20, "unit": "1cm" },
+             "objects": [ { "id": "grid", "type": "grid", "x_step": 1, "y_step": 1, "z_step": "1/2",
+                            "x_range": [-1, 1], "y_range": [0, 2], "z_range": [0, 1] } ] }"#,
+    )
+    .expect("読める");
+    let written = serde_json::to_string_pretty(&scene).expect("書き出せる");
+    assert_eq!(parse_scene(&written).expect("読み直せる"), scene);
+}
