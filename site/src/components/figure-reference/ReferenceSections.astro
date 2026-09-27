@@ -1,0 +1,30 @@
+---
+// リファレンスの節の並び．節ごとに見出し(ページの中のリンク先)，説明，項目の表か値の形を示す．
+import type { ReferenceSection } from '@/figure-reference/scene-reference';
+
+import FieldTable from './FieldTable.astro';
+import TextParts from './TextParts.astro';
+
+interface Props {
+  sections: readonly ReferenceSection[];
+}
+---
+
+{
+  Astro.props.sections.map((section) => (
+    <section class="scene-reference-section">
+      <h3 id={section.anchor}>{section.codeTitle ? <code>{section.title}</code> : section.title}</h3>
+      {section.note !== '' && <p class="scene-reference-note">{section.note}</p>}
+      <p>
+        <TextParts parts={section.description} />
+      </p>
+      {section.shape.length > 0 && (
+        <p>
+          値：
+          <TextParts parts={section.shape} />
+        </p>
+      )}
+      {section.fields.length > 0 && <FieldTable fields={section.fields} />}
+    </section>
+  ))
+}

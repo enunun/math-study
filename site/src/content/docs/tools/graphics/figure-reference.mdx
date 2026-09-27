@@ -1,0 +1,50 @@
+---
+title: 図のシーンのリファレンス
+description: 図の作成で作るシーン(JSON)の書き方を網羅したリファレンス．オブジェクトの種類ごとの項目，共通の部品，式で使える演算と関数を並べる．
+date: 2026-09-27
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+import SceneReference from '@/components/figure-reference/SceneReference.astro';
+
+このページは，図の作成で作る図の定義(シーンと呼ぶJSON)に書けるものを，すべて並べる．内容は，シーンの形式を決める[JSON Schema](https://enunun.github.io/math-study/schema/scene.schema.json)から作るので，種類や項目が増えれば，このページにも自動で載る．
+
+表の「編集画面の欄」は，図の作成のフォームでの欄の名前である．「値」の列のリンクは，下の「共通の部品」の節を指す．
+
+<LinkCard title="図の作成" description="シーンをフォームで組み立て，TikZや画像として書き出す．" href="../figure-editor/" />
+
+## シーン全体
+
+シーンは，次の4つの項目を持つJSONのオブジェクトである．`view`の形で，平面の図か空間の図かが決まる．
+
+<SceneReference part="scene" />
+
+## オブジェクト
+
+`objects`に並べるオブジェクトは，`type`で種類を選ぶ．種類ごとに，使える図の種類(平面，空間)と項目が決まっている．
+
+<SceneReference part="objects" />
+
+## 共通の部品
+
+いくつもの種類で使う値の形である．
+
+<SceneReference part="common" />
+
+## 式
+
+数を書く所の多くには，式も書ける．式には，四則演算(`+`，`-`，`*`，`/`)，累乗(`^`)，丸括弧を使える．かけ算の記号は省けないので，`2x`ではなく`2*x`と書く．三角関数の角はラジアンで，変換の回転(`rotate`)の角は度である．
+
+式の中では，次の名前を使える．
+
+- 媒介変数(`parameter`)の識別子．
+- 関数(`function`)の識別子．`f(x, y)`のように，1個から3個の引数で呼ぶ．
+- 先に置いた点の座標．点`P`の座標は，`P_x`，`P_y`(空間の図では`P_z`も)である．
+- グラフや曲線，曲面の変数(`var`，`vars`)．そのオブジェクトの式の中だけで使える．
+
+点の位置(`at`)は，点の識別子を位置ベクトルとして扱う式でも書ける．たとえば`(A + B) / 2`は2点の中点である．点どうしの和と差，数と点の積，点を数で割ることだけができる．
+
+定数と関数は，次のとおりである．
+
+<SceneReference part="expressions" />

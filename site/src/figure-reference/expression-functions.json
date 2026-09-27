@@ -1,0 +1,24 @@
+{
+  "constants": [
+    { "name": "pi", "meaning": "円周率π" },
+    { "name": "e", "meaning": "自然対数の底e" }
+  ],
+  "functions": [
+    { "names": ["sin", "cos", "tan"], "meaning": "三角関数(角はラジアン)" },
+    { "names": ["asin", "acos", "atan"], "meaning": "逆三角関数" },
+    { "names": ["sinh", "cosh", "tanh"], "meaning": "双曲線関数" },
+    { "names": ["exp"], "meaning": "指数関数" },
+    { "names": ["log", "ln"], "meaning": "自然対数(2つの名前は同じ関数)" },
+    { "names": ["sqrt"], "meaning": "平方根" },
+    { "names": ["abs"], "meaning": "絶対値" },
+    { "names": ["gamma"], "meaning": "ガンマ関数" },
+    { "names": ["loggamma", "lgamma"], "meaning": "ガンマ関数の自然対数(2つの名前は同じ関数)" },
+    { "names": ["erf", "erfc"], "meaning": "誤差関数と，相補誤差関数" },
+    { "names": ["dawson"], "meaning": "ドーソン関数" },
+    { "names": ["lambertw"], "meaning": "ランベルトのW関数(主枝)" },
+    { "names": ["besselj0", "besselj1"], "meaning": "第1種ベッセル関数(0次，1次)" },
+    { "names": ["bessely0", "bessely1"], "meaning": "第2種ベッセル関数(0次，1次)" },
+    { "names": ["besseli0", "besseli1"], "meaning": "第1種変形ベッセル関数(0次，1次)" },
+    { "names": ["besselk0", "besselk1"], "meaning": "第2種変形ベッセル関数(0次，1次)" }
+  ]
+}

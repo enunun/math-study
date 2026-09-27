@@ -1,0 +1,83 @@
+---
+// 図のシーンのリファレンスの1つの部分．中身は，JSON Schemaから作る(`scene-reference.ts`)．
+import {
+  commonSections,
+  expressionEntries,
+  objectSections,
+  sceneFields,
+  viewSections,
+} from '@/figure-reference/scene-reference';
+import type { NamedEntry } from '@/figure-reference/scene-reference';
+
+import FieldTable from './FieldTable.astro';
+import ReferenceSections from './ReferenceSections.astro';
+
+import './scene-reference.css';
+
+interface Props {
+  /** シーン全体，オブジェクト，共通の部品，式の定数と関数のどれか． */
+  part: 'scene' | 'objects' | 'common' | 'expressions';
+}
+
+const { part } = Astro.props;
+const objects = objectSections();
+const { constants, functions } = expressionEntries();
+const expressionTables: readonly (readonly [string, readonly NamedEntry[]])[] = [
+  ['定数', constants],
+  ['関数', functions],
+];
+---
+
+{
+  part === 'scene' && (
+    <>
+      <FieldTable fields={sceneFields()} />
+      <ReferenceSections sections={viewSections()} />
+    </>
+  )
+}
+{
+  part === 'objects' && (
+    <>
+      <ul class="scene-reference-index">
+        {objects.map((section) => (
+          <li>
+            <a href={`#${section.anchor}`}>
+              <code>{section.title}</code>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <ReferenceSections sections={objects} />
+    </>
+  )
+}
+{part === 'common' && <ReferenceSections sections={commonSections()} />}
+{
+  part === 'expressions' &&
+    expressionTables.map(([title, entries]) => (
+      <table class="scene-reference-table" tabindex="0">
+        <thead>
+          <tr>
+            <th scope="col">{title}</th>
+            <th scope="col">意味</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry) => (
+            <tr>
+              <td>
+                {entry.names.map((name, index) => (
+                  <>
+                    {index > 0 && '，'}
+                    <code>{name}</code>
+                  </>
+                ))}
+              </td>
+              <td>{entry.meaning}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    ))
+}

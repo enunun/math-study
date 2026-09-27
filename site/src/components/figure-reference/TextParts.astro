@@ -1,0 +1,15 @@
+---
+// リファレンスの文の一片の並びを，コードとリンクを交えて示す．
+import type { TextPart } from '@/figure-reference/schema-text';
+
+interface Props {
+  parts: readonly TextPart[];
+}
+---
+
+{
+  Astro.props.parts.map((part) => {
+    const content = part.code === true ? <code>{part.text}</code> : part.text;
+    return part.href === undefined ? content : <a href={part.href}>{content}</a>;
+  })
+}

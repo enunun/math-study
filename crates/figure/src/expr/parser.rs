@@ -18,6 +18,11 @@ const MAX_DEPTH: usize = 128;
 /// 定数の名前と値．
 const CONSTANTS: [(&str, f64); 2] = [("pi", std::f64::consts::PI), ("e", std::f64::consts::E)];
 
+/// 定数の名前．
+pub fn constant_names() -> impl Iterator<Item = &'static str> {
+    CONSTANTS.iter().map(|(name, _)| *name)
+}
+
 /// 定数の名前か．
 pub fn is_constant(name: &str) -> bool {
     CONSTANTS.iter().any(|(constant, _)| *constant == name)

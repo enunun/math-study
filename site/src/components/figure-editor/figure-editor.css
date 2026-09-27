@@ -289,3 +289,8 @@
   min-width: 4em;
   font-variant-numeric: tabular-nums;
 }
+
+.fe-reference-link {
+  justify-self: start;
+  font-size: var(--sl-text-sm);
+}

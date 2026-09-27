@@ -112,39 +112,46 @@ enum Function {
     BesselK1,
 }
 
+/// 関数の名前と関数．`log`と`ln`，`loggamma`と`lgamma`は，それぞれ同じ関数である．
+const FUNCTIONS: [(&str, Function); 29] = [
+    ("sin", Function::Sin),
+    ("cos", Function::Cos),
+    ("tan", Function::Tan),
+    ("asin", Function::Asin),
+    ("acos", Function::Acos),
+    ("atan", Function::Atan),
+    ("sinh", Function::Sinh),
+    ("cosh", Function::Cosh),
+    ("tanh", Function::Tanh),
+    ("exp", Function::Exp),
+    ("log", Function::Log),
+    ("ln", Function::Log),
+    ("sqrt", Function::Sqrt),
+    ("abs", Function::Abs),
+    ("gamma", Function::Gamma),
+    ("loggamma", Function::LnGamma),
+    ("lgamma", Function::LnGamma),
+    ("erf", Function::Erf),
+    ("erfc", Function::Erfc),
+    ("dawson", Function::Dawson),
+    ("lambertw", Function::LambertW),
+    ("besselj0", Function::BesselJ0),
+    ("besselj1", Function::BesselJ1),
+    ("bessely0", Function::BesselY0),
+    ("bessely1", Function::BesselY1),
+    ("besseli0", Function::BesselI0),
+    ("besseli1", Function::BesselI1),
+    ("besselk0", Function::BesselK0),
+    ("besselk1", Function::BesselK1),
+];
+
 impl Function {
-    /// 名前から関数を探す．`log`と`ln`，`loggamma`と`lgamma`は，それぞれ同じ関数である．
+    /// 名前から関数を探す．
     fn from_name(name: &str) -> Option<Self> {
-        Some(match name {
-            "sin" => Self::Sin,
-            "cos" => Self::Cos,
-            "tan" => Self::Tan,
-            "asin" => Self::Asin,
-            "acos" => Self::Acos,
-            "atan" => Self::Atan,
-            "sinh" => Self::Sinh,
-            "cosh" => Self::Cosh,
-            "tanh" => Self::Tanh,
-            "exp" => Self::Exp,
-            "log" | "ln" => Self::Log,
-            "sqrt" => Self::Sqrt,
-            "abs" => Self::Abs,
-            "gamma" => Self::Gamma,
-            "loggamma" | "lgamma" => Self::LnGamma,
-            "erf" => Self::Erf,
-            "erfc" => Self::Erfc,
-            "dawson" => Self::Dawson,
-            "lambertw" => Self::LambertW,
-            "besselj0" => Self::BesselJ0,
-            "besselj1" => Self::BesselJ1,
-            "bessely0" => Self::BesselY0,
-            "bessely1" => Self::BesselY1,
-            "besseli0" => Self::BesselI0,
-            "besseli1" => Self::BesselI1,
-            "besselk0" => Self::BesselK0,
-            "besselk1" => Self::BesselK1,
-            _ => return None,
-        })
+        FUNCTIONS
+            .iter()
+            .find(|(function, _)| *function == name)
+            .map(|(_, function)| *function)
     }
 
     fn apply(self, x: f64) -> f64 {
@@ -178,6 +185,16 @@ impl Function {
             Self::BesselK1 => puruspe::Kn(1, x),
         }
     }
+}
+
+/// 式で使える関数の名前．
+pub fn function_names() -> impl Iterator<Item = &'static str> {
+    FUNCTIONS.iter().map(|(name, _)| *name)
+}
+
+/// 式で使える定数の名前．
+pub fn constant_names() -> impl Iterator<Item = &'static str> {
+    parser::constant_names()
 }
 
 /// 関数か定数の名前か．媒介変数の`id`や変数の名前には使えない．

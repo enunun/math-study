@@ -91,7 +91,10 @@
       "additionalProperties": false,
       "description": "線のスタイル．省いた項目は，オブジェクトの種類ごとの既定になる(既定の線の種類は，格子だけ点線，ほかは実線)．",
       "properties": {
-        "line": { "$ref": "#/$defs/line" },
+        "line": {
+          "$ref": "#/$defs/line",
+          "description": "線の種類．省くと，種類ごとの既定(格子とワイヤーフレームは点線，ほかは実線)になる．"
+        },
         "hidden": { "$ref": "#/$defs/hidden" },
         "color": { "$ref": "#/$defs/color" },
         "width": { "$ref": "#/$defs/length" },
@@ -110,7 +113,7 @@
           "$ref": "#/$defs/bound",
           "description": "軸の上の位置．軸の範囲の中でなければならない．"
         },
-        "label": { "type": "string" },
+        "label": { "type": "string", "description": "目盛の名前の式(TeX)．省くと，線だけを引く．" },
         "anchor": { "$ref": "#/$defs/anchor" }
       }
     },
@@ -181,7 +184,7 @@
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "axis" },
         "direction": { "$ref": "#/$defs/direction" },
-        "arrow": { "$ref": "#/$defs/arrow" },
+        "arrow": { "$ref": "#/$defs/arrow", "description": "軸の先の矢じり．既定は`stealth`．" },
         "label": { "type": "string", "description": "軸の名前の式(TeX)．`\"x\"`は$x$と組まれる．" },
         "range": {
           "$ref": "#/$defs/numberPair",
@@ -292,7 +295,10 @@
           "maxItems": 3,
           "description": "各座標の式．平面の図では2個，空間の図では3個でなければならない．どちらの数にするかは`view`で決まる．"
         },
-        "domain": { "$ref": "#/$defs/boundPair" },
+        "domain": {
+          "$ref": "#/$defs/boundPair",
+          "description": "変数の範囲．数どうしなら，小さい方が先でなければならない．"
+        },
         "bezier": {
           "type": "array",
           "items": {
@@ -404,7 +410,7 @@
         "type": { "const": "vector" },
         "from": { "$ref": "#/$defs/identifier" },
         "to": { "$ref": "#/$defs/identifier" },
-        "arrow": { "$ref": "#/$defs/arrow" },
+        "arrow": { "$ref": "#/$defs/arrow", "description": "終点の矢じり．既定は`stealth`．" },
         "style": { "$ref": "#/$defs/style" },
         "transform": { "$ref": "#/$defs/transform" }
       }
@@ -444,7 +450,7 @@
           "description": "領域のxの範囲．グラフの定義域の中でなければならない．"
         },
         "hatch": { "type": "boolean", "description": "斜線を引くか．既定は引く．" },
-        "fill": { "$ref": "#/$defs/fill" },
+        "fill": { "$ref": "#/$defs/fill", "description": "塗り．省くと，斜線で埋める．" },
         "angle": {
           "type": "number",
           "description": "斜線の角度(度)．x軸から反時計回りに測る．既定は45．"
@@ -502,8 +508,14 @@
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "sphere" },
         "transform": { "$ref": "#/$defs/transform" },
-        "center": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
-        "radius": { "type": "number", "exclusiveMinimum": 0 },
+        "center": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "中心の座標．"
+        },
+        "radius": { "type": "number", "exclusiveMinimum": 0, "description": "半径．正の数．" },
         "style": { "$ref": "#/$defs/style" },
         "wireframe": {
           "$ref": "#/$defs/style",
@@ -765,7 +777,13 @@
           "enum": ["tetrahedron", "cube", "octahedron", "dodecahedron", "icosahedron"],
           "description": "種類．正4面体，正6面体(立方体)，正8面体，正12面体，正20面体．"
         },
-        "center": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+        "center": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "中心の座標．"
+        },
         "radius": {
           "type": "number",
           "exclusiveMinimum": 0,
@@ -778,7 +796,7 @@
     "transformStep": {
       "type": "object",
       "additionalProperties": false,
-      "description": "変換の手順の1つ．操作(`translate`，`rotate`，`scale`，`reflect`，`shear`，`map`)をちょうど1つ書く．数は，数か，媒介変数と定数を使う式で書く．座標の数(平面の図では2個，空間の図では3個)が合うか，`axis`が空間の図の回転にだけあるか，`center`が回転・拡大縮小・対称移動・せん断にだけあるかは，スキーマでは表せない．",
+      "description": "変換の手順の1つ．操作(`translate`，`rotate`，`scale`，`reflect`，`shear`，`map`)をちょうど1つ書く．数は，数か，媒介変数と定数を使う式で書く．座標は，平面の図では2個，空間の図では3個書く．`axis`は空間の図の回転にだけ，`center`は回転・拡大縮小・対称移動・せん断にだけ書ける(スキーマでは表せない)．",
       "oneOf": [
         { "required": ["translate"] },
         { "required": ["rotate"] },
@@ -978,7 +996,7 @@
       }
     },
     "object": {
-      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
+      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`は平面の図でだけ，`sphere`，`surface`，`cut`，`level_curve`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },
