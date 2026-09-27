@@ -1,6 +1,7 @@
 import { ANALYSIS_SAMPLE_SCENES } from './analysis-sample-scenes';
 import { SCENE_VERSION } from './draft';
 import type { SceneDraft } from './draft';
+import { EWALD_SECTION_SAMPLE, EWALD_SPHERE_SAMPLE } from './ewald-sample-scenes';
 import { FOUR_SPACE_SAMPLE_SCENES } from './four-space-sample-scenes';
 import type { JsonObject } from './json';
 import { SPACE_AZIMUTH, SPACE_ELEVATION, SPACE_UNIT, spaceAxes } from './sample-parts';
@@ -216,6 +217,7 @@ const TREFOIL_SCENE: SceneDraft = {
 const PLANE_SAMPLE_SCENES: readonly SceneTemplate[] = [
   { id: 'ellipseFoci', label: '楕円と焦点', scene: ELLIPSE_FOCI_SCENE },
   ...ANALYSIS_SAMPLE_SCENES,
+  EWALD_SECTION_SAMPLE,
 ];
 
 const SPACE_SAMPLE_SCENES: readonly SceneTemplate[] = [
@@ -226,6 +228,7 @@ const SPACE_SAMPLE_SCENES: readonly SceneTemplate[] = [
   { id: 'trefoil', label: '三葉結び目', scene: TREFOIL_SCENE },
   ...SURFACE_SAMPLE_SCENES,
   ...FOUR_SPACE_SAMPLE_SCENES,
+  EWALD_SPHERE_SAMPLE,
 ];
 
 export { PLANE_SAMPLE_SCENES, SPACE_SAMPLE_SCENES };
