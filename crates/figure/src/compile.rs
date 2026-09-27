@@ -8,9 +8,9 @@ use crate::expr::{Expr, Functions, is_reserved_name};
 use crate::fractal;
 use crate::image::transform_of;
 use crate::scene::{
-    Anchor, Axis, Bound, Curve, Cut, Direction, Factor, Fractal, Graph, Grid, Label, Object, Point,
-    Polygon, Position, Region, Scene, Surface, TangentLine, TangentPlane, Taylor, TransformStep,
-    View,
+    Anchor, Axis, Bound, Curve, Cut, Direction, Factor, Fractal, Graph, Grid, Label, LevelCurve,
+    Object, Point, Polygon, Position, Region, Scene, Surface, TangentLine, TangentPlane, Taylor,
+    TransformStep, View,
 };
 use crate::transform::{Affine, MapFn, Transform, Vector3};
 use crate::validate::curve_expressions;
@@ -133,6 +133,18 @@ pub struct SurfacePlot {
     pub wireframe: [Vec<f64>; 2],
 }
 
+/// 式を読んだ後の，等値線．
+pub struct LevelCurvePlot {
+    /// 写像のx，y，z座標の式．名前の順は，2つの変数，媒介変数と点の座標である．
+    pub exprs: Vec<Expr>,
+    /// 値を比べる関数の式．名前の順は，`exprs`と同じである．
+    pub level: Expr,
+    /// 評価した，各変数の範囲．
+    pub domain: [[f64; 2]; 2],
+    /// 評価した，線を引く値．
+    pub values: Vec<f64>,
+}
+
 /// 式を読んだ後の，領域．
 pub struct RegionPlot {
     /// 評価した，xの範囲．
@@ -171,6 +183,8 @@ pub enum Plot {
     Polygon(PolygonPlot),
     /// テイラー展開の多項式．
     Taylor(TaylorPlot),
+    /// 等値線．
+    LevelCurve(LevelCurvePlot),
     /// 式のないオブジェクト．
     None,
 }
@@ -644,6 +658,9 @@ fn compile_object(
         Object::Taylor(taylor) => compile_taylor(taylor, env)
             .map(Plot::Taylor)
             .map_err(|kind| Error::in_object(&taylor.id, kind)),
+        Object::LevelCurve(curve) => compile_level_curve(curve, env)
+            .map(Plot::LevelCurve)
+            .map_err(|kind| Error::in_object(&curve.id, kind)),
         Object::Parameter(_)
         | Object::Sphere(_)
         | Object::Vector(_)
@@ -809,6 +826,60 @@ fn compile_cut(cut: &Cut, env: &Env) -> Result<CutPlot, ErrorKind> {
                 .to_owned(),
         ))
     }
+}
+
+/// 2つの変数を先頭にした，式の名前の並び．変数の名前が，予約された名前や，ほかの名前と重ならないかを確かめる．
+fn two_variable_names<'a>(vars: &'a [String], env: &Env<'a>) -> Result<Vec<&'a str>, ErrorKind> {
+    let [first, second] = vars else {
+        return Err(ErrorKind::Invalid(
+            "変数(`vars`)は，2つの名前で書く．".to_owned(),
+        ));
+    };
+    for var in [first, second] {
+        if is_reserved_name(var) {
+            return Err(ErrorKind::ReservedName(var.clone()));
+        }
+        if env.names.contains(&var.as_str()) {
+            return Err(ErrorKind::NameConflict(var.clone()));
+        }
+    }
+    Ok([first.as_str(), second.as_str()]
+        .into_iter()
+        .chain(env.names.iter().copied())
+        .collect())
+}
+
+fn compile_level_curve(curve: &LevelCurve, env: &Env) -> Result<LevelCurvePlot, ErrorKind> {
+    let names = two_variable_names(&curve.vars, env)?;
+    let exprs = curve
+        .expr
+        .iter()
+        .enumerate()
+        .map(|(index, source)| compile_expr("expr", index, source, &names, env.functions))
+        .collect::<Result<Vec<_>, _>>()?;
+    let level = compile_expr("level", 0, &curve.level, &names, env.functions)?;
+    let [u_domain, v_domain] = &curve.domain;
+    let values = curve
+        .values
+        .iter()
+        .enumerate()
+        .map(|(index, bound)| evaluate_bound("values", bound, index, env))
+        .collect::<Result<Vec<_>, _>>()?;
+    if let Some(index) = values.iter().position(|value| !value.is_finite()) {
+        return Err(ErrorKind::Invalid(format!(
+            "線を引く値(`values`の{}番目)は，有限の数にする．",
+            index.saturating_add(1)
+        )));
+    }
+    Ok(LevelCurvePlot {
+        exprs,
+        level,
+        domain: [
+            evaluate_domain(u_domain, env)?,
+            evaluate_domain(v_domain, env)?,
+        ],
+        values,
+    })
 }
 
 fn compile_surface(surface: &Surface, env: &Env) -> Result<SurfacePlot, ErrorKind> {

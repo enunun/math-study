@@ -50,6 +50,7 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'surface', label: '曲面(式)', kinds: SPACE },
   { type: BEZIER, label: '曲面(ベジエ)', kinds: SPACE },
   { type: 'cut', label: '曲面の切り口', kinds: SPACE },
+  { type: 'level_curve', label: '等値線', kinds: SPACE },
   { type: 'intersection', label: '曲面の交線', kinds: SPACE },
   { type: 'tangent_plane', label: '接平面', kinds: SPACE },
   { type: 'polyhedron', label: '正多面体', kinds: SPACE },

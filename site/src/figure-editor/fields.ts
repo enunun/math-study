@@ -5,6 +5,7 @@ import { ANCHORS, ARROWS, PLANE_DIRECTIONS, SOLIDS, SPACE_DIRECTIONS } from './f
 import type { FieldSpec } from './field-spec';
 import { stringOf } from './json';
 import type { JsonObject } from './json';
+import { SURFACE_FIELDS } from './surface-fields';
 
 const PAIR = 2;
 const TRIPLE = 3;
@@ -19,38 +20,6 @@ const DOMAIN: FieldSpec = {
   item: 'bound',
   count: PAIR,
 };
-const MESH: FieldSpec = {
-  kind: 'list',
-  key: 'mesh',
-  label: '網の細かさ',
-  item: 'number',
-  count: PAIR,
-  optional: true,
-};
-const BOUNDARY: FieldSpec = {
-  kind: 'checkbox',
-  key: 'boundary',
-  label: '縁を描く',
-  initial: false,
-};
-/** 曲面と球で共通の，ワイヤーフレーム(u一定・v一定の断面，球では経線と緯線)の項目． */
-const WIREFRAME: FieldSpec = {
-  kind: 'toggleStyle',
-  key: 'wireframe',
-  label: 'ワイヤーフレームを表示',
-};
-/**
- * 曲面だけの，ワイヤーフレームの刻み(u方向，v方向)．断面は，刻みの整数倍の所に引く．球の経線・緯線の
- * 本数は，今のところ変えられない．
- */
-const WIREFRAME_STEP: FieldSpec = {
-  kind: 'list',
-  key: 'wireframe_step',
-  label: 'ワイヤーフレームの刻み(u方向，v方向)',
-  item: 'bound',
-  count: PAIR,
-  optional: true,
-};
 /**
  * 変換(平行移動・回転・拡大縮小・対称移動・せん断・写像)．変換できる種類(`create.ts`の`TRANSFORMABLE`で，
  * 座標軸・媒介変数・関数・写像のほかのすべて)は，どれもスタイルの前にこの項目を持つ．
@@ -63,13 +32,6 @@ const FILL: FieldSpec = {
   label: '塗りつぶし',
   optional: true,
   hint: '{"color": "blue", "opacity": 0.25}',
-};
-
-/** ベジエ曲面だけの，制御点の網の項目． */
-const CONTROL_NET: FieldSpec = {
-  kind: 'toggleStyle',
-  key: 'control_net',
-  label: '制御点の網を表示',
 };
 
 const AXIS: readonly FieldSpec[] = [
@@ -87,6 +49,7 @@ const AXIS: readonly FieldSpec[] = [
 
 /** 種類ごとの，識別子とスタイル以外の項目．軸の向きは，図の種類で選択肢が変わるので，別に足す． */
 const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
+  ...SURFACE_FIELDS,
   axis: AXIS,
   label: [
     { kind: 'position', key: 'at', label: '位置' },
@@ -201,33 +164,6 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
   image: [
     { kind: 'reference', key: 'of', label: '元のオブジェクト', of: TRANSFORMABLE },
     { kind: 'text', key: 'label', label: '名前(点の像だけ)', optional: true },
-  ],
-  sphere: [
-    { kind: 'list', key: 'center', label: '中心', item: 'number', count: TRIPLE },
-    { kind: 'number', key: 'radius', label: '半径' },
-    WIREFRAME,
-  ],
-  surface: [
-    { kind: 'list', key: 'vars', label: '変数の名前', item: 'text', count: PAIR },
-    { kind: 'list', key: 'expr', label: 'x，y，zの式', item: 'text', count: TRIPLE },
-    { kind: 'domain2', key: 'domain', label: '変数の範囲' },
-    MESH,
-    BOUNDARY,
-    WIREFRAME,
-    WIREFRAME_STEP,
-  ],
-  bezier: [
-    {
-      kind: 'json',
-      key: 'bezier',
-      label: '制御点の網',
-      hint: '[[[0,0,0],[0,1,0]],[[1,0,0],[1,1,1]]]',
-    },
-    MESH,
-    BOUNDARY,
-    WIREFRAME,
-    WIREFRAME_STEP,
-    CONTROL_NET,
   ],
   cut: [
     { kind: 'reference', key: 'surface', label: '切る曲面', of: SURFACES },

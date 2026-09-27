@@ -7,9 +7,9 @@ use crate::error::{Error, ErrorKind};
 use crate::image::{expand_images, transform_of};
 use crate::scene::{
     Axis, Bound, CM_PER_PT, Complex, Curve, Cut, Direction, Fill, Fractal, FunctionDef, Graph,
-    Grid, Intersection, Label, MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object, Parameter, Point,
-    Polygon, Position, Region, Scene, SpaceView, Sphere, Style, Surface, TangentPlane, Taylor,
-    TransformStep, View,
+    Grid, Intersection, Label, LevelCurve, MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object,
+    Parameter, Point, Polygon, Position, Region, Scene, SpaceView, Sphere, Style, Surface,
+    TangentPlane, Taylor, TransformStep, View,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -122,6 +122,9 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
             space_only("surface", view).and_then(|()| validate_surface(surface))
         }
         Object::Cut(cut) => space_only("cut", view).and_then(|()| validate_cut(cut)),
+        Object::LevelCurve(curve) => {
+            space_only("level_curve", view).and_then(|()| validate_level_curve(curve))
+        }
         Object::Intersection(found) => {
             space_only("intersection", view).and_then(|()| validate_intersection(found))
         }
@@ -185,6 +188,7 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::Fractal(o) => Some(&o.style),
         Object::Surface(o) => Some(&o.style),
         Object::Cut(o) => Some(&o.style),
+        Object::LevelCurve(o) => Some(&o.style),
         Object::Intersection(o) => Some(&o.style),
         Object::TangentPlane(o) => Some(&o.style),
         Object::Complex(o) => Some(&o.style),
@@ -276,6 +280,51 @@ fn validate_surface(surface: &Surface) -> Result<(), ErrorKind> {
         )),
         (None, _) => Ok(()),
     }
+}
+
+/// 等値線．変数は2つの名前，写像は3つの式，値は1つ以上で，網の細かさは曲面と同じ範囲である．
+fn validate_level_curve(curve: &LevelCurve) -> Result<(), ErrorKind> {
+    let [first, second] = curve.vars.as_slice() else {
+        return Err(ErrorKind::Invalid(
+            "等値線の変数(`vars`)は，2つの名前で書く．".to_owned(),
+        ));
+    };
+    check_variable(first)?;
+    check_variable(second)?;
+    if first == second {
+        return Err(ErrorKind::NameConflict(first.clone()));
+    }
+    if curve.expr.len() != 3 {
+        return Err(ErrorKind::ExpressionCount {
+            expected: 3,
+            found: curve.expr.len(),
+        });
+    }
+    for expr in &curve.expr {
+        non_empty("expr", expr)?;
+    }
+    non_empty("level", &curve.level)?;
+    if curve.values.is_empty() || curve.values.len() > LevelCurve::MAX_VALUES {
+        return Err(ErrorKind::Invalid(format!(
+            "線を引く値(`values`)は，1個以上{}個以下を並べる．",
+            LevelCurve::MAX_VALUES
+        )));
+    }
+    for domain in &curve.domain {
+        check_domain(domain)?;
+    }
+    if curve
+        .mesh
+        .iter()
+        .any(|count| !(Surface::MIN_MESH..=Surface::MAX_MESH).contains(count))
+    {
+        return Err(ErrorKind::Invalid(format!(
+            "網の細かさ(`mesh`)は，各方向とも，{}以上{}以下にする．",
+            Surface::MIN_MESH,
+            Surface::MAX_MESH
+        )));
+    }
+    Ok(())
 }
 
 /// 式で書いた曲面．変数，式，定義域が要る．

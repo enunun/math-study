@@ -486,19 +486,34 @@ impl Mesh {
         self.tidy(lines)
     }
 
-    /// 平面`normal・p = offset`による，曲面の切り口の線．網の辺の上で，平面の式の値が0になる点を結び，
-    /// 厳密な式`surface`の上へ磨き，曲がりに合わせて点を足した，空間の折れ線である．
+    /// 平面`normal・p = offset`による，曲面の切り口の線．厳密な式`surface`の上の，空間の折れ線である．
     #[must_use]
     pub fn cut(&self, normal: Point3, offset: f64, surface: SurfaceFn) -> Vec<Vec<Rim>> {
+        let level = |u: f64, v: f64| surface(u, v).map(|p| dot(normal, p) - offset);
+        self.level_lines(&level, surface)
+    }
+
+    /// 2つの変数の関数`level`が0になる線を，`surface`で空間へ移した折れ線．網の辺の上で，値が0をまたぐ
+    /// 所を結び，`level`が0になる所へ磨き，曲がりに合わせて点を足す．網は，変数の升目として使うだけなので，
+    /// `surface`で作った網でなくても，変数の範囲と分割数が同じならよい．
+    #[must_use]
+    pub fn level_lines(
+        &self,
+        level: &dyn Fn(f64, f64) -> Option<f64>,
+        surface: SurfaceFn,
+    ) -> Vec<Vec<Rim>> {
         let values: Vec<f64> = (0..self.points.len())
-            .map(|k| self.point(k).map_or(0.0, |p| dot(normal, p) - offset))
+            .map(|k| {
+                let [u, v] = self.vertex_params(k);
+                level(u, v).unwrap_or(0.0)
+            })
             .collect();
         let (chains, points) = self.level_chains(&values, &self.vertex_normals());
         let residual = |params: &[f64]| -> Option<Vec<f64>> {
             let [u, v] = params else {
                 return None;
             };
-            surface(*u, *v).map(|p| vec![dot(normal, p) - offset])
+            level(*u, *v).map(|value| vec![value])
         };
         let position = |params: &[f64]| -> Option<Point3> {
             let [u, v] = params else {

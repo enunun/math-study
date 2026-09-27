@@ -12,8 +12,8 @@ use std::f64::consts::TAU;
 
 use crate::bezier::{bezier_curve_point, bezier_point};
 use crate::compile::{
-    Compiled, CurvePlot, CutPlot, GridPlot, LabelPlot, LinkPlot, Plot, PointPlot, SurfacePlot,
-    TangentPlanePlot,
+    Compiled, CurvePlot, CutPlot, GridPlot, LabelPlot, LevelCurvePlot, LinkPlot, Plot, PointPlot,
+    SurfacePlot, TangentPlanePlot,
 };
 use crate::crossing::{Drawn, Traced, break_crossings};
 use crate::derivative::central_difference_point;
@@ -24,8 +24,8 @@ use crate::render::{
 };
 use crate::sample::{sample, sample_with_parameters};
 use crate::scene::{
-    Anchor, Arrow, Axis, Complex, Cut, Direction, Hidden, Intersection, Label, Length, Line,
-    Object, Point, Scene, SpaceView, Sphere, Style, Surface, TangentPlane,
+    Anchor, Arrow, Axis, Complex, Cut, Direction, Hidden, Intersection, Label, Length, LevelCurve,
+    Line, Object, Point, Scene, SpaceView, Sphere, Style, Surface, TangentPlane,
 };
 use crate::spline::catmull_rom_point;
 use crate::surface::{Frame, Mesh, Rim};
@@ -399,6 +399,11 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
             }
             (Object::Cut(cut), Plot::Cut(placed)) => {
                 items.extend(cut_items(cut, placed, transform, &space));
+            }
+            (Object::LevelCurve(curve), Plot::LevelCurve(placed)) => {
+                items.extend(level_curve_items(
+                    curve, placed, compiled, transform, &space,
+                ));
             }
             (Object::TangentPlane(tangent), Plot::TangentPlane(placed)) => {
                 items.extend(tangent_plane_items(tangent, placed, transform, &space));
@@ -1112,17 +1117,60 @@ fn cut_items(cut: &Cut, placed: &CutPlot, transform: &Transform, space: &Space) 
     else {
         return Vec::new();
     };
-    let stroke = stroke_of(&cut.style, Line::Solid, CURVE_WIDTH);
-    let tested = cut.style.hidden.is_tested();
+    mesh.cut(placed.normal, placed.offset, map.as_ref())
+        .iter()
+        .flat_map(|line| polyline_items(&moved_line(line, transform), &cut.style, space))
+        .collect()
+}
+
+/// 空間の折れ線を，隠れ方に分けて描く．
+fn polyline_items(line: &[Rim], style: &Style, space: &Space) -> Vec<Drawn> {
+    let stroke = stroke_of(style, Line::Solid, CURVE_WIDTH);
+    let tested = style.hidden.is_tested();
+    let steps: Vec<f64> = (0..line.len())
+        .map(|k| f64::from(u32::try_from(k).unwrap_or(u32::MAX)))
+        .collect();
+    let at = |t: f64| polyline_at(line, t).0;
+    let pieces = split_by_visibility(&steps, &at, &|t| tested && space.hidden(at(t)));
+    piece_items(&pieces, stroke, style, &space.camera)
+}
+
+/// 等値線．写像の網を変数の升目として作り，値ごとに，`level`がその値になる線を求める．網は描かず，
+/// ほかの線も隠さない．変換は写像に含めるので，線は変換した後の写像の上に求まる．
+fn level_curve_items(
+    curve: &LevelCurve,
+    plot: &LevelCurvePlot,
+    compiled: &Compiled,
+    transform: &Transform,
+    space: &Space,
+) -> Vec<Drawn> {
+    let values_at = |u: f64, v: f64| {
+        let mut values = vec![u, v];
+        values.extend_from_slice(&compiled.parameters);
+        values
+    };
+    let map = |u: f64, v: f64| -> Option<Point3> {
+        let values = values_at(u, v);
+        let [x, y, z] = plot.exprs.as_slice() else {
+            return None;
+        };
+        let point = [x.eval(&values), y.eval(&values), z.eval(&values)];
+        if point.iter().all(|c| c.is_finite()) {
+            transform.apply3(point)
+        } else {
+            None
+        }
+    };
+    let mesh = Mesh::build(&map, plot.domain, curve.mesh, space.camera.frame());
     let mut items = Vec::new();
-    for line in &mesh.cut(placed.normal, placed.offset, map.as_ref()) {
-        let line = &moved_line(line, transform);
-        let steps: Vec<f64> = (0..line.len())
-            .map(|k| f64::from(u32::try_from(k).unwrap_or(u32::MAX)))
-            .collect();
-        let at = |t: f64| polyline_at(line, t).0;
-        let pieces = split_by_visibility(&steps, &at, &|t| tested && space.hidden(at(t)));
-        items.extend(piece_items(&pieces, stroke, &cut.style, &space.camera));
+    for value in &plot.values {
+        let level = |u: f64, v: f64| {
+            let found = plot.level.eval(&values_at(u, v)) - value;
+            found.is_finite().then_some(found)
+        };
+        for line in &mesh.level_lines(&level, &map) {
+            items.extend(polyline_items(line, &curve.style, space));
+        }
     }
     items
 }

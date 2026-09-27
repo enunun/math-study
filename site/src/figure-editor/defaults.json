@@ -165,6 +165,19 @@
     },
     "cut": { "space": { "type": "cut", "surface": "", "normal": [0, 0, 1], "offset": 0 } },
     "intersection": { "space": { "type": "intersection", "surfaces": [] } },
+    "level_curve": {
+      "space": {
+        "type": "level_curve",
+        "vars": ["x", "y"],
+        "expr": ["x", "y", "0"],
+        "domain": [
+          [-2, 2],
+          [-2, 2]
+        ],
+        "level": "x^2 + y^2",
+        "values": [1, 2, 3]
+      }
+    },
     "tangent_plane": { "space": { "type": "tangent_plane", "of": "", "at": [0, 0], "size": 1 } },
     "polyhedron": {
       "space": { "type": "polyhedron", "solid": "cube", "center": [0, 0, 0], "radius": 1 }

@@ -151,6 +151,8 @@ pub enum Object {
     Surface(Surface),
     /// 曲面の，平面による切り口．空間の図でだけ使える．
     Cut(Cut),
+    /// 等値線．2つの変数の関数が決まった値になる所を，空間へ写した曲線．空間の図でだけ使える．
+    LevelCurve(LevelCurve),
     /// 2つの曲面の交線．空間の図でだけ使える．
     Intersection(Intersection),
     /// 曲面の接平面．空間の図でだけ使える．
@@ -880,6 +882,43 @@ pub struct Cut {
     pub transform: Vec<TransformStep>,
 }
 
+/// 等値線．2つの変数の関数`level`が，`values`の各値になる所を，2つの変数から空間への写像`expr`で移した曲線．
+///
+/// 写像が作る面は描かず，ほかの線も隠さない．`expr`を曲面の式にすれば曲面の等高線に，4次元の曲面の
+/// x，y，z座標にして`level`を4つ目の座標wにすれば，超平面w = 値による切り口(時刻の姿)になる．
+/// 曲線は，変数の網の上で値をまたぐ所を結び，式の上へ磨いて求める．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct LevelCurve {
+    /// 識別子．
+    pub id: String,
+    /// 2つの変数の名前．
+    pub vars: Vec<String>,
+    /// 空間への写像の，x，y，z座標の式．
+    pub expr: Vec<String>,
+    /// 各変数の範囲．数か式で書く．
+    pub domain: [[Bound; 2]; 2],
+    /// 値を比べる関数の式．2つの変数と媒介変数を使う．
+    pub level: String,
+    /// 線を引く値．数か式を1つ以上並べ，値ごとに線を引く．
+    pub values: Vec<Bound>,
+    /// 網の細かさ(各変数の方向の分割数)．細かいほど，小さな輪を取りこぼさず，重い．
+    #[serde(default = "default_mesh", skip_serializing_if = "is_default_mesh")]
+    pub mesh: [usize; 2],
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+    /// 変換．書いた順に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
+}
+
+impl LevelCurve {
+    /// 並べられる値の数の上限．
+    pub const MAX_VALUES: usize = 64;
+}
+
 /// 曲面．空間の点を，2つの変数の式か，ベジエ曲面の制御点の網で表す．輪郭と，曲面に隠れる線を，三角形の網から求める．
 ///
 /// 曲面は不透明な殻で，ほかのオブジェクトの線を隠す．輪郭は，視線が曲面に接する所である．
@@ -1187,6 +1226,7 @@ impl Object {
             Self::Fractal(o) => &o.id,
             Self::Surface(o) => &o.id,
             Self::Cut(o) => &o.id,
+            Self::LevelCurve(o) => &o.id,
             Self::Intersection(o) => &o.id,
             Self::TangentPlane(o) => &o.id,
             Self::Complex(o) => &o.id,
@@ -1218,6 +1258,7 @@ impl Object {
             Self::Fractal(_) => "fractal",
             Self::Surface(_) => "surface",
             Self::Cut(_) => "cut",
+            Self::LevelCurve(_) => "level_curve",
             Self::Intersection(_) => "intersection",
             Self::TangentPlane(_) => "tangent_plane",
             Self::Complex(_) => "complex",

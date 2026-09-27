@@ -624,6 +624,57 @@
         "style": { "$ref": "#/$defs/style" }
       }
     },
+    "level_curve": {
+      "type": "object",
+      "required": ["id", "type", "vars", "expr", "domain", "level", "values"],
+      "additionalProperties": false,
+      "description": "等値線．2つの変数の関数`level`が，`values`の各値になる所を，写像`expr`で空間へ移した曲線．写像が作る面は描かず，ほかの線も隠さない．`expr`を曲面の式にすれば曲面の等高線に，4次元の曲面のx，y，z座標にして`level`を4つ目の座標にすれば，超平面による切り口になる．空間の図でだけ使える．",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "level_curve" },
+        "vars": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/identifier" },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "2つの変数の名前．重ならないこと，`e`や`pi`と重ならないことが必要である．"
+        },
+        "expr": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonBlankString" },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "空間への写像の，x，y，z座標の式．"
+        },
+        "domain": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/boundPair" },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "各変数の範囲．数どうしなら，小さい方が先でなければならない．"
+        },
+        "level": {
+          "$ref": "#/$defs/nonBlankString",
+          "description": "値を比べる関数の式．2つの変数と媒介変数を使う．"
+        },
+        "values": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/bound" },
+          "minItems": 1,
+          "maxItems": 64,
+          "description": "線を引く値．数か式を並べ，値ごとに線を引く．"
+        },
+        "mesh": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 4, "maximum": 200 },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "網の細かさ(各変数の方向の分割数)．既定は48．細かいほど，小さな輪を取りこぼさず，重い．"
+        },
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" }
+      }
+    },
     "intersection": {
       "type": "object",
       "required": ["id", "type", "surfaces"],
@@ -944,6 +995,7 @@
         { "$ref": "#/$defs/sphere" },
         { "$ref": "#/$defs/surface" },
         { "$ref": "#/$defs/cut" },
+        { "$ref": "#/$defs/level_curve" },
         { "$ref": "#/$defs/intersection" },
         { "$ref": "#/$defs/tangent_plane" },
         { "$ref": "#/$defs/complex" },

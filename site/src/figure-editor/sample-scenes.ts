@@ -1,26 +1,11 @@
 import { ANALYSIS_SAMPLE_SCENES } from './analysis-sample-scenes';
 import { SCENE_VERSION } from './draft';
 import type { SceneDraft } from './draft';
+import { FOUR_SPACE_SAMPLE_SCENES } from './four-space-sample-scenes';
 import type { JsonObject } from './json';
+import { SPACE_AZIMUTH, SPACE_ELEVATION, SPACE_UNIT, spaceAxes } from './sample-parts';
+import { SURFACE_SAMPLE_SCENES } from './surface-sample-scenes';
 import type { SceneTemplate } from './template-types';
-
-/** 空間の図の見る向き．既定(方位角60度，仰角20度)より，少し上から見る． */
-const SPACE_AZIMUTH = 60;
-const SPACE_ELEVATION = 30;
-const SPACE_UNIT = '1cm';
-
-/** 空間の図の座標軸と，原点Oの名前．軸は，`range`の範囲に引く． */
-function spaceAxes(
-  horizontal: readonly [number, number],
-  vertical: readonly [number, number],
-): JsonObject[] {
-  return [
-    { id: 'x_axis', type: 'axis', direction: 'x', range: [...horizontal], label: 'x' },
-    { id: 'y_axis', type: 'axis', direction: 'y', range: [...horizontal], label: 'y' },
-    { id: 'z_axis', type: 'axis', direction: 'z', range: [...vertical], label: 'z' },
-    { id: 'origin_label', type: 'label', at: [0, 0, 0], anchor: 'north east', tex: '$O$' },
-  ];
-}
 
 /** 1周する角度の範囲．継ぎ目(`±pi`)を，見る向きの裏側(x軸の負の側)に置く． */
 const ANGLE_DOMAIN = ['-pi', 'pi'];
@@ -239,6 +224,8 @@ const SPACE_SAMPLE_SCENES: readonly SceneTemplate[] = [
   { id: 'torus', label: 'トーラス', scene: TORUS_SCENE },
   { id: 'mobius', label: 'メビウスの帯', scene: MOBIUS_STRIP_SCENE },
   { id: 'trefoil', label: '三葉結び目', scene: TREFOIL_SCENE },
+  ...SURFACE_SAMPLE_SCENES,
+  ...FOUR_SPACE_SAMPLE_SCENES,
 ];
 
 export { PLANE_SAMPLE_SCENES, SPACE_SAMPLE_SCENES };
