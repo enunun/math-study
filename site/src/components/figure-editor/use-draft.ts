@@ -12,6 +12,8 @@ interface DraftState {
   /** 外から図を読み込むたびに増える．入力欄の作り直しに使う． */
   revision: number;
   setDraft: (draft: SceneDraft) => void;
+  /** 今の図から次の図を作る．スライダーの再生のように，続けて書き換えるときに使う． */
+  update: (change: (draft: SceneDraft) => SceneDraft) => void;
   /** 見本や，読み込んだファイルの図に置き換える． */
   load: (draft: SceneDraft) => void;
   /** テンプレートのオブジェクトを，重ならない識別子に付け替えて，今の図に加える． */
@@ -66,7 +68,7 @@ function useDraft(): DraftState {
     setDraft((current) => insertObjects(current, viewKind(current), objects));
   }, []);
 
-  return { draft, revision, setDraft, load, insert };
+  return { draft, revision, setDraft, update: setDraft, load, insert };
 }
 
 export { useDraft };

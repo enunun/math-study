@@ -255,3 +255,37 @@
 .fe-list .fe-pick[aria-invalid='true'] {
   border-color: var(--sl-color-red);
 }
+
+.fe-sliders {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.fe-slider {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  font-size: var(--sl-text-sm);
+}
+
+.fe-slider label {
+  display: flex;
+  flex: 1;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.fe-slider input {
+  flex: 1;
+  min-width: 0;
+}
+
+.fe-slider-name {
+  font-family: var(--sl-font-mono);
+}
+
+.fe-slider-value {
+  min-width: 4em;
+  font-variant-numeric: tabular-nums;
+}

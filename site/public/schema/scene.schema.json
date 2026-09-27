@@ -218,9 +218,16 @@
       "additionalProperties": false,
       "description": "式から名前で参照する数．",
       "properties": {
-        "id": { "$ref": "#/$defs/identifier" },
+        "id": {
+          "$ref": "#/$defs/identifier",
+          "description": "識別子．式の中で，この名前で値を参照する．"
+        },
         "type": { "const": "parameter" },
-        "value": { "type": "number" }
+        "value": { "type": "number", "description": "値．" },
+        "range": {
+          "$ref": "#/$defs/numberPair",
+          "description": "値を動かせる範囲．図の編集画面は，範囲のある媒介変数にスライダーを出す．描画には使わない．値は範囲の中(端を含む)にする(スキーマでは表せない)．"
+        }
       }
     },
     "graph": {

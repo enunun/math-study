@@ -93,6 +93,8 @@ interface BodyProps extends ControlsProps {
   failed: boolean;
   onPickObject: (id: string) => void;
   onRotate: (deltaAzimuth: number, deltaElevation: number) => void;
+  /** 今の図から次の図を作る(スライダー)． */
+  onUpdate: (change: (draft: SceneDraft) => SceneDraft) => void;
 }
 
 /**
@@ -104,6 +106,7 @@ function Body({
   failed,
   onPickObject,
   onRotate,
+  onUpdate,
   ...controls
 }: BodyProps): ReactElement {
   const kind = viewKind(controls.draft);
@@ -116,6 +119,8 @@ function Body({
           kind={kind}
           onPickObject={onPickObject}
           onRotate={onRotate}
+          draft={controls.draft}
+          onUpdate={onUpdate}
         />
         <OutputPreview rendered={rendered} failed={failed} />
       </div>
@@ -129,7 +134,7 @@ function Body({
  * シーンのJSONの読み込みと書き出し，対応するTikZの書き出しができる．
  */
 function FigureEditor(): ReactElement {
-  const { draft, revision, setDraft, load, insert } = useDraft();
+  const { draft, revision, setDraft, update, load, insert } = useDraft();
   const [tab, setTab] = useState<Tab>('form');
   const [selected, setSelected] = useState(NO_SELECTION);
   const [message, setMessage] = useState('');
@@ -161,6 +166,7 @@ function FigureEditor(): ReactElement {
         onRotate={(deltaAzimuth, deltaElevation) => {
           setDraft(rotateView(draft, deltaAzimuth, deltaElevation));
         }}
+        onUpdate={update}
         tab={tab}
         onTab={setTab}
         draft={draft}

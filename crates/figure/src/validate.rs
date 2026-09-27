@@ -7,8 +7,8 @@ use crate::error::{Error, ErrorKind};
 use crate::image::{expand_images, transform_of};
 use crate::scene::{
     Axis, Bound, CM_PER_PT, Complex, Curve, Cut, Direction, Fill, Fractal, FunctionDef, Graph,
-    Grid, Intersection, Label, MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object, Point, Polygon,
-    Position, Region, Scene, SpaceView, Sphere, Style, Surface, TangentPlane, Taylor,
+    Grid, Intersection, Label, MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object, Parameter, Point,
+    Polygon, Position, Region, Scene, SpaceView, Sphere, Style, Surface, TangentPlane, Taylor,
     TransformStep, View,
 };
 
@@ -147,8 +147,27 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Map(map) => validate_map(map),
         Object::Taylor(taylor) => plane_only("taylor", view).and_then(|()| validate_taylor(taylor)),
         // 像は，検査の前に，元のオブジェクトの複製に置き換えてある．
-        Object::Image(_) | Object::Vector(_) | Object::Segment(_) | Object::Parameter(_) => Ok(()),
+        Object::Parameter(parameter) => validate_parameter(parameter),
+        Object::Image(_) | Object::Vector(_) | Object::Segment(_) => Ok(()),
     }
+}
+
+/// 範囲のある媒介変数は，範囲が小さい方から書かれ，値がその中(端を含む)にある．
+fn validate_parameter(parameter: &Parameter) -> Result<(), ErrorKind> {
+    let Some(range) = parameter.range else {
+        return Ok(());
+    };
+    if !is_increasing(range) {
+        return Err(ErrorKind::InvalidRange("range"));
+    }
+    let [low, high] = range;
+    if !(low..=high).contains(&parameter.value) {
+        return Err(ErrorKind::Invalid(format!(
+            "媒介変数の値({})が，範囲({low}から{high}まで)の外にある．",
+            parameter.value
+        )));
+    }
+    Ok(())
 }
 
 fn style_of(object: &Object) -> Option<&Style> {

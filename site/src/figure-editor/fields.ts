@@ -93,7 +93,17 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     { kind: 'select', key: 'anchor', label: '位置に合わせる部分', options: ANCHORS },
     { kind: 'text', key: 'tex', label: 'TeXの文字列' },
   ],
-  parameter: [{ kind: 'number', key: 'value', label: '値' }],
+  parameter: [
+    { kind: 'number', key: 'value', label: '値' },
+    {
+      kind: 'list',
+      key: 'range',
+      label: 'スライダーの範囲',
+      item: 'number',
+      count: PAIR,
+      optional: true,
+    },
+  ],
   graph: [
     { kind: 'text', key: 'var', label: '変数の名前' },
     { kind: 'text', key: 'expr', label: '式' },

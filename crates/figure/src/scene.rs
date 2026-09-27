@@ -300,6 +300,10 @@ pub struct Parameter {
     pub id: String,
     /// 値．
     pub value: f64,
+    /// 値を動かせる範囲．図の編集画面は，範囲のある媒介変数にスライダーを出す．描画には使わない．
+    /// 値は範囲の中(端を含む)にある．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub range: Option<[f64; 2]>,
 }
 
 /// 定義域の端．数か式．

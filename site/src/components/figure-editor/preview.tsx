@@ -1,8 +1,11 @@
 import type { ReactElement } from 'react';
 
 import type { Rendered } from '@/components/figure/render-figure';
-import type { ViewKind } from '@/figure-editor/draft';
+import type { SceneDraft, ViewKind } from '@/figure-editor/draft';
+import { slidersOf } from '@/figure-editor/sliders';
 
+import { ParameterSliders } from './parameter-sliders';
+import type { Update } from './parameter-sliders';
 import { useDragRotate } from './use-drag-rotate';
 
 interface Props {
@@ -15,6 +18,10 @@ interface Props {
   onPickObject: (id: string) => void;
   /** 空間の図で，プレビューをドラッグしたときの，方位角と仰角の移動量(度)． */
   onRotate: (deltaAzimuth: number, deltaElevation: number) => void;
+  /** 図．範囲のある媒介変数を，図の下のスライダーにする． */
+  draft: SceneDraft;
+  /** 今の図から次の図を作る(スライダー)． */
+  onUpdate: Update;
 }
 
 /**
@@ -23,7 +30,16 @@ interface Props {
  * 実際の色や線の種類，見た目は，下の「プレビュー」で確かめる．曲面のワイヤーフレームは，シーン自身の項目
  * (フォームの「ワイヤーフレームを表示」)で選ぶので，両方の図に，そのまま現れる．
  */
-function Preview({ rendered, failed, kind, onPickObject, onRotate }: Props): ReactElement {
+function Preview({
+  rendered,
+  failed,
+  kind,
+  onPickObject,
+  onRotate,
+  draft,
+  onUpdate,
+}: Props): ReactElement {
+  const sliders = slidersOf(draft);
   const failure = rendered?.failure;
   const draggable = kind === 'space' && rendered?.figure !== undefined;
   const drag = useDragRotate({ enabled: draggable, onRotate });
@@ -33,6 +49,7 @@ function Preview({ rendered, failed, kind, onPickObject, onRotate }: Props): Rea
       <div className={draggable ? 'fe-preview-figure fe-draggable' : 'fe-preview-figure'} {...drag}>
         {rendered?.figure}
       </div>
+      {sliders.length > 0 && <ParameterSliders sliders={sliders} onUpdate={onUpdate} />}
       <p className="fe-hint">
         格子と座標軸は，補助として灰色の点線と目盛で示す．実際の見た目は，下の「プレビュー」で確かめる．
       </p>

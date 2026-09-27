@@ -1,3 +1,4 @@
+import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
@@ -148,6 +149,56 @@ test.describe('曲面・球・曲線の制御点', () => {
     await expect(async () => {
       expect(await preview(page).locator('path').count()).toBeGreaterThan(before);
     }).toPass();
+    await expect(editor(page).getByRole('alert')).toHaveCount(0);
+  });
+});
+
+test.describe('媒介変数のスライダー', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(PAGE);
+    await expect(preview(page)).toBeVisible();
+  });
+
+  test('範囲のある媒介変数はスライダーになり，動かすと図と値が変わり，再生すると値が動き続ける', async ({
+    page,
+  }) => {
+    await editor(page).getByRole('button', { name: 'JSON', exact: true }).click();
+    await editor(page)
+      .getByRole('textbox', { name: 'シーン(JSON)' })
+      .fill(
+        JSON.stringify({
+          version: '0.1.0',
+          description: '動く点',
+          view: { x: [-1, 3], y: [-1, 1], unit: { x: '1cm', y: '1cm' } },
+          objects: [
+            { id: 't', type: 'parameter', value: 0, range: [0, 2] },
+            { id: 'p', type: 'point', at: ['t', 0], dot: true },
+          ],
+        }),
+      );
+    const sliders = editor(page).getByRole('group', { name: '媒介変数のスライダー' });
+    const slider = sliders.getByRole('slider', { name: 't' });
+    await expect(slider).toHaveValue('0');
+    const before = await outputPreview(page).innerHTML();
+    await slider.fill('1.5');
+    await expect(sliders.locator('output')).toHaveText('1.5');
+    await expect(async () => {
+      expect(await outputPreview(page).innerHTML()).not.toBe(before);
+    }).toPass();
+
+    await sliders.getByRole('button', { name: 'tを再生する' }).click();
+    const playing = sliders.getByRole('button', { name: 'tを止める' });
+    await expect(playing).toHaveAttribute('aria-pressed', 'true');
+    const first = await sliders.locator('output').textContent();
+    await expect(async () => {
+      expect(await sliders.locator('output').textContent()).not.toBe(first);
+    }).toPass();
+    await playing.click();
+    const { violations } = await new AxeBuilder({ page }).include('.fe-edit-preview').analyze();
+    expect(violations).toEqual([]);
+    const stopped = await sliders.locator('output').textContent();
+    await page.waitForTimeout(300);
+    await expect(sliders.locator('output')).toHaveText(stopped ?? '');
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
 });
