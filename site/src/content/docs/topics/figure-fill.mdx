@@ -30,7 +30,7 @@ import { Definition, Proposition } from '@/components/statement';
 斜線の向きを角$\theta$で決める．向きの単位ベクトルとそれに垂直な単位ベクトルは，次のとおりである．
 
 $$
-\boldsymbol{e} = \begin{bmatrix} \cos\theta \\ \sin\theta \end{bmatrix}, \qquad \boldsymbol{n} = \begin{bmatrix} -\sin\theta \\ \cos\theta \end{bmatrix}
+\boldsymbol{e} = \begin{bmatrix} \cos\theta \\ \sin\theta \end{bmatrix}, \quad \boldsymbol{n} = \begin{bmatrix} -\sin\theta \\ \cos\theta \end{bmatrix}
 $$
 
 線は，$\boldsymbol{n} \cdot \boldsymbol{p} = kg$（$k$は整数，$g$は間隔）を満たす直線に引く．原点から数えるので，多角形の位置や頂点の並べ方に線の位置は左右されない．隣り合う領域の線は，切れ目なく続く．
@@ -74,7 +74,7 @@ $\sigma_i$は$0$か$1$の値を取る．$\sigma$が変わるたびに，値は$0
 線や多角形は，表示範囲の長方形の枠で切り取る．線分の切り取りは，Liang–Barskyの方法で行う．線分を$\boldsymbol{p} + t\boldsymbol{v}\ (0 \le t \le 1)$と書く．枠の4つの辺の内側に入る条件は，それぞれ$t$の一次不等式になる．
 
 $$
-x_{\min} \le p_x + t v_x \le x_{\max}, \qquad y_{\min} \le p_y + t v_y \le y_{\max}
+x_{\min} \le p_x + t v_x \le x_{\max}, \quad y_{\min} \le p_y + t v_y \le y_{\max}
 $$
 
 これらは，$at \le b$の形の不等式4つに書き直せる．$a > 0$なら$t \le b/a$，$a < 0$なら$t \ge b/a$である．$a = 0$なら，$b \ge 0$のときはどの$t$でも成り立ち，$b < 0$のときは成り立つ$t$がない．
