@@ -1,5 +1,6 @@
 //! 等値線(`level_curve`)を確かめる．2つの変数の関数`level`が値`values`になる所を，写像`expr`で空間へ移した曲線である．
-//! 4次元の曲面の超平面による切り口(時刻tの姿)や，曲面の等高線に使う．
+//! 4次元の曲面の超平面による切り口(時刻tの姿)や，曲面の等高線に使う．平面の図では，写像`expr`を平面への
+//! 2つの式にして，陰関数の曲線や，斜交座標で書いた直線の族を描く．
 
 #![allow(
     clippy::expect_used,
@@ -179,18 +180,6 @@ fn 変換で動かせる() {
 }
 
 #[test]
-fn 平面の図では使えない() {
-    let error = parse_scene(&format!(
-        r#"{{ "version": "0.1.0", "description": "a",
-             "view": {{ "x": [-1, 1], "y": [-1, 1], "unit": {{ "x": "1cm", "y": "1cm" }} }},
-             "objects": [{}] }}"#,
-        planar("x^2 + y^2", "[1]", "0", "")
-    ))
-    .expect_err("誤りになる");
-    assert!(error.to_string().contains("level_curve"), "{error}");
-}
-
-#[test]
 fn 値は_1つ以上要る() {
     let error = error_of(&planar("x^2 + y^2", "[]", "0", ""));
     assert!(error.to_string().contains("values"), "{error}");
@@ -198,7 +187,7 @@ fn 値は_1つ以上要る() {
 }
 
 #[test]
-fn 写像は3つの式で_変数は2つの名前で書く() {
+fn 空間の図の写像は3つの式で_変数は2つの名前で書く() {
     let error = error_of(
         r#"{ "id": "c", "type": "level_curve", "vars": ["x", "y"], "expr": ["x", "y"],
              "domain": [[0, 1], [0, 1]], "level": "x", "values": [0.5] }"#,
@@ -238,4 +227,132 @@ fn 関数の式の誤りは_項目の名前を示す() {
 fn 未知の項目は誤りになる() {
     let error = error_of(&planar("x", "[0]", "0", r#", "value": 1"#));
     assert!(error.to_string().contains("value"), "{error}");
+}
+
+/// 平面の図．x，yとも-3から3まで，1の長さを`unit`にする．
+fn plane_scene(objects: &str, unit: &str) -> String {
+    format!(
+        r#"{{ "version": "0.1.0", "description": "試験の図",
+             "view": {{ "x": [-3, 3], "y": [-3, 3], "unit": {{ "x": "{unit}", "y": "{unit}" }} }},
+             "objects": [{objects}] }}"#
+    )
+}
+
+fn plane_figure_of(objects: &str, unit: &str) -> Figure {
+    render(&parse_scene(&plane_scene(objects, unit)).expect("読める")).expect("描画できる")
+}
+
+/// 平面を，そのまま写す等値線(陰関数の曲線)．
+fn implicit(level: &str, values: &str, extra: &str) -> String {
+    format!(
+        r#"{{ "id": "c", "type": "level_curve", "vars": ["x", "y"],
+              "expr": ["x", "y"], "domain": [[-4, 4], [-4, 4]],
+              "level": "{level}", "values": {values} {extra} }}"#
+    )
+}
+
+#[test]
+fn 平面の図では_陰関数の曲線を描く() {
+    let figure = plane_figure_of(&implicit("x^2 + y^2", "[1, 4]", ""), "1cm");
+    let lines = paths(&figure);
+    assert_eq!(lines.len(), 2, "値ごとに閉じた1本の線");
+    for (line, radius) in lines.iter().zip([1.0, 2.0]) {
+        assert!(line.points.len() > 16, "曲がりに合わせて点がある");
+        for [x, y] in &line.points {
+            assert!(
+                (x.hypot(*y) - radius).abs() < 4e-3,
+                "({x}, {y})は半径{radius}の円の上"
+            );
+        }
+        assert_eq!(line.stroke.line, Line::Solid);
+    }
+}
+
+#[test]
+fn 平面の等値線は_単位の長さで拡大する() {
+    let figure = plane_figure_of(&implicit("x^2 + y^2", "[1]", ""), "2cm");
+    for [x, y] in &paths(&figure)[0].points {
+        assert!(
+            (x.hypot(*y) - 2.0).abs() < 8e-3,
+            "({x}, {y})は半径2cmの円の上"
+        );
+    }
+}
+
+#[test]
+fn 平面の等値線は_見える範囲で切り取る() {
+    // 半径4の円は，見える範囲[-3, 3]の角だけに掛かる．
+    let figure = plane_figure_of(&implicit("x^2 + y^2", "[16]", ""), "1cm");
+    let lines = paths(&figure);
+    assert!(!lines.is_empty());
+    for [x, y] in lines.iter().flat_map(|line| &line.points) {
+        assert!(
+            x.abs() <= 3.0 + 1e-9 && y.abs() <= 3.0 + 1e-9,
+            "({x}, {y})は範囲の中"
+        );
+    }
+}
+
+#[test]
+fn 平面の写像で_斜交座標の直線の族を描く() {
+    // 基本ベクトル(1, 0)と(1/2, 1)の格子の座標(u, v)で，u = nの線は，x - y/2 = nの直線である．
+    let figure = plane_figure_of(
+        r#"{ "id": "c", "type": "level_curve", "vars": ["u", "v"],
+             "expr": ["u + v/2", "v"], "domain": [[-6, 6], [-4, 4]],
+             "level": "u", "values": [-1, 0, 1] }"#,
+        "1cm",
+    );
+    let lines = paths(&figure);
+    assert_eq!(lines.len(), 3);
+    for (line, n) in lines.iter().zip([-1.0, 0.0, 1.0]) {
+        for [x, y] in &line.points {
+            assert!(
+                (x - y / 2.0 - n).abs() < 1e-6,
+                "({x}, {y})はx - y/2 = {n}の上"
+            );
+        }
+        let (first, last) = (line.points[0], line.points[line.points.len() - 1]);
+        assert!(
+            (first[1] - last[1]).abs() > 5.9,
+            "見える範囲の上下をまたぐ: {first:?} {last:?}"
+        );
+    }
+}
+
+#[test]
+fn 平面の等値線を変換で動かせる() {
+    let figure = plane_figure_of(
+        &implicit(
+            "x^2 + y^2",
+            "[1]",
+            r#", "transform": [{ "translate": [1, 0] }]"#,
+        ),
+        "1cm",
+    );
+    for [x, y] in &paths(&figure)[0].points {
+        assert!(
+            ((x - 1.0).hypot(*y) - 1.0).abs() < 4e-3,
+            "({x}, {y})は中心(1, 0)の円の上"
+        );
+    }
+}
+
+#[test]
+fn 平面の図の写像は2つの式で書く() {
+    let error = parse_scene(&plane_scene(
+        r#"{ "id": "c", "type": "level_curve", "vars": ["x", "y"], "expr": ["x", "y", "0"],
+             "domain": [[0, 1], [0, 1]], "level": "x", "values": [0.5] }"#,
+        "1cm",
+    ))
+    .expect_err("誤りになる");
+    assert!(
+        matches!(
+            error.kind,
+            ErrorKind::ExpressionCount {
+                expected: 2,
+                found: 3
+            }
+        ),
+        "{error}"
+    );
 }

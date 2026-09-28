@@ -6,8 +6,8 @@ use crate::arrow::Stealth;
 use crate::bezier::bezier_curve_point;
 use crate::clip::{clip_polygon, clip_polyline};
 use crate::compile::{
-    Compiled, CurvePlot, FractalPlot, GraphPlot, GridPlot, LabelPlot, LinkPlot, Plot, PointPlot,
-    PolygonPlot, TangentLinePlot, TaylorPlot, TickPlot, compile,
+    Compiled, CurvePlot, FractalPlot, GraphPlot, GridPlot, LabelPlot, LevelCurvePlot, LinkPlot,
+    Plot, PointPlot, PolygonPlot, TangentLinePlot, TaylorPlot, TickPlot, compile,
 };
 use crate::derivative::central_difference_point;
 use crate::error::Error;
@@ -16,12 +16,13 @@ use crate::image::expand_images;
 use crate::region::region_items;
 use crate::sample::sample;
 use crate::scene::{
-    Anchor, Arrow, Axis, CM_PER_PT, Curve, Direction, Fractal, Graph, Label, Line, Object,
-    PlaneView, Point, Polygon, Scene, Style, TangentLine, Taylor, View,
+    Anchor, Arrow, Axis, CM_PER_PT, Curve, Direction, Fractal, Graph, Label, LevelCurve, Line,
+    Object, PlaneView, Point, Polygon, Scene, Style, TangentLine, Taylor, View,
 };
 use crate::space::render_space;
 use crate::sphere::expand_transformed_spheres;
 use crate::spline::catmull_rom_point;
+use crate::surface::{Frame, Mesh, Point3};
 use crate::transform::Transform;
 
 /// 軸の線幅(pt)．`TikZ`の`semithick`である．
@@ -187,6 +188,9 @@ fn object_items(
         }
         (Object::Taylor(taylor), Plot::Taylor(placed)) => {
             taylor_items(taylor, placed, transform, scale, window)
+        }
+        (Object::LevelCurve(curve), Plot::LevelCurve(placed)) => {
+            level_curve_items(curve, placed, transform, context)
         }
         _ => Vec::new(),
     })
@@ -710,6 +714,66 @@ fn mapped_line_items(
     .flat_map(|points| clip_polyline(points, min, max))
     .map(|points| Item::Path(curve_path(points, tangent.style)))
     .collect()
+}
+
+/// 平面の等値線．平面をz = 0の空間に置き，空間の等値線と同じく，写像の網を変数の升目として作って，
+/// 値ごとに`level`がその値になる線を求める．変換は写像に含め，線は見える範囲で切り取る．
+fn level_curve_items(
+    curve: &LevelCurve,
+    plot: &LevelCurvePlot,
+    transform: &Transform,
+    context: &PlaneContext,
+) -> Vec<Item> {
+    let PlaneContext {
+        scale,
+        window,
+        compiled,
+        ..
+    } = *context;
+    let values_at = |u: f64, v: f64| {
+        let mut values = vec![u, v];
+        values.extend_from_slice(&compiled.parameters);
+        values
+    };
+    let map = |u: f64, v: f64| -> Option<Point3> {
+        let values = values_at(u, v);
+        let [x, y] = plot.exprs.as_slice() else {
+            return None;
+        };
+        let point = [x.eval(&values), y.eval(&values)];
+        if !point.iter().all(|c| c.is_finite()) {
+            return None;
+        }
+        let [x, y] = transform.apply2(point)?;
+        Some([x, y, 0.0])
+    };
+    // 網は隠れ方の判定に使わないので，真上から見る向きを渡しておく．
+    let frame = Frame {
+        right: [1.0, 0.0, 0.0],
+        up: [0.0, 1.0, 0.0],
+        toward: [0.0, 0.0, 1.0],
+    };
+    let mesh = Mesh::build(&map, plot.domain, curve.mesh, frame);
+    let [min, max] = window;
+    let mut items = Vec::new();
+    for value in &plot.values {
+        let level = |u: f64, v: f64| {
+            let found = plot.level.eval(&values_at(u, v)) - value;
+            found.is_finite().then_some(found)
+        };
+        for line in &mesh.level_lines(&level, &map) {
+            let points: Vec<[f64; 2]> = line
+                .iter()
+                .map(|([x, y, _], _)| scale.point(*x, *y))
+                .collect();
+            items.extend(
+                clip_polyline(&points, min, max)
+                    .into_iter()
+                    .map(|points| Item::Path(curve_path(points, curve.style))),
+            );
+        }
+    }
+    items
 }
 
 /// フラクタル図形の線．タートルが歩いた点の並びを，数学の座標からcmに直し，見える範囲で切り取る．

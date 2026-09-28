@@ -122,9 +122,7 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
             space_only("surface", view).and_then(|()| validate_surface(surface))
         }
         Object::Cut(cut) => space_only("cut", view).and_then(|()| validate_cut(cut)),
-        Object::LevelCurve(curve) => {
-            space_only("level_curve", view).and_then(|()| validate_level_curve(curve))
-        }
+        Object::LevelCurve(curve) => validate_level_curve(curve, view),
         Object::Intersection(found) => {
             space_only("intersection", view).and_then(|()| validate_intersection(found))
         }
@@ -282,8 +280,9 @@ fn validate_surface(surface: &Surface) -> Result<(), ErrorKind> {
     }
 }
 
-/// 等値線．変数は2つの名前，写像は3つの式，値は1つ以上で，網の細かさは曲面と同じ範囲である．
-fn validate_level_curve(curve: &LevelCurve) -> Result<(), ErrorKind> {
+/// 等値線．変数は2つの名前，写像は曲線と同じ数(平面は2つ，空間は3つ)の式，値は1つ以上で，
+/// 網の細かさは曲面と同じ範囲である．
+fn validate_level_curve(curve: &LevelCurve, view: &View) -> Result<(), ErrorKind> {
     let [first, second] = curve.vars.as_slice() else {
         return Err(ErrorKind::Invalid(
             "等値線の変数(`vars`)は，2つの名前で書く．".to_owned(),
@@ -294,9 +293,10 @@ fn validate_level_curve(curve: &LevelCurve) -> Result<(), ErrorKind> {
     if first == second {
         return Err(ErrorKind::NameConflict(first.clone()));
     }
-    if curve.expr.len() != 3 {
+    let expected = curve_expressions(view);
+    if curve.expr.len() != expected {
         return Err(ErrorKind::ExpressionCount {
-            expected: 3,
+            expected,
             found: curve.expr.len(),
         });
     }

@@ -166,6 +166,17 @@
     "cut": { "space": { "type": "cut", "surface": "", "normal": [0, 0, 1], "offset": 0 } },
     "intersection": { "space": { "type": "intersection", "surfaces": [] } },
     "level_curve": {
+      "plane": {
+        "type": "level_curve",
+        "vars": ["x", "y"],
+        "expr": ["x", "y"],
+        "domain": [
+          [-2, 2],
+          [-2, 2]
+        ],
+        "level": "x^2 + y^2",
+        "values": [1, 2, 3]
+      },
       "space": {
         "type": "level_curve",
         "vars": ["x", "y"],

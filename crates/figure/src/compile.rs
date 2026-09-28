@@ -135,7 +135,7 @@ pub struct SurfacePlot {
 
 /// 式を読んだ後の，等値線．
 pub struct LevelCurvePlot {
-    /// 写像のx，y，z座標の式．名前の順は，2つの変数，媒介変数と点の座標である．
+    /// 写像の各座標の式(平面は2個，空間は3個)．名前の順は，2つの変数，媒介変数と点の座標である．
     pub exprs: Vec<Expr>,
     /// 値を比べる関数の式．名前の順は，`exprs`と同じである．
     pub level: Expr,

@@ -71,7 +71,9 @@ const SURFACE_FIELDS: Readonly<Record<string, readonly FieldSpec[]>> = {
     CONTROL_NET,
   ],
   level_curve: [
-    ...TWO_VARIABLE_MAP,
+    { kind: 'list', key: 'vars', label: '変数の名前', item: 'text', count: PAIR },
+    { kind: 'list', key: 'expr', label: '写像の座標の式', item: 'text', count: 'dimension' },
+    { kind: 'domain2', key: 'domain', label: '変数の範囲' },
     { kind: 'text', key: 'level', label: '値を比べる関数の式' },
     { kind: 'json', key: 'values', label: '線を引く値', hint: '[0, 0.5, "t"]' },
     MESH,

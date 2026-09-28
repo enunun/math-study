@@ -882,10 +882,13 @@ pub struct Cut {
     pub transform: Vec<TransformStep>,
 }
 
-/// 等値線．2つの変数の関数`level`が，`values`の各値になる所を，2つの変数から空間への写像`expr`で移した曲線．
+/// 等値線．2つの変数の関数`level`が，`values`の各値になる所を，2つの変数から図の平面か空間への
+/// 写像`expr`で移した曲線．
 ///
-/// 写像が作る面は描かず，ほかの線も隠さない．`expr`を曲面の式にすれば曲面の等高線に，4次元の曲面の
-/// x，y，z座標にして`level`を4つ目の座標wにすれば，超平面w = 値による切り口(時刻の姿)になる．
+/// 写像が作る面は描かず，ほかの線も隠さない．平面の図で`expr`を`[x, y]`にすれば陰関数の曲線に，
+/// 斜交座標の式にすれば格子面の族のような直線の族になる．空間の図で`expr`を曲面の式にすれば曲面の
+/// 等高線に，4次元の曲面のx，y，z座標にして`level`を4つ目の座標wにすれば，超平面w = 値による切り口
+/// (時刻の姿)になる．
 /// 曲線は，変数の網の上で値をまたぐ所を結び，式の上へ磨いて求める．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -895,7 +898,7 @@ pub struct LevelCurve {
     pub id: String,
     /// 2つの変数の名前．
     pub vars: Vec<String>,
-    /// 空間への写像の，x，y，z座標の式．
+    /// 写像の各座標の式．平面の図では2個，空間の図では3個である．
     pub expr: Vec<String>,
     /// 各変数の範囲．数か式で書く．
     pub domain: [[Bound; 2]; 2],
