@@ -72,6 +72,7 @@ function Controls({
       <Tabs tab={tab} onTab={onTab} />
       {tab === 'form' && (
         <FormPanel
+          key={revision}
           draft={draft}
           onDraft={onDraft}
           invalidId={invalidId}
@@ -134,7 +135,7 @@ function Body({
  * シーンのJSONの読み込みと書き出し，対応するTikZの書き出しができる．
  */
 function FigureEditor(): ReactElement {
-  const { draft, revision, setDraft, update, load, insert } = useDraft();
+  const { draft, revision, setDraft, update, load, insert, ...history } = useDraft();
   const [tab, setTab] = useState<Tab>('form');
   const [selected, setSelected] = useState(NO_SELECTION);
   const [message, setMessage] = useState('');
@@ -154,6 +155,7 @@ function FigureEditor(): ReactElement {
         onMessage={setMessage}
         onLoad={replace}
         onInsert={insert}
+        history={history}
       />
       <Body
         rendered={rendered}

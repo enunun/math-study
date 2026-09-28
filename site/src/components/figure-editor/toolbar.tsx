@@ -1,19 +1,18 @@
 import { useRef } from 'react';
 import type { ReactElement } from 'react';
 
-import { copyText, downloadText } from '@/figure-editor/download';
 import { parseDraft } from '@/figure-editor/draft';
 import type { SceneDraft, ViewKind } from '@/figure-editor/draft';
 import type { JsonObject } from '@/figure-editor/json';
 import { SAMPLE_GROUPS } from '@/figure-editor/samples';
 import { OBJECT_TEMPLATE_CATEGORIES, SCENE_TEMPLATES } from '@/figure-editor/templates';
-import { fileName, standaloneDocument } from '@/figure-editor/tikz-document';
 import type { Figure } from '@/wasm/figure';
 
+import { ExportButtons, STEM } from './export-buttons';
+import type { ExportProps } from './export-buttons';
 import { GroupedPicker } from './grouped-picker';
+import { HistoryControls } from './history-controls';
 import { ImageExportControls } from './image-export-controls';
-
-const STEM = 'figure';
 
 interface Props {
   kind: ViewKind;
@@ -138,78 +137,25 @@ function ImportButton(props: Props): ReactElement {
   );
 }
 
-interface ExportProps {
-  json: string;
-  /** 図を描けているときの，TikZ．描けていなければ，空の文字列． */
-  tikz: string;
-  onMessage: (message: string) => void;
-}
-
-/** コピーの結果を知らせる． */
-async function copyTikz(tikz: string, onMessage: (message: string) => void): Promise<void> {
-  const ok = await copyText(tikz);
-  onMessage(ok ? 'TikZをコピーした．' : 'コピーできなかった．');
-}
-
-/** JSONとTikZの書き出しと，TikZのコピー． */
-function ExportButtons({ json, tikz, onMessage }: ExportProps): ReactElement {
-  const empty = tikz === '';
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => {
-          downloadText(fileName(STEM, 'json'), json, 'application/json');
-        }}
-      >
-        JSONを書き出す
-      </button>
-      <button
-        type="button"
-        disabled={empty}
-        onClick={() => {
-          downloadText(fileName(STEM, 'tikz'), tikz, 'text/plain');
-        }}
-      >
-        TikZを書き出す(.tikz)
-      </button>
-      <button
-        type="button"
-        disabled={empty}
-        onClick={() => {
-          downloadText(fileName(STEM, 'tex'), standaloneDocument(tikz), 'text/x-tex');
-        }}
-      >
-        単体の文書を書き出す(.tex)
-      </button>
-      <button
-        type="button"
-        disabled={empty}
-        onClick={() => {
-          void copyTikz(tikz, onMessage);
-        }}
-      >
-        TikZをコピー
-      </button>
-    </>
-  );
-}
-
-/** 見本とテンプレート，JSONの読み込みと書き出し，TikZと画像の書き出し． */
+/** 元に戻す・やり直す，見本とテンプレート，JSONの読み込みと書き出し，TikZと画像の書き出し． */
 function Toolbar({
   message,
   json,
   tikz,
   figure,
+  history,
   ...actions
 }: Props &
   ExportProps & {
     message: string;
     /** 図を描けているときの，中間表現．描けていなければ，`undefined`． */
     figure: Figure | undefined;
+    /** 元に戻す・やり直す． */
+    history: Parameters<typeof HistoryControls>[0];
   }): ReactElement {
   return (
     <div className="fe-toolbar">
+      <HistoryControls {...history} />
       <Samples onLoad={actions.onLoad} />
       <ObjectTemplates kind={actions.kind} onInsert={actions.onInsert} />
       <SceneTemplates onLoad={actions.onLoad} />
