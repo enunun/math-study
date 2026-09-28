@@ -58,12 +58,12 @@ test.describe('曲面・球・曲線の制御点', () => {
     await expect(editor(page).getByLabel('ワイヤーフレームを表示')).toBeVisible();
   });
 
-  test('ベジエ曲面のフォームには，ワイヤーフレームと，別に，制御点の網の選択もある', async ({
+  test('Bézier曲面のフォームには，ワイヤーフレームと，別に，制御点の網の選択もある', async ({
     page,
   }) => {
     await editor(page).getByRole('button', { name: '座標軸(空間)', exact: true }).click();
-    const picker = editor(page).locator('.fe-template-picker').filter({ hasText: 'ベジエ曲面' });
-    await picker.getByLabel('ベジエ曲面').selectOption({ label: '双3次ベジエ曲面(制御点4×4個)' });
+    const picker = editor(page).locator('.fe-template-picker').filter({ hasText: 'Bézier曲面' });
+    await picker.getByLabel('Bézier曲面').selectOption({ label: '双3次Bézier曲面(制御点4×4個)' });
     await picker.getByRole('button', { name: '挿入' }).click();
     await editor(page)
       .getByRole('list', { name: 'オブジェクトの一覧' })
@@ -73,9 +73,9 @@ test.describe('曲面・球・曲線の制御点', () => {
     await expect(editor(page).getByLabel('制御点の網を表示')).toBeVisible();
   });
 
-  test('ベジエ曲線を足すと，制御点で図を描ける', async ({ page }) => {
+  test('Bézier曲線を足すと，制御点で図を描ける', async ({ page }) => {
     const before = await preview(page).locator('path').count();
-    await addObject(page, '曲線(ベジエ)');
+    await addObject(page, '曲線(Bézier)');
     await expect(async () => {
       expect(await preview(page).locator('path').count()).toBeGreaterThan(before);
     }).toPass();
@@ -205,11 +205,11 @@ test.describe('媒介変数のスライダー', () => {
 
 test.describe('ラベル', () => {
   test(
-    String.raw`見本「エワルド球(断面)」のラベルの，拡張のマクロ(\boldsymbol)も描画される`,
+    String.raw`見本「Ewald球(断面)」のラベルの，拡張のマクロ(\boldsymbol)も描画される`,
     async ({ page }) => {
       // ブラウザのMathJaxは，拡張をその場で読み込む．読み込めないと，式の文字列がそのまま残る．
       await page.goto(PAGE);
-      await editor(page).getByRole('button', { name: 'エワルド球(断面)', exact: true }).click();
+      await editor(page).getByRole('button', { name: 'Ewald球(断面)', exact: true }).click();
       const labels = editor(page).locator('.fe-edit-preview .inline-math');
       await expect(labels.first()).toBeVisible();
       const count = await labels.count();

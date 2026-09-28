@@ -15,7 +15,7 @@ const UNIT = '1.1cm';
 interface SceneOptions {
   azimuth: number;
   elevation: number;
-  /** ベジエ曲面を描くか． */
+  /** Bézier曲面を描くか． */
   patch: boolean;
 }
 
@@ -36,7 +36,7 @@ function readScene(
   return { rest, objects };
 }
 
-/** ベジエ曲面のオブジェクト．解説の図(`bezier-patch.json`)と同じ曲面である． */
+/** Bézier曲面のオブジェクト．解説の図(`bezier-patch.json`)と同じ曲面である． */
 function patchObject(): unknown {
   const found = readScene(patchScene, 'bezier-patch.json').objects.find(
     (object) => isRecord(object) && object.id === 'patch',
@@ -49,7 +49,7 @@ function patchObject(): unknown {
 
 /**
  * 解説の図に使うシーン(JSON)．解説の図(`projection-staircase.json`)の，座標軸と，点Pへの階段を，指定の向きから描く．
- * ベジエ曲面を加えると，曲面が隠す線は，点線になる．
+ * Bézier曲面を加えると，曲面が隠す線は，点線になる．
  */
 function projectionScene({ azimuth, elevation, patch }: SceneOptions): string {
   const { rest, objects } = readScene(staircaseScene, 'projection-staircase.json');

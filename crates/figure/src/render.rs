@@ -498,7 +498,7 @@ fn polygon_items(
     items
 }
 
-/// テイラー展開の多項式のグラフ．グラフと同じに(変換を施して)標本化し，見える範囲で切り取る．
+/// Taylor展開の多項式のグラフ．グラフと同じに(変換を施して)標本化し，見える範囲で切り取る．
 fn taylor_items(
     taylor: &Taylor,
     placed: &TaylorPlot,

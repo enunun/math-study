@@ -116,7 +116,7 @@ describe('変換は，座標軸・媒介変数・関数・写像のほかのす�
     ['space', SPACE_TYPES, [0, 0, 1]],
   ] as const)('%sの図で，変換できるものをすべて平行移動しても，描ける', (kind, types, offset) => {
     const draft = draftOf(kind, types);
-    // 像は自分の変換を持ち，グラフは領域とテイラー展開が参照するので，動かさない．
+    // 像は自分の変換を持ち，グラフは領域とTaylor展開が参照するので，動かさない．
     const fixed = new Set(['image', 'graph']);
     const objects: JsonObject[] = [];
     for (const object of draft.objects) {

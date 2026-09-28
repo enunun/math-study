@@ -14,7 +14,7 @@ import type { ObjectTemplate } from './template-types';
 
 /** 図の大きさ．基本図形(1辺1)を，この倍率に広げて置く． */
 const SIZE = 4;
-/** ピタゴラスの木の幹(正方形)の1辺と，根元を置く高さ．木の高さは，幹の約4倍になる． */
+/** Pythagorasの木の幹(正方形)の1辺と，根元を置く高さ．木の高さは，幹の約4倍になる． */
 const TREE_SIZE = 1.2;
 const TREE_ROOT_Y = -3;
 
@@ -26,20 +26,20 @@ const CENTERED_SQUARE = placement(SIZE, [HALF, HALF]);
 const KOCH_ANGLE = 60;
 const DRAGON_ANGLE = 45;
 const DRAGON_BACK_ANGLE = 135;
-/** レヴィのC曲線とドラゴン曲線の深さ．線分の数は，2のこの乗になる． */
+/** LévyのC曲線とドラゴン曲線の深さ．線分の数は，2のこの乗になる． */
 const CURVE_DEPTH = 10;
-/** レヴィのC曲線の大きさ．曲線は，線分の両端より外へ広がるので，ほかより小さくする． */
+/** LévyのC曲線の大きさ．曲線は，線分の両端より外へ広がるので，ほかより小さくする． */
 const LEVY_SIZE = 3;
-/** カントール集合の段の数と，段の間隔(長さ1の線分に対する割合)． */
+/** Cantor集合の段の数と，段の間隔(長さ1の線分に対する割合)． */
 const CANTOR_DEPTH = 5;
 const CANTOR_ROW = 0.1;
-/** カントール集合の段の真ん中の高さ(上の段0から下の段-0.5までの中点)． */
+/** Cantor集合の段の真ん中の高さ(上の段0から下の段-0.5までの中点)． */
 const CANTOR_CENTER_Y = -0.25;
 const CARPET_DIVISIONS = 3;
 const MIDDLE = 1;
 
 /**
- * コッホ曲線(長さ1の線分)．3等分した真ん中を，正三角形の2辺で置き換える．コッホ雪片は，
+ * Koch曲線(長さ1の線分)．3等分した真ん中を，正三角形の2辺で置き換える．Koch雪片は，
  * これを正三角形の各辺に置く．
  */
 const KOCH_TRANSFORMS: JsonObject[][] = [
@@ -49,7 +49,7 @@ const KOCH_TRANSFORMS: JsonObject[][] = [
   similarity(THIRD, 0, ['2/3', 0]),
 ];
 const KOCH_DEPTH = 5;
-/** コッホ雪片の2辺目，3辺目を作る回転(度)．雪片の中心(原点)のまわりに回す． */
+/** Koch雪片の2辺目，3辺目を作る回転(度)．雪片の中心(原点)のまわりに回す． */
 const FULL_TURN_DEGREES = 360;
 const SNOWFLAKE_SIDES = 3;
 const SNOWFLAKE_TURNS = Array.from(
@@ -57,7 +57,7 @@ const SNOWFLAKE_TURNS = Array.from(
   (_, index) => ((index + 1) * FULL_TURN_DEGREES) / SNOWFLAKE_SIDES,
 );
 
-/** シェルピンスキーのカーペットの8つの変換．3×3に分けた，真ん中以外の正方形へ縮める． */
+/** Sierpińskiのカーペットの8つの変換．3×3に分けた，真ん中以外の正方形へ縮める． */
 const CARPET_TRANSFORMS: JsonObject[][] = Array.from(
   { length: CARPET_DIVISIONS * CARPET_DIVISIONS },
   (_, index) => [index % CARPET_DIVISIONS, Math.floor(index / CARPET_DIVISIONS)] as const,
@@ -67,7 +67,7 @@ const CARPET_TRANSFORMS: JsonObject[][] = Array.from(
     similarity(THIRD, 0, [column === 0 ? 0 : `${column}/3`, row === 0 ? 0 : `${row}/3`]),
   );
 
-/** ヴィチェックのフラクタルの5つの変換．3×3に分けた，4隅と真ん中の正方形へ縮める． */
+/** Vicsekのフラクタルの5つの変換．3×3に分けた，4隅と真ん中の正方形へ縮める． */
 const VICSEK_TRANSFORMS: JsonObject[][] = [
   similarity(THIRD, 0, [0, 0]),
   similarity(THIRD, 0, ['2/3', 0]),
@@ -83,7 +83,7 @@ const VICSEK_TRANSFORMS: JsonObject[][] = [
 const FRACTAL_TEMPLATES: readonly ObjectTemplate[] = [
   {
     id: 'cantor',
-    label: 'カントール集合',
+    label: 'Cantor集合',
     kind: 'plane',
     // 各段を1行ずつ下にずらし(xだけを縮める)，すべての深さを重ねて，作り方の段を上から並べる．
     objects: [
@@ -101,7 +101,7 @@ const FRACTAL_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'koch',
-    label: 'コッホ曲線',
+    label: 'Koch曲線',
     kind: 'plane',
     objects: [
       fractal({
@@ -114,7 +114,7 @@ const FRACTAL_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'kochSnowflake',
-    label: 'コッホ雪片',
+    label: 'Koch雪片',
     kind: 'plane',
     // 上の辺(左から右へ，突起が外側)を1つ置き，その像を，中心のまわりに120度ずつ回して3辺にする．
     // 雪片の中心(正三角形の重心)が原点に来るように，辺を置く．大きさを変えても，中心は動かない．
@@ -135,7 +135,7 @@ const FRACTAL_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'sierpinskiTriangle',
-    label: 'シェルピンスキーの三角形',
+    label: 'Sierpińskiの三角形',
     kind: 'plane',
     objects: [
       fractal({
@@ -153,7 +153,7 @@ const FRACTAL_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'sierpinskiCarpet',
-    label: 'シェルピンスキーのカーペット',
+    label: 'Sierpińskiのカーペット',
     kind: 'plane',
     objects: [
       fractal({
@@ -167,7 +167,7 @@ const FRACTAL_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'vicsek',
-    label: 'ヴィチェックのフラクタル',
+    label: 'Vicsekのフラクタル',
     kind: 'plane',
     objects: [
       fractal({
@@ -181,7 +181,7 @@ const FRACTAL_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'levy',
-    label: 'レヴィのC曲線',
+    label: 'LévyのC曲線',
     kind: 'plane',
     objects: [
       fractal({
@@ -213,7 +213,7 @@ const FRACTAL_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'pythagorasTree',
-    label: 'ピタゴラスの木',
+    label: 'Pythagorasの木',
     kind: 'plane',
     // 正方形の上に直角二等辺三角形を置き，その2本の辺に，縮めた正方形を置くことを繰り返す．
     // 途中の段の正方形も木の一部なので，すべての深さを重ねて描く．

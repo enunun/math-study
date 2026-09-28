@@ -7,21 +7,21 @@ import type { SceneTemplate } from './template-types';
 /** 自己交差する曲面の見本の，見る向き．横から見て，交わる所を見やすくする． */
 const SIDE_ELEVATION = 20;
 
-/** クラインの壺の図の単位． */
+/** Kleinの壺の図の単位． */
 const KLEIN_UNIT = '1.5cm';
 /** 首が胴を1周で通り抜けるので，uの方向(首に沿う方向)の網を細かくする． */
 const KLEIN_U_DIVISIONS = 96;
 const KLEIN_V_DIVISIONS = 48;
 
 /**
- * 壺の形のクラインの壺．uは首に沿う方向(0からπ)，vは断面の円の角度である．u = 0とu = πの断面は，
+ * 壺の形のKleinの壺．uは首に沿う方向(0からπ)，vは断面の円の角度である．u = 0とu = πの断面は，
  * 同じ円を逆向きにたどるので，vの範囲を-π/2から3π/2にして，2つの縁が点ごとに逆順に重なる(継ぎ目として
  * 縁を描かない)ようにする．
  */
 const KLEIN_BOTTLE_SCENE: SceneDraft = {
   version: SCENE_VERSION,
   description:
-    'クラインの壺をℝ^3に置いた図．首が胴の側面を通り抜けて底につながり，内側と外側の区別がない．向き付け不可能な閉曲面で，ℝ^3では首が胴と交わる所(自己交差)が避けられない．見本「クラインの壺(4次元)」は，交わらずに置けるℝ^4での姿である．',
+    'Kleinの壺をℝ^3に置いた図．首が胴の側面を通り抜けて底につながり，内側と外側の区別がない．向き付け不可能な閉曲面で，ℝ^3では首が胴と交わる所(自己交差)が避けられない．見本「Kleinの壺(4次元)」は，交わらずに置けるℝ^4での姿である．',
   view: { azimuth: SPACE_AZIMUTH, elevation: SIDE_ELEVATION, unit: KLEIN_UNIT },
   objects: [
     {
@@ -146,7 +146,7 @@ const CONTOUR_SCENE: SceneDraft = {
 };
 
 const SURFACE_SAMPLE_SCENES: readonly SceneTemplate[] = [
-  { id: 'kleinBottle', label: 'クラインの壺', scene: KLEIN_BOTTLE_SCENE },
+  { id: 'kleinBottle', label: 'Kleinの壺', scene: KLEIN_BOTTLE_SCENE },
   { id: 'crossCap', label: '交差帽(射影平面)', scene: CROSS_CAP_SCENE },
   { id: 'contour', label: '曲面の等高線', scene: CONTOUR_SCENE },
 ];

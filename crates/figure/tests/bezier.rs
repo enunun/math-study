@@ -1,4 +1,4 @@
-//! ベジエ曲面を確かめる．制御点の網で書いた曲面は，同じ形を式で書いた曲面と，同じ図になる．
+//! Bézier曲面を確かめる．制御点の網で書いた曲面は，同じ形を式で書いた曲面と，同じ図になる．
 
 #![allow(
     clippy::expect_used,
@@ -66,7 +66,7 @@ fn same_paths(a: &Figure, b: &Figure) {
 // ---- 読み込みと検査 ----
 
 #[test]
-fn ベジエ曲面は_制御点の網だけで書け_変数と式と定義域を持たない() {
+fn bézier曲面は_制御点の網だけで書け_変数と式と定義域を持たない() {
     let scene = parse_scene(&space_scene(BEZIER)).expect("読める");
     let Object::Surface(surface) = &scene.objects[0] else {
         panic!("曲面である");
@@ -79,7 +79,7 @@ fn ベジエ曲面は_制御点の網だけで書け_変数と式と定義域を
 }
 
 #[test]
-fn ベジエ曲面を書き出して読み直すと同じになる() {
+fn bézier曲面を書き出して読み直すと同じになる() {
     let scene = parse_scene(&space_scene(BEZIER)).expect("読める");
     let json = serde_json::to_string(&scene).expect("書き出せる");
     assert_eq!(parse_scene(&json).expect("読み直せる"), scene);
@@ -120,7 +120,7 @@ fn 制御点は_3つの座標を持つ() {
 }
 
 #[test]
-fn ベジエ曲面と式の曲面は_同時に書けない() {
+fn bézier曲面と式の曲面は_同時に書けない() {
     let error = error_of(
         r#"{ "id": "b", "type": "surface", "vars": ["u", "v"], "expr": ["u", "v", "0"],
              "domain": [[0, 1], [0, 1]],
@@ -130,7 +130,7 @@ fn ベジエ曲面と式の曲面は_同時に書けない() {
 }
 
 #[test]
-fn ベジエ曲面でも_式の曲面でもないものは_誤りになる() {
+fn bézier曲面でも_式の曲面でもないものは_誤りになる() {
     let error = error_of(r#"{ "id": "b", "type": "surface" }"#);
     assert!(matches!(error.kind, ErrorKind::Invalid(_)), "{error:?}");
 }
@@ -150,12 +150,12 @@ fn 制御点の式に誤りがあると_式の誤りになる() {
 // ---- 形 ----
 
 #[test]
-fn ベジエ曲面は_同じ形を式で書いた曲面と_同じ図になる() {
+fn bézier曲面は_同じ形を式で書いた曲面と_同じ図になる() {
     same_paths(&figure_of(BEZIER), &figure_of(FORMULA));
 }
 
 #[test]
-fn ベジエ曲面の切り口は_式の曲面の切り口と同じになる() {
+fn bézier曲面の切り口は_式の曲面の切り口と同じになる() {
     let cut = r#", { "id": "c", "type": "cut", "surface": "b", "normal": [0, 0, 1], "offset": 1 }"#;
     same_paths(
         &figure_of(&format!("{BEZIER}{cut}")),
@@ -164,7 +164,7 @@ fn ベジエ曲面の切り口は_式の曲面の切り口と同じになる() {
 }
 
 #[test]
-fn ベジエ曲面は_後ろの線を隠す() {
+fn bézier曲面は_後ろの線を隠す() {
     // 広い平らな網の下を通る軸は，網に隠れて，実線の部分がなくなる．
     let flat = r#"{ "id": "b", "type": "surface",
         "bezier": [[[-6, -6, 0], [-6, 6, 0]], [[6, -6, 0], [6, 6, 0]]] }"#;

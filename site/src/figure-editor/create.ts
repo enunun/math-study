@@ -15,9 +15,9 @@ const BOTH: readonly ViewKind[] = ['plane', 'space'];
 const PLANE: readonly ViewKind[] = ['plane'];
 const SPACE: readonly ViewKind[] = ['space'];
 
-/** ベジエ曲面は，`type`が`surface`で，`bezier`の項目を持つ．追加の一覧では，別の種類として扱う． */
+/** Bézier曲面は，`type`が`surface`で，`bezier`の項目を持つ．追加の一覧では，別の種類として扱う． */
 const BEZIER = 'bezier';
-/** ベジエ曲線は，`type`が`curve`で，`bezier`の項目を持つ．追加の一覧では，別の種類として扱う． */
+/** Bézier曲線は，`type`が`curve`で，`bezier`の項目を持つ．追加の一覧では，別の種類として扱う． */
 const BEZIER_CURVE = 'bezierCurve';
 /** スプライン曲線は，`type`が`curve`で，`spline`の項目を持つ．追加の一覧では，別の種類として扱う． */
 const SPLINE_CURVE = 'splineCurve';
@@ -31,7 +31,7 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'parameter', label: '媒介変数', kinds: BOTH },
   { type: 'graph', label: '関数のグラフ', kinds: PLANE },
   { type: 'curve', label: '曲線(式)', kinds: BOTH },
-  { type: BEZIER_CURVE, label: '曲線(ベジエ)', kinds: BOTH },
+  { type: BEZIER_CURVE, label: '曲線(Bézier)', kinds: BOTH },
   { type: SPLINE_CURVE, label: '曲線(スプライン)', kinds: BOTH },
   { type: 'tangent_line', label: '接線', kinds: PLANE },
   { type: 'grid', label: '格子', kinds: BOTH },
@@ -42,13 +42,13 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: VERTEX_POLYGON, label: '多角形(頂点)', kinds: PLANE },
   { type: 'region', label: '領域', kinds: PLANE },
   { type: 'fractal', label: 'フラクタル', kinds: PLANE },
-  { type: 'taylor', label: 'テイラー展開', kinds: PLANE },
+  { type: 'taylor', label: 'Taylor展開', kinds: PLANE },
   { type: 'function', label: '関数', kinds: BOTH },
   { type: 'map', label: '写像', kinds: BOTH },
   { type: 'image', label: '像(変換した図形)', kinds: BOTH },
   { type: 'sphere', label: '球', kinds: SPACE },
   { type: 'surface', label: '曲面(式)', kinds: SPACE },
-  { type: BEZIER, label: '曲面(ベジエ)', kinds: SPACE },
+  { type: BEZIER, label: '曲面(Bézier)', kinds: SPACE },
   { type: 'cut', label: '曲面の切り口', kinds: SPACE },
   { type: 'level_curve', label: '等値線', kinds: SPACE },
   { type: 'intersection', label: '曲面の交線', kinds: SPACE },
@@ -77,7 +77,7 @@ function typesFor(kind: ViewKind): readonly ObjectType[] {
   return OBJECT_TYPES.filter((entry) => entry.kinds.includes(kind));
 }
 
-/** 追加の一覧での種類の名前．ベジエ曲面・曲線とスプライン曲線は，`surface`・`curve`ではなく，
+/** 追加の一覧での種類の名前．Bézier曲面・曲線とスプライン曲線は，`surface`・`curve`ではなく，
  * 別の名前である． */
 function listedType(object: JsonObject): string {
   const type = stringOf(object, 'type');
@@ -102,7 +102,7 @@ function allowedIn(object: JsonObject, kind: ViewKind): boolean {
 }
 
 /**
- * 識別子の元になる名前．ベジエ曲面は`surface`，ベジエ曲線とスプライン曲線は`curve`，頂点で書く多角形は
+ * 識別子の元になる名前．Bézier曲面は`surface`，Bézier曲線とスプライン曲線は`curve`，頂点で書く多角形は
  * `polygon`から始める．関数と写像は，式の中で呼ぶ名前になるので，短い`f`と`F`から始める．
  */
 const STEMS: Readonly<Record<string, string>> = {

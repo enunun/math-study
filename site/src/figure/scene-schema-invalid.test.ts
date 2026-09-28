@@ -49,7 +49,7 @@ describe('シーンのJSON Schemaは，構造の誤りを断る', () => {
     ).toBe(true);
   });
 
-  it('曲線が，式とベジエ曲線の両方を持てば断る', () => {
+  it('曲線が，式とBézier曲線の両方を持てば断る', () => {
     expect(
       invalid({
         ...plane,
@@ -70,11 +70,11 @@ describe('シーンのJSON Schemaは，構造の誤りを断る', () => {
     ).toBe(true);
   });
 
-  it('曲線が，式もベジエ曲線も持たなければ断る', () => {
+  it('曲線が，式もBézier曲線も持たなければ断る', () => {
     expect(invalid({ ...plane, objects: [{ id: 'c', type: 'curve' }] })).toBe(true);
   });
 
-  it('曲線が，ベジエ曲線とスプライン曲線の両方を持てば断る', () => {
+  it('曲線が，Bézier曲線とスプライン曲線の両方を持てば断る', () => {
     expect(
       invalid({
         ...plane,
@@ -96,7 +96,7 @@ describe('シーンのJSON Schemaは，構造の誤りを断る', () => {
     ).toBe(true);
   });
 
-  it('曲面が，式とベジエ曲面の両方を持てば断る', () => {
+  it('曲面が，式とBézier曲面の両方を持てば断る', () => {
     expect(
       invalid({
         ...space,
@@ -126,11 +126,11 @@ describe('シーンのJSON Schemaは，構造の誤りを断る', () => {
     ).toBe(true);
   });
 
-  it('曲面が，式もベジエ曲面も持たなければ断る', () => {
+  it('曲面が，式もBézier曲面も持たなければ断る', () => {
     expect(invalid({ ...space, objects: [{ id: 's', type: 'surface' }] })).toBe(true);
   });
 
-  it('制御点の網(control_net)を，ベジエ曲面でない曲面に指定すれば断る', () => {
+  it('制御点の網(control_net)を，Bézier曲面でない曲面に指定すれば断る', () => {
     expect(
       invalid({
         ...space,
@@ -260,7 +260,7 @@ describe('シーンのJSON Schemaは，構造の誤りを断る', () => {
     expect(invalid({ ...plane, objects: [{ id: 'i', type: 'image', of: 'p' }] })).toBe(true);
   });
 
-  it('テイラー展開の次数が，上限(30)を超えれば断る', () => {
+  it('Taylor展開の次数が，上限(30)を超えれば断る', () => {
     expect(
       invalid({ ...plane, objects: [{ id: 't', type: 'taylor', of: 'f', at: 0, order: 31 }] }),
     ).toBe(true);

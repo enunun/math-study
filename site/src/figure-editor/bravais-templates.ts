@@ -14,7 +14,7 @@ import type { Basis, Centering, LatticeConstant } from './bravais-cells';
 import type { ObjectTemplate } from './template-types';
 
 /**
- * ブラベー格子の単位胞．格子ベクトルの先端を点A，B，C(平面ではA，B)とし，座標を格子定数の媒介変数の式で
+ * Bravais格子の単位胞．格子ベクトルの先端を点A，B，C(平面ではA，B)とし，座標を格子定数の媒介変数の式で
  * 書く．胞のほかの頂点と，体心・面心・底心の点は，点の式(`A + B`など)で書くので，格子定数を1つ変えれば
  * 胞全体が変わる．格子定数は範囲を持つので，図の作成のスライダーで動かせる．角度は度で書く．
  */
@@ -88,7 +88,7 @@ const RHOMBOHEDRAL_BASIS = generalBasis(
 );
 const CUBIC_BASIS = orthogonalBasis('a', 'a', 'a');
 
-/** 空間の14種類のブラベー格子．晶系の順(三斜，単斜，直方，正方，三方，六方，立方)に並べる． */
+/** 空間の14種類のBravais格子．晶系の順(三斜，単斜，直方，正方，三方，六方，立方)に並べる． */
 const SPACE_LATTICES: readonly SpaceLattice[] = [
   { id: 'aP', label: '三斜(aP)', constants: TRICLINIC, basis: TRICLINIC_BASIS, centering: 'P' },
   {
@@ -170,7 +170,7 @@ interface PlaneLattice {
 
 const OBLIQUE_GAMMA = 70;
 
-/** 平面の5種類のブラベー格子． */
+/** 平面の5種類のBravais格子． */
 const PLANE_LATTICES: readonly PlaneLattice[] = [
   {
     id: 'mp',
@@ -224,7 +224,7 @@ const PLANE_LATTICES: readonly PlaneLattice[] = [
   },
 ];
 
-/** ブラベー格子のテンプレート．平面の5種類，空間の14種類である． */
+/** Bravais格子のテンプレート．平面の5種類，空間の14種類である． */
 const BRAVAIS_TEMPLATES: readonly ObjectTemplate[] = [
   ...PLANE_LATTICES.map(({ id, label, constants, basis, centered }) => ({
     id: `bravais-${id}`,

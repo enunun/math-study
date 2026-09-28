@@ -1,4 +1,4 @@
-//! 式のテイラー係数．式の各節を，打ち切ったべき級数(0次から`order`次までの係数)として計算する．
+//! 式のTaylor係数．式の各節を，打ち切ったべき級数(0次から`order`次までの係数)として計算する．
 //!
 //! 四則演算は級数の演算，初等関数は係数の漸化式(`exp`なら`e' = a' e`を係数で書いたもの)で求める．
 //! 数値微分と違い，次数が高くても誤差が増えない．漸化式のない特殊関数は展開しない．
@@ -11,7 +11,7 @@ type Series = Vec<f64>;
 /// 指数が整数のとき，掛け算を繰り返して計算する，指数の絶対値の上限．負の数の整数乗も展開できる．
 const MAX_INTEGER_POWER: f64 = 64.0;
 
-/// 式`node`の，変数`var`についての，`values`のまわりのテイラー係数．
+/// 式`node`の，変数`var`についての，`values`のまわりのTaylor係数．
 pub fn coefficients(node: &Node, var: usize, values: &[f64], order: usize) -> Option<Series> {
     let length = order.checked_add(1)?;
     let series = Expander {
@@ -157,7 +157,7 @@ fn zip_with(a: &[f64], b: &[f64], op: impl Fn(f64, f64) -> f64) -> Series {
     a.iter().zip(b).map(|(x, y)| op(*x, *y)).collect()
 }
 
-/// 級数の積(コーシー積)．
+/// 級数の積(Cauchy積)．
 fn multiply(a: &[f64], b: &[f64]) -> Series {
     (0..a.len())
         .map(|k| (0..=k).map(|j| at(a, j) * at(b, k.saturating_sub(j))).sum())

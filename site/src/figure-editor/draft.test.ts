@@ -113,7 +113,7 @@ describe('新しいオブジェクト', () => {
     expect(segment.id).toBe('segment1');
   });
 
-  it('曲面の項目は，式かベジエ曲面かで変わる', () => {
+  it('曲面の項目は，式かBézier曲面かで変わる', () => {
     const draft = emptyDraft('space');
     const formula = fieldsFor(createObject('surface', draft, 'space'), 'space');
     const bezier = fieldsFor(createObject('bezier', draft, 'space'), 'space');

@@ -255,7 +255,7 @@
       "type": "object",
       "required": ["id", "type"],
       "additionalProperties": false,
-      "description": "媒介変数表示の曲線．式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)か，スプライン曲線が通る点(`spline`)の，どれか1つで書く．2つ以上は書けない．",
+      "description": "媒介変数表示の曲線．式(`var`，`expr`，`domain`)か，Bézier曲線の制御点(`bezier`)か，スプライン曲線が通る点(`spline`)の，どれか1つで書く．2つ以上は書けない．",
       "oneOf": [
         {
           "required": ["var", "expr", "domain"],
@@ -309,7 +309,7 @@
           },
           "minItems": 2,
           "maxItems": 12,
-          "description": "ベジエ曲線の制御点．各点は，平面の図では2個，空間の図では3個の，数か式で書く座標である．2点以上12点以下を並べる．媒介変数の範囲は，0から1である．"
+          "description": "Bézier曲線の制御点．各点は，平面の図では2個，空間の図では3個の，数か式で書く座標である．2点以上12点以下を並べる．媒介変数の範囲は，0から1である．"
         },
         "spline": {
           "type": "array",
@@ -527,7 +527,7 @@
       "type": "object",
       "required": ["id", "type"],
       "additionalProperties": false,
-      "description": "曲面．空間の図でだけ使える．式(`vars`，`expr`，`domain`)か，ベジエ曲面の制御点の網(`bezier`)のどちらかで書き，両方は書けない．`control_net`は，`bezier`があるときだけ使える．",
+      "description": "曲面．空間の図でだけ使える．式(`vars`，`expr`，`domain`)か，Bézier曲面の制御点の網(`bezier`)のどちらかで書き，両方は書けない．`control_net`は，`bezier`があるときだけ使える．",
       "oneOf": [
         {
           "required": ["vars", "expr", "domain"],
@@ -596,18 +596,18 @@
         "style": { "$ref": "#/$defs/style" },
         "wireframe": {
           "$ref": "#/$defs/style",
-          "description": "曲面のワイヤーフレーム(u一定・v一定の断面)．式で書いた曲面でも，ベジエ曲面でも，同じように，曲面の上の線として描く．この項目があれば描き，スタイルとして使う(`{}`でもよい)．省くと描かない．"
+          "description": "曲面のワイヤーフレーム(u一定・v一定の断面)．式で書いた曲面でも，Bézier曲面でも，同じように，曲面の上の線として描く．この項目があれば描き，スタイルとして使う(`{}`でもよい)．省くと描かない．"
         },
         "wireframe_step": {
           "type": "array",
           "items": { "$ref": "#/$defs/positiveNumberOrExpression" },
           "minItems": 2,
           "maxItems": 2,
-          "description": "ワイヤーフレームの刻み(u方向，v方向)．断面は，各変数が刻みの整数倍になる所のうち，定義域の内側(両端を除く)に引く．数か式で書く．省くと，どちらも定義域の幅の4分の1．ベジエ曲面の変数の範囲は0から1．`wireframe`があるときだけ使う．各方向の断面が50本を超える刻みは断られる(スキーマでは表せない)．"
+          "description": "ワイヤーフレームの刻み(u方向，v方向)．断面は，各変数が刻みの整数倍になる所のうち，定義域の内側(両端を除く)に引く．数か式で書く．省くと，どちらも定義域の幅の4分の1．Bézier曲面の変数の範囲は0から1．`wireframe`があるときだけ使う．各方向の断面が50本を超える刻みは断られる(スキーマでは表せない)．"
         },
         "control_net": {
           "$ref": "#/$defs/style",
-          "description": "ベジエ曲面の，制御点の網(行と列を結ぶ折れ線)．`bezier`があるときだけ使える．この項目があれば描き，スタイルとして使う(`{}`でもよい)．省くと描かない．"
+          "description": "Bézier曲面の，制御点の網(行と列を結ぶ折れ線)．`bezier`があるときだけ使える．この項目があれば描き，スタイルとして使う(`{}`でもよい)．省くと描かない．"
         },
         "transform": { "$ref": "#/$defs/transform" }
       }
@@ -972,7 +972,7 @@
       "type": "object",
       "required": ["id", "type", "of", "at", "order"],
       "additionalProperties": false,
-      "description": "グラフのテイラー展開を，`order`次で打ち切った多項式のグラフ．平面の図でだけ使える．展開するグラフの式は，特殊関数を含まず，中心で微分できなければならない(スキーマでは表せない)．",
+      "description": "グラフのTaylor展開を，`order`次で打ち切った多項式のグラフ．平面の図でだけ使える．展開するグラフの式は，特殊関数を含まず，中心で微分できなければならない(スキーマでは表せない)．",
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "taylor" },

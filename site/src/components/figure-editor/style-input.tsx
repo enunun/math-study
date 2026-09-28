@@ -127,7 +127,7 @@ interface ToggleProps {
 }
 
 /**
- * 項目自体の有無をチェックボックスで選ぶ，スタイルの入力欄．曲面のワイヤーフレームや，ベジエ曲面の
+ * 項目自体の有無をチェックボックスで選ぶ，スタイルの入力欄．曲面のワイヤーフレームや，Bézier曲面の
  * 制御点の網のように，「描くかどうか」と「描くときのスタイル」を，1つの項目(あれば描く)で持つ場合に使う．
  */
 function ToggleStyleInput({ object, kind, field, label, onChange }: ToggleProps): ReactElement {

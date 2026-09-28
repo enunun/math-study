@@ -112,7 +112,7 @@ function ProjectionExplorer(): ReactElement {
               setPatch(event.target.checked);
             }}
           />
-          <span>自由な曲面（ベジエ曲面）を加える</span>
+          <span>自由な曲面（Bézier曲面）を加える</span>
         </label>
         <MathView tex={texts.basis[0]} label={texts.basis[1]} />
         <MathView tex={texts.product[0]} label={texts.product[1]} />

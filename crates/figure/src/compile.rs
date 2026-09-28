@@ -25,12 +25,12 @@ pub struct GraphPlot {
 
 /// 式を読んだ後の，媒介変数表示の曲線．
 pub struct CurvePlot {
-    /// 各座標の式(平面では2個，空間では3個)．ベジエ曲線・スプライン曲線では空．
+    /// 各座標の式(平面では2個，空間では3個)．Bézier曲線・スプライン曲線では空．
     /// 名前の順は，変数，媒介変数である．
     pub exprs: Vec<Expr>,
-    /// 評価した媒介変数の範囲．ベジエ曲線・スプライン曲線では`[0.0, 1.0]`である．
+    /// 評価した媒介変数の範囲．Bézier曲線・スプライン曲線では`[0.0, 1.0]`である．
     pub domain: [f64; 2],
-    /// ベジエ曲線の制御点の座標(各点，平面では2個，空間では3個)．それ以外の曲線では`None`．
+    /// Bézier曲線の制御点の座標(各点，平面では2個，空間では3個)．それ以外の曲線では`None`．
     pub net: Option<Vec<Vec<f64>>>,
     /// スプライン曲線が順に通る点の座標(各点，平面では2個，空間では3個)．それ以外の曲線では`None`．
     pub spline: Option<Vec<Vec<f64>>>,
@@ -123,11 +123,11 @@ pub struct CutPlot {
 
 /// 式を読んだ後の，曲面．
 pub struct SurfacePlot {
-    /// x，y，z座標の式．名前の順は，2つの変数，媒介変数と点の座標である．ベジエ曲面では空である．
+    /// x，y，z座標の式．名前の順は，2つの変数，媒介変数と点の座標である．Bézier曲面では空である．
     pub exprs: Vec<Expr>,
-    /// 評価した，各変数の範囲．ベジエ曲面では，どちらも0から1である．
+    /// 評価した，各変数の範囲．Bézier曲面では，どちらも0から1である．
     pub domain: [[f64; 2]; 2],
-    /// 評価した，ベジエ曲面の制御点の網．式で書く曲面では`None`である．
+    /// 評価した，Bézier曲面の制御点の網．式で書く曲面では`None`である．
     pub net: Option<Vec<Vec<[f64; 3]>>>,
     /// ワイヤーフレームの断面を引く，uの値とvの値．`wireframe`がなければ，どちらも空である．
     pub wireframe: [Vec<f64>; 2],
@@ -181,7 +181,7 @@ pub enum Plot {
     TangentPlane(TangentPlanePlot),
     /// 多角形．
     Polygon(PolygonPlot),
-    /// テイラー展開の多項式．
+    /// Taylor展開の多項式．
     Taylor(TaylorPlot),
     /// 等値線．
     LevelCurve(LevelCurvePlot),
@@ -195,7 +195,7 @@ pub struct PolygonPlot {
     pub vertices: Vec<[f64; 2]>,
 }
 
-/// 式を読んだ後の，テイラー展開の多項式．
+/// 式を読んだ後の，Taylor展開の多項式．
 pub struct TaylorPlot {
     /// 展開の中心．
     pub at: f64,
@@ -206,7 +206,7 @@ pub struct TaylorPlot {
 }
 
 impl TaylorPlot {
-    /// 多項式の値．ホーナー法で計算する．
+    /// 多項式の値．Horner法で計算する．
     #[must_use]
     pub fn value(&self, x: f64) -> f64 {
         let h = x - self.at;
@@ -706,9 +706,9 @@ fn compile_graph(graph: &Graph, env: &Env) -> Result<GraphPlot, ErrorKind> {
     Ok(GraphPlot { expr, domain })
 }
 
-/// 曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)か，
+/// 曲線は，式(`var`，`expr`，`domain`)か，Bézier曲線の制御点(`bezier`)か，
 /// スプライン曲線が通る点(`spline`)の，どれか1つで書く．
-const CURVE_FORM_HINT: &str = "曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)か，\
+const CURVE_FORM_HINT: &str = "曲線は，式(`var`，`expr`，`domain`)か，Bézier曲線の制御点(`bezier`)か，\
      スプライン曲線の点(`spline`)で書く．";
 
 fn compile_curve(curve: &Curve, env: &Env, size: usize) -> Result<CurvePlot, ErrorKind> {
@@ -758,7 +758,7 @@ fn compile_curve(curve: &Curve, env: &Env, size: usize) -> Result<CurvePlot, Err
     })
 }
 
-/// ベジエ曲線・スプライン曲線に共通の，点の座標を評価する処理．座標は，媒介変数と定数を使え，
+/// Bézier曲線・スプライン曲線に共通の，点の座標を評価する処理．座標は，媒介変数と定数を使え，
 /// 有限の数でなければならない．
 fn compile_curve_points(
     points: &[Vec<Bound>],
@@ -978,7 +978,7 @@ fn wireframe_values(
 /// 定義域の端と重なるとみなす，断面の近さ(定義域の幅に対する割合)．
 const WIREFRAME_EDGE_MARGIN: f64 = 1e-9;
 
-/// ベジエ曲面の制御点の座標を評価する．座標は，媒介変数と定数を使え，有限の数でなければならない．
+/// Bézier曲面の制御点の座標を評価する．座標は，媒介変数と定数を使え，有限の数でなければならない．
 fn compile_bezier(net: &[Vec<Vec<Bound>>], env: &Env) -> Result<SurfacePlot, ErrorKind> {
     let evaluated = net
         .iter()
@@ -993,7 +993,7 @@ fn compile_bezier(net: &[Vec<Vec<Bound>>], env: &Env) -> Result<SurfacePlot, Err
                     match coordinates.as_slice() {
                         [x, y, z] if coordinates.iter().all(|c| c.is_finite()) => Ok([*x, *y, *z]),
                         _ => Err(ErrorKind::Invalid(
-                            "ベジエ曲面の制御点の座標は，有限の数にする．".to_owned(),
+                            "Bézier曲面の制御点の座標は，有限の数にする．".to_owned(),
                         )),
                     }
                 })
@@ -1120,7 +1120,7 @@ fn compile_polygon(
     Ok(PolygonPlot { vertices })
 }
 
-/// テイラー展開の中心と，描く範囲を評価する．係数は，グラフを読んだあとに求める
+/// Taylor展開の中心と，描く範囲を評価する．係数は，グラフを読んだあとに求める
 /// (`expand_taylor_polynomials`)．範囲を書かなければ，グラフの定義域を使う．
 fn compile_taylor(taylor: &Taylor, env: &Env) -> Result<TaylorPlot, ErrorKind> {
     let at = evaluate_numbers("at", std::slice::from_ref(&taylor.at), env)?
@@ -1138,7 +1138,7 @@ fn compile_taylor(taylor: &Taylor, env: &Env) -> Result<TaylorPlot, ErrorKind> {
     })
 }
 
-/// テイラー展開の係数を，展開するグラフの式から求める．グラフは，展開よりあとに置いてもよい．
+/// Taylor展開の係数を，展開するグラフの式から求める．グラフは，展開よりあとに置いてもよい．
 fn expand_taylor_polynomials(
     scene: &Scene,
     plots: &mut [Plot],
@@ -1171,7 +1171,7 @@ fn expand_taylor_polynomials(
             .collect();
         placed.coefficients = expr.taylor(0, &values, taylor.order).ok_or_else(|| {
             fail(ErrorKind::Invalid(format!(
-                "グラフ「{}」の式は，{}のまわりでテイラー展開できない(特殊関数を含むか，その点で微分できない)．",
+                "グラフ「{}」の式は，{}のまわりでTaylor展開できない(特殊関数を含むか，その点で微分できない)．",
                 taylor.of, placed.at
             )))
         })?;

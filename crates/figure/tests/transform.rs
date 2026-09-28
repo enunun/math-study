@@ -314,7 +314,7 @@ fn 変換したグラフには接線を引ける() {
 }
 
 #[test]
-fn 変換したグラフは領域とテイラー展開に使えない() {
+fn 変換したグラフは領域とtaylor展開に使えない() {
     let error = plane_error(
         r#"{ "id": "f", "type": "graph", "var": "x", "expr": "x^2", "domain": [-2, 2],
              "transform": [{ "rotate": 90 }] },
@@ -371,7 +371,7 @@ fn ラベルの位置を変換できる() {
 }
 
 #[test]
-fn テイラー展開の多項式のグラフを変換できる() {
+fn taylor展開の多項式のグラフを変換できる() {
     // y = x^2の2次の展開は，x^2そのものである．90度回すと，x = -y^2になる．
     let figure = plane_figure(
         r#"{ "id": "f", "type": "graph", "var": "x", "expr": "x^2", "domain": [-2, 2],

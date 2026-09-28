@@ -668,7 +668,7 @@ fn torus_point(u: f64, v: f64) -> Option<[f64; 3]> {
     Some([r * u.cos(), r * u.sin(), 0.5 * v.sin()])
 }
 
-/// メビウスの帯．`u = -pi`の辺と`u = pi`の辺は，向きを逆にして重なる．
+/// Möbiusの帯．`u = -pi`の辺と`u = pi`の辺は，向きを逆にして重なる．
 #[allow(clippy::unnecessary_wraps)]
 fn mobius_point(u: f64, v: f64) -> Option<[f64; 3]> {
     let r = 2.0 + v / 2.0 * (u / 2.0).cos();
@@ -696,7 +696,7 @@ fn 閉じた曲面には縁がない() {
 }
 
 #[test]
-fn 向きを逆にして重なる辺も継ぎ目であり_メビウスの帯の縁は幅の端の2本である() {
+fn 向きを逆にして重なる辺も継ぎ目であり_möbiusの帯の縁は幅の端の2本である() {
     let band = build(&mobius_point, [[-PI, PI], [-1.0, 1.0]], 32);
     let lines = band.boundary();
     assert_eq!(lines.len(), 2);

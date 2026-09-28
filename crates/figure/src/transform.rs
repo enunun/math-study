@@ -57,7 +57,7 @@ impl Affine {
         Self::rotate_about_axis(degrees, [0.0, 0.0, 1.0])
     }
 
-    /// 空間の回転．単位ベクトル`axis`のまわりに，右ねじの向きに`degrees`度回す(ロドリゲスの公式)．
+    /// 空間の回転．単位ベクトル`axis`のまわりに，右ねじの向きに`degrees`度回す(Rodriguesの公式)．
     #[must_use]
     pub fn rotate_about_axis(degrees: f64, axis: Vector3) -> Self {
         let (sin, cos) = degrees.to_radians().sin_cos();

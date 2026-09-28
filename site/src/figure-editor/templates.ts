@@ -71,12 +71,12 @@ const OBJECT_TEMPLATE_GROUPS: readonly ObjectTemplateGroup[] = [
   { label: '平面曲線', templates: PLANE_CURVE_TEMPLATES },
   { label: '関数のグラフ', templates: FUNCTION_TEMPLATES },
   { label: 'フラクタル', templates: FRACTAL_TEMPLATES },
-  { label: 'ベジエ曲線・スプライン曲線', templates: BEZIER_SPLINE_TEMPLATES },
+  { label: 'Bézier曲線・スプライン曲線', templates: BEZIER_SPLINE_TEMPLATES },
   { label: '空間曲線', templates: SPACE_CURVE_TEMPLATES },
   { label: '正多面体', templates: POLYHEDRON_TEMPLATES },
-  { label: 'ブラベー格子', templates: BRAVAIS_TEMPLATES },
+  { label: 'Bravais格子', templates: BRAVAIS_TEMPLATES },
   { label: '2次曲面', templates: QUADRIC_TEMPLATES },
-  { label: 'ベジエ曲面', templates: BEZIER_SURFACE_TEMPLATES },
+  { label: 'Bézier曲面', templates: BEZIER_SURFACE_TEMPLATES },
   { label: 'いろいろな曲面', templates: OTHER_SURFACE_TEMPLATES },
 ];
 

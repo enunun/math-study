@@ -35,7 +35,7 @@ const WIREFRAME_STEP: FieldSpec = {
   count: PAIR,
   optional: true,
 };
-/** ベジエ曲面だけの，制御点の網の項目． */
+/** Bézier曲面だけの，制御点の網の項目． */
 const CONTROL_NET: FieldSpec = {
   kind: 'toggleStyle',
   key: 'control_net',
@@ -49,7 +49,7 @@ const TWO_VARIABLE_MAP: readonly FieldSpec[] = [
   { kind: 'domain2', key: 'domain', label: '変数の範囲' },
 ];
 
-/** 球，曲面，ベジエ曲面，等値線の，識別子とスタイル以外の項目． */
+/** 球，曲面，Bézier曲面，等値線の，識別子とスタイル以外の項目． */
 const SURFACE_FIELDS: Readonly<Record<string, readonly FieldSpec[]>> = {
   sphere: [
     { kind: 'list', key: 'center', label: '中心', item: 'number', count: TRIPLE },

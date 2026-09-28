@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "description": "4個の制御点A，B，C，Dで決まる，3次のベジエ曲線．点線は，制御点を順に結ぶ制御多角形である．",
+  "description": "4個の制御点A，B，C，Dで決まる，3次のBézier曲線．点線は，制御点を順に結ぶ制御多角形である．",
   "view": { "x": [-1, 5], "y": [-3, 4], "unit": { "x": "1cm", "y": "1cm" } },
   "objects": [
     { "id": "x_axis", "type": "axis", "direction": "x", "label": "x" },

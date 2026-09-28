@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "description": "シェルピンスキーの三角形．正三角形を，半分の大きさの3つの三角形に写す変換を，4回繰り返す．",
+  "description": "Sierpińskiの三角形．正三角形を，半分の大きさの3つの三角形に写す変換を，4回繰り返す．",
   "view": { "x": [-1, 5], "y": [-1, 5], "unit": { "x": "1cm", "y": "1cm" } },
   "objects": [
     { "id": "x_axis", "type": "axis", "direction": "x", "label": "x" },

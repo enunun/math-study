@@ -1,4 +1,4 @@
-//! 特殊関数(ガンマ関数，誤差関数，ベッセル関数など)を式の中で使えることを確かめる．
+//! 特殊関数(ガンマ関数，誤差関数，Bessel関数など)を式の中で使えることを確かめる．
 //! 数値そのものの正しさは`puruspe`が検証済みなので，ここでは式のエンジンが正しい関数へ
 //! つないでいることだけを確かめる．
 
@@ -44,20 +44,20 @@ fn 誤差関数は原点で0_無限遠で1に近づく() {
 }
 
 #[test]
-fn ドーソン関数は原点で0である() {
+fn dawson関数は原点で0である() {
     assert_eq!(eval("dawson(0)"), 0.0);
     assert_eq!(eval("dawson(1)"), puruspe::dawson(1.0));
 }
 
 #[test]
-fn ランベルトのw関数は_xe_xの逆関数である() {
+fn lambertのw関数は_xe_xの逆関数である() {
     assert!(close(eval("lambertw(0)"), 0.0));
     assert!(close(eval("lambertw(e)"), 1.0));
     assert_eq!(eval("lambertw(2)"), puruspe::lambert_w0(2.0));
 }
 
 #[test]
-fn ベッセル関数は次数0と1を使える() {
+fn bessel関数は次数0と1を使える() {
     assert!(close_loosely(eval("besselj0(0)"), 1.0));
     assert_eq!(eval("besselj1(0)"), 0.0);
     assert!(close_loosely(eval("besseli0(0)"), 1.0));

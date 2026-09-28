@@ -13,20 +13,20 @@ const ANGLE_DOMAIN = ['-pi', 'pi'];
 /** 角度の方向のワイヤーフレームの刻み．30度ごとに断面を引く． */
 const ANGLE_STEP = 'pi/6';
 
-/** メビウスの帯の軸の範囲と，幅の方向の刻み． */
+/** Möbiusの帯の軸の範囲と，幅の方向の刻み． */
 const MOBIUS_AXIS = 3;
 const MOBIUS_Z_AXIS = 1.5;
 const MOBIUS_WIDTH_STEP = 0.5;
 
 /**
- * メビウスの帯．帯の中心の半径2，帯の幅1の，パラメータ表示の曲面．`u`が帯に沿った角度，`v`が幅方向．
+ * Möbiusの帯．帯の中心の半径2，帯の幅1の，パラメータ表示の曲面．`u`が帯に沿った角度，`v`が幅方向．
  * `boundary`は，継ぎ目の`u`の端を除いて，`v = ±1`の2本の辺を描く．2本は継ぎ目でつながり，
  * ただ1本の縁になる．
  */
 const MOBIUS_STRIP_SCENE: SceneDraft = {
   version: SCENE_VERSION,
   description:
-    'メビウスの帯．半周ひねりながら1周する帯で，表と裏の区別がない(向き付け不可能な)曲面の代表例．縁は1本の閉じた曲線である．',
+    'Möbiusの帯．半周ひねりながら1周する帯で，表と裏の区別がない(向き付け不可能な)曲面の代表例．縁は1本の閉じた曲線である．',
   view: { azimuth: SPACE_AZIMUTH, elevation: SPACE_ELEVATION, unit: SPACE_UNIT },
   objects: [
     ...spaceAxes([-MOBIUS_AXIS, MOBIUS_AXIS], [-MOBIUS_Z_AXIS, MOBIUS_Z_AXIS]),
@@ -224,7 +224,7 @@ const SPACE_SAMPLE_SCENES: readonly SceneTemplate[] = [
   { id: 'cylinderCut', label: '円柱と平面の切り口', scene: CYLINDER_CUT_SCENE },
   { id: 'helix', label: '円柱の上のらせん', scene: HELIX_SCENE },
   { id: 'torus', label: 'トーラス', scene: TORUS_SCENE },
-  { id: 'mobius', label: 'メビウスの帯', scene: MOBIUS_STRIP_SCENE },
+  { id: 'mobius', label: 'Möbiusの帯', scene: MOBIUS_STRIP_SCENE },
   { id: 'trefoil', label: '三葉結び目', scene: TREFOIL_SCENE },
   ...SURFACE_SAMPLE_SCENES,
   ...FOUR_SPACE_SAMPLE_SCENES,

@@ -136,7 +136,7 @@ function edgeObjects(edges: readonly (readonly [string, string])[]): JsonObject[
   }));
 }
 
-/** 空間のブラベー格子の単位胞．媒介変数，格子ベクトルの先端，残りの頂点，心の点，辺の順に並べる． */
+/** 空間のBravais格子の単位胞．媒介変数，格子ベクトルの先端，残りの頂点，心の点，辺の順に並べる． */
 function spaceCell(
   constants: readonly LatticeConstant[],
   basis: Basis,
@@ -163,7 +163,7 @@ const PLANE_EDGES: readonly (readonly [string, string])[] = [
   ['B', 'AB'],
 ];
 
-/** 平面のブラベー格子の単位胞．`centered`なら，胞の中心にも格子点がある． */
+/** 平面のBravais格子の単位胞．`centered`なら，胞の中心にも格子点がある． */
 function planeCell(
   constants: readonly LatticeConstant[],
   basis: Basis,

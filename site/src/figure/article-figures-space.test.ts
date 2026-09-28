@@ -151,11 +151,11 @@ describe('空間の図', () => {
     });
   });
 
-  describe('ベジエ曲面(bezier-patch)', () => {
+  describe('Bézier曲面(bezier-patch)', () => {
     const drawn = draw('bezier-patch');
 
     it('縁と輪郭を実線で描き，曲面が隠す軸を点線にする', () => {
-      expect(drawn.svg.properties.ariaLabel).toMatch(/ベジエ曲面/u);
+      expect(drawn.svg.properties.ariaLabel).toMatch(/Bézier曲面/u);
       expect(drawn.paths.some((path) => dashed(path))).toBe(true);
       expect(drawn.paths.some((path) => !dashed(path))).toBe(true);
     });

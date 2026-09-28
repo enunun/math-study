@@ -276,7 +276,7 @@ fn validate_surface(surface: &Surface) -> Result<(), ErrorKind> {
     match (&surface.control_net, &surface.bezier) {
         (Some(style), Some(_)) => check_style(style),
         (Some(_), None) => Err(ErrorKind::Invalid(
-            "制御点の網(`control_net`)は，ベジエ曲面(`bezier`)にだけ使える．".to_owned(),
+            "制御点の網(`control_net`)は，Bézier曲面(`bezier`)にだけ使える．".to_owned(),
         )),
         (None, _) => Ok(()),
     }
@@ -331,7 +331,7 @@ fn validate_level_curve(curve: &LevelCurve) -> Result<(), ErrorKind> {
 fn validate_formula(surface: &Surface) -> Result<(), ErrorKind> {
     let Some(domain) = &surface.domain else {
         return Err(ErrorKind::Invalid(
-            "曲面は，式(`vars`，`expr`，`domain`)か，ベジエ曲面の制御点の網(`bezier`)で書く．"
+            "曲面は，式(`vars`，`expr`，`domain`)か，Bézier曲面の制御点の網(`bezier`)で書く．"
                 .to_owned(),
         ));
     };
@@ -360,36 +360,36 @@ fn validate_formula(surface: &Surface) -> Result<(), ErrorKind> {
     Ok(())
 }
 
-/// ベジエ曲面．制御点の網は，各方向に2点以上を，行の長さを揃えて並べ，各点は3つの座標を持つ．
+/// Bézier曲面．制御点の網は，各方向に2点以上を，行の長さを揃えて並べ，各点は3つの座標を持つ．
 fn validate_bezier(surface: &Surface, net: &[Vec<Vec<Bound>>]) -> Result<(), ErrorKind> {
     if !surface.vars.is_empty() || !surface.expr.is_empty() || surface.domain.is_some() {
         return Err(ErrorKind::Invalid(
-            "ベジエ曲面(`bezier`)は，式(`vars`，`expr`，`domain`)と同時に書けない．".to_owned(),
+            "Bézier曲面(`bezier`)は，式(`vars`，`expr`，`domain`)と同時に書けない．".to_owned(),
         ));
     }
     let width = net.first().map_or(0, Vec::len);
     if net.len() < Surface::MIN_CONTROL_POINTS || width < Surface::MIN_CONTROL_POINTS {
         return Err(ErrorKind::Invalid(format!(
-            "ベジエ曲面の制御点は，各方向に{}点以上を並べる．",
+            "Bézier曲面の制御点は，各方向に{}点以上を並べる．",
             Surface::MIN_CONTROL_POINTS
         )));
     }
     if net.len() > Surface::MAX_CONTROL_POINTS || width > Surface::MAX_CONTROL_POINTS {
         return Err(ErrorKind::Invalid(format!(
-            "ベジエ曲面の制御点は，各方向に{}点以下にする．",
+            "Bézier曲面の制御点は，各方向に{}点以下にする．",
             Surface::MAX_CONTROL_POINTS
         )));
     }
     for row in net {
         if row.len() != width {
             return Err(ErrorKind::Invalid(
-                "ベジエ曲面の制御点の行は，長さを揃える．".to_owned(),
+                "Bézier曲面の制御点の行は，長さを揃える．".to_owned(),
             ));
         }
         for point in row {
             if point.len() != 3 {
                 return Err(ErrorKind::Invalid(
-                    "ベジエ曲面の制御点は，x，y，zの3つの座標で書く．".to_owned(),
+                    "Bézier曲面の制御点は，x，y，zの3つの座標で書く．".to_owned(),
                 ));
             }
         }
@@ -504,7 +504,7 @@ fn validate_fractal(fractal: &Fractal) -> Result<(), ErrorKind> {
     Ok(())
 }
 
-/// 領域が挟むグラフと，テイラー展開するグラフは，`graph`オブジェクトの`id`でなければならない．
+/// 領域が挟むグラフと，Taylor展開するグラフは，`graph`オブジェクトの`id`でなければならない．
 /// 変換したグラフは，関数のグラフではなくなるので，使えない．
 fn check_graphs(
     object: &Object,
@@ -522,7 +522,7 @@ fn check_graphs(
         }
         if transformed.contains(name.as_str()) {
             return Err(ErrorKind::Invalid(format!(
-                "グラフ「{name}」は変換(`transform`)してあるので，領域やテイラー展開には使えない．"
+                "グラフ「{name}」は変換(`transform`)してあるので，領域やTaylor展開には使えない．"
             )));
         }
     }
@@ -663,7 +663,7 @@ fn validate_map(map: &Map) -> Result<(), ErrorKind> {
 fn validate_taylor(taylor: &Taylor) -> Result<(), ErrorKind> {
     if taylor.order > Taylor::MAX_ORDER {
         return Err(ErrorKind::Invalid(format!(
-            "テイラー展開の次数(`order`)は，{}以下にする．",
+            "Taylor展開の次数(`order`)は，{}以下にする．",
             Taylor::MAX_ORDER
         )));
     }
@@ -796,19 +796,19 @@ fn validate_complex(complex: &Complex) -> Result<(), ErrorKind> {
     Ok(())
 }
 
-/// 曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)か，
+/// 曲線は，式(`var`，`expr`，`domain`)か，Bézier曲線の制御点(`bezier`)か，
 /// スプライン曲線が通る点(`spline`)の，どれか1つで書く．
-const CURVE_FORM_HINT: &str = "曲線は，式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)か，\
+const CURVE_FORM_HINT: &str = "曲線は，式(`var`，`expr`，`domain`)か，Bézier曲線の制御点(`bezier`)か，\
      スプライン曲線の点(`spline`)で書く．";
 
 fn validate_curve(curve: &Curve, view: &View) -> Result<(), ErrorKind> {
     match (&curve.bezier, &curve.spline) {
-        (Some(net), None) => validate_curve_points(curve, net, view, "ベジエ曲線", "bezier"),
+        (Some(net), None) => validate_curve_points(curve, net, view, "Bézier曲線", "bezier"),
         (None, Some(points)) => {
             validate_curve_points(curve, points, view, "スプライン曲線", "spline")
         }
         (Some(_), Some(_)) => Err(ErrorKind::Invalid(
-            "ベジエ曲線(`bezier`)とスプライン曲線(`spline`)は，同時に書けない．".to_owned(),
+            "Bézier曲線(`bezier`)とスプライン曲線(`spline`)は，同時に書けない．".to_owned(),
         )),
         (None, None) => validate_curve_formula(curve, view),
     }
@@ -836,7 +836,7 @@ fn validate_curve_formula(curve: &Curve, view: &View) -> Result<(), ErrorKind> {
     check_domain(domain)
 }
 
-/// ベジエ曲線・スプライン曲線に共通の検査．点(制御点か，通る点)は，2点以上12点以下を，
+/// Bézier曲線・スプライン曲線に共通の検査．点(制御点か，通る点)は，2点以上12点以下を，
 /// 平面なら2個，空間なら3個の座標で並べる．式とは同時に書けない．
 fn validate_curve_points(
     curve: &Curve,

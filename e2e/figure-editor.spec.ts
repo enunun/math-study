@@ -225,11 +225,9 @@ test.describe('図の作成', () => {
     await expect(items).toHaveCount(1);
   });
 
-  test('見本「シェルピンスキーの三角形」は，誤りなく描ける', async ({ page }) => {
+  test('見本「Sierpińskiの三角形」は，誤りなく描ける', async ({ page }) => {
     // 見本の図の正しさはビルドとscene-schema.test.tsが確かめるので，読み込みの仕組みだけを確かめる．
-    await editor(page)
-      .getByRole('button', { name: 'シェルピンスキーの三角形', exact: true })
-      .click();
+    await editor(page).getByRole('button', { name: 'Sierpińskiの三角形', exact: true }).click();
     await expect(preview(page)).toBeVisible();
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
@@ -268,9 +266,9 @@ test.describe('図の作成', () => {
     expect(dashArrays.some((value) => value !== null)).toBe(true);
   });
 
-  test('コードで書いた見本「メビウスの帯」は，誤りなく描ける', async ({ page }) => {
+  test('コードで書いた見本「Möbiusの帯」は，誤りなく描ける', async ({ page }) => {
     // 記事の図のファイルではなく，sample-scenes.tsのシーンを読み込む見本も，同じように動くことを確かめる．
-    await editor(page).getByRole('button', { name: 'メビウスの帯', exact: true }).click();
+    await editor(page).getByRole('button', { name: 'Möbiusの帯', exact: true }).click();
     await expect(preview(page)).toBeVisible();
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });

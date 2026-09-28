@@ -78,7 +78,7 @@ function fieldEntries(node: SchemaNode, labels: ReadonlyMap<string, string>): Fi
   }));
 }
 
-/** 追加の一覧の種類(ベジエ曲線などを含む)のうち，本当の`type`が`type`であるもの． */
+/** 追加の一覧の種類(Bézier曲線などを含む)のうち，本当の`type`が`type`であるもの． */
 function listedTypesOf(type: string): { label: string; kind: ViewKind; listed: string }[] {
   return OBJECT_TYPES.flatMap(({ type: listed, label, kinds }) =>
     kinds
@@ -87,7 +87,7 @@ function listedTypesOf(type: string): { label: string; kind: ViewKind; listed: s
   );
 }
 
-/** 種類の各項目の，編集画面の欄の名前．ベジエ曲面のように欄が変わる種類は，すべての欄を集める． */
+/** 種類の各項目の，編集画面の欄の名前．Bézier曲面のように欄が変わる種類は，すべての欄を集める． */
 function editorLabels(type: string): Map<string, string> {
   const labels = new Map<string, string>([['style', 'スタイル']]);
   for (const { kind, listed } of listedTypesOf(type)) {

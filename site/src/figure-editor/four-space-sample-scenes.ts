@@ -104,20 +104,20 @@ const FOUR_SPHERE_SCENE: SceneDraft = {
   ],
 };
 
-/** クラインの壺の軸の範囲と，網の細かさ(uの方向は1周で断面の円が半回転するので，細かくする)． */
+/** Kleinの壺の軸の範囲と，網の細かさ(uの方向は1周で断面の円が半回転するので，細かくする)． */
 const KLEIN_AXIS = 3.5;
 const KLEIN_Z_AXIS = 1.5;
 const KLEIN_U_DIVISIONS = 72;
 const KLEIN_V_DIVISIONS = 36;
 
 /**
- * ℝ⁴のクラインの壺．半径2の円に沿って，半径1の円を，1周で半回転させながら動かす．回る円のzとwの成分が
+ * ℝ⁴のKleinの壺．半径2の円に沿って，半径1の円を，1周で半回転させながら動かす．回る円のzとwの成分が
  * 入れ替わるので，ℝ³への射影は自己交差するが，ℝ⁴では交わらない．
  */
 const KLEIN_BOTTLE_4D_SCENE: SceneDraft = {
   version: SCENE_VERSION,
   description:
-    'ℝ^4のクラインの壺((2 + cos v)cos u, (2 + cos v)sin u, sin v cos(u/2), sin v sin(u/2))を，超平面w = tで切った切り口．tを動かすと，切り口の曲線が形とつながり方を変える．点線は，決まった時刻の切り口である．クラインの壺は向き付け不可能で，ℝ^3には自己交差なしに置けないが，ℝ^4には置ける．',
+    'ℝ^4のKleinの壺((2 + cos v)cos u, (2 + cos v)sin u, sin v cos(u/2), sin v sin(u/2))を，超平面w = tで切った切り口．tを動かすと，切り口の曲線が形とつながり方を変える．点線は，決まった時刻の切り口である．Kleinの壺は向き付け不可能で，ℝ^3には自己交差なしに置けないが，ℝ^4には置ける．',
   view: { azimuth: SPACE_AZIMUTH, elevation: SPACE_ELEVATION, unit: SPACE_UNIT },
   objects: [
     timeParameter(),
@@ -178,7 +178,7 @@ const PROJECTIVE_PLANE_4D_SCENE: SceneDraft = {
 
 const FOUR_SPACE_SAMPLE_SCENES: readonly SceneTemplate[] = [
   { id: 'fourSphere', label: '3次元球面の断面(4次元)', scene: FOUR_SPHERE_SCENE },
-  { id: 'kleinBottle4d', label: 'クラインの壺(4次元)', scene: KLEIN_BOTTLE_4D_SCENE },
+  { id: 'kleinBottle4d', label: 'Kleinの壺(4次元)', scene: KLEIN_BOTTLE_4D_SCENE },
   { id: 'projectivePlane4d', label: '射影平面(4次元)', scene: PROJECTIVE_PLANE_4D_SCENE },
 ];
 

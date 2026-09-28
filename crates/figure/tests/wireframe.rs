@@ -1,4 +1,4 @@
-//! 曲面と球のワイヤーフレーム(`wireframe`)と，ベジエ曲面の制御点の網(`control_net`)を確かめる．
+//! 曲面と球のワイヤーフレーム(`wireframe`)と，Bézier曲面の制御点の網(`control_net`)を確かめる．
 
 #![allow(
     clippy::expect_used,
@@ -51,7 +51,7 @@ fn colored_paths(figure: &Figure, color: Color) -> usize {
 const PARABOLOID: &str = r#"{ "id": "s", "type": "surface", "vars": ["u", "v"],
     "expr": ["u", "v", "u^2 + v^2"], "domain": [[-2, 2], [-2, 2]] }"#;
 
-/// ベジエ曲面．制御点は配列(`[`，`]`)で書くので，こちらも末尾に`}`が1つだけである．
+/// Bézier曲面．制御点は配列(`[`，`]`)で書くので，こちらも末尾に`}`が1つだけである．
 const BEZIER: &str = r#"{ "id": "b", "type": "surface",
     "bezier": [[[0,0,0],[0,2,0],[0,4,0]],[[2,0,0],[2,2,1],[2,4,0]],[[4,0,0],[4,2,0],[4,4,0]]] }"#;
 
@@ -140,7 +140,7 @@ fn ワイヤーフレームの刻みが0以下か_断面が多すぎれば誤り
 }
 
 #[test]
-fn ベジエ曲面にも_式の曲面と同じようにワイヤーフレームを引ける() {
+fn bézier曲面にも_式の曲面と同じようにワイヤーフレームを引ける() {
     let without = figure_of(BEZIER).items.len();
     let with = figure_of(&with_field(BEZIER, r#""wireframe": {}"#))
         .items
@@ -158,7 +158,7 @@ fn 球にもワイヤーフレーム_経線と緯線_を引ける() {
 }
 
 #[test]
-fn ベジエ曲面の制御点の網は_行と列を結ぶ線分になる() {
+fn bézier曲面の制御点の網は_行と列を結ぶ線分になる() {
     let without = figure_of(BEZIER).items.len();
     let with = figure_of(&with_field(BEZIER, r#""control_net": {}"#))
         .items
@@ -167,9 +167,9 @@ fn ベジエ曲面の制御点の網は_行と列を結ぶ線分になる() {
 }
 
 #[test]
-fn 制御点の網は_ベジエ曲面にだけ使える() {
+fn 制御点の網は_bézier曲面にだけ使える() {
     let error = error_of(&with_field(PARABOLOID, r#""control_net": {}"#));
-    assert!(error.to_string().contains("ベジエ"));
+    assert!(error.to_string().contains("Bézier"));
 }
 
 #[test]

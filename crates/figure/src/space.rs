@@ -224,7 +224,7 @@ impl Space<'_> {
     }
 }
 
-/// 曲面の式の関数．2つの変数から，点を返す．値が有限でなければ，`None`を返す．ベジエ曲面では，制御点の網から求める．
+/// 曲面の式の関数．2つの変数から，点を返す．値が有限でなければ，`None`を返す．Bézier曲面では，制御点の網から求める．
 /// 曲面の変換(`transform`)は，ここで施すので，切り口・交線・接平面も，変換した曲面の上に求まる．
 fn surface_map<'a>(
     plot: &'a SurfacePlot,
@@ -762,7 +762,7 @@ fn wireframe_line(
 }
 
 /// 曲面のワイヤーフレーム．`u`一定・`v`一定の断面を，`plot.wireframe`(刻みから`compile.rs`が求めた値)
-/// の所に引く．式で書いた曲面でもベジエ曲面でも，`map`(曲面の式の関数)が同じ形なので，同じように描ける．
+/// の所に引く．式で書いた曲面でもBézier曲面でも，`map`(曲面の式の関数)が同じ形なので，同じように描ける．
 fn surface_wireframe_items(
     surface: &Surface,
     plot: &SurfacePlot,
@@ -798,7 +798,7 @@ fn surface_wireframe_items(
     items
 }
 
-/// ベジエ曲面の制御点の網(行と列を結ぶ折れ線)．曲面自身と同じく，ほかの曲面や球に隠れる．
+/// Bézier曲面の制御点の網(行と列を結ぶ折れ線)．曲面自身と同じく，ほかの曲面や球に隠れる．
 fn control_net_items(
     surface: &Surface,
     plot: &SurfacePlot,

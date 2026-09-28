@@ -23,7 +23,7 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
     }
   });
 
-  it('曲面と球のワイヤーフレーム，ベジエ曲面の制御点の網は，スキーマに合う', () => {
+  it('曲面と球のワイヤーフレーム，Bézier曲面の制御点の網は，スキーマに合う', () => {
     const space = minimalObject('space');
     expect(
       validate({
@@ -64,7 +64,7 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
     ).toBe(true);
   });
 
-  it('ベジエ曲線は，平面でも空間でも，スキーマに合う', () => {
+  it('Bézier曲線は，平面でも空間でも，スキーマに合う', () => {
     const plane = minimalObject('plane');
     const space = minimalObject('space');
     expect(

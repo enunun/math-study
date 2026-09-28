@@ -115,7 +115,7 @@ fn どの頂点も_中心から半径の距離にある() {
 }
 
 #[test]
-fn 稜の長さはすべて等しく_オイラーの公式を満たす() {
+fn 稜の長さはすべて等しく_eulerの公式を満たす() {
     for (solid, vertices, faces, _) in SOLIDS {
         let complex = polyhedron_of(solid, CENTER, RADIUS).to_complex();
         let edges = directed_edges(&complex);

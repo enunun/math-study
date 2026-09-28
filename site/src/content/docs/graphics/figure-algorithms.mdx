@@ -191,7 +191,7 @@ $$
 <Figure
   src="bezier-patch"
   id="fig-patch"
-  caption="16個の制御点で決まる曲面（ベジエ曲面）．曲面が隠す軸の部分は点線で描かれる．"
+  caption="16個の制御点で決まる曲面（Bézier曲面）．曲面が隠す軸の部分は点線で描かれる．"
 />
 
 曲面も点の集まりなので，同じ行列で写る．どの点が隠れるかは，奥行き$Z$を使って決まる．次の節で述べる．
@@ -430,7 +430,7 @@ $$
 \begin{bmatrix} u \\ v \end{bmatrix} \longmapsto \begin{bmatrix} \boldsymbol{r} \cdot \boldsymbol{S}(u, v) \\ \boldsymbol{u} \cdot \boldsymbol{S}(u, v) \end{bmatrix}
 $$
 
-この写像のヤコビ行列$K$は，次のとおりである．
+この写像のJacobi行列$K$は，次のとおりである．
 
 $$
 K = \begin{bmatrix} \boldsymbol{r} \cdot \boldsymbol{S}_u & \boldsymbol{r} \cdot \boldsymbol{S}_v \\ \boldsymbol{u} \cdot \boldsymbol{S}_u & \boldsymbol{u} \cdot \boldsymbol{S}_v \end{bmatrix}
@@ -580,7 +580,7 @@ $$
 \boldsymbol{F}(\boldsymbol{x}) = \boldsymbol{S}_A(u, v) - \boldsymbol{S}_B(s, t) = \boldsymbol{0}, \quad \boldsymbol{x} = \begin{bmatrix} u \\ v \\ s \\ t \end{bmatrix}
 $$
 
-$\boldsymbol{x}$は，4つの未知数を並べた列ベクトルである．式は3つ，未知数は4つなので，解は一般に1次元の集合，すなわち曲線になる．$\boldsymbol{F}$のヤコビ行列$J$は，3行4列である．
+$\boldsymbol{x}$は，4つの未知数を並べた列ベクトルである．式は3つ，未知数は4つなので，解は一般に1次元の集合，すなわち曲線になる．$\boldsymbol{F}$のJacobi行列$J$は，3行4列である．
 
 $$
 J = \begin{bmatrix} \boldsymbol{S}_{A,u} & \boldsymbol{S}_{A,v} & -\boldsymbol{S}_{B,s} & -\boldsymbol{S}_{B,t} \end{bmatrix}
@@ -743,7 +743,7 @@ $$
 \boldsymbol{F}(\boldsymbol{x} + \boldsymbol{\delta}) \approx \boldsymbol{F}(\boldsymbol{x}) + J\boldsymbol{\delta} = \boldsymbol{0}
 $$
 
-ここで$J$は，$m \times n$のヤコビ行列である．式が未知数より少ないので，$\boldsymbol{\delta}$は1つに決まらない．そこで動きの大きさが最小のものを選ぶ．
+ここで$J$は，$m \times n$のJacobi行列である．式が未知数より少ないので，$\boldsymbol{\delta}$は1つに決まらない．そこで動きの大きさが最小のものを選ぶ．
 
 <Proposition id="minimal-step" name="最小の動き">
 

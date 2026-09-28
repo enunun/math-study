@@ -105,7 +105,7 @@ const PLANE_CURVE_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'lissajous',
-    label: 'リサジュー曲線',
+    label: 'Lissajous曲線',
     kind: 'plane',
     objects: [parametricCurve('c', ['2*sin(3*t)', '2*sin(2*t)'], FULL_TURN_DOMAIN)],
   },
@@ -137,7 +137,7 @@ const SPACE_CURVE_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'viviani',
-    label: 'ビビアーニの曲線(球と円柱の交線)',
+    label: 'Vivianiの曲線(球と円柱の交線)',
     kind: 'space',
     objects: [parametricCurve('c', ['1 + cos(t)', 'sin(t)', '2*sin(t/2)'], [0, TWO_TURNS_EXPR])],
   },

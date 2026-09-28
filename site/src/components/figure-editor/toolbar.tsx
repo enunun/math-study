@@ -43,7 +43,7 @@ function Samples({ onLoad }: Pick<Props, 'onLoad'>): ReactElement {
   );
 }
 
-/** 部品として組み合わせるテンプレート(正多角形・2次曲線・ベジエ曲面など)を，種類ごとに選んで，今の図に挿入する． */
+/** 部品として組み合わせるテンプレート(正多角形・2次曲線・Bézier曲面など)を，種類ごとに選んで，今の図に挿入する． */
 function ObjectTemplatePicker({
   group,
   onInsert,

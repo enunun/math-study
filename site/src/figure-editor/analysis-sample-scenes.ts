@@ -2,7 +2,7 @@ import { SCENE_VERSION } from './draft';
 import type { SceneDraft } from './draft';
 import type { SceneTemplate } from './template-types';
 
-/** テイラー展開の図の見える範囲と，展開の次数． */
+/** Taylor展開の図の見える範囲と，展開の次数． */
 const TAYLOR_VIEW_X = 5;
 const TAYLOR_VIEW_Y = 2;
 const TAYLOR_ORDERS = [
@@ -13,13 +13,13 @@ const TAYLOR_ORDERS = [
 ] as const;
 
 /**
- * 正弦関数と，原点のまわりのテイラー展開を1次，3次，5次，7次で打ち切った多項式．次数を上げるほど，
+ * 正弦関数と，原点のまわりのTaylor展開を1次，3次，5次，7次で打ち切った多項式．次数を上げるほど，
  * 原点から離れた所まで正弦関数に近づく．
  */
 const TAYLOR_SCENE: SceneDraft = {
   version: SCENE_VERSION,
   description:
-    '正弦関数y = sin xと，原点のまわりのテイラー展開を1次，3次，5次，7次で打ち切った多項式のグラフ．次数を上げるほど，広い範囲で正弦関数に近づく．',
+    '正弦関数y = sin xと，原点のまわりのTaylor展開を1次，3次，5次，7次で打ち切った多項式のグラフ．次数を上げるほど，広い範囲で正弦関数に近づく．',
   view: {
     x: [-TAYLOR_VIEW_X, TAYLOR_VIEW_X],
     y: [-TAYLOR_VIEW_Y, TAYLOR_VIEW_Y],
@@ -136,9 +136,9 @@ const MAP_SCENE: SceneDraft = {
   ],
 };
 
-/** 関数(テイラー展開，合成関数)と写像の見本．`sample-scenes.ts`の平面の見本に並べる． */
+/** 関数(Taylor展開，合成関数)と写像の見本．`sample-scenes.ts`の平面の見本に並べる． */
 const ANALYSIS_SAMPLE_SCENES: readonly SceneTemplate[] = [
-  { id: 'taylor', label: 'テイラー展開', scene: TAYLOR_SCENE },
+  { id: 'taylor', label: 'Taylor展開', scene: TAYLOR_SCENE },
   { id: 'composition', label: '合成関数', scene: COMPOSITION_SCENE },
   { id: 'mapGrid', label: '写像による格子の像', scene: MAP_SCENE },
 ];

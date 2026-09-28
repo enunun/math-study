@@ -169,7 +169,7 @@ pub enum Object {
     Map(Map),
     /// 別のオブジェクトを変換した像．
     Image(Image),
-    /// グラフのテイラー展開を，途中の次数で打ち切った多項式のグラフ．平面の図でだけ使える．
+    /// グラフのTaylor展開を，途中の次数で打ち切った多項式のグラフ．平面の図でだけ使える．
     Taylor(Taylor),
 }
 
@@ -661,7 +661,7 @@ pub struct Fractal {
     /// 再帰の深さ．
     pub depth: u32,
     /// 深さ0から`depth`までの図形を，すべて重ねて描くか．既定は，深さ`depth`の図形だけを描く．
-    /// ピタゴラスの木のように，途中の段も図形の一部であるときに使う．
+    /// Pythagorasの木のように，途中の段も図形の一部であるときに使う．
     #[serde(default, skip_serializing_if = "is_false")]
     pub all_depths: bool,
     /// スタイル．
@@ -831,7 +831,7 @@ pub struct Image {
     pub style: Style,
 }
 
-/// グラフ(`of`)のテイラー展開を，`order`次で打ち切った多項式のグラフ．平面の図でだけ使える．
+/// グラフ(`of`)のTaylor展開を，`order`次で打ち切った多項式のグラフ．平面の図でだけ使える．
 /// 係数は，グラフの式から，べき級数の計算で正確に求める(特殊関数を含む式は展開できない)．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -919,10 +919,10 @@ impl LevelCurve {
     pub const MAX_VALUES: usize = 64;
 }
 
-/// 曲面．空間の点を，2つの変数の式か，ベジエ曲面の制御点の網で表す．輪郭と，曲面に隠れる線を，三角形の網から求める．
+/// 曲面．空間の点を，2つの変数の式か，Bézier曲面の制御点の網で表す．輪郭と，曲面に隠れる線を，三角形の網から求める．
 ///
 /// 曲面は不透明な殻で，ほかのオブジェクトの線を隠す．輪郭は，視線が曲面に接する所である．
-/// 式で書くときは`vars`，`expr`，`domain`を，ベジエ曲面で書くときは`bezier`を使う．両方は書けない．
+/// 式で書くときは`vars`，`expr`，`domain`を，Bézier曲面で書くときは`bezier`を使う．両方は書けない．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -938,7 +938,7 @@ pub struct Surface {
     /// 各変数の範囲．数か式で書く．式で書く曲面だけが持つ．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub domain: Option<[[Bound; 2]; 2]>,
-    /// ベジエ曲面の制御点の網．`bezier[i][j]`は，1つ目の変数の方向にi番目，2つ目の変数の方向にj番目の点で，
+    /// Bézier曲面の制御点の網．`bezier[i][j]`は，1つ目の変数の方向にi番目，2つ目の変数の方向にj番目の点で，
     /// x，y，z座標を，数か式で書く．各方向に2点以上を並べ，行の長さを揃える．変数の範囲は，どちらも0から1である．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bezier: Option<Vec<Vec<Vec<Bound>>>>,
@@ -952,15 +952,15 @@ pub struct Surface {
     #[serde(default, skip_serializing_if = "Style::is_default")]
     pub style: Style,
     /// 曲面のワイヤーフレーム(u一定・v一定の断面)．なければ描かない．あれば，そのスタイルで描く．
-    /// 式で書いた曲面でも，ベジエ曲面でも，同じように，曲面の上の線として描く．
+    /// 式で書いた曲面でも，Bézier曲面でも，同じように，曲面の上の線として描く．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub wireframe: Option<Style>,
     /// ワイヤーフレームの刻み(u方向，v方向)．断面は，各変数が刻みの整数倍になる所のうち，定義域の内側
-    /// (両端を除く)に引く．数か式で書く．なければ，どちらも定義域の幅の4分の1である．ベジエ曲面の変数の
+    /// (両端を除く)に引く．数か式で書く．なければ，どちらも定義域の幅の4分の1である．Bézier曲面の変数の
     /// 範囲は0から1である．`wireframe`があるときだけ使う．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub wireframe_step: Option<[Bound; 2]>,
-    /// ベジエ曲面の，制御点の網(行と列を結ぶ折れ線)．なければ描かない．`bezier`があるときだけ使える．
+    /// Bézier曲面の，制御点の網(行と列を結ぶ折れ線)．なければ描かない．`bezier`があるときだけ使える．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub control_net: Option<Style>,
     /// 変換．書いた順に施す．
@@ -975,9 +975,9 @@ impl Surface {
     pub const MIN_MESH: usize = 4;
     /// 網の細かさの上限．
     pub const MAX_MESH: usize = 200;
-    /// ベジエ曲面の制御点の数の下限(各方向)．
+    /// Bézier曲面の制御点の数の下限(各方向)．
     pub const MIN_CONTROL_POINTS: usize = 2;
-    /// ベジエ曲面の制御点の数の上限(各方向)．次数が高いと，制御点の動きが，形に効きにくくなる．
+    /// Bézier曲面の制御点の数の上限(各方向)．次数が高いと，制御点の動きが，形に効きにくくなる．
     pub const MAX_CONTROL_POINTS: usize = 12;
     /// ワイヤーフレームの刻みを書かないときの，定義域の分け方(幅の何分の1を刻みにするか)．
     pub const DEFAULT_WIREFRAME_DIVISIONS: f64 = 4.0;
@@ -1165,7 +1165,7 @@ pub struct Graph {
     pub transform: Vec<TransformStep>,
 }
 
-/// 媒介変数表示の曲線．式(`var`，`expr`，`domain`)か，ベジエ曲線の制御点(`bezier`)か，
+/// 媒介変数表示の曲線．式(`var`，`expr`，`domain`)か，Bézier曲線の制御点(`bezier`)か，
 /// スプライン曲線が通る点(`spline`)の，どれか1つで書く．2つ以上は書けない．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -1182,7 +1182,7 @@ pub struct Curve {
     /// 媒介変数の範囲．式で書く曲線だけが持つ．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub domain: Option<[Bound; 2]>,
-    /// ベジエ曲線の制御点．各点は，平面なら2個，空間なら3個の，数か式で書く座標である．
+    /// Bézier曲線の制御点．各点は，平面なら2個，空間なら3個の，数か式で書く座標である．
     /// 2点以上12点以下を並べる．媒介変数の範囲は，0から1である．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bezier: Option<Vec<Vec<Bound>>>,
@@ -1200,9 +1200,9 @@ pub struct Curve {
 }
 
 impl Curve {
-    /// ベジエ曲線・スプライン曲線の制御点(通る点)の数の下限．
+    /// Bézier曲線・スプライン曲線の制御点(通る点)の数の下限．
     pub const MIN_CONTROL_POINTS: usize = Surface::MIN_CONTROL_POINTS;
-    /// ベジエ曲線・スプライン曲線の制御点(通る点)の数の上限．
+    /// Bézier曲線・スプライン曲線の制御点(通る点)の数の上限．
     pub const MAX_CONTROL_POINTS: usize = Surface::MAX_CONTROL_POINTS;
 }
 

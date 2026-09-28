@@ -1,4 +1,4 @@
-//! テイラー展開の多項式(`taylor`)と，関数(`function`)を使うシーンを確かめる．
+//! Taylor展開の多項式(`taylor`)と，関数(`function`)を使うシーンを確かめる．
 
 #![allow(
     clippy::expect_used,
@@ -48,7 +48,7 @@ fn on_graph(paths: &[&Path], f: impl Fn(f64) -> f64) -> bool {
 }
 
 #[test]
-fn 正弦の3次のテイラー多項式を描く() {
+fn 正弦の3次のtaylor多項式を描く() {
     let figure = figure_of(
         r#"{ "id": "f", "type": "graph", "var": "x", "expr": "sin(x)", "domain": [-3, 3] },
            { "id": "p", "type": "taylor", "of": "f", "at": 0, "order": 3, "domain": [-2, 2] }"#,
@@ -105,7 +105,7 @@ fn 展開できない式と次数の上限() {
            { "id": "p", "type": "taylor", "of": "f", "at": 2, "order": 3 }"#,
     );
     assert_eq!(error.object.as_deref(), Some("p"));
-    assert!(error.to_string().contains("テイラー展開できない"));
+    assert!(error.to_string().contains("Taylor展開できない"));
     let error = error_of(
         r#"{ "id": "f", "type": "graph", "var": "x", "expr": "x", "domain": [1, 3] },
            { "id": "p", "type": "taylor", "of": "f", "at": 2, "order": 31 }"#,

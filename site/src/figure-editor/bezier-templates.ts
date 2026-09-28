@@ -1,7 +1,7 @@
 import type { Json, JsonObject } from './json';
 import type { ObjectTemplate } from './template-types';
 
-// ベジエ曲線・スプライン曲線とベジエ曲面のテンプレート．制御点(スプライン曲線では通る点)は数で書き，
+// Bézier曲線・スプライン曲線とBézier曲面のテンプレート．制御点(スプライン曲線では通る点)は数で書き，
 // 挿入したあと，フォームで書き換えて形を変える．
 
 /** 制御点の座標に使う値．平面は，横が`[-5, 5]`，縦が`[-3, 3]`の既定の範囲に収める． */
@@ -12,7 +12,7 @@ const HIGH = 2.5;
 const BEZIER_SPLINE_TEMPLATES: readonly ObjectTemplate[] = [
   {
     id: 'bezier2-plane',
-    label: '2次ベジエ曲線(制御点3個)',
+    label: '2次Bézier曲線(制御点3個)',
     kind: 'plane',
     objects: [
       {
@@ -28,7 +28,7 @@ const BEZIER_SPLINE_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'bezier3-plane',
-    label: '3次ベジエ曲線(制御点4個)',
+    label: '3次Bézier曲線(制御点4個)',
     kind: 'plane',
     objects: [
       {
@@ -63,7 +63,7 @@ const BEZIER_SPLINE_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'bezier2-space',
-    label: '2次ベジエ曲線(制御点3個)',
+    label: '2次Bézier曲線(制御点3個)',
     kind: 'space',
     objects: [
       {
@@ -79,7 +79,7 @@ const BEZIER_SPLINE_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'bezier3-space',
-    label: '3次ベジエ曲線(制御点4個)',
+    label: '3次Bézier曲線(制御点4個)',
     kind: 'space',
     objects: [
       {
@@ -114,11 +114,11 @@ const BEZIER_SPLINE_TEMPLATES: readonly ObjectTemplate[] = [
   },
 ];
 
-/** ベジエ曲面の制御点を並べる範囲(x，yともに`[-NET_HALF, NET_HALF]`)と，制御点の高さ． */
+/** Bézier曲面の制御点を並べる範囲(x，yともに`[-NET_HALF, NET_HALF]`)と，制御点の高さ． */
 const NET_HALF = 2;
 const NET_WIDTH = 4;
 const NET_HIGH = 1.5;
-/** ベジエ曲面のワイヤーフレームの刻み．変数の範囲は0から1なので，4等分する． */
+/** Bézier曲面のワイヤーフレームの刻み．変数の範囲は0から1なので，4等分する． */
 const BEZIER_STEP = 0.25;
 
 /**
@@ -136,7 +136,7 @@ function bezierNet(heights: readonly (readonly number[])[]): Json[] {
   );
 }
 
-/** ベジエ曲面．縁は，網の外周の制御点で決まる本当の縁なので描く．制御点の網も描く． */
+/** Bézier曲面．縁は，網の外周の制御点で決まる本当の縁なので描く．制御点の網も描く． */
 function bezierSurface(heights: readonly (readonly number[])[]): JsonObject {
   return {
     id: 's',
@@ -152,7 +152,7 @@ function bezierSurface(heights: readonly (readonly number[])[]): JsonObject {
 const BEZIER_SURFACE_TEMPLATES: readonly ObjectTemplate[] = [
   {
     id: 'bezier-bilinear',
-    label: '双1次ベジエ曲面(制御点2×2個)',
+    label: '双1次Bézier曲面(制御点2×2個)',
     kind: 'space',
     objects: [
       bezierSurface([
@@ -163,7 +163,7 @@ const BEZIER_SURFACE_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'bezier-biquadratic',
-    label: '双2次ベジエ曲面(制御点3×3個)',
+    label: '双2次Bézier曲面(制御点3×3個)',
     kind: 'space',
     objects: [
       bezierSurface([
@@ -175,7 +175,7 @@ const BEZIER_SURFACE_TEMPLATES: readonly ObjectTemplate[] = [
   },
   {
     id: 'bezier-bicubic',
-    label: '双3次ベジエ曲面(制御点4×4個)',
+    label: '双3次Bézier曲面(制御点4×4個)',
     kind: 'space',
     objects: [
       bezierSurface([

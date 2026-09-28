@@ -84,7 +84,7 @@ fn distance_to_segment(point: Point3, start: Point3, end: Point3) -> f64 {
     distance(point, nearest)
 }
 
-/// 連立方程式`matrix * y = rhs`を，ガウスの消去法で解く．特異なら`None`を返す．
+/// 連立方程式`matrix * y = rhs`を，Gaussの消去法で解く．特異なら`None`を返す．
 fn solve(mut matrix: Vec<Vec<f64>>, mut rhs: Vec<f64>) -> Option<Vec<f64>> {
     let size = rhs.len();
     for column in 0..size {

@@ -4,8 +4,8 @@ import type { JsonObject } from './json';
 import type { SceneTemplate } from './template-types';
 
 /**
- * エワルド球の見本．逆格子の格子点の間隔を1とし，波長λも同じ単位で書く．入射波の波数ベクトルkは
- * x軸の向きで，長さは1/λである．エワルド球は，中心C = O* − k，半径|k|の球(断面では円)で，原点O*を通る．
+ * Ewald球の見本．逆格子の格子点の間隔を1とし，波長λも同じ単位で書く．入射波の波数ベクトルkは
+ * x軸の向きで，長さは1/λである．Ewald球は，中心C = O* − k，半径|k|の球(断面では円)で，原点O*を通る．
  * 結晶の回転角θ(度，z軸のまわり)と波長λは，範囲のある媒介変数なので，スライダーで動かせる．
  */
 
@@ -29,7 +29,7 @@ const SIN = 'sin(theta*pi/180)';
 /** 逆格子点G = (h, k)を，原点のまわりにθ回した点の，x座標とy座標の式． */
 const G_AT = [`${G_H}*${COS} - ${G_K}*${SIN}`, `${G_H}*${SIN} + ${G_K}*${COS}`];
 
-/** 空間の図では，どの線も隠さない(エワルド球は透けた球として描く)． */
+/** 空間の図では，どの線も隠さない(Ewald球は透けた球として描く)． */
 const SEEN: JsonObject = { hidden: 'visible' };
 const LATTICE_STYLE: JsonObject = { color: 'gray', ...SEEN };
 const G_STYLE: JsonObject = { color: 'red', ...SEEN };
@@ -38,7 +38,7 @@ const K_PRIME_STYLE: JsonObject = { color: 'red', width: '1pt', ...SEEN };
 const RECIPROCAL_STYLE: JsonObject = { color: 'green', width: '1pt', ...SEEN };
 const EWALD_STYLE: JsonObject = { color: 'blue', ...SEEN };
 
-/** 断面の図の見える範囲．エワルド球の断面(円)と，その左の逆格子点までが入る． */
+/** 断面の図の見える範囲．Ewald球の断面(円)と，その左の逆格子点までが入る． */
 const PLANE_X_MIN = -6;
 const PLANE_X_MAX = 1.5;
 const PLANE_Y_END = 3.5;
@@ -118,11 +118,11 @@ function vectorObjects(space: boolean): JsonObject[] {
 }
 
 const DESCRIPTION_BODY =
-  '結晶に波数ベクトルkの波(X線など)を当てると，回折波の波数ベクトルk′は，k′ − kが逆格子ベクトルGに等しい向きにだけ強く出る(ラウエの条件で，ブラッグの条件2d sin θ = λと同じ)．|k′| = |k|なので，k′の終点は，中心C = O* − k，半径1/λの球(エワルド球)の上にある．したがって，回折が起きるのは，逆格子点がエワルド球の上に載るときである．逆格子点Gの1つ1つは結晶の格子面の1組に当たり，Gは格子面に垂直で，長さは面の間隔dの逆数である．逆格子を描けば，どの格子面がどの向きに回折を起こすかが，点と球の位置関係として読める．スライダーで結晶の回転角θや波長λを変えると，格子点が球面を横切るときにだけ条件が満たされることがわかる．';
+  '結晶に波数ベクトルkの波(X線など)を当てると，回折波の波数ベクトルk′は，k′ − kが逆格子ベクトルGに等しい向きにだけ強く出る(Laueの条件で，Braggの条件2d sin θ = λと同じ)．|k′| = |k|なので，k′の終点は，中心C = O* − k，半径1/λの球(Ewald球)の上にある．したがって，回折が起きるのは，逆格子点がEwald球の上に載るときである．逆格子点Gの1つ1つは結晶の格子面の1組に当たり，Gは格子面に垂直で，長さは面の間隔dの逆数である．逆格子を描けば，どの格子面がどの向きに回折を起こすかが，点と球の位置関係として読める．スライダーで結晶の回転角θや波長λを変えると，格子点が球面を横切るときにだけ条件が満たされることがわかる．';
 
 const EWALD_SECTION_SCENE: SceneDraft = {
   version: SCENE_VERSION,
-  description: `エワルド球の断面(原点O*を通る逆格子の面)．${DESCRIPTION_BODY}`,
+  description: `Ewald球の断面(原点O*を通る逆格子の面)．${DESCRIPTION_BODY}`,
   view: {
     x: [PLANE_X_MIN, PLANE_X_MAX],
     y: [-PLANE_Y_END, PLANE_Y_END],
@@ -175,7 +175,7 @@ const SPACE_ELEVATION = 25;
 
 const EWALD_SPHERE_SCENE: SceneDraft = {
   version: SCENE_VERSION,
-  description: `エワルド球．逆格子のうち，原点O*を通る層(z = 0)だけを描き，その層と球が交わる円を太く描く．${DESCRIPTION_BODY}`,
+  description: `Ewald球．逆格子のうち，原点O*を通る層(z = 0)だけを描き，その層と球が交わる円を太く描く．${DESCRIPTION_BODY}`,
   view: { azimuth: SPACE_AZIMUTH, elevation: SPACE_ELEVATION, unit: '1cm' },
   objects: [
     ...PARAMETERS,
@@ -240,12 +240,12 @@ const EWALD_SPHERE_SCENE: SceneDraft = {
 
 const EWALD_SECTION_SAMPLE: SceneTemplate = {
   id: 'ewaldSection',
-  label: 'エワルド球(断面)',
+  label: 'Ewald球(断面)',
   scene: EWALD_SECTION_SCENE,
 };
 const EWALD_SPHERE_SAMPLE: SceneTemplate = {
   id: 'ewaldSphere',
-  label: 'エワルド球',
+  label: 'Ewald球',
   scene: EWALD_SPHERE_SCENE,
 };
 
