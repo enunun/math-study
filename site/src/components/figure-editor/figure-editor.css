@@ -164,6 +164,19 @@
   cursor: grabbing;
 }
 
+/* 点を動かせる平面の図．指でのドラッグを，ページのスクロールにしない． */
+.fe-points-movable {
+  touch-action: none;
+}
+
+.fe-point-hover {
+  cursor: grab;
+}
+
+.fe-point-dragging {
+  cursor: grabbing;
+}
+
 .fe-hint {
   margin: 0.4rem 0 0;
   color: var(--sl-color-gray-3);
