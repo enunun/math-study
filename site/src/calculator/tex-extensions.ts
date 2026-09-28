@@ -55,7 +55,7 @@ function loadTexExtension(file: string): Promise<unknown> {
   const name = EXTENSION_PATH.exec(file)?.groups?.name;
   const load = name === undefined ? undefined : TEX_EXTENSIONS[name];
   if (load === undefined) {
-    return Promise.reject(new Error(`読み込めないファイル: ${file}`));
+    return Promise.reject(new Error(`読み込めないファイル：${file}`));
   }
   return load();
 }
