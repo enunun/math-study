@@ -278,6 +278,14 @@ impl Expr {
         Ok(Self { root })
     }
 
+    /// 定数だけの式．
+    #[must_use]
+    pub const fn constant(value: f64) -> Self {
+        Self {
+            root: Node::Number(value),
+        }
+    }
+
     /// 変数`var`(`compile`に渡した名前の番号)について，`values`の値のまわりのTaylor係数を，
     /// 0次から`order`次まで返す．`k`番目は，`k`次の導関数の値を`k!`で割ったものである．
     ///

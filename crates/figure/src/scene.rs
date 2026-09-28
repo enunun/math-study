@@ -151,7 +151,7 @@ pub enum Object {
     Surface(Surface),
     /// 曲面の，平面による切り口．空間の図でだけ使える．
     Cut(Cut),
-    /// 等値線．2つの変数の関数が決まった値になる所を，空間へ写した曲線．空間の図でだけ使える．
+    /// 等値線．2つの変数の関数が決まった値になる所を，平面か空間へ写した曲線．
     LevelCurve(LevelCurve),
     /// 2つの曲面の交線．空間の図でだけ使える．
     Intersection(Intersection),
@@ -171,6 +171,8 @@ pub enum Object {
     Image(Image),
     /// グラフのTaylor展開を，途中の次数で打ち切った多項式のグラフ．平面の図でだけ使える．
     Taylor(Taylor),
+    /// ベクトル場．格子点ごとに場の値の矢印を置く．平面の図でだけ使える．
+    VectorField(VectorField),
 }
 
 /// 軸の向き．
@@ -926,6 +928,100 @@ impl LevelCurve {
     pub const MAX_VALUES: usize = 64;
 }
 
+/// ベクトル場の矢印の長さの決め方．
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum ArrowLength {
+    /// 場の値に倍率`scale`(既定は1)を掛けた長さ．
+    #[default]
+    Scaled,
+    /// 長さをそろえ，向きだけを示す．長さは`scale`(既定は刻みの小さい方の0.8倍)である．
+    Normalized,
+    /// 場の値に倍率`scale`を掛け，`max_length`(既定は刻みの小さい方の0.8倍)より長ければ，そこで切る．
+    Clamped,
+}
+
+/// ベクトル場の矢印を，格子点のどこに置くか．
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum Pivot {
+    /// 矢印の中点を，格子点に置く．
+    #[default]
+    Middle,
+    /// 矢印の根元を，格子点に置く．
+    Tail,
+}
+
+/// 既定の値か．既定の値は，書き出さない．
+fn is_default<T: Default + PartialEq>(value: &T) -> bool {
+    *value == T::default()
+}
+
+fn default_field_var() -> String {
+    "r".to_owned()
+}
+
+fn is_default_field_var(var: &str) -> bool {
+    var == "r"
+}
+
+/// ベクトル場．格子点ごとに場の式を評価し，その値の矢印を置く．
+///
+/// 場は，ベクトルの式(点の式と同じ形で，格子点の位置ベクトル`var`と，先に置いた点を使う．例：
+/// `"(r - Q) / norm(r - Q)^3"`)か，成分の式の並び(例：`["-r_y", "r_x"]`)で書く．位置ベクトルの成分は，
+/// `r_x`，`r_y`の名前で使える．値が有限でない格子点と，見える範囲からはみ出す矢印は描かない．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct VectorField {
+    /// 識別子．
+    pub id: String,
+    /// 格子点の位置ベクトルの名前．既定は`r`で，成分は`r_x`，`r_y`になる．
+    #[serde(
+        default = "default_field_var",
+        skip_serializing_if = "is_default_field_var"
+    )]
+    pub var: String,
+    /// 場の式．ベクトルの式か，成分の式の並び．
+    pub field: Position,
+    /// x方向の刻み．数か，媒介変数と定数を使う式．
+    pub x_step: Bound,
+    /// y方向の刻み．
+    pub y_step: Bound,
+    /// 格子点を置くxの範囲．下端から刻みごとに置く．なければ，見える範囲から刻みの半分だけ内側にある，
+    /// 刻みの倍数に置く．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub x_range: Option<[f64; 2]>,
+    /// 格子点を置くyの範囲．省いたときは`x_range`と同じである．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub y_range: Option<[f64; 2]>,
+    /// 矢印の長さの決め方．
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub length: ArrowLength,
+    /// 倍率(`normalized`では矢印の長さ)．数か式．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scale: Option<Bound>,
+    /// 矢印の長さの上限．`clamped`でだけ使う．数か式．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_length: Option<Bound>,
+    /// 矢印を，格子点のどこに置くか．
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub pivot: Pivot,
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+    /// 変換．書いた順に施す．矢印の両端に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
+}
+
+impl VectorField {
+    /// 格子点の数の上限．
+    pub const MAX_POINTS: usize = 5000;
+}
+
 /// 曲面．空間の点を，2つの変数の式か，Bézier曲面の制御点の網で表す．輪郭と，曲面に隠れる線を，三角形の網から求める．
 ///
 /// 曲面は不透明な殻で，ほかのオブジェクトの線を隠す．輪郭は，視線が曲面に接する所である．
@@ -1234,6 +1330,7 @@ impl Object {
             Self::Surface(o) => &o.id,
             Self::Cut(o) => &o.id,
             Self::LevelCurve(o) => &o.id,
+            Self::VectorField(o) => &o.id,
             Self::Intersection(o) => &o.id,
             Self::TangentPlane(o) => &o.id,
             Self::Complex(o) => &o.id,
@@ -1266,6 +1363,7 @@ impl Object {
             Self::Surface(_) => "surface",
             Self::Cut(_) => "cut",
             Self::LevelCurve(_) => "level_curve",
+            Self::VectorField(_) => "vector_field",
             Self::Intersection(_) => "intersection",
             Self::TangentPlane(_) => "tangent_plane",
             Self::Complex(_) => "complex",

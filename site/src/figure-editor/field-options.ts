@@ -33,5 +33,18 @@ const SOLIDS: readonly Option[] = [
   ['icosahedron', '正二十面体'],
 ];
 
-export { ANCHORS, ARROWS, PLANE_DIRECTIONS, SOLIDS, SPACE_DIRECTIONS };
+/** ベクトル場の矢印の長さの決め方． */
+const ARROW_LENGTHS: readonly Option[] = [
+  ['scaled', '場の値×倍率'],
+  ['normalized', 'そろえる(向きだけ)'],
+  ['clamped', '場の値×倍率(上限で切る)'],
+];
+
+/** ベクトル場の矢印を置く位置． */
+const PIVOTS: readonly Option[] = [
+  ['middle', '中点を格子点に'],
+  ['tail', '根元を格子点に'],
+];
+
+export { ANCHORS, ARROWS, ARROW_LENGTHS, PIVOTS, PLANE_DIRECTIONS, SOLIDS, SPACE_DIRECTIONS };
 export type { Option };

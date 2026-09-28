@@ -165,6 +165,15 @@
     },
     "cut": { "space": { "type": "cut", "surface": "", "normal": [0, 0, 1], "offset": 0 } },
     "intersection": { "space": { "type": "intersection", "surfaces": [] } },
+    "vector_field": {
+      "plane": {
+        "type": "vector_field",
+        "field": ["-r_y", "r_x"],
+        "x_step": 1,
+        "y_step": 1,
+        "length": "normalized"
+      }
+    },
     "level_curve": {
       "plane": {
         "type": "level_curve",

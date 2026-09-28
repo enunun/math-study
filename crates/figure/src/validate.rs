@@ -6,10 +6,10 @@ use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::image::{expand_images, transform_of};
 use crate::scene::{
-    Axis, Bound, CM_PER_PT, Complex, Curve, Cut, Direction, Fill, Fractal, FunctionDef, Graph,
-    Grid, Intersection, Label, LevelCurve, MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object,
-    Parameter, Point, Polygon, Position, Region, Scene, SpaceView, Sphere, Style, Surface,
-    TangentPlane, Taylor, TransformStep, View,
+    ArrowLength, Axis, Bound, CM_PER_PT, Complex, Curve, Cut, Direction, Fill, Fractal,
+    FunctionDef, Graph, Grid, Intersection, Label, LevelCurve, MAX_TRANSFORM_STEPS, MAX_WIDTH_PT,
+    Map, Object, Parameter, Point, Polygon, Position, Region, Scene, SpaceView, Sphere, Style,
+    Surface, TangentPlane, Taylor, TransformStep, VectorField, View,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -147,6 +147,9 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Function(function) => validate_function(function),
         Object::Map(map) => validate_map(map),
         Object::Taylor(taylor) => plane_only("taylor", view).and_then(|()| validate_taylor(taylor)),
+        Object::VectorField(field) => {
+            plane_only("vector_field", view).and_then(|()| validate_vector_field(field))
+        }
         // 像は，検査の前に，元のオブジェクトの複製に置き換えてある．
         Object::Parameter(parameter) => validate_parameter(parameter),
         Object::Image(_) | Object::Vector(_) | Object::Segment(_) => Ok(()),
@@ -183,8 +186,37 @@ fn validate_parameter(parameter: &Parameter) -> Result<(), ErrorKind> {
     Ok(())
 }
 
+/// ベクトル場．位置ベクトルの名前，刻み(数なら正)，範囲を確かめる．上限の長さは`clamped`でだけ使う．
+/// 式で書いた刻みと，格子点の数は，評価してから`compile.rs`で確かめる．
+fn validate_vector_field(field: &VectorField) -> Result<(), ErrorKind> {
+    check_variable(&field.var)?;
+    if let Position::Vector(source) = &field.field {
+        non_empty("field", source)?;
+    }
+    for (name, step) in [("x_step", &field.x_step), ("y_step", &field.y_step)] {
+        if matches!(step, Bound::Number(value) if !(value.is_finite() && *value > 0.0)) {
+            return Err(ErrorKind::Invalid(format!(
+                "ベクトル場の刻み(`{name}`)は，正の有限の数にする．"
+            )));
+        }
+    }
+    for (name, range) in [("x_range", field.x_range), ("y_range", field.y_range)] {
+        if range.is_some_and(|[low, high]| !(low.is_finite() && high.is_finite() && low <= high)) {
+            return Err(ErrorKind::InvalidRange(name));
+        }
+    }
+    if field.max_length.is_some() && field.length != ArrowLength::Clamped {
+        return Err(ErrorKind::Invalid(
+            "矢印の長さの上限(`max_length`)は，上限で切る長さ(`length`が`clamped`)でだけ使う．"
+                .to_owned(),
+        ));
+    }
+    Ok(())
+}
+
 fn style_of(object: &Object) -> Option<&Style> {
     match object {
+        Object::VectorField(o) => Some(&o.style),
         Object::Axis(o) => Some(&o.style),
         Object::Graph(o) => Some(&o.style),
         Object::Curve(o) => Some(&o.style),

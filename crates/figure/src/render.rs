@@ -7,7 +7,7 @@ use crate::bezier::bezier_curve_point;
 use crate::clip::{clip_polygon, clip_polyline};
 use crate::compile::{
     Compiled, CurvePlot, FractalPlot, GraphPlot, GridPlot, LabelPlot, LevelCurvePlot, LinkPlot,
-    Plot, PointPlot, PolygonPlot, TangentLinePlot, TaylorPlot, TickPlot, compile,
+    Plot, PointPlot, PolygonPlot, TangentLinePlot, TaylorPlot, TickPlot, VectorFieldPlot, compile,
 };
 use crate::derivative::central_difference_point;
 use crate::error::Error;
@@ -192,6 +192,9 @@ fn object_items(
         (Object::LevelCurve(curve), Plot::LevelCurve(placed)) => {
             level_curve_items(curve, placed, transform, context)
         }
+        (Object::VectorField(field), Plot::VectorField(placed)) => vector_field_items(placed, view)
+            .filter_map(|link| link_item(&field.style, Arrow::Stealth, &link, scale))
+            .collect(),
         _ => Vec::new(),
     })
 }
@@ -714,6 +717,23 @@ fn mapped_line_items(
     .flat_map(|points| clip_polyline(points, min, max))
     .map(|points| Item::Path(curve_path(points, tangent.style)))
     .collect()
+}
+
+/// ベクトル場の矢印のうち，両端が見える範囲にあるもの．はみ出す矢印は，矢じりごと切ることになるので描かない．
+fn vector_field_items<'a>(
+    plot: &'a VectorFieldPlot,
+    view: &'a PlaneView,
+) -> impl Iterator<Item = LinkPlot> + 'a {
+    let inside = |[x, y]: [f64; 2]| {
+        (view.x[0]..=view.x[1]).contains(&x) && (view.y[0]..=view.y[1]).contains(&y)
+    };
+    plot.arrows
+        .iter()
+        .filter(move |[start, end]| inside(*start) && inside(*end))
+        .map(|[start, end]| LinkPlot {
+            from: start.to_vec(),
+            to: end.to_vec(),
+        })
 }
 
 /// 平面の等値線．平面をz = 0の空間に置き，空間の等値線と同じく，写像の網を変数の升目として作って，

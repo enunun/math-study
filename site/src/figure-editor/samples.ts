@@ -11,6 +11,7 @@ import {
   SURFACE_SAMPLES,
 } from './sample-scenes';
 import type { SceneTemplate } from './template-types';
+import { VECTOR_FIELD_SAMPLES } from './vector-field-sample-scenes';
 
 const files = import.meta.glob<string>('../figures/*.json', {
   eager: true,
@@ -80,6 +81,7 @@ const SAMPLE_GROUPS: readonly SampleGroup[] = [
       articleSample('sierpinski', 'Sierpińskiの三角形', 'sierpinski-triangle'),
     ],
   },
+  { label: '平面：ベクトル場', samples: VECTOR_FIELD_SAMPLES },
   { label: '平面：結晶と逆格子', samples: PLANE_CRYSTAL_SAMPLES },
   {
     label: '空間：曲面',

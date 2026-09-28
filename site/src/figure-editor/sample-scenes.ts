@@ -8,6 +8,7 @@ import { RECIPROCAL_PLANE_SAMPLES, RECIPROCAL_SPACE_SAMPLES } from './reciprocal
 import { SPACE_AZIMUTH, SPACE_ELEVATION, SPACE_UNIT, spaceAxes } from './sample-parts';
 import { SURFACE_SAMPLE_SCENES } from './surface-sample-scenes';
 import type { SceneTemplate } from './template-types';
+import { VECTOR_FIELD_SAMPLES } from './vector-field-sample-scenes';
 
 /** 1周する角度の範囲．継ぎ目(`±pi`)を，見る向きの裏側(x軸の負の側)に置く． */
 const ANGLE_DOMAIN = ['-pi', 'pi'];
@@ -248,6 +249,7 @@ const SPACE_CRYSTAL_SAMPLES: readonly SceneTemplate[] = [
 const PLANE_SAMPLE_SCENES: readonly SceneTemplate[] = [
   ELLIPSE_FOCI_SAMPLE,
   ...ANALYSIS_SAMPLE_SCENES,
+  ...VECTOR_FIELD_SAMPLES,
   ...PLANE_CRYSTAL_SAMPLES,
 ];
 

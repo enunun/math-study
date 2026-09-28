@@ -973,6 +973,58 @@
         }
       }
     },
+    "vector_field": {
+      "type": "object",
+      "required": ["id", "type", "field", "x_step", "y_step"],
+      "additionalProperties": false,
+      "description": "ベクトル場．格子点ごとに場の式を評価し，その値の矢印を置く．平面の図でだけ使える．場は，ベクトルの式(点の式と同じ形で，格子点の位置ベクトル`r`と先に置いた点を使う．例：`\"(r - Q) / norm(r - Q)^3\"`)か，成分の式の並び(例：`[\"-r_y\", \"r_x\"]`)で書く．値が有限でない格子点(点電荷の位置など)と，見える範囲からはみ出す矢印は描かない．",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "vector_field" },
+        "var": {
+          "$ref": "#/$defs/identifier",
+          "description": "格子点の位置ベクトルの名前．既定は`r`で，成分は`r_x`，`r_y`の名前で使える．媒介変数や点の名前と重ならないこと(スキーマでは表せない)．"
+        },
+        "field": {
+          "description": "場の式．ベクトルの式(文字列．値がベクトルになる．内積`dot`，外積`cross`，長さ`norm`も使える)か，2個の成分の数か式の並び．",
+          "oneOf": [
+            { "$ref": "#/$defs/nonBlankString" },
+            { "type": "array", "items": { "$ref": "#/$defs/bound" }, "minItems": 2, "maxItems": 2 }
+          ]
+        },
+        "x_step": { "$ref": "#/$defs/bound", "description": "格子点のx方向の刻み．正の数か式．" },
+        "y_step": {
+          "$ref": "#/$defs/bound",
+          "description": "格子点のy方向の刻み．正の数か式．格子点は5000個まで(スキーマでは表せない)．"
+        },
+        "x_range": {
+          "$ref": "#/$defs/numberPair",
+          "description": "格子点を置くxの範囲．下端から刻みごとに置く．省くと，見える範囲から刻みの半分だけ内側にある，刻みの倍数に置く(矢印が縁で切れない)．"
+        },
+        "y_range": {
+          "$ref": "#/$defs/numberPair",
+          "description": "格子点を置くyの範囲．省いたときの置き方は`x_range`と同じである．"
+        },
+        "length": {
+          "enum": ["scaled", "normalized", "clamped"],
+          "description": "矢印の長さの決め方．`scaled`(既定)は場の値に倍率`scale`を掛けた長さ，`normalized`は長さをそろえて向きだけを示し(長さは`scale`)，`clamped`は倍率を掛けて`max_length`より長ければそこで切る．"
+        },
+        "scale": {
+          "$ref": "#/$defs/bound",
+          "description": "倍率．`normalized`では矢印の長さ．既定は，`scaled`と`clamped`では1，`normalized`では刻みの小さい方の0.8倍．"
+        },
+        "max_length": {
+          "$ref": "#/$defs/bound",
+          "description": "矢印の長さの上限．`clamped`でだけ使う(スキーマでは表せない)．既定は刻みの小さい方の0.8倍．"
+        },
+        "pivot": {
+          "enum": ["middle", "tail"],
+          "description": "矢印を格子点のどこに置くか．`middle`(既定)は中点，`tail`は根元．"
+        },
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" }
+      }
+    },
     "taylor": {
       "type": "object",
       "required": ["id", "type", "of", "at", "order"],
@@ -1001,7 +1053,7 @@
       }
     },
     "object": {
-      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
+      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`，`vector_field`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },
@@ -1027,7 +1079,8 @@
         { "$ref": "#/$defs/function" },
         { "$ref": "#/$defs/map" },
         { "$ref": "#/$defs/image" },
-        { "$ref": "#/$defs/taylor" }
+        { "$ref": "#/$defs/taylor" },
+        { "$ref": "#/$defs/vector_field" }
       ]
     }
   }
