@@ -119,9 +119,54 @@ const GRADIENT_SCENE: SceneDraft = {
   ],
 };
 
+/** 直線電流の見本の格子．xとyは-2から2まで，zは-1から1まで，刻み1である． */
+const WIRE_END = 2;
+const WIRE_Z_END = 1;
+const WIRE_ARROW = 0.6;
+const WIRE_LENGTH = 1.8;
+const SPACE_AZIMUTH = 35;
+const SPACE_ELEVATION = 25;
+
+const MAGNETIC_SCENE: SceneDraft = {
+  version: SCENE_VERSION,
+  description:
+    '直線電流のまわりの磁場．z軸に沿って流れる電流(赤の矢印)がつくる磁場B(r) = (e_z × r)/(r_x^2 + r_y^2)(定数は省く)を，向きだけをそろえた矢印で描く．e_zは点Zの位置ベクトルで，場は外積crossのまま書いてある．磁場は電流を軸とする円に沿って回り，右ねじの向きを向く．z軸の上では値が有限でないので，矢印を描かない．',
+  view: { azimuth: SPACE_AZIMUTH, elevation: SPACE_ELEVATION, unit: UNIT },
+  objects: [
+    { id: 'Z', type: 'point', at: [0, 0, 1] },
+    { id: 'wire_from', type: 'point', at: [0, 0, -WIRE_LENGTH] },
+    { id: 'wire_to', type: 'point', at: [0, 0, WIRE_LENGTH] },
+    {
+      id: 'current',
+      type: 'vector',
+      from: 'wire_from',
+      to: 'wire_to',
+      style: { color: 'red', width: '1pt' },
+    },
+    {
+      id: 'B',
+      type: 'vector_field',
+      field: 'cross(Z, r) / (r_x^2 + r_y^2)',
+      x_step: 1,
+      y_step: 1,
+      z_step: 1,
+      x_range: [-WIRE_END, WIRE_END],
+      y_range: [-WIRE_END, WIRE_END],
+      z_range: [-WIRE_Z_END, WIRE_Z_END],
+      length: 'normalized',
+      scale: WIRE_ARROW,
+      style: { color: 'blue' },
+    },
+  ],
+};
+
+const SPACE_VECTOR_FIELD_SAMPLES: readonly SceneTemplate[] = [
+  { id: 'wireMagneticField', label: '直線電流のまわりの磁場', scene: MAGNETIC_SCENE },
+];
+
 const VECTOR_FIELD_SAMPLES: readonly SceneTemplate[] = [
   { id: 'dipoleField', label: '2つの点電荷の電場', scene: DIPOLE_SCENE },
   { id: 'gradientField', label: '勾配の場と等高線', scene: GRADIENT_SCENE },
 ];
 
-export { VECTOR_FIELD_SAMPLES };
+export { SPACE_VECTOR_FIELD_SAMPLES, VECTOR_FIELD_SAMPLES };

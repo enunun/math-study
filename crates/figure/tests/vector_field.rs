@@ -253,14 +253,107 @@ fn 刻みは正の数で_格子点の数には上限がある() {
     assert!(error.to_string().contains("格子点"), "{error}");
 }
 
-#[test]
-fn 空間の図ではまだ使えない() {
-    let error = parse_scene(&format!(
-        r#"{{ "version": "0.1.0", "description": "a",
+/// 空間の図(方位角60度，仰角20度)．
+fn space_scene(objects: &str) -> String {
+    format!(
+        r#"{{ "version": "0.1.0", "description": "試験の図",
              "view": {{ "azimuth": 60, "elevation": 20, "unit": "1cm" }},
-             "objects": [{}] }}"#,
-        field("[1, 0, 0]", "")
+             "objects": [{objects}] }}"#
+    )
+}
+
+fn space_figure(objects: &str) -> Figure {
+    render(&parse_scene(&space_scene(objects)).expect("読める")).expect("描ける")
+}
+
+/// 空間の点を，画面(cm)へ投影する．
+fn project(p: [f64; 3]) -> [f64; 2] {
+    let (a, e) = (60.0_f64.to_radians(), 20.0_f64.to_radians());
+    let right = [-a.sin(), a.cos(), 0.0];
+    let up = [-e.sin() * a.cos(), -e.sin() * a.sin(), e.cos()];
+    let dot = |u: [f64; 3]| u[0] * p[0] + u[1] * p[1] + u[2] * p[2];
+    [dot(right), dot(up)]
+}
+
+/// 空間の格子[-1, 1]^3，刻み1のベクトル場(27個の格子点)．
+fn space_field(field: &str, extra: &str) -> String {
+    format!(
+        r#"{{ "id": "E", "type": "vector_field", "field": {field},
+              "x_step": 1, "y_step": 1, "z_step": 1,
+              "x_range": [-1, 1], "y_range": [-1, 1], "z_range": [-1, 1] {extra} }}"#
+    )
+}
+
+#[test]
+fn 空間の一様な場は_格子点ごとに同じ向きの矢印になる() {
+    let figure = space_figure(&space_field(
+        "[0, 0, 1]",
+        r#", "scale": 0.5, "pivot": "tail""#,
+    ));
+    let lines = arrows(&figure);
+    assert_eq!(lines.len(), 27);
+    let expected = project([0.0, 0.0, 0.5]);
+    for line in lines {
+        let (start, end) = ends(line);
+        assert!(close([end[0] - start[0], end[1] - start[1]], expected));
+        assert!(line.arrow.is_some());
+    }
+    // 原点の矢印は，原点から伸びる．
+    assert!(
+        arrows(&figure)
+            .into_iter()
+            .map(ends)
+            .any(|(start, _)| close(start, [0.0, 0.0]))
+    );
+}
+
+#[test]
+fn 空間のベクトルの式は_3成分の位置ベクトルを使う() {
+    // 原点の点電荷の場．原点では値が有限でないので，26本になる．
+    let figure = space_figure(&format!(
+        r#"{{ "id": "Q", "type": "point", "at": [0, 0, 0] }},
+           {}"#,
+        space_field(
+            r#""(r - Q) / norm(r - Q)^3""#,
+            r#", "length": "normalized", "scale": 0.3, "pivot": "tail""#
+        )
+    ));
+    assert_eq!(arrows(&figure).len(), 26);
+    // 成分の名前r_zも使える．z = 0の層の9点では長さ0なので描かない．
+    let figure = space_figure(&space_field(r#"[0, 0, "r_z"]"#, ""));
+    assert_eq!(arrows(&figure).len(), 18);
+}
+
+#[test]
+fn 空間のベクトル場は_曲面に隠れる部分を隠れた線で描く() {
+    // 大きな球の中心にある矢印は，すべて球に隠れる．
+    let figure = space_figure(
+        r#"{ "id": "ball", "type": "sphere", "center": [0, 0, 0], "radius": 3 },
+           { "id": "E", "type": "vector_field", "field": [0, 0, 1], "scale": 0.5,
+             "x_step": 1, "y_step": 1, "z_step": 1,
+             "x_range": [0, 0], "y_range": [0, 0], "z_range": [0, 0] }"#,
+    );
+    let arrow = arrows(&figure)
+        .into_iter()
+        .find(|path| path.points.len() == 2 && path.arrow.is_none())
+        .expect("矢印の線がある");
+    assert_ne!(arrow.stroke.line, figure::scene::Line::Solid);
+}
+
+#[test]
+fn 空間の図では_範囲を3つとも書き_成分は3個にする() {
+    let error = parse_scene(&space_scene(
+        r#"{ "id": "E", "type": "vector_field", "field": [0, 0, 1],
+             "x_step": 1, "y_step": 1, "z_step": 1, "x_range": [-1, 1], "y_range": [-1, 1] }"#,
     ))
     .expect_err("誤りになる");
-    assert!(error.to_string().contains("vector_field"), "{error}");
+    assert!(error.to_string().contains("z_range"), "{error}");
+    let error = parse_scene(&space_scene(&space_field("[0, 1]", ""))).expect_err("誤りになる");
+    assert!(error.to_string().contains("field"), "{error}");
+}
+
+#[test]
+fn 平面の図では_z方向の刻みと範囲は書けない() {
+    let error = error_of(&field("[1, 0]", r#", "z_step": 1"#));
+    assert!(error.to_string().contains("z_step"), "{error}");
 }

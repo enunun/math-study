@@ -171,7 +171,7 @@ pub enum Object {
     Image(Image),
     /// グラフのTaylor展開を，途中の次数で打ち切った多項式のグラフ．平面の図でだけ使える．
     Taylor(Taylor),
-    /// ベクトル場．格子点ごとに場の値の矢印を置く．平面の図でだけ使える．
+    /// ベクトル場．格子点ごとに場の値の矢印を置く．
     VectorField(VectorField),
 }
 
@@ -967,11 +967,12 @@ fn is_default_field_var(var: &str) -> bool {
     var == "r"
 }
 
-/// ベクトル場．格子点ごとに場の式を評価し，その値の矢印を置く．
+/// ベクトル場．格子点ごとに場の式を評価し，その値の矢印を置く．平面の図でも空間の図でも使える．
 ///
 /// 場は，ベクトルの式(点の式と同じ形で，格子点の位置ベクトル`var`と，先に置いた点を使う．例：
 /// `"(r - Q) / norm(r - Q)^3"`)か，成分の式の並び(例：`["-r_y", "r_x"]`)で書く．位置ベクトルの成分は，
-/// `r_x`，`r_y`の名前で使える．値が有限でない格子点と，見える範囲からはみ出す矢印は描かない．
+/// `r_x`，`r_y`(空間の図では`r_z`も)の名前で使える．値が有限でない格子点は描かない．平面の図では，
+/// 見える範囲からはみ出す矢印も描かない．空間の図の矢印は，曲面に隠れる部分を隠れた線で描く．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -990,13 +991,19 @@ pub struct VectorField {
     pub x_step: Bound,
     /// y方向の刻み．
     pub y_step: Bound,
-    /// 格子点を置くxの範囲．下端から刻みごとに置く．なければ，見える範囲から刻みの半分だけ内側にある，
-    /// 刻みの倍数に置く．
+    /// z方向の刻み．空間の図でだけ書き，空間の図では必要である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub z_step: Option<Bound>,
+    /// 格子点を置くxの範囲．下端から刻みごとに置く．平面の図でなければ，見える範囲から刻みの半分だけ
+    /// 内側にある，刻みの倍数に置く．空間の図では必要である．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x_range: Option<[f64; 2]>,
-    /// 格子点を置くyの範囲．省いたときは`x_range`と同じである．
+    /// 格子点を置くyの範囲．省いたときは`x_range`と同じである．空間の図では必要である．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub y_range: Option<[f64; 2]>,
+    /// 格子点を置くzの範囲．空間の図でだけ書き，空間の図では必要である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub z_range: Option<[f64; 2]>,
     /// 矢印の長さの決め方．
     #[serde(default, skip_serializing_if = "is_default")]
     pub length: ArrowLength,

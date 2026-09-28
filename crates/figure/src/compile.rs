@@ -193,8 +193,9 @@ pub enum Plot {
 
 /// 式を読んだ後の，ベクトル場．
 pub struct VectorFieldPlot {
-    /// 矢印の根元と先端(数学の座標)．変換を施してある．値が有限でない格子点と，長さ0の矢印は除いてある．
-    pub arrows: Vec<[[f64; 2]; 2]>,
+    /// 矢印の根元と先端(数学の座標，図の次元の数の成分)．変換を施してある．値が有限でない格子点と，
+    /// 長さ0の矢印は除いてある．
+    pub arrows: Vec<LinkPlot>,
 }
 
 /// 式を読んだ後の，多角形．
@@ -1494,14 +1495,22 @@ fn field_step(name: &'static str, bound: &Bound, env: &Env) -> Result<f64, Error
     }
 }
 
-/// ベクトル場の式を読む．位置ベクトルの名前とその成分の名前が，ほかの名前とぶつかれば誤りにする．
+/// 座標の名前の末尾．平面の図では先頭の2つを使う．
+const AXIS_SUFFIXES: [&str; 3] = ["x", "y", "z"];
+
+/// ベクトル場の式を読む．位置ベクトルの名前とその成分の名前(`r_x`など，図の次元の数だけ)が，
+/// ほかの名前とぶつかれば誤りにする．
 fn compile_field_expr(
     field: &VectorField,
     env: &Env,
     scope: &VectorScope,
 ) -> Result<FieldExpr, ErrorKind> {
     let var = field.var.as_str();
-    let components = [format!("{var}_x"), format!("{var}_y")];
+    let components: Vec<String> = AXIS_SUFFIXES
+        .iter()
+        .take(scope.dimension)
+        .map(|suffix| format!("{var}_{suffix}"))
+        .collect();
     let point_ids: Vec<&str> = scope.points.iter().map(|(id, _)| *id).collect();
     for name in std::iter::once(var).chain(components.iter().map(String::as_str)) {
         if is_reserved_name(name) {
@@ -1531,9 +1540,10 @@ fn compile_field_expr(
                 })
         }
         Position::Coordinates(list) => {
-            if list.len() != 2 {
+            if list.len() != scope.dimension {
                 return Err(ErrorKind::Invalid(format!(
-                    "ベクトル場の成分(`field`)は，2個の数か式で書く(今は{}個)．",
+                    "ベクトル場の成分(`field`)は，{}個の数か式で書く(今は{}個)．",
+                    scope.dimension,
                     list.len()
                 )));
             }
@@ -1551,33 +1561,32 @@ fn compile_field_expr(
     }
 }
 
-/// 格子点`[x, y]`での場の値．値が有限でなければ`None`を返す．式がベクトルの式として正しくなければ，誤りを返す．
+/// 格子点`at`での場の値．値が有限でなければ`None`を返す．式がベクトルの式として正しくなければ，誤りを返す．
 fn field_value(
     expr: &FieldExpr,
-    [x, y]: [f64; 2],
+    at: &[f64],
     env: &Env,
     scope: &VectorScope,
-) -> Result<Option<[f64; 2]>, ErrorKind> {
+) -> Result<Option<Vec<f64>>, ErrorKind> {
     let parameter_count = env.names.len();
     let value = match expr {
         FieldExpr::Vector(expr) => {
             let value_of = |index: usize| -> Value {
-                match index {
-                    0 => Value::Vector(vec![x, y]),
-                    1 => Value::Number(x),
-                    2 => Value::Number(y),
-                    _ => {
-                        let rest = index.saturating_sub(3);
-                        match env.parameters.get(rest).filter(|_| rest < parameter_count) {
-                            Some(value) => Value::Number(*value),
-                            None => rest
-                                .checked_sub(parameter_count)
-                                .and_then(|at| scope.points.get(at))
-                                .map_or(Value::Number(f64::NAN), |(_, at)| {
-                                    Value::Vector(at.clone())
-                                }),
-                        }
-                    }
+                if index == 0 {
+                    return Value::Vector(at.to_vec());
+                }
+                if let Some(component) = at.get(index.saturating_sub(1)) {
+                    return Value::Number(*component);
+                }
+                let rest = index.saturating_sub(at.len().saturating_add(1));
+                match env.parameters.get(rest).filter(|_| rest < parameter_count) {
+                    Some(value) => Value::Number(*value),
+                    None => rest
+                        .checked_sub(parameter_count)
+                        .and_then(|point| scope.points.get(point))
+                        .map_or(Value::Number(f64::NAN), |(_, point)| {
+                            Value::Vector(point.clone())
+                        }),
                 }
             };
             match expr.eval_vector(&value_of) {
@@ -1596,17 +1605,87 @@ fn field_value(
             }
         }
         FieldExpr::Components(exprs) => {
-            let values: Vec<f64> = [x, y]
-                .into_iter()
+            let values: Vec<f64> = at
+                .iter()
+                .copied()
                 .chain(env.parameters.iter().take(parameter_count).copied())
                 .collect();
             exprs.iter().map(|expr| expr.eval(&values)).collect()
         }
     };
-    Ok(match value.as_slice() {
-        [u, v] if u.is_finite() && v.is_finite() => Some([*u, *v]),
-        _ => None,
+    Ok((value.len() == at.len() && value.iter().all(|c| c.is_finite())).then_some(value))
+}
+
+/// 格子点の座標．各方向の値の，すべての組み合わせである(先の方向ほど外側で回る)．
+fn grid_points(levels: &[Vec<f64>]) -> Vec<Vec<f64>> {
+    levels.iter().fold(vec![Vec::new()], |points, values| {
+        points
+            .iter()
+            .flat_map(|point| {
+                values.iter().map(move |value| {
+                    let mut next = point.clone();
+                    next.push(*value);
+                    next
+                })
+            })
+            .collect()
     })
+}
+
+/// ベクトル場の格子点を置く，各方向の値．平面の図で範囲を省けば，見える範囲の内側に置く．
+fn field_grid(
+    field: &VectorField,
+    env: &Env,
+    view: &View,
+) -> Result<(Vec<Vec<f64>>, f64), ErrorKind> {
+    let plane_view = match view {
+        View::Plane(plane) => Some([plane.x, plane.y]),
+        View::Space(_) => None,
+    };
+    let mut axes = vec![
+        ("x_step", Some(&field.x_step), field.x_range),
+        ("y_step", Some(&field.y_step), field.y_range),
+    ];
+    if plane_view.is_none() {
+        axes.push(("z_step", field.z_step.as_ref(), field.z_range));
+    }
+    let mut steps = Vec::new();
+    let mut ranges = Vec::new();
+    for (index, (name, step, range)) in axes.into_iter().enumerate() {
+        let step = step.ok_or_else(|| ErrorKind::Invalid(format!("`{name}`が要る．")))?;
+        let step = field_step(name, step, env)?;
+        let range = match (range, plane_view.and_then(|ends| ends.get(index).copied())) {
+            (Some(range), _) => range,
+            (None, Some(visible)) => inner_range(visible, step),
+            (None, None) => {
+                return Err(ErrorKind::Invalid(
+                    "空間の図のベクトル場には，格子点を置く範囲が要る．".to_owned(),
+                ));
+            }
+        };
+        steps.push(step);
+        ranges.push(range);
+    }
+    let counts: Vec<f64> = ranges
+        .iter()
+        .zip(&steps)
+        .map(|([low, high], step)| field_level_count(*low, *high, *step))
+        .collect();
+    let total: f64 = counts.iter().product();
+    let limit = f64::from(u32::try_from(VectorField::MAX_POINTS).unwrap_or(u32::MAX));
+    if total > limit {
+        return Err(ErrorKind::Invalid(format!(
+            "ベクトル場の格子点が多すぎる({total}個．上限は{limit}個)．刻みを大きくする．"
+        )));
+    }
+    let levels = ranges
+        .iter()
+        .zip(&steps)
+        .zip(&counts)
+        .map(|(([low, _], step), count)| field_levels(*low, *step, *count))
+        .collect();
+    let smallest = steps.iter().copied().fold(f64::INFINITY, f64::min);
+    Ok((levels, FIELD_ARROW_RATIO * smallest))
 }
 
 /// ベクトル場．格子点ごとに場の値を求め，長さの決め方に従って矢印にし，変換を施す．
@@ -1617,31 +1696,7 @@ fn compile_vector_field(
     scope: &VectorScope,
     transform: &Transform,
 ) -> Result<VectorFieldPlot, ErrorKind> {
-    let View::Plane(plane) = view else {
-        return Err(ErrorKind::Invalid(
-            "ベクトル場は，平面の図でだけ使える．".to_owned(),
-        ));
-    };
-    let x_step = field_step("x_step", &field.x_step, env)?;
-    let y_step = field_step("y_step", &field.y_step, env)?;
-    let [x_low, x_high] = field
-        .x_range
-        .unwrap_or_else(|| inner_range(plane.x, x_step));
-    let [y_low, y_high] = field
-        .y_range
-        .unwrap_or_else(|| inner_range(plane.y, y_step));
-    let columns = field_level_count(x_low, x_high, x_step);
-    let rows = field_level_count(y_low, y_high, y_step);
-    let limit = f64::from(u32::try_from(VectorField::MAX_POINTS).unwrap_or(u32::MAX));
-    if columns * rows > limit {
-        return Err(ErrorKind::Invalid(format!(
-            "ベクトル場の格子点が多すぎる({}個．上限は{limit}個)．刻みを大きくする．",
-            columns * rows
-        )));
-    }
-    let xs = field_levels(x_low, x_step, columns);
-    let ys = field_levels(y_low, y_step, rows);
-    let default_length = FIELD_ARROW_RATIO * x_step.min(y_step);
+    let (levels, default_length) = field_grid(field, env, view)?;
     let optional = |name: &'static str, bound: &Option<Bound>| -> Result<Option<f64>, ErrorKind> {
         let Some(bound) = bound else {
             return Ok(None);
@@ -1657,41 +1712,36 @@ fn compile_vector_field(
     let max_length = optional("max_length", &field.max_length)?.unwrap_or(default_length);
     let expr = compile_field_expr(field, env, scope)?;
     let mut arrows = Vec::new();
-    for &x in &xs {
-        for &y in &ys {
-            let Some([u, v]) = field_value(&expr, [x, y], env, scope)? else {
-                continue;
-            };
-            let norm = u.hypot(v);
-            let factor = match field.length {
-                ArrowLength::Scaled => scale.unwrap_or(1.0),
-                ArrowLength::Normalized => scale.unwrap_or(default_length) / norm,
-                ArrowLength::Clamped => {
-                    let factor = scale.unwrap_or(1.0);
-                    let length = (factor * norm).abs();
-                    if length > max_length {
-                        factor * max_length / length
-                    } else {
-                        factor
-                    }
+    for at in grid_points(&levels) {
+        let Some(value) = field_value(&expr, &at, env, scope)? else {
+            continue;
+        };
+        let norm = value.iter().map(|c| c * c).sum::<f64>().sqrt();
+        let factor = match field.length {
+            ArrowLength::Scaled => scale.unwrap_or(1.0),
+            ArrowLength::Normalized => scale.unwrap_or(default_length) / norm,
+            ArrowLength::Clamped => {
+                let factor = scale.unwrap_or(1.0);
+                let length = (factor * norm).abs();
+                if length > max_length {
+                    factor * max_length / length
+                } else {
+                    factor
                 }
-            };
-            let arrow = [u * factor, v * factor];
-            if !(arrow[0].is_finite() && arrow[1].is_finite()) || arrow[0].hypot(arrow[1]) == 0.0 {
-                continue;
             }
-            let (start, end) = match field.pivot {
-                Pivot::Tail => ([x, y], [x + arrow[0], y + arrow[1]]),
-                Pivot::Middle => {
-                    let half = [arrow[0] / 2.0, arrow[1] / 2.0];
-                    ([x - half[0], y - half[1]], [x + half[0], y + half[1]])
-                }
-            };
-            if let (Some(start), Some(end)) = (transform.apply(&start), transform.apply(&end))
-                && let ([sx, sy], [ex, ey]) = (start.as_slice(), end.as_slice())
-            {
-                arrows.push([[*sx, *sy], [*ex, *ey]]);
-            }
+        };
+        let arrow: Vec<f64> = value.iter().map(|c| c * factor).collect();
+        if !arrow.iter().all(|c| c.is_finite()) || arrow.iter().all(|c| *c == 0.0) {
+            continue;
+        }
+        let shift = match field.pivot {
+            Pivot::Tail => 0.0,
+            Pivot::Middle => 0.5,
+        };
+        let start: Vec<f64> = at.iter().zip(&arrow).map(|(p, a)| p - shift * a).collect();
+        let end: Vec<f64> = start.iter().zip(&arrow).map(|(p, a)| p + a).collect();
+        if let (Some(from), Some(to)) = (transform.apply(&start), transform.apply(&end)) {
+            arrows.push(LinkPlot { from, to });
         }
     }
     Ok(VectorFieldPlot { arrows })

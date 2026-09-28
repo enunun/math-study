@@ -147,9 +147,7 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Function(function) => validate_function(function),
         Object::Map(map) => validate_map(map),
         Object::Taylor(taylor) => plane_only("taylor", view).and_then(|()| validate_taylor(taylor)),
-        Object::VectorField(field) => {
-            plane_only("vector_field", view).and_then(|()| validate_vector_field(field))
-        }
+        Object::VectorField(field) => validate_vector_field(field, view),
         // 像は，検査の前に，元のオブジェクトの複製に置き換えてある．
         Object::Parameter(parameter) => validate_parameter(parameter),
         Object::Image(_) | Object::Vector(_) | Object::Segment(_) => Ok(()),
@@ -187,20 +185,56 @@ fn validate_parameter(parameter: &Parameter) -> Result<(), ErrorKind> {
 }
 
 /// ベクトル場．位置ベクトルの名前，刻み(数なら正)，範囲を確かめる．上限の長さは`clamped`でだけ使う．
+/// z方向の刻みと範囲は空間の図でだけ書き，空間の図では3つの方向の範囲が要る(見える範囲がないため)．
 /// 式で書いた刻みと，格子点の数は，評価してから`compile.rs`で確かめる．
-fn validate_vector_field(field: &VectorField) -> Result<(), ErrorKind> {
+fn validate_vector_field(field: &VectorField, view: &View) -> Result<(), ErrorKind> {
     check_variable(&field.var)?;
+    match view {
+        View::Plane(_) => {
+            if field.z_step.is_some() || field.z_range.is_some() {
+                return Err(ErrorKind::Invalid(
+                    "ベクトル場の`z_step`と`z_range`は，空間の図でだけ使える．".to_owned(),
+                ));
+            }
+        }
+        View::Space(_) => {
+            let missing: Vec<&str> = [
+                ("x_range", field.x_range.is_none()),
+                ("y_range", field.y_range.is_none()),
+                ("z_range", field.z_range.is_none()),
+                ("z_step", field.z_step.is_none()),
+            ]
+            .into_iter()
+            .filter_map(|(name, absent)| absent.then_some(name))
+            .collect();
+            if !missing.is_empty() {
+                return Err(ErrorKind::Invalid(format!(
+                    "空間の図のベクトル場には，格子点を置く範囲と刻みが要る(ない項目：`{}`)．",
+                    missing.join("`，`")
+                )));
+            }
+        }
+    }
     if let Position::Vector(source) = &field.field {
         non_empty("field", source)?;
     }
-    for (name, step) in [("x_step", &field.x_step), ("y_step", &field.y_step)] {
-        if matches!(step, Bound::Number(value) if !(value.is_finite() && *value > 0.0)) {
+    let steps = [
+        ("x_step", Some(&field.x_step)),
+        ("y_step", Some(&field.y_step)),
+        ("z_step", field.z_step.as_ref()),
+    ];
+    for (name, step) in steps {
+        if matches!(step, Some(Bound::Number(value)) if !(value.is_finite() && *value > 0.0)) {
             return Err(ErrorKind::Invalid(format!(
                 "ベクトル場の刻み(`{name}`)は，正の有限の数にする．"
             )));
         }
     }
-    for (name, range) in [("x_range", field.x_range), ("y_range", field.y_range)] {
+    for (name, range) in [
+        ("x_range", field.x_range),
+        ("y_range", field.y_range),
+        ("z_range", field.z_range),
+    ] {
         if range.is_some_and(|[low, high]| !(low.is_finite() && high.is_finite() && low <= high)) {
             return Err(ErrorKind::InvalidRange(name));
         }

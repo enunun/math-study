@@ -977,19 +977,19 @@
       "type": "object",
       "required": ["id", "type", "field", "x_step", "y_step"],
       "additionalProperties": false,
-      "description": "ベクトル場．格子点ごとに場の式を評価し，その値の矢印を置く．平面の図でだけ使える．場は，ベクトルの式(点の式と同じ形で，格子点の位置ベクトル`r`と先に置いた点を使う．例：`\"(r - Q) / norm(r - Q)^3\"`)か，成分の式の並び(例：`[\"-r_y\", \"r_x\"]`)で書く．値が有限でない格子点(点電荷の位置など)と，見える範囲からはみ出す矢印は描かない．",
+      "description": "ベクトル場．格子点ごとに場の式を評価し，その値の矢印を置く．平面の図でも空間の図でも使える．場は，ベクトルの式(点の式と同じ形で，格子点の位置ベクトル`r`と先に置いた点を使う．例：`\"(r - Q) / norm(r - Q)^3\"`)か，成分の式の並び(例：`[\"-r_y\", \"r_x\"]`)で書く．値が有限でない格子点(点電荷の位置など)は描かない．平面の図では，見える範囲からはみ出す矢印も描かない．空間の図では，格子点を置く3つの範囲とz方向の刻みが要り(スキーマでは表せない)，矢印の曲面に隠れる部分は隠れた線で描く．",
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "type": { "const": "vector_field" },
         "var": {
           "$ref": "#/$defs/identifier",
-          "description": "格子点の位置ベクトルの名前．既定は`r`で，成分は`r_x`，`r_y`の名前で使える．媒介変数や点の名前と重ならないこと(スキーマでは表せない)．"
+          "description": "格子点の位置ベクトルの名前．既定は`r`で，成分は`r_x`，`r_y`(空間の図では`r_z`も)の名前で使える．媒介変数や点の名前と重ならないこと(スキーマでは表せない)．"
         },
         "field": {
-          "description": "場の式．ベクトルの式(文字列．値がベクトルになる．内積`dot`，外積`cross`，長さ`norm`も使える)か，2個の成分の数か式の並び．",
+          "description": "場の式．ベクトルの式(文字列．値がベクトルになる．内積`dot`，外積`cross`，長さ`norm`も使える)か，成分の数か式の並び(平面の図では2個，空間の図では3個)．",
           "oneOf": [
             { "$ref": "#/$defs/nonBlankString" },
-            { "type": "array", "items": { "$ref": "#/$defs/bound" }, "minItems": 2, "maxItems": 2 }
+            { "type": "array", "items": { "$ref": "#/$defs/bound" }, "minItems": 2, "maxItems": 3 }
           ]
         },
         "x_step": { "$ref": "#/$defs/bound", "description": "格子点のx方向の刻み．正の数か式．" },
@@ -997,13 +997,21 @@
           "$ref": "#/$defs/bound",
           "description": "格子点のy方向の刻み．正の数か式．格子点は5000個まで(スキーマでは表せない)．"
         },
+        "z_step": {
+          "$ref": "#/$defs/bound",
+          "description": "格子点のz方向の刻み．正の数か式．空間の図でだけ書き，空間の図では必要である(スキーマでは表せない)．"
+        },
         "x_range": {
           "$ref": "#/$defs/numberPair",
-          "description": "格子点を置くxの範囲．下端から刻みごとに置く．省くと，見える範囲から刻みの半分だけ内側にある，刻みの倍数に置く(矢印が縁で切れない)．"
+          "description": "格子点を置くxの範囲．下端から刻みごとに置く．平面の図で省くと，見える範囲から刻みの半分だけ内側にある，刻みの倍数に置く(矢印が縁で切れない)．空間の図では必要である(スキーマでは表せない)．"
         },
         "y_range": {
           "$ref": "#/$defs/numberPair",
           "description": "格子点を置くyの範囲．省いたときの置き方は`x_range`と同じである．"
+        },
+        "z_range": {
+          "$ref": "#/$defs/numberPair",
+          "description": "格子点を置くzの範囲．空間の図でだけ書き，空間の図では必要である(スキーマでは表せない)．"
         },
         "length": {
           "enum": ["scaled", "normalized", "clamped"],
@@ -1053,7 +1061,7 @@
       }
     },
     "object": {
-      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`，`vector_field`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
+      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },

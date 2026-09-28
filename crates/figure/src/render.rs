@@ -195,7 +195,7 @@ fn object_items(
             level_curve_items(curve, placed, transform, context)
         }
         (Object::VectorField(field), Plot::VectorField(placed)) => vector_field_items(placed, view)
-            .filter_map(|link| link_item(&field.style, Arrow::Stealth, &link, scale))
+            .filter_map(|link| link_item(&field.style, Arrow::Stealth, link, scale))
             .collect(),
         _ => Vec::new(),
     })
@@ -737,17 +737,16 @@ fn mapped_line_items(
 fn vector_field_items<'a>(
     plot: &'a VectorFieldPlot,
     view: &'a PlaneView,
-) -> impl Iterator<Item = LinkPlot> + 'a {
-    let inside = |[x, y]: [f64; 2]| {
-        (view.x[0]..=view.x[1]).contains(&x) && (view.y[0]..=view.y[1]).contains(&y)
+) -> impl Iterator<Item = &'a LinkPlot> + 'a {
+    let inside = |at: &[f64]| {
+        let [x, y] = at else {
+            return false;
+        };
+        (view.x[0]..=view.x[1]).contains(x) && (view.y[0]..=view.y[1]).contains(y)
     };
     plot.arrows
         .iter()
-        .filter(move |[start, end]| inside(*start) && inside(*end))
-        .map(|[start, end]| LinkPlot {
-            from: start.to_vec(),
-            to: end.to_vec(),
-        })
+        .filter(move |link| inside(&link.from) && inside(&link.to))
 }
 
 /// 平面の等値線．平面をz = 0の空間に置き，空間の等値線と同じく，写像の網を変数の升目として作って，

@@ -394,6 +394,11 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
             (Object::Segment(segment), Plot::Link(link)) => {
                 items.extend(link_items(&segment.style, Arrow::None, link, &space));
             }
+            (Object::VectorField(field), Plot::VectorField(placed)) => {
+                for link in &placed.arrows {
+                    items.extend(link_items(&field.style, Arrow::Stealth, link, &space));
+                }
+            }
             (Object::Intersection(found), _) => {
                 items.extend(intersection_items(found, transform, &space));
             }

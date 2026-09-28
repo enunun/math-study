@@ -1,15 +1,7 @@
-import { COORDINATE_NAMES, gridFields } from './coordinate-fields';
+import { COORDINATE_NAMES, gridFields, vectorFieldFields } from './coordinate-fields';
 import { listedType, TRANSFORMABLE } from './create';
 import type { ViewKind } from './draft';
-import {
-  ANCHORS,
-  ARROWS,
-  ARROW_LENGTHS,
-  PIVOTS,
-  PLANE_DIRECTIONS,
-  SOLIDS,
-  SPACE_DIRECTIONS,
-} from './field-options';
+import { ANCHORS, ARROWS, PLANE_DIRECTIONS, SOLIDS, SPACE_DIRECTIONS } from './field-options';
 import type { FieldSpec } from './field-spec';
 import { stringOf } from './json';
 import type { JsonObject } from './json';
@@ -75,18 +67,6 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
       optional: true,
     },
     { kind: 'number', key: 'step', label: 'スライダーの刻み', optional: true },
-  ],
-  vector_field: [
-    { kind: 'position', key: 'field', label: '場の式(ベクトルの式か成分)' },
-    { kind: 'text', key: 'var', label: '位置ベクトルの名前(既定はr)', optional: true },
-    { kind: 'bound', key: 'x_step', label: 'xの刻み' },
-    { kind: 'bound', key: 'y_step', label: 'yの刻み' },
-    { kind: 'list', key: 'x_range', label: 'xの範囲', item: 'number', count: PAIR, optional: true },
-    { kind: 'list', key: 'y_range', label: 'yの範囲', item: 'number', count: PAIR, optional: true },
-    { kind: 'select', key: 'length', label: '矢印の長さ', options: ARROW_LENGTHS, optional: true },
-    { kind: 'bound', key: 'scale', label: '倍率(そろえるときは長さ)', optional: true },
-    { kind: 'bound', key: 'max_length', label: '長さの上限', optional: true },
-    { kind: 'select', key: 'pivot', label: '矢印の位置', options: PIVOTS, optional: true },
   ],
   graph: [
     { kind: 'text', key: 'var', label: '変数の名前' },
@@ -215,6 +195,12 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
   ],
 };
 
+/** 図の種類(平面・空間)で項目が変わる種類．格子とベクトル場は，空間の図でz方向の項目を持つ． */
+const OWN_FIELDS: Readonly<Record<string, (kind: ViewKind) => readonly FieldSpec[]>> = {
+  grid: gridFields,
+  vector_field: vectorFieldFields,
+};
+
 /** スタイルを持たない種類． */
 const UNSTYLED = new Set(['label', 'parameter', 'function', 'map']);
 
@@ -236,7 +222,7 @@ function fieldsFor(object: JsonObject, kind: ViewKind): readonly FieldSpec[] {
   const first = type === 'axis' ? [ID, directionField(kind)] : [ID];
   const transform = TRANSFORMABLE.includes(stringOf(object, 'type')) ? [TRANSFORM] : [];
   const last = [...transform, ...(UNSTYLED.has(type) ? [] : [STYLE])];
-  const own = type === 'grid' ? gridFields(kind) : (SPECS[type] ?? []);
+  const own = OWN_FIELDS[type]?.(kind) ?? SPECS[type] ?? [];
   return [...first, ...own, ...last];
 }
 

@@ -13,7 +13,7 @@ import {
 import { SPACE_SYMMETRY_SAMPLES } from './space-symmetry-sample-scenes';
 import { SYMMETRY_SAMPLES } from './symmetry-sample-scenes';
 import type { SceneTemplate } from './template-types';
-import { VECTOR_FIELD_SAMPLES } from './vector-field-sample-scenes';
+import { SPACE_VECTOR_FIELD_SAMPLES, VECTOR_FIELD_SAMPLES } from './vector-field-sample-scenes';
 
 const files = import.meta.glob<string>('../figures/*.json', {
   eager: true,
@@ -106,6 +106,7 @@ const SAMPLE_GROUPS: readonly SampleGroup[] = [
     ],
   },
   { label: '空間：4次元', samples: FOUR_SPACE_SAMPLE_SCENES },
+  { label: '空間：ベクトル場', samples: SPACE_VECTOR_FIELD_SAMPLES },
   { label: '空間：格子の対称性', samples: SPACE_SYMMETRY_SAMPLES },
   { label: '空間：結晶と逆格子', samples: SPACE_CRYSTAL_SAMPLES },
 ];
