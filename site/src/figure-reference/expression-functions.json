@@ -19,6 +19,12 @@
     { "names": ["besselj0", "besselj1"], "meaning": "第1種Bessel関数(0次，1次)" },
     { "names": ["bessely0", "bessely1"], "meaning": "第2種Bessel関数(0次，1次)" },
     { "names": ["besseli0", "besseli1"], "meaning": "第1種変形Bessel関数(0次，1次)" },
-    { "names": ["besselk0", "besselk1"], "meaning": "第2種変形Bessel関数(0次，1次)" }
+    { "names": ["besselk0", "besselk1"], "meaning": "第2種変形Bessel関数(0次，1次)" },
+    { "names": ["dot"], "meaning": "内積dot(A, B)．点の式でだけ使える" },
+    {
+      "names": ["cross"],
+      "meaning": "外積cross(A, B)．空間ではベクトル，平面では数(z成分)．点の式でだけ使える"
+    },
+    { "names": ["norm"], "meaning": "ベクトルの長さnorm(A)．点の式でだけ使える" }
   ]
 }

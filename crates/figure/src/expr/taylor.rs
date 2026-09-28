@@ -73,6 +73,8 @@ impl Expander<'_> {
                 }
             }
             Node::Call(function, argument) => self.call(*function, &self.expand(argument)?),
+            // ベクトルの関数は，数の式にはない．
+            Node::Vector(..) => None,
         }
     }
 

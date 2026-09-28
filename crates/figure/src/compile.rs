@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::error::{Error, ErrorKind};
-use crate::expr::{Expr, Functions, is_reserved_name};
+use crate::expr::{Expr, Functions, Value, is_reserved_name};
 use crate::fractal;
 use crate::image::transform_of;
 use crate::scene::{
@@ -692,11 +692,19 @@ fn compile_expr(
     names: &[&str],
     functions: &Functions,
 ) -> Result<Expr, ErrorKind> {
-    Expr::compile_with(source, names, functions).map_err(|error| ErrorKind::Expression {
-        field,
-        index,
-        error,
-    })
+    let expr =
+        Expr::compile_with(source, names, functions).map_err(|error| ErrorKind::Expression {
+            field,
+            index,
+            error,
+        })?;
+    if expr.uses_vector_functions() {
+        return Err(ErrorKind::Invalid(format!(
+            "内積(`dot`)，外積(`cross`)，長さ(`norm`)は，点の式(点の位置`at`を1つの文字列で書く式)でだけ使える(`{field}`の{}番目)．",
+            index.saturating_add(1)
+        )));
+    }
+    Ok(expr)
 }
 
 fn compile_graph(graph: &Graph, env: &Env) -> Result<GraphPlot, ErrorKind> {
@@ -1245,39 +1253,45 @@ fn evaluate_position(
     }
 }
 
-/// 点の式を評価する．点を，原点からの位置ベクトルとして扱い，成分ごとに評価する．
-/// 和と差と数倍しか許さないので，成分ごとに評価した結果は，そのままベクトルの計算になる．
+/// 点の式を評価する．点を原点からの位置ベクトルとし，ベクトルのまま評価する(内積，外積，長さも使える)．
 fn evaluate_vector(source: &str, scope: &VectorScope) -> Result<Vec<f64>, ErrorKind> {
-    let parameter_count = scope.parameter_names.len();
     let names: Vec<&str> = scope
         .parameter_names
         .iter()
         .copied()
         .chain(scope.points.iter().map(|(id, _)| *id))
         .collect();
-    let expr = compile_expr("at", 0, source, &names, scope.functions)?;
-    if expr.point_kind(&|index| index >= parameter_count) != Some(true) {
-        return Err(ErrorKind::Invalid(
-            "位置の式は，点の`id`を，和と差と数の倍でつないだ，点の式で書く(点どうしの積，点への数の足し引き，点を関数やべき乗に入れる式，点を含まない式は書けない)．"
-                .to_owned(),
-        ));
-    }
-    let component = |axis: usize| -> f64 {
-        let values: Vec<f64> = scope
-            .parameter_values
-            .iter()
-            .copied()
-            .chain(
-                scope
-                    .points
-                    .iter()
-                    .map(|(_, at)| at.get(axis).copied().unwrap_or(f64::NAN)),
-            )
-            .collect();
-        expr.eval(&values)
+    let expr = Expr::compile_with(source, &names, scope.functions).map_err(|error| {
+        ErrorKind::Expression {
+            field: "at",
+            index: 0,
+            error,
+        }
+    })?;
+    let value_of = |index: usize| -> Value {
+        match scope.parameter_values.get(index) {
+            Some(value) => Value::Number(*value),
+            None => index
+                .checked_sub(scope.parameter_values.len())
+                .and_then(|at| scope.points.get(at))
+                .map_or(Value::Number(f64::NAN), |(_, at)| Value::Vector(at.clone())),
+        }
     };
-    let at: Vec<f64> = (0..scope.dimension).map(component).collect();
-    if at.iter().all(|value| value.is_finite()) {
+    let at = match expr.eval_vector(&value_of) {
+        Ok(Value::Vector(at)) => at,
+        Ok(Value::Number(_)) => {
+            return Err(ErrorKind::Invalid(
+                "位置の式の値は，点(ベクトル)にする．数になる式(内積や長さだけの式など)は書けない．"
+                    .to_owned(),
+            ));
+        }
+        Err(reason) => {
+            return Err(ErrorKind::Invalid(format!(
+                "位置の式が，点の式になっていない．{reason}"
+            )));
+        }
+    };
+    if at.len() == scope.dimension && at.iter().all(|value| value.is_finite()) {
         Ok(at)
     } else {
         Err(ErrorKind::Invalid(

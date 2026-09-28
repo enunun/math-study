@@ -57,15 +57,6 @@ function basisVectors(
   ]);
 }
 
-/** 点`p`と`q`を位置ベクトルとみた外積p × qの成分の式(点の座標の名前`p_x`などで書く)． */
-function cross(p: string, q: string): Triple {
-  return [
-    `${p}_y*${q}_z - ${p}_z*${q}_y`,
-    `${p}_z*${q}_x - ${p}_x*${q}_z`,
-    `${p}_x*${q}_y - ${p}_y*${q}_x`,
-  ];
-}
-
 /** 単位胞の辺の両端．0は原点，1から3は基本ベクトルの先端，2つ以上の数字はその和の頂点である． */
 const CELL_EDGES: readonly (readonly [string, string])[] = [
   ['0', '1'],
@@ -125,23 +116,15 @@ const C_LENGTH = 1.25;
 const ALPHA = 80;
 const BETA = 95;
 const GAMMA = 85;
-const TRIPLE_PRODUCT = ((): string => {
-  const [x, y, z] = cross('A2', 'A3');
-  return `A1_x*(${x}) + A1_y*(${y}) + A1_z*(${z})`;
-})();
-
-/** 逆格子の基本ベクトルの先端．b = (first × second) / Vを，O*から描く． */
+/**
+ * 逆格子の基本ベクトルの先端．b = (first × second) / Vを，O*から描く．V = a_1・(a_2 × a_3)は単位胞の体積で，
+ * 実格子の原点Oは(0, 0, 0)なので，先端の点をそのままベクトルとして使える．
+ */
 function reciprocalTip(id: string, first: string, second: string): JsonObject {
-  const [x, y, z] = cross(first, second);
-  const [dx, dy] = TRICLINIC_OFFSET;
   return {
     id,
     type: 'point',
-    at: [
-      `${dx} + (${x})/(${TRIPLE_PRODUCT})`,
-      `${dy} + (${y})/(${TRIPLE_PRODUCT})`,
-      `(${z})/(${TRIPLE_PRODUCT})`,
-    ],
+    at: `O_star + cross(${first}, ${second}) / dot(A1, cross(A2, A3))`,
   };
 }
 

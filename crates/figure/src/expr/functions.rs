@@ -115,6 +115,13 @@ fn substitute(
         Node::Neg(operand) => Node::Neg(recurse(operand)?),
         Node::Binary(op, left, right) => Node::Binary(*op, recurse(left)?, recurse(right)?),
         Node::Call(function, argument) => Node::Call(*function, recurse(argument)?),
+        Node::Vector(function, children) => Node::Vector(
+            *function,
+            children
+                .iter()
+                .map(|child| substitute(child, arguments, globals, names))
+                .collect::<Result<_, _>>()?,
+        ),
     })
 }
 
@@ -127,6 +134,9 @@ impl Node {
             Self::Binary(_, left, right) => {
                 left.size().saturating_add(right.size()).saturating_add(1)
             }
+            Self::Vector(_, arguments) => arguments
+                .iter()
+                .fold(1_usize, |sum, argument| sum.saturating_add(argument.size())),
         }
     }
 }

@@ -10,6 +10,7 @@
 //! ```
 
 use super::lexer::{Token, TokenKind};
+use super::vector::VectorFunction;
 use super::{BinaryOp, ExprError, ExprErrorKind, Function, Functions, Node, Span};
 
 /// 括弧や単項の記号の入れ子の上限．
@@ -207,6 +208,11 @@ impl Parser<'_> {
 
     /// 名前が，関数の呼び出し，変数，定数のどれかを決める．
     fn name(&mut self, name: &str, span: &Span) -> Result<Node, ExprError> {
+        if self.peek()?.kind == TokenKind::OpenParen
+            && let Some(function) = VectorFunction::from_name(name)
+        {
+            return self.vector_call(function, name, span);
+        }
         if self.peek()?.kind == TokenKind::OpenParen {
             if Function::from_name(name).is_none() && self.functions.contains(name) {
                 return self.user_call(name, span);
@@ -255,6 +261,32 @@ impl Parser<'_> {
                     span.clone(),
                 ))
             })
+    }
+
+    /// ベクトルの関数の呼び出し．引数を`,`で区切って読み，数を確かめる．
+    fn vector_call(
+        &mut self,
+        function: VectorFunction,
+        name: &str,
+        span: &Span,
+    ) -> Result<Node, ExprError> {
+        self.advance();
+        self.enter(span)?;
+        let arguments = self.arguments();
+        self.leave();
+        let arguments = arguments?;
+        self.expect_close()?;
+        if arguments.len() != function.arity() {
+            return Err(error_at(
+                ExprErrorKind::ArgumentCount {
+                    name: name.to_owned(),
+                    expected: function.arity(),
+                    found: arguments.len(),
+                },
+                span.clone(),
+            ));
+        }
+        Ok(Node::Vector(function, arguments))
     }
 
     /// `,`で区切った引数の並び．閉じ括弧の手前まで読む．

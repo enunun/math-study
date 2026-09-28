@@ -6,8 +6,11 @@ mod functions;
 mod lexer;
 mod parser;
 mod taylor;
+mod vector;
 
 pub use functions::Functions;
+pub use vector::Value;
+use vector::{VECTOR_FUNCTIONS, VectorFunction};
 
 /// 入力の中の範囲．バイトではなく，文字(Unicodeのスカラー値)の番号で数える．
 pub type Span = Range<usize>;
@@ -187,9 +190,12 @@ impl Function {
     }
 }
 
-/// 式で使える関数の名前．
+/// 式で使える関数の名前．点の式でだけ使えるベクトルの関数(`dot`，`cross`，`norm`)も含む．
 pub fn function_names() -> impl Iterator<Item = &'static str> {
-    FUNCTIONS.iter().map(|(name, _)| *name)
+    FUNCTIONS
+        .iter()
+        .map(|(name, _)| *name)
+        .chain(VECTOR_FUNCTIONS.iter().map(|(name, _)| *name))
 }
 
 /// 式で使える定数の名前．
@@ -200,7 +206,9 @@ pub fn constant_names() -> impl Iterator<Item = &'static str> {
 /// 関数か定数の名前か．媒介変数の`id`や変数の名前には使えない．
 #[must_use]
 pub fn is_reserved_name(name: &str) -> bool {
-    Function::from_name(name).is_some() || parser::is_constant(name)
+    Function::from_name(name).is_some()
+        || VectorFunction::from_name(name).is_some()
+        || parser::is_constant(name)
 }
 
 /// 構文木の節．
@@ -212,27 +220,11 @@ enum Node {
     Neg(Box<Node>),
     Binary(BinaryOp, Box<Node>, Box<Node>),
     Call(Function, Box<Node>),
+    /// ベクトルの関数の呼び出し．点の式でだけ値を持つ．
+    Vector(VectorFunction, Vec<Node>),
 }
 
 impl Node {
-    fn point_kind(&self, is_point: &dyn Fn(usize) -> bool) -> Option<bool> {
-        match self {
-            Self::Number(_) => Some(false),
-            Self::Variable(index) => Some(is_point(*index)),
-            Self::Neg(operand) => operand.point_kind(is_point),
-            Self::Binary(op, left, right) => {
-                let (left, right) = (left.point_kind(is_point)?, right.point_kind(is_point)?);
-                match op {
-                    BinaryOp::Add | BinaryOp::Sub => (left == right).then_some(left),
-                    BinaryOp::Mul => (!(left && right)).then_some(left || right),
-                    BinaryOp::Div => (!right).then_some(left),
-                    BinaryOp::Pow => (!(left || right)).then_some(false),
-                }
-            }
-            Self::Call(_, argument) => (!argument.point_kind(is_point)?).then_some(false),
-        }
-    }
-
     fn eval(&self, values: &[f64]) -> f64 {
         match self {
             Self::Number(value) => *value,
@@ -249,6 +241,8 @@ impl Node {
                 }
             }
             Self::Call(function, argument) => function.apply(argument.eval(values)),
+            // ベクトルの関数は，点の式でだけ使える(`uses_vector_functions`で断る)．
+            Self::Vector(..) => f64::NAN,
         }
     }
 }
@@ -309,14 +303,20 @@ fn parse_source(source: &str, names: &[&str], functions: &Functions) -> Result<N
 }
 
 impl Expr {
-    /// 式が，点(ベクトル)の式として正しいかを調べ，値が点なら`Some(true)`，数なら`Some(false)`を返す．
-    /// `is_point`は，`compile`に渡した名前の番号が，点の名前かを答える．
+    /// 点の式として評価する．点はベクトルのまま扱い，内積(`dot`)，外積(`cross`)，長さ(`norm`)を使える．
+    /// `value_of`は，`compile`に渡した名前の番号から，値(媒介変数なら数，点ならベクトル)を返す．
     ///
-    /// 点は，和と差(点どうし，数どうしだけ)，数の倍(点×数，数×点)，数での割り算(点÷数)ができる．
-    /// 点どうしの積，点への数の足し引き，点を関数やべき乗や割る側に使う式は，正しくない(`None`)．
+    /// # Errors
+    ///
+    /// 点どうしの積，点への数の足し引き，点を数の関数に入れる式など，点の式として正しくなければ，理由を返す．
+    pub fn eval_vector(&self, value_of: &dyn Fn(usize) -> Value) -> Result<Value, &'static str> {
+        self.root.eval_vector(value_of)
+    }
+
+    /// ベクトルの関数(`dot`，`cross`，`norm`)を使っているか．これらは点の式でだけ使える．
     #[must_use]
-    pub fn point_kind(&self, is_point: &dyn Fn(usize) -> bool) -> Option<bool> {
-        self.root.point_kind(is_point)
+    pub fn uses_vector_functions(&self) -> bool {
+        self.root.uses_vector_functions()
     }
 
     /// 変数に値を入れて，式を評価する．`values`は，`compile`に渡した`names`と同じ順に並べる．
