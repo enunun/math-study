@@ -177,6 +177,8 @@ pub enum Object {
     FieldLine(FieldLine),
     /// Wigner-Seitz胞(逆格子なら第1Brillouinゾーン)．平面の図でだけ使える．
     WignerSeitz(WignerSeitz),
+    /// 楕円曲線．
+    EllipticCurve(EllipticCurve),
 }
 
 /// 軸の向き．
@@ -1058,6 +1060,57 @@ pub struct WignerSeitz {
     pub transform: Vec<TransformStep>,
 }
 
+/// 楕円曲線．Weierstrassの標準形`y^2 = x^3 + a x + b`の実の点を描く．平面の図でだけ使える．
+///
+/// 点`p`(と`q`)のx座標を与えると，群の演算の作図を描く．`q`があれば，`P`と`Q`を通る直線，3つ目の交点
+/// `-(P+Q)`，それをx軸について折り返した`P+Q`．`q`がなければ，`P`での接線による`2P`．`multiples`を
+/// 与えると，`P`，`2P`，…，`nP`の点を並べる．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+// 真偽の項目は，それぞれ独立したJSONの切り替えである(枝の選び方2つと，作図，名前)．
+#[allow(clippy::struct_excessive_bools)]
+pub struct EllipticCurve {
+    /// 識別子．
+    pub id: String,
+    /// 係数`a`．数か式．
+    pub a: Bound,
+    /// 係数`b`．数か式．
+    pub b: Bound,
+    /// 点`P`のx座標．数か式．なければ，曲線だけを描く．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub p: Option<Bound>,
+    /// 点`P`を，下の枝(`y < 0`)にとるか．既定は上の枝(`y >= 0`)である．
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub p_lower: bool,
+    /// 点`Q`のx座標．数か式．なければ，`P`の2倍を作図する．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub q: Option<Bound>,
+    /// 点`Q`を，下の枝にとるか．
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub q_lower: bool,
+    /// 和(か2倍)の作図を描くか．既定は描く．`p`がなければ，何もしない．
+    #[serde(default = "default_true", skip_serializing_if = "is_true")]
+    pub construction: bool,
+    /// `P`の倍数`2P`，…，`nP`の点を並べるときの`n`(2以上)．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub multiples: Option<u32>,
+    /// 点の名前(`P`，`Q`，`P+Q`など)を置くか．既定は置く．
+    #[serde(default = "default_true", skip_serializing_if = "is_true")]
+    pub labels: bool,
+    /// 曲線のスタイル．`color`は，点の印の色にもなる．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+    /// 変換．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
+}
+
+impl EllipticCurve {
+    /// 倍数の点の数の上限．
+    pub const MAX_MULTIPLES: u32 = 64;
+}
+
 /// 流線をどちらの向きに伸ばすか．
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -1455,6 +1508,7 @@ impl Object {
             Self::VectorField(o) => &o.id,
             Self::FieldLine(o) => &o.id,
             Self::WignerSeitz(o) => &o.id,
+            Self::EllipticCurve(o) => &o.id,
             Self::Intersection(o) => &o.id,
             Self::TangentPlane(o) => &o.id,
             Self::Complex(o) => &o.id,
@@ -1490,6 +1544,7 @@ impl Object {
             Self::VectorField(_) => "vector_field",
             Self::FieldLine(_) => "field_line",
             Self::WignerSeitz(_) => "wigner_seitz",
+            Self::EllipticCurve(_) => "elliptic_curve",
             Self::Intersection(_) => "intersection",
             Self::TangentPlane(_) => "tangent_plane",
             Self::Complex(_) => "complex",

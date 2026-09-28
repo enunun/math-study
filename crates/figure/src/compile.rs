@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use crate::elliptic_curve::{EllipticCurvePlot, compile_elliptic_curve};
 use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, Functions, Value, is_reserved_name};
 use crate::fractal;
@@ -232,6 +233,8 @@ pub enum Plot {
     VectorField(VectorFieldPlot),
     /// 流線．
     FieldLine(FieldLinePlot),
+    /// 楕円曲線．
+    EllipticCurve(EllipticCurvePlot),
     /// 式のないオブジェクト．
     None,
 }
@@ -721,6 +724,11 @@ fn compile_object(
         Object::WignerSeitz(cell) => compile_wigner_seitz(cell, env)
             .map(Plot::Polygon)
             .map_err(|kind| Error::in_object(&cell.id, kind)),
+        Object::EllipticCurve(curve) => {
+            compile_elliptic_curve(curve, &|field, bound| evaluate_bound(field, bound, 0, env))
+                .map(Plot::EllipticCurve)
+                .map_err(|kind| Error::in_object(&curve.id, kind))
+        }
         Object::FieldLine(line) => compile_field_line(line, env, view, scope, transform)
             .map(Plot::FieldLine)
             .map_err(|kind| Error::in_object(&line.id, kind)),

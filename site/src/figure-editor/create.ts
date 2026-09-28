@@ -46,6 +46,7 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'vector_field', label: 'ベクトル場', kinds: BOTH },
   { type: 'field_line', label: '流線', kinds: BOTH },
   { type: 'wigner_seitz', label: 'Wigner-Seitz胞(Brillouinゾーン)', kinds: PLANE },
+  { type: 'elliptic_curve', label: '楕円曲線', kinds: PLANE },
   { type: 'function', label: '関数', kinds: BOTH },
   { type: 'map', label: '写像', kinds: BOTH },
   { type: 'image', label: '像(変換した図形)', kinds: BOTH },

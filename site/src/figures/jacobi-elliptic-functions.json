@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "description": "Jacobiの楕円関数sn(u, k)，cn(u, k)，dn(u, k)のグラフ．母数kを0に近づけると，sin u，cos u，1に近づき，1に近づけると，周期4K(k)が長くなる．",
+  "view": { "x": [-0.5, 13], "y": [-1.4, 1.6], "unit": { "x": "0.8cm", "y": "1.5cm" } },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "label": "u" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "label": "y" },
+    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "$O$" },
+    { "id": "k", "type": "parameter", "value": 0.8, "range": [0, 0.99], "step": 0.01 },
+    { "id": "sn_graph", "type": "graph", "var": "u", "expr": "sn(u, k)", "domain": [0, 13] },
+    {
+      "id": "cn_graph",
+      "type": "graph",
+      "var": "u",
+      "expr": "cn(u, k)",
+      "domain": [0, 13],
+      "style": { "color": "blue", "line": "dashed" }
+    },
+    {
+      "id": "dn_graph",
+      "type": "graph",
+      "var": "u",
+      "expr": "dn(u, k)",
+      "domain": [0, 13],
+      "style": { "color": "red", "line": "dotted" }
+    }
+  ]
+}

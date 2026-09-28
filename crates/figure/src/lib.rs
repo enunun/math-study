@@ -19,6 +19,7 @@ pub mod clip;
 mod compile;
 mod crossing;
 mod derivative;
+pub mod elliptic_curve;
 pub mod error;
 pub mod expr;
 pub mod figure;

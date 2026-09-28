@@ -1134,8 +1134,66 @@
         "style": { "$ref": "#/$defs/style" }
       }
     },
+    "elliptic_curve": {
+      "type": "object",
+      "required": ["id", "type", "a", "b"],
+      "additionalProperties": false,
+      "description": "楕円曲線．Weierstrassの標準形y^2 = x^3 + a x + bの実の点を描く．点`p`(と`q`)のx座標を与えると，群の演算の作図を描く：`q`があれば，PとQを通る直線，3つ目の交点-(P+Q)，それをx軸について折り返したP+Q．`q`がなければ，Pでの接線による2P．平面の図でだけ使える．",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "type": {
+          "const": "elliptic_curve"
+        },
+        "a": {
+          "$ref": "#/$defs/bound",
+          "description": "係数a．"
+        },
+        "b": {
+          "$ref": "#/$defs/bound",
+          "description": "係数b．"
+        },
+        "p": {
+          "$ref": "#/$defs/bound",
+          "description": "点Pのx座標．省くと，曲線だけを描く．x^3 + a x + bが負になるx座標では，曲線の上に点がないので誤りになる(スキーマでは表せない)．"
+        },
+        "p_lower": {
+          "type": "boolean",
+          "description": "点Pを下の枝(y < 0)にとるか．既定は上の枝(y >= 0)．"
+        },
+        "q": {
+          "$ref": "#/$defs/bound",
+          "description": "点Qのx座標．省くと，Pの2倍を作図する．`p`と一緒に書く(スキーマでは表せない)．"
+        },
+        "q_lower": {
+          "type": "boolean",
+          "description": "点Qを下の枝にとるか．"
+        },
+        "construction": {
+          "type": "boolean",
+          "description": "和(か2倍)の作図を描くか．既定は描く．"
+        },
+        "multiples": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 64,
+          "description": "Pの倍数P，2P，…，nPの点を並べるときのn．`p`と一緒に書く(スキーマでは表せない)．"
+        },
+        "labels": {
+          "type": "boolean",
+          "description": "点の名前(P，Q，P+Qなど)を置くか．既定は置く．"
+        },
+        "style": {
+          "$ref": "#/$defs/style"
+        },
+        "transform": {
+          "$ref": "#/$defs/transform"
+        }
+      }
+    },
     "object": {
-      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`，`wigner_seitz`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
+      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`，`wigner_seitz`，`elliptic_curve`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },
@@ -1164,7 +1222,8 @@
         { "$ref": "#/$defs/taylor" },
         { "$ref": "#/$defs/vector_field" },
         { "$ref": "#/$defs/field_line" },
-        { "$ref": "#/$defs/wigner_seitz" }
+        { "$ref": "#/$defs/wigner_seitz" },
+        { "$ref": "#/$defs/elliptic_curve" }
       ]
     }
   }

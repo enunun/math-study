@@ -82,6 +82,14 @@ const SAMPLE_GROUPS: readonly SampleGroup[] = [
       articleSample('sierpinski', 'Sierpińskiの三角形', 'sierpinski-triangle'),
     ],
   },
+  {
+    label: '平面：楕円曲線と楕円関数',
+    samples: [
+      articleSample('ellipticAddition', '楕円曲線の点の和', 'elliptic-curve-addition'),
+      articleSample('ellipticDoubling', '楕円曲線の点の2倍', 'elliptic-curve-doubling'),
+      articleSample('jacobiFunctions', 'Jacobiの楕円関数', 'jacobi-elliptic-functions'),
+    ],
+  },
   { label: '平面：ベクトル場', samples: VECTOR_FIELD_SAMPLES },
   ...PLANE_SYMMETRY_GROUPS,
   { label: '平面：結晶と逆格子', samples: PLANE_CRYSTAL_SAMPLES },

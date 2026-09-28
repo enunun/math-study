@@ -11,6 +11,7 @@ use crate::compile::{
     VectorFieldPlot, compile,
 };
 use crate::derivative::central_difference_point;
+use crate::elliptic_curve::{Placement, elliptic_curve_items, view_extent};
 use crate::error::Error;
 use crate::figure::{ArrowHead, Bounds, DotItem, Figure, FillItem, Item, LabelItem, Path, Stroke};
 use crate::image::expand_images;
@@ -209,6 +210,16 @@ fn object_items(
         (Object::FieldLine(line), Plot::FieldLine(placed)) => {
             field_line_items(placed, line.style, scale, window)
         }
+        (Object::EllipticCurve(curve), Plot::EllipticCurve(placed)) => elliptic_curve_items(
+            curve,
+            placed,
+            &Placement {
+                transform,
+                to_cm: &|[x, y]| scale.point(x, y),
+                window,
+                extent: view_extent(view.x, view.y),
+            },
+        ),
         (Object::VectorField(field), Plot::VectorField(placed)) => vector_field_items(placed, view)
             .filter_map(|link| link_item(&field.style, Arrow::Stealth, link, scale))
             .collect(),

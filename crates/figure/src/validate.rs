@@ -6,8 +6,8 @@ use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::image::{expand_images, transform_of};
 use crate::scene::{
-    ArrowLength, Axis, Bound, CM_PER_PT, Complex, Curve, CurveExpr, Cut, Direction, FieldLine,
-    Fill, Fractal, FunctionDef, Graph, Grid, ImplicitCurve, Intersection, Label,
+    ArrowLength, Axis, Bound, CM_PER_PT, Complex, Curve, CurveExpr, Cut, Direction, EllipticCurve,
+    FieldLine, Fill, Fractal, FunctionDef, Graph, Grid, ImplicitCurve, Intersection, Label,
     MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object, Parameter, Point, Polygon, Position, Region,
     Scene, SpaceView, Sphere, Style, Surface, TangentPlane, Taylor, TransformStep, VectorField,
     View, WignerSeitz,
@@ -152,6 +152,9 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::FieldLine(line) => validate_field_line(line, view),
         Object::WignerSeitz(cell) => {
             plane_only("wigner_seitz", view).and_then(|()| validate_wigner_seitz(cell))
+        }
+        Object::EllipticCurve(curve) => {
+            plane_only("elliptic_curve", view).and_then(|()| validate_elliptic_curve(curve))
         }
         // 像は，検査の前に，元のオブジェクトの複製に置き換えてある．
         Object::Parameter(parameter) => validate_parameter(parameter),
@@ -299,8 +302,27 @@ fn validate_wigner_seitz(cell: &WignerSeitz) -> Result<(), ErrorKind> {
     check_fill(cell.fill.as_ref())
 }
 
+/// 楕円曲線．`q`と倍数は，`p`と一緒に書く．倍数は2以上で，上限以下である．
+fn validate_elliptic_curve(curve: &EllipticCurve) -> Result<(), ErrorKind> {
+    if curve.p.is_none() && (curve.q.is_some() || curve.multiples.is_some()) {
+        return Err(ErrorKind::Invalid(
+            "楕円曲線の点`q`と倍数`multiples`は，点`p`と一緒に書く．".to_owned(),
+        ));
+    }
+    if let Some(count) = curve.multiples
+        && !(2..=EllipticCurve::MAX_MULTIPLES).contains(&count)
+    {
+        return Err(ErrorKind::Invalid(format!(
+            "楕円曲線の倍数`multiples`は，2以上{}以下にする(今は{count})．",
+            EllipticCurve::MAX_MULTIPLES
+        )));
+    }
+    Ok(())
+}
+
 fn style_of(object: &Object) -> Option<&Style> {
     match object {
+        Object::EllipticCurve(o) => Some(&o.style),
         Object::VectorField(o) => Some(&o.style),
         Object::FieldLine(o) => Some(&o.style),
         Object::WignerSeitz(o) => Some(&o.style),
