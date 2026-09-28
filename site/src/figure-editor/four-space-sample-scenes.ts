@@ -49,7 +49,7 @@ interface FourSurface {
 /** 決まった時刻の切り口(`ghost`)と，今の時刻tの切り口(`slice`)．どちらも等値線で描く． */
 function sliceObjects(surface: FourSurface): JsonObject[] {
   const shape: JsonObject = {
-    type: 'level_curve',
+    type: 'implicit_curve',
     vars: [...surface.vars],
     expr: [...surface.expr],
     domain: surface.domain.map((range) => [...range]),

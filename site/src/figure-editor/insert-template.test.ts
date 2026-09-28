@@ -105,7 +105,7 @@ describe('式の中の名前を持つテンプレートの挿入', () => {
       { id: 'q', type: 'point', at: '(p + p) / 2' },
       {
         id: 'c',
-        type: 'level_curve',
+        type: 'implicit_curve',
         vars: ['u', 'v'],
         expr: ['u', 'v', 'a'],
         domain: [

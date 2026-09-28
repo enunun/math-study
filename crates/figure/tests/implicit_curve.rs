@@ -1,4 +1,4 @@
-//! 等値線(`level_curve`)を確かめる．2つの変数の関数`level`が値`values`になる所を，写像`expr`で空間へ移した曲線である．
+//! 陰関数の曲線(`implicit_curve`)を確かめる．2つの変数の関数`level`が値`values`になる所を，写像`expr`で空間へ移した曲線である．
 //! 4次元の曲面の超平面による切り口(時刻tの姿)や，曲面の等高線に使う．平面の図では，写像`expr`を平面への
 //! 2つの式にして，陰関数の曲線や，斜交座標で書いた直線の族を描く．
 
@@ -43,17 +43,17 @@ fn paths(figure: &Figure) -> Vec<&Path> {
         .collect()
 }
 
-/// xy平面(z = height)を，そのまま写す等値線．`level`はxとyの式である．
+/// xy平面(z = height)を，そのまま写す陰関数の曲線．`level`はxとyの式である．
 fn planar(level: &str, values: &str, height: &str, extra: &str) -> String {
     format!(
-        r#"{{ "id": "c", "type": "level_curve", "vars": ["x", "y"],
+        r#"{{ "id": "c", "type": "implicit_curve", "vars": ["x", "y"],
               "expr": ["x", "y", "{height}"], "domain": [[-3, 3], [-3, 3]],
               "level": "{level}", "values": {values} {extra} }}"#
     )
 }
 
 #[test]
-fn 等値線を読み_書き出して読み直すと同じになる() {
+fn 陰関数の曲線を読み_書き出して読み直すと同じになる() {
     let scene = parse_scene(&top_scene(&planar("x^2 + y^2", r#"[1, "t"]"#, "0", "")))
         .expect_err("tがないので誤りになる");
     assert!(
@@ -65,21 +65,21 @@ fn 等値線を読み_書き出して読み直すと同じになる() {
         planar("x^2 + y^2", r#"[1, "t"]"#, "0", "")
     )))
     .expect("読める");
-    let Object::LevelCurve(curve) = &parsed.objects[1] else {
-        panic!("等値線である");
+    let Object::ImplicitCurve(curve) = &parsed.objects[1] else {
+        panic!("陰関数の曲線である");
     };
     assert_eq!(curve.level, "x^2 + y^2");
     assert_eq!(
         curve.values,
         [Bound::Number(1.0), Bound::Expression("t".to_owned())]
     );
-    assert_eq!(parsed.objects[1].type_name(), "level_curve");
+    assert_eq!(parsed.objects[1].type_name(), "implicit_curve");
     let written = serde_json::to_string(&parsed).expect("書き出せる");
     assert_eq!(parse_scene(&written).expect("読み直せる"), parsed);
 }
 
 #[test]
-fn 円の等値線は_その半径の円になる() {
+fn 円の陰関数の曲線は_その半径の円になる() {
     let figure = figure_of(&planar("x^2 + y^2", "[1]", "0", ""));
     let lines = paths(&figure);
     assert_eq!(lines.len(), 1, "閉じた1本の線");
@@ -110,7 +110,7 @@ fn 値を並べると_値ごとに線を引く() {
 }
 
 #[test]
-fn 値に届かない等値線は_何も描かない() {
+fn 値に届かない陰関数の曲線は_何も描かない() {
     let figure = figure_of(&planar("x^2 + y^2", "[-1]", "0", ""));
     assert!(paths(&figure).is_empty());
 }
@@ -130,7 +130,7 @@ fn 値と式は_媒介変数を使える() {
 }
 
 #[test]
-fn 等値線は_不透明な曲面に隠れる() {
+fn 陰関数の曲線は_不透明な曲面に隠れる() {
     // 半径1の球の下(z = -2)の，半径0.5の円は，真上から見ると，すべて球に隠れる．
     let figure = figure_of(&format!(
         r#"{{ "id": "ball", "type": "sphere", "center": [0, 0, 0], "radius": 1 }},
@@ -146,8 +146,8 @@ fn 等値線は_不透明な曲面に隠れる() {
 }
 
 #[test]
-fn 等値線自身は_ほかの線を隠さない() {
-    // 等値線の写像が作る面は，描かないので，下にある軸を隠さない．
+fn 陰関数の曲線自身は_ほかの線を隠さない() {
+    // 陰関数の曲線の写像が作る面は，描かないので，下にある軸を隠さない．
     let figure = figure_of(&format!(
         r#"{{ "id": "x_axis", "type": "axis", "direction": "x", "range": [-1, 1] }},
            {}"#,
@@ -189,7 +189,7 @@ fn 値は_1つ以上要る() {
 #[test]
 fn 空間の図の写像は3つの式で_変数は2つの名前で書く() {
     let error = error_of(
-        r#"{ "id": "c", "type": "level_curve", "vars": ["x", "y"], "expr": ["x", "y"],
+        r#"{ "id": "c", "type": "implicit_curve", "vars": ["x", "y"], "expr": ["x", "y"],
              "domain": [[0, 1], [0, 1]], "level": "x", "values": [0.5] }"#,
     );
     assert!(
@@ -203,7 +203,7 @@ fn 空間の図の写像は3つの式で_変数は2つの名前で書く() {
         "{error}"
     );
     let error = error_of(
-        r#"{ "id": "c", "type": "level_curve", "vars": ["x"], "expr": ["x", "x", "x"],
+        r#"{ "id": "c", "type": "implicit_curve", "vars": ["x"], "expr": ["x", "x", "x"],
              "domain": [[0, 1], [0, 1]], "level": "x", "values": [0.5] }"#,
     );
     assert!(error.to_string().contains("vars"), "{error}");
@@ -242,10 +242,10 @@ fn plane_figure_of(objects: &str, unit: &str) -> Figure {
     render(&parse_scene(&plane_scene(objects, unit)).expect("読める")).expect("描画できる")
 }
 
-/// 平面を，そのまま写す等値線(陰関数の曲線)．
+/// 平面を，そのまま写す陰関数の曲線．
 fn implicit(level: &str, values: &str, extra: &str) -> String {
     format!(
-        r#"{{ "id": "c", "type": "level_curve", "vars": ["x", "y"],
+        r#"{{ "id": "c", "type": "implicit_curve", "vars": ["x", "y"],
               "expr": ["x", "y"], "domain": [[-4, 4], [-4, 4]],
               "level": "{level}", "values": {values} {extra} }}"#
     )
@@ -269,7 +269,7 @@ fn 平面の図では_陰関数の曲線を描く() {
 }
 
 #[test]
-fn 平面の等値線は_単位の長さで拡大する() {
+fn 平面の陰関数の曲線は_単位の長さで拡大する() {
     let figure = plane_figure_of(&implicit("x^2 + y^2", "[1]", ""), "2cm");
     for [x, y] in &paths(&figure)[0].points {
         assert!(
@@ -280,7 +280,7 @@ fn 平面の等値線は_単位の長さで拡大する() {
 }
 
 #[test]
-fn 平面の等値線は_見える範囲で切り取る() {
+fn 平面の陰関数の曲線は_見える範囲で切り取る() {
     // 半径4の円は，見える範囲[-3, 3]の角だけに掛かる．
     let figure = plane_figure_of(&implicit("x^2 + y^2", "[16]", ""), "1cm");
     let lines = paths(&figure);
@@ -297,7 +297,7 @@ fn 平面の等値線は_見える範囲で切り取る() {
 fn 平面の写像で_斜交座標の直線の族を描く() {
     // 基本ベクトル(1, 0)と(1/2, 1)の格子の座標(u, v)で，u = nの線は，x - y/2 = nの直線である．
     let figure = plane_figure_of(
-        r#"{ "id": "c", "type": "level_curve", "vars": ["u", "v"],
+        r#"{ "id": "c", "type": "implicit_curve", "vars": ["u", "v"],
              "expr": ["u + v/2", "v"], "domain": [[-6, 6], [-4, 4]],
              "level": "u", "values": [-1, 0, 1] }"#,
         "1cm",
@@ -320,7 +320,7 @@ fn 平面の写像で_斜交座標の直線の族を描く() {
 }
 
 #[test]
-fn 平面の等値線を変換で動かせる() {
+fn 平面の陰関数の曲線を変換で動かせる() {
     let figure = plane_figure_of(
         &implicit(
             "x^2 + y^2",
@@ -340,7 +340,7 @@ fn 平面の等値線を変換で動かせる() {
 #[test]
 fn 平面の図の写像は2つの式で書く() {
     let error = parse_scene(&plane_scene(
-        r#"{ "id": "c", "type": "level_curve", "vars": ["x", "y"], "expr": ["x", "y", "0"],
+        r#"{ "id": "c", "type": "implicit_curve", "vars": ["x", "y"], "expr": ["x", "y", "0"],
              "domain": [[0, 1], [0, 1]], "level": "x", "values": [0.5] }"#,
         "1cm",
     ))

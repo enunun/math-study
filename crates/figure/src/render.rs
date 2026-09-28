@@ -6,8 +6,8 @@ use crate::arrow::Stealth;
 use crate::bezier::bezier_curve_point;
 use crate::clip::{clip_polygon, clip_polyline};
 use crate::compile::{
-    Compiled, CurvePlot, FieldLinePlot, FractalPlot, GraphPlot, GridPlot, LabelPlot,
-    LevelCurvePlot, LinkPlot, Plot, PointPlot, PolygonPlot, TangentLinePlot, TaylorPlot, TickPlot,
+    Compiled, CurvePlot, FieldLinePlot, FractalPlot, GraphPlot, GridPlot, ImplicitCurvePlot,
+    LabelPlot, LinkPlot, Plot, PointPlot, PolygonPlot, TangentLinePlot, TaylorPlot, TickPlot,
     VectorFieldPlot, compile,
 };
 use crate::derivative::central_difference_point;
@@ -17,7 +17,7 @@ use crate::image::expand_images;
 use crate::region::region_items;
 use crate::sample::sample;
 use crate::scene::{
-    Anchor, Arrow, Axis, CM_PER_PT, Curve, Direction, Fractal, Graph, Label, LevelCurve, Line,
+    Anchor, Arrow, Axis, CM_PER_PT, Curve, Direction, Fractal, Graph, ImplicitCurve, Label, Line,
     Object, PlaneView, Point, Polygon, Scene, Style, TangentLine, Taylor, View,
 };
 use crate::space::render_space;
@@ -192,8 +192,8 @@ fn object_items(
         (Object::Taylor(taylor), Plot::Taylor(placed)) => {
             taylor_items(taylor, placed, transform, scale, window)
         }
-        (Object::LevelCurve(curve), Plot::LevelCurve(placed)) => {
-            level_curve_items(curve, placed, transform, context)
+        (Object::ImplicitCurve(curve), Plot::ImplicitCurve(placed)) => {
+            implicit_curve_items(curve, placed, transform, context)
         }
         (Object::FieldLine(line), Plot::FieldLine(placed)) => {
             field_line_items(placed, line.style, scale, window)
@@ -776,11 +776,11 @@ fn vector_field_items<'a>(
         .filter(move |link| inside(&link.from) && inside(&link.to))
 }
 
-/// 平面の等値線．平面をz = 0の空間に置き，空間の等値線と同じく，写像の網を変数の升目として作って，
+/// 平面の陰関数の曲線．平面をz = 0の空間に置き，空間の陰関数の曲線と同じく，写像の網を変数の升目として作って，
 /// 値ごとに`level`がその値になる線を求める．変換は写像に含め，線は見える範囲で切り取る．
-fn level_curve_items(
-    curve: &LevelCurve,
-    plot: &LevelCurvePlot,
+fn implicit_curve_items(
+    curve: &ImplicitCurve,
+    plot: &ImplicitCurvePlot,
     transform: &Transform,
     context: &PlaneContext,
 ) -> Vec<Item> {

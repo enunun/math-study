@@ -202,9 +202,9 @@
         "length": "normalized"
       }
     },
-    "level_curve": {
+    "implicit_curve": {
       "plane": {
-        "type": "level_curve",
+        "type": "implicit_curve",
         "vars": ["x", "y"],
         "expr": ["x", "y"],
         "domain": [
@@ -215,7 +215,7 @@
         "values": [1, 2, 3]
       },
       "space": {
-        "type": "level_curve",
+        "type": "implicit_curve",
         "vars": ["x", "y"],
         "expr": ["x", "y", "0"],
         "domain": [

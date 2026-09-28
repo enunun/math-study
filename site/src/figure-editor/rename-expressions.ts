@@ -35,7 +35,7 @@ function renameInJson(value: Json, names: ReadonlyMap<string, string>): Json {
   return value;
 }
 
-/** 文字列で書く項目のうち，式であるもの(グラフや曲面の式，等値線の関数)． */
+/** 文字列で書く項目のうち，式であるもの(グラフや曲面の式，陰関数の曲線の関数)． */
 const EXPRESSION_TEXTS: ReadonlySet<string> = new Set(['expr', 'level']);
 
 /** 中身がすべて式である項目の種類(数か式，位置，範囲，JSON，変換の手順)． */

@@ -28,7 +28,7 @@ test.describe('図のシーンのリファレンス', () => {
   test('スキーマのオブジェクトの種類ごとに，見出しと項目の表がある', async ({ page }) => {
     await page.goto(PAGE);
     const types = await objectTypes();
-    expect(types).toContain('level_curve');
+    expect(types).toContain('implicit_curve');
     for (const type of types) {
       const heading = page.locator(`h3#object-${type}`);
       await expect(heading, type).toHaveText(type);

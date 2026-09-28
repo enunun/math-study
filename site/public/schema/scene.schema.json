@@ -641,14 +641,14 @@
         "style": { "$ref": "#/$defs/style" }
       }
     },
-    "level_curve": {
+    "implicit_curve": {
       "type": "object",
       "required": ["id", "type", "vars", "expr", "domain", "level", "values"],
       "additionalProperties": false,
-      "description": "等値線．2つの変数の関数`level`が，`values`の各値になる所を，写像`expr`で図の平面か空間へ移した曲線．写像が作る面は描かず，ほかの線も隠さない．平面の図で`expr`を`[\"x\", \"y\"]`にすれば陰関数の曲線に，斜交座標の式にすれば格子面の族のような直線の族になる．空間の図で`expr`を曲面の式にすれば曲面の等高線に，4次元の曲面のx，y，z座標にして`level`を4つ目の座標にすれば，超平面による切り口になる．",
+      "description": "陰関数の曲線．2つの変数の関数`level`が，`values`の各値になる所を，写像`expr`で図の平面か空間へ移した曲線．写像が作る面は描かず，ほかの線も隠さない．平面の図で`expr`を`[\"x\", \"y\"]`にすれば陰関数の曲線に，斜交座標の式にすれば格子面の族のような直線の族になる．空間の図で`expr`を曲面の式にすれば曲面の等高線に，4次元の曲面のx，y，z座標にして`level`を4つ目の座標にすれば，超平面による切り口になる．",
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
-        "type": { "const": "level_curve" },
+        "type": { "const": "implicit_curve" },
         "vars": {
           "type": "array",
           "items": { "$ref": "#/$defs/identifier" },
@@ -1125,7 +1125,7 @@
         { "$ref": "#/$defs/sphere" },
         { "$ref": "#/$defs/surface" },
         { "$ref": "#/$defs/cut" },
-        { "$ref": "#/$defs/level_curve" },
+        { "$ref": "#/$defs/implicit_curve" },
         { "$ref": "#/$defs/intersection" },
         { "$ref": "#/$defs/tangent_plane" },
         { "$ref": "#/$defs/complex" },

@@ -151,8 +151,8 @@ pub enum Object {
     Surface(Surface),
     /// 曲面の，平面による切り口．空間の図でだけ使える．
     Cut(Cut),
-    /// 等値線．2つの変数の関数が決まった値になる所を，平面か空間へ写した曲線．
-    LevelCurve(LevelCurve),
+    /// 陰関数の曲線．2つの変数の関数が決まった値になる所を，平面か空間へ写した曲線．
+    ImplicitCurve(ImplicitCurve),
     /// 2つの曲面の交線．空間の図でだけ使える．
     Intersection(Intersection),
     /// 曲面の接平面．空間の図でだけ使える．
@@ -890,7 +890,7 @@ pub struct Cut {
     pub transform: Vec<TransformStep>,
 }
 
-/// 等値線．2つの変数の関数`level`が，`values`の各値になる所を，2つの変数から図の平面か空間への
+/// 陰関数の曲線．2つの変数の関数`level`が，`values`の各値になる所を，2つの変数から図の平面か空間への
 /// 写像`expr`で移した曲線．
 ///
 /// 写像が作る面は描かず，ほかの線も隠さない．平面の図で`expr`を`[x, y]`にすれば陰関数の曲線に，
@@ -901,7 +901,7 @@ pub struct Cut {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
-pub struct LevelCurve {
+pub struct ImplicitCurve {
     /// 識別子．
     pub id: String,
     /// 2つの変数の名前．
@@ -925,7 +925,7 @@ pub struct LevelCurve {
     pub transform: Vec<TransformStep>,
 }
 
-impl LevelCurve {
+impl ImplicitCurve {
     /// 並べられる値の数の上限．
     pub const MAX_VALUES: usize = 64;
 }
@@ -1398,7 +1398,7 @@ impl Object {
             Self::Fractal(o) => &o.id,
             Self::Surface(o) => &o.id,
             Self::Cut(o) => &o.id,
-            Self::LevelCurve(o) => &o.id,
+            Self::ImplicitCurve(o) => &o.id,
             Self::VectorField(o) => &o.id,
             Self::FieldLine(o) => &o.id,
             Self::Intersection(o) => &o.id,
@@ -1432,7 +1432,7 @@ impl Object {
             Self::Fractal(_) => "fractal",
             Self::Surface(_) => "surface",
             Self::Cut(_) => "cut",
-            Self::LevelCurve(_) => "level_curve",
+            Self::ImplicitCurve(_) => "implicit_curve",
             Self::VectorField(_) => "vector_field",
             Self::FieldLine(_) => "field_line",
             Self::Intersection(_) => "intersection",

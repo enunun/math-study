@@ -120,7 +120,7 @@ const GRADIENT_SCENE: SceneDraft = {
   objects: [
     {
       id: 'contours',
-      type: 'level_curve',
+      type: 'implicit_curve',
       vars: ['x', 'y'],
       expr: ['x', 'y'],
       domain: [

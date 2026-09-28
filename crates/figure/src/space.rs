@@ -12,8 +12,8 @@ use std::f64::consts::TAU;
 
 use crate::bezier::{bezier_curve_point, bezier_point};
 use crate::compile::{
-    Compiled, CurvePlot, CutPlot, GridPlot, LabelPlot, LevelCurvePlot, LinkPlot, Plot, PointPlot,
-    SurfacePlot, TangentPlanePlot,
+    Compiled, CurvePlot, CutPlot, GridPlot, ImplicitCurvePlot, LabelPlot, LinkPlot, Plot,
+    PointPlot, SurfacePlot, TangentPlanePlot,
 };
 use crate::crossing::{Drawn, Traced, break_crossings};
 use crate::derivative::central_difference_point;
@@ -24,8 +24,8 @@ use crate::render::{
 };
 use crate::sample::{sample, sample_with_parameters};
 use crate::scene::{
-    Anchor, Arrow, Axis, Complex, Cut, Direction, Hidden, Intersection, Label, Length, LevelCurve,
-    Line, Object, Point, Scene, SpaceView, Sphere, Style, Surface, TangentPlane,
+    Anchor, Arrow, Axis, Complex, Cut, Direction, Hidden, ImplicitCurve, Intersection, Label,
+    Length, Line, Object, Point, Scene, SpaceView, Sphere, Style, Surface, TangentPlane,
 };
 use crate::spline::catmull_rom_point;
 use crate::surface::{Frame, Mesh, Rim};
@@ -415,8 +415,8 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
             (Object::Cut(cut), Plot::Cut(placed)) => {
                 items.extend(cut_items(cut, placed, transform, &space));
             }
-            (Object::LevelCurve(curve), Plot::LevelCurve(placed)) => {
-                items.extend(level_curve_items(
+            (Object::ImplicitCurve(curve), Plot::ImplicitCurve(placed)) => {
+                items.extend(implicit_curve_items(
                     curve, placed, compiled, transform, &space,
                 ));
             }
@@ -1150,11 +1150,11 @@ fn polyline_items(line: &[Rim], style: &Style, space: &Space) -> Vec<Drawn> {
     piece_items(&pieces, stroke, style, &space.camera)
 }
 
-/// 等値線．写像の網を変数の升目として作り，値ごとに，`level`がその値になる線を求める．網は描かず，
+/// 陰関数の曲線．写像の網を変数の升目として作り，値ごとに，`level`がその値になる線を求める．網は描かず，
 /// ほかの線も隠さない．変換は写像に含めるので，線は変換した後の写像の上に求まる．
-fn level_curve_items(
-    curve: &LevelCurve,
-    plot: &LevelCurvePlot,
+fn implicit_curve_items(
+    curve: &ImplicitCurve,
+    plot: &ImplicitCurvePlot,
     compiled: &Compiled,
     transform: &Transform,
     space: &Space,

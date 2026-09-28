@@ -9,8 +9,8 @@ use crate::fractal;
 use crate::image::transform_of;
 use crate::scene::{
     Anchor, ArrowLength, Axis, Bound, Curve, Cut, Direction, Factor, FieldLine, Fractal, Graph,
-    Grid, Label, LevelCurve, LineDirection, Object, Pivot, Point, Polygon, Position, Region, Scene,
-    Surface, TangentLine, TangentPlane, Taylor, TransformStep, VectorField, View,
+    Grid, ImplicitCurve, Label, LineDirection, Object, Pivot, Point, Polygon, Position, Region,
+    Scene, Surface, TangentLine, TangentPlane, Taylor, TransformStep, VectorField, View,
 };
 use crate::transform::{Affine, MapFn, Transform, Vector3};
 use crate::validate::curve_expressions;
@@ -133,8 +133,8 @@ pub struct SurfacePlot {
     pub wireframe: [Vec<f64>; 2],
 }
 
-/// 式を読んだ後の，等値線．
-pub struct LevelCurvePlot {
+/// 式を読んだ後の，陰関数の曲線．
+pub struct ImplicitCurvePlot {
     /// 写像の各座標の式(平面は2個，空間は3個)．名前の順は，2つの変数，媒介変数と点の座標である．
     pub exprs: Vec<Expr>,
     /// 値を比べる関数の式．名前の順は，`exprs`と同じである．
@@ -183,8 +183,8 @@ pub enum Plot {
     Polygon(PolygonPlot),
     /// Taylor展開の多項式．
     Taylor(TaylorPlot),
-    /// 等値線．
-    LevelCurve(LevelCurvePlot),
+    /// 陰関数の曲線．
+    ImplicitCurve(ImplicitCurvePlot),
     /// ベクトル場．
     VectorField(VectorFieldPlot),
     /// 流線．
@@ -681,8 +681,8 @@ fn compile_object(
         Object::VectorField(field) => compile_vector_field(field, env, view, scope, transform)
             .map(Plot::VectorField)
             .map_err(|kind| Error::in_object(&field.id, kind)),
-        Object::LevelCurve(curve) => compile_level_curve(curve, env)
-            .map(Plot::LevelCurve)
+        Object::ImplicitCurve(curve) => compile_implicit_curve(curve, env)
+            .map(Plot::ImplicitCurve)
             .map_err(|kind| Error::in_object(&curve.id, kind)),
         Object::Parameter(_)
         | Object::Sphere(_)
@@ -880,7 +880,10 @@ fn two_variable_names<'a>(vars: &'a [String], env: &Env<'a>) -> Result<Vec<&'a s
         .collect())
 }
 
-fn compile_level_curve(curve: &LevelCurve, env: &Env) -> Result<LevelCurvePlot, ErrorKind> {
+fn compile_implicit_curve(
+    curve: &ImplicitCurve,
+    env: &Env,
+) -> Result<ImplicitCurvePlot, ErrorKind> {
     let names = two_variable_names(&curve.vars, env)?;
     let exprs = curve
         .expr
@@ -902,7 +905,7 @@ fn compile_level_curve(curve: &LevelCurve, env: &Env) -> Result<LevelCurvePlot, 
             index.saturating_add(1)
         )));
     }
-    Ok(LevelCurvePlot {
+    Ok(ImplicitCurvePlot {
         exprs,
         level,
         domain: [

@@ -3,7 +3,7 @@ import type { JsonObject } from './json';
 
 /**
  * 逆格子の見本の部品．実格子の基本ベクトルa_iから，a_i・b_j = δ_ij(2πを付けない流儀)を満たす逆格子の
- * 基本ベクトルb_jを作る．格子の線は，格子の座標(u, v)から平面への写像を持つ等値線で描くので，
+ * 基本ベクトルb_jを作る．格子の線は，格子の座標(u, v)から平面への写像を持つ陰関数の曲線(`implicit_curve`)で描くので，
  * u = n，v = nの線が，そのまま格子の線になる．
  */
 
@@ -97,7 +97,7 @@ function latticeLines({
 }: LinesSpec): JsonObject {
   return {
     id,
-    type: 'level_curve',
+    type: 'implicit_curve',
     vars: ['u', 'v'],
     expr: [...latticeAt(lattice, ['u', 'v'])],
     domain: [

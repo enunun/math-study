@@ -98,7 +98,7 @@ const HEIGHT_STYLE: JsonObject = { color: 'blue', width: '1.2pt' };
 function contour(id: string, expr: readonly string[], values: JsonObject['values']): JsonObject {
   return {
     id,
-    type: 'level_curve',
+    type: 'implicit_curve',
     vars: ['x', 'y'],
     expr: [...expr],
     domain: CONTOUR_DOMAIN,

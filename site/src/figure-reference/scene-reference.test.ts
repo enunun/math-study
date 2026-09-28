@@ -33,7 +33,7 @@ describe('図のシーンのリファレンス', () => {
   it('スキーマのオブジェクトの種類を，すべて節にする', () => {
     const sections = objectSections();
     expect(sections.map((section) => section.title)).toEqual(objectTypes());
-    expect(objectTypes()).toContain('level_curve');
+    expect(objectTypes()).toContain('implicit_curve');
     for (const section of sections) {
       expect(section.fields.map((field) => field.name)).toEqual(properties(section.title));
     }
@@ -73,7 +73,7 @@ describe('図のシーンのリファレンス', () => {
     expect(label('surface', 'expr')).toBe('x，y，zの式');
     expect(label('surface', 'bezier')).toBe('制御点の網');
     expect(label('grid', 'z_step')).toBe('z方向の間隔');
-    expect(label('level_curve', 'values')).toBe('線を引く値');
+    expect(label('implicit_curve', 'values')).toBe('線を引く値');
   });
 
   it('式の関数は，別名を1つの行にまとめる', () => {

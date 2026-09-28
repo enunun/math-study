@@ -42,14 +42,14 @@ const CONTROL_NET: FieldSpec = {
   label: '制御点の網を表示',
 };
 
-/** 2つの変数の式で書くもの(曲面と等値線)で共通の，変数の名前，写像の式，変数の範囲． */
+/** 2つの変数の式で書くもの(曲面と陰関数の曲線)で共通の，変数の名前，写像の式，変数の範囲． */
 const TWO_VARIABLE_MAP: readonly FieldSpec[] = [
   { kind: 'list', key: 'vars', label: '変数の名前', item: 'text', count: PAIR },
   { kind: 'list', key: 'expr', label: 'x，y，zの式', item: 'text', count: TRIPLE },
   { kind: 'domain2', key: 'domain', label: '変数の範囲' },
 ];
 
-/** 球，曲面，Bézier曲面，等値線の，識別子とスタイル以外の項目． */
+/** 球，曲面，Bézier曲面，陰関数の曲線の，識別子とスタイル以外の項目． */
 const SURFACE_FIELDS: Readonly<Record<string, readonly FieldSpec[]>> = {
   sphere: [
     { kind: 'list', key: 'center', label: '中心', item: 'number', count: TRIPLE },
@@ -70,7 +70,7 @@ const SURFACE_FIELDS: Readonly<Record<string, readonly FieldSpec[]>> = {
     WIREFRAME_STEP,
     CONTROL_NET,
   ],
-  level_curve: [
+  implicit_curve: [
     { kind: 'list', key: 'vars', label: '変数の名前', item: 'text', count: PAIR },
     { kind: 'list', key: 'expr', label: '写像の座標の式', item: 'text', count: 'dimension' },
     { kind: 'domain2', key: 'domain', label: '変数の範囲' },
