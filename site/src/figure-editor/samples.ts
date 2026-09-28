@@ -3,6 +3,7 @@ import { parseDraft } from './draft';
 import type { SceneDraft } from './draft';
 import { FOUR_SPACE_SAMPLE_SCENES } from './four-space-sample-scenes';
 import type { JsonObject } from './json';
+import { PLANE_SYMMETRY_GROUPS, SPACE_SYMMETRY_GROUPS } from './lattice-symmetry-samples';
 import {
   ELLIPSE_FOCI_SAMPLE,
   PLANE_CRYSTAL_SAMPLES,
@@ -10,8 +11,6 @@ import {
   SPACE_CURVE_SAMPLES,
   SURFACE_SAMPLES,
 } from './sample-scenes';
-import { SPACE_SYMMETRY_SAMPLES } from './space-symmetry-sample-scenes';
-import { SYMMETRY_SAMPLES } from './symmetry-sample-scenes';
 import type { SceneTemplate } from './template-types';
 import { SPACE_VECTOR_FIELD_SAMPLES, VECTOR_FIELD_SAMPLES } from './vector-field-sample-scenes';
 
@@ -84,7 +83,7 @@ const SAMPLE_GROUPS: readonly SampleGroup[] = [
     ],
   },
   { label: '平面：ベクトル場', samples: VECTOR_FIELD_SAMPLES },
-  { label: '平面：格子の対称性', samples: SYMMETRY_SAMPLES },
+  ...PLANE_SYMMETRY_GROUPS,
   { label: '平面：結晶と逆格子', samples: PLANE_CRYSTAL_SAMPLES },
   {
     label: '空間：曲面',
@@ -107,7 +106,7 @@ const SAMPLE_GROUPS: readonly SampleGroup[] = [
   },
   { label: '空間：4次元', samples: FOUR_SPACE_SAMPLE_SCENES },
   { label: '空間：ベクトル場', samples: SPACE_VECTOR_FIELD_SAMPLES },
-  { label: '空間：格子の対称性', samples: SPACE_SYMMETRY_SAMPLES },
+  ...SPACE_SYMMETRY_GROUPS,
   { label: '空間：結晶と逆格子', samples: SPACE_CRYSTAL_SAMPLES },
 ];
 

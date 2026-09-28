@@ -216,4 +216,5 @@ const SYMMETRY_SAMPLES: readonly SceneTemplate[] = [
   { id: 'latticeTranslation', label: '格子の並進対称', scene: TRANSLATION_SCENE },
 ];
 
-export { SYMMETRY_SAMPLES };
+export { SQUARE, SYMMETRY_SAMPLES, latticeConstants, twoCopies as parametricCopies, view };
+export type { Lattice };

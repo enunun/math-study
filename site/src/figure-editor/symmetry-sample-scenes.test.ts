@@ -2,63 +2,17 @@ import { readFile } from 'node:fs/promises';
 
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { initSync, renderScene } from '@/wasm/figure';
+import { initSync } from '@/wasm/figure';
 
-import { stringifyDraft } from './draft';
-import type { SceneDraft } from './draft';
-import type { JsonObject } from './json';
 import { SPACE_SYMMETRY_SAMPLES } from './space-symmetry-sample-scenes';
 import { SYMMETRY_SAMPLES } from './symmetry-sample-scenes';
+import { coincide, dotsByColor, sample, withValues } from './symmetry-test-support';
 import type { SceneTemplate } from './template-types';
 
 beforeAll(async () => {
   const module = await readFile(new URL('../wasm/figure_bg.wasm', import.meta.url));
   initSync({ module });
 });
-
-function sample(samples: readonly SceneTemplate[], id: string): SceneDraft {
-  const found = samples.find((candidate) => candidate.id === id);
-  if (found === undefined) {
-    throw new Error(`見本「${id}」がない`);
-  }
-  return found.scene;
-}
-
-/** 媒介変数の値を書き換えた図． */
-function withValues(scene: SceneDraft, values: Readonly<Record<string, number>>): SceneDraft {
-  const objects: JsonObject[] = [];
-  for (const object of scene.objects) {
-    const value = typeof object.id === 'string' ? values[object.id] : undefined;
-    objects.push(value === undefined ? object : { ...object, value });
-  }
-  return { ...scene, objects };
-}
-
-/** 丸めた点の印の位置を，色ごとに集めたもの．灰色は元の組，青は変換した組である． */
-function dotsByColor(scene: SceneDraft): Map<string, string[]> {
-  const outcome = renderScene(stringifyDraft(scene));
-  if (outcome.status !== 'ok') {
-    throw new Error(JSON.stringify(outcome));
-  }
-  const groups = new Map<string, string[]>();
-  for (const item of outcome.figure.items) {
-    if (item.type === 'dot') {
-      const key = item.color ?? 'none';
-      const at = item.at.map((value) => (Math.abs(value) < 1e-6 ? 0 : value).toFixed(4)).join(',');
-      groups.set(key, [...(groups.get(key) ?? []), at]);
-    }
-  }
-  return groups;
-}
-
-/** 元の組と変換した組の，見えている格子点が一致するか． */
-function coincide(scene: SceneDraft): boolean {
-  const groups = dotsByColor(scene);
-  const fixed = [...(groups.get('gray') ?? [])].toSorted();
-  const moved = [...(groups.get('blue') ?? [])].toSorted();
-  expect(fixed.length).toBeGreaterThan(0);
-  return fixed.length === moved.length && fixed.every((at, index) => at === moved[index]);
-}
 
 interface Case {
   samples: readonly SceneTemplate[];
