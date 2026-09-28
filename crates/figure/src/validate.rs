@@ -10,7 +10,7 @@ use crate::scene::{
     Fill, Fractal, FunctionDef, Graph, Grid, ImplicitCurve, Intersection, Label,
     MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object, Parameter, Point, Polygon, Position, Region,
     Scene, SpaceView, Sphere, Style, Surface, TangentPlane, Taylor, TransformStep, VectorField,
-    View,
+    View, WignerSeitz,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -150,6 +150,9 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Taylor(taylor) => plane_only("taylor", view).and_then(|()| validate_taylor(taylor)),
         Object::VectorField(field) => validate_vector_field(field, view),
         Object::FieldLine(line) => validate_field_line(line, view),
+        Object::WignerSeitz(cell) => {
+            plane_only("wigner_seitz", view).and_then(|()| validate_wigner_seitz(cell))
+        }
         // 像は，検査の前に，元のオブジェクトの複製に置き換えてある．
         Object::Parameter(parameter) => validate_parameter(parameter),
         Object::Image(_) | Object::Vector(_) | Object::Segment(_) => Ok(()),
@@ -280,10 +283,27 @@ fn validate_field_line(line: &FieldLine, view: &View) -> Result<(), ErrorKind> {
     Ok(())
 }
 
+/// Wigner-Seitz胞．基本ベクトルは2個の座標の2つのベクトルで，中心は2個の座標である．平行かどうかは，
+/// 評価してから`compile.rs`で確かめる．
+fn validate_wigner_seitz(cell: &WignerSeitz) -> Result<(), ErrorKind> {
+    if cell.basis.len() != 2 || cell.basis.iter().any(|vector| vector.len() != 2) {
+        return Err(ErrorKind::Invalid(
+            "Wigner-Seitz胞の基本ベクトル(`basis`)は，2個の座標のベクトルを2つ並べる．".to_owned(),
+        ));
+    }
+    if cell.center.as_ref().is_some_and(|center| center.len() != 2) {
+        return Err(ErrorKind::Invalid(
+            "Wigner-Seitz胞の中心(`center`)は，2個の座標で書く．".to_owned(),
+        ));
+    }
+    check_fill(cell.fill.as_ref())
+}
+
 fn style_of(object: &Object) -> Option<&Style> {
     match object {
         Object::VectorField(o) => Some(&o.style),
         Object::FieldLine(o) => Some(&o.style),
+        Object::WignerSeitz(o) => Some(&o.style),
         Object::Axis(o) => Some(&o.style),
         Object::Graph(o) => Some(&o.style),
         Object::Curve(o) => Some(&o.style),

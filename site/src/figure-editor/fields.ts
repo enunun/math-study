@@ -148,6 +148,16 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     { kind: 'bound', key: 'radius', label: '半径(中心から頂点まで)' },
     FILL,
   ],
+  wigner_seitz: [
+    {
+      kind: 'json',
+      key: 'basis',
+      label: '基本ベクトル(2つ)',
+      hint: '[[1, 0], ["b*cos(g)", "b*sin(g)"]]',
+    },
+    { kind: 'list', key: 'center', label: '中心', item: 'bound', count: PAIR, optional: true },
+    FILL,
+  ],
   vertexPolygon: [
     { kind: 'json', key: 'vertices', label: '頂点(座標か点の名前)', hint: '[[0,0],[3,0],"A"]' },
     FILL,

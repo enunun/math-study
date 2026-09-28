@@ -1080,6 +1080,33 @@
         "transform": { "$ref": "#/$defs/transform" }
       }
     },
+    "wigner_seitz": {
+      "type": "object",
+      "required": ["id", "type", "basis"],
+      "additionalProperties": false,
+      "description": "Wigner-Seitz胞．2つの基本ベクトルで張る格子の，中心の格子点にいちばん近い点の集まりで，中心と近くの格子点を結ぶ線分の垂直二等分線で囲まれた凸多角形である．逆格子の基本ベクトルを渡せば，第1Brillouinゾーンになる．辺と塗りは，多角形(`polygon`)と同じに描く．平面の図でだけ使える．",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "wigner_seitz" },
+        "basis": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/boundPair" },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "2つの基本ベクトル．各ベクトルは2個の数か式である．平行であってはならない(スキーマでは表せない)．"
+        },
+        "center": {
+          "$ref": "#/$defs/boundPair",
+          "description": "中心の格子点．省くと原点である．"
+        },
+        "fill": {
+          "$ref": "#/$defs/fill",
+          "description": "面を塗る色と不透明度．なければ塗らない．"
+        },
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" }
+      }
+    },
     "taylor": {
       "type": "object",
       "required": ["id", "type", "of", "at", "order"],
@@ -1108,7 +1135,7 @@
       }
     },
     "object": {
-      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
+      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`，`wigner_seitz`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },
@@ -1136,7 +1163,8 @@
         { "$ref": "#/$defs/image" },
         { "$ref": "#/$defs/taylor" },
         { "$ref": "#/$defs/vector_field" },
-        { "$ref": "#/$defs/field_line" }
+        { "$ref": "#/$defs/field_line" },
+        { "$ref": "#/$defs/wigner_seitz" }
       ]
     }
   }

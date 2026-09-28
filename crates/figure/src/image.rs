@@ -109,6 +109,7 @@ fn parts_of(object: &mut Object) -> Option<Parts<'_>> {
         Object::TangentPlane(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
         Object::VectorField(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
         Object::FieldLine(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::WignerSeitz(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
         _ => return None,
     })
 }
@@ -140,6 +141,7 @@ pub fn transform_of(object: &Object) -> Option<&[TransformStep]> {
         Object::TangentPlane(o) => &o.transform,
         Object::VectorField(o) => &o.transform,
         Object::FieldLine(o) => &o.transform,
+        Object::WignerSeitz(o) => &o.transform,
         _ => return None,
     })
 }

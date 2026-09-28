@@ -165,6 +165,15 @@
     },
     "cut": { "space": { "type": "cut", "surface": "", "normal": [0, 0, 1], "offset": 0 } },
     "intersection": { "space": { "type": "intersection", "surfaces": [] } },
+    "wigner_seitz": {
+      "plane": {
+        "type": "wigner_seitz",
+        "basis": [
+          [1, 0],
+          [0.5, 0.866]
+        ]
+      }
+    },
     "field_line": {
       "plane": {
         "type": "field_line",

@@ -17,8 +17,8 @@ use crate::image::expand_images;
 use crate::region::region_items;
 use crate::sample::sample;
 use crate::scene::{
-    Anchor, Arrow, Axis, CM_PER_PT, Curve, Direction, Fractal, Graph, ImplicitCurve, Label, Line,
-    Object, PlaneView, Point, Polygon, Scene, Style, TangentLine, Taylor, View,
+    Anchor, Arrow, Axis, CM_PER_PT, Curve, Direction, Fill, Fractal, Graph, ImplicitCurve, Label,
+    Line, Object, PlaneView, Point, Scene, Style, TangentLine, Taylor, View,
 };
 use crate::space::render_space;
 use crate::sphere::expand_transformed_spheres;
@@ -186,9 +186,20 @@ fn object_items(
         (Object::Fractal(fractal), Plot::Fractal(placed)) => {
             fractal_items(fractal, placed, scale, window)
         }
-        (Object::Polygon(polygon), Plot::Polygon(placed)) => {
-            polygon_items(polygon, placed, transform, scale, window)
-        }
+        (Object::Polygon(polygon), Plot::Polygon(placed)) => polygon_items(
+            (polygon.fill.as_ref(), polygon.style),
+            placed,
+            transform,
+            scale,
+            window,
+        ),
+        (Object::WignerSeitz(cell), Plot::Polygon(placed)) => polygon_items(
+            (cell.fill.as_ref(), cell.style),
+            placed,
+            transform,
+            scale,
+            window,
+        ),
         (Object::Taylor(taylor), Plot::Taylor(placed)) => {
             taylor_items(taylor, placed, transform, scale, window)
         }
@@ -468,8 +479,9 @@ fn transformed_segment(
 
 /// 多角形の面(塗り)と辺．辺は，変換した各辺をつないだ，閉じた折れ線である．面は，辺の下に敷く．
 /// 写像で辺が途切れたときは，面を塗らない．
+/// 多角形の辺と塗り．`look`は，塗り(なければ塗らない)と辺のスタイルである．
 fn polygon_items(
-    polygon: &Polygon,
+    look: (Option<&Fill>, Style),
     placed: &PolygonPlot,
     transform: &Transform,
     scale: Scale,
@@ -499,14 +511,15 @@ fn polygon_items(
             let skip = usize::from(!boundary.is_empty());
             boundary.extend(piece.iter().skip(skip));
         }
-        if let Some(fill) = &polygon.fill {
+        let (fill, style) = look;
+        if let Some(fill) = fill {
             // 塗りの多角形は閉じているとみなすので，最初の頂点に戻る点は除く．
             let open = boundary.split_last().map_or(&[][..], |(_, rest)| rest);
             let points = clip_polygon(open, min, max);
             if !points.is_empty() {
                 items.push(Item::Fill(FillItem {
                     points,
-                    color: fill.color.or(polygon.style.color),
+                    color: fill.color.or(style.color),
                     opacity: fill.opacity,
                 }));
             }
@@ -517,7 +530,7 @@ fn polygon_items(
         pieces
             .iter()
             .flat_map(|points| clip_polyline(points, min, max))
-            .map(|points| Item::Path(curve_path(points, polygon.style))),
+            .map(|points| Item::Path(curve_path(points, look.1))),
     );
     items
 }

@@ -1,3 +1,4 @@
+import { BRILLOUIN_SAMPLE } from './brillouin-scene';
 import { EWALD_BRAGG_SAMPLE } from './ewald-bragg-scene';
 import { RECIPROCAL_FCC_SAMPLE } from './fcc-reciprocal-scene';
 import { RECIPROCAL_PLANE_SCENES } from './reciprocal-plane-scenes';
@@ -10,6 +11,7 @@ import type { SceneTemplate } from './template-types';
  */
 const RECIPROCAL_PLANE_SAMPLES: readonly SceneTemplate[] = [
   ...RECIPROCAL_PLANE_SCENES,
+  BRILLOUIN_SAMPLE,
   EWALD_BRAGG_SAMPLE,
 ];
 

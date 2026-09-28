@@ -175,6 +175,8 @@ pub enum Object {
     VectorField(VectorField),
     /// 流線．起点から，場の向きに沿って積分した曲線．
     FieldLine(FieldLine),
+    /// Wigner-Seitz胞(逆格子なら第1Brillouinゾーン)．平面の図でだけ使える．
+    WignerSeitz(WignerSeitz),
 }
 
 /// 軸の向き．
@@ -1031,6 +1033,31 @@ impl VectorField {
     pub const MAX_POINTS: usize = 5000;
 }
 
+/// Wigner-Seitz胞．2つの基本ベクトル(`basis`)で張る格子の，中心(`center`，格子点)にいちばん近い点の集まりで，
+/// 中心と近くの格子点を結ぶ線分の垂直二等分線で囲まれた凸多角形である．逆格子の基本ベクトルを渡せば，
+/// 第1Brillouinゾーンになる．辺と塗りは，多角形(`polygon`)と同じに描く．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct WignerSeitz {
+    /// 識別子．
+    pub id: String,
+    /// 2つの基本ベクトル．各ベクトルは2個の数か式である．平行であってはならない．
+    pub basis: Vec<Vec<Bound>>,
+    /// 中心の格子点(2個の数か式)．なければ原点である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub center: Option<Vec<Bound>>,
+    /// 面を塗る色と不透明度．なければ，塗らない．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fill: Option<Fill>,
+    /// 辺のスタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+    /// 変換．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
+}
+
 /// 流線をどちらの向きに伸ばすか．
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -1427,6 +1454,7 @@ impl Object {
             Self::ImplicitCurve(o) => &o.id,
             Self::VectorField(o) => &o.id,
             Self::FieldLine(o) => &o.id,
+            Self::WignerSeitz(o) => &o.id,
             Self::Intersection(o) => &o.id,
             Self::TangentPlane(o) => &o.id,
             Self::Complex(o) => &o.id,
@@ -1461,6 +1489,7 @@ impl Object {
             Self::ImplicitCurve(_) => "implicit_curve",
             Self::VectorField(_) => "vector_field",
             Self::FieldLine(_) => "field_line",
+            Self::WignerSeitz(_) => "wigner_seitz",
             Self::Intersection(_) => "intersection",
             Self::TangentPlane(_) => "tangent_plane",
             Self::Complex(_) => "complex",

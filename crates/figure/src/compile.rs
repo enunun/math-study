@@ -11,6 +11,7 @@ use crate::scene::{
     Anchor, ArrowLength, Axis, Bound, Curve, CurveExpr, Cut, Direction, Factor, FieldLine, Fractal,
     Graph, Grid, ImplicitCurve, Label, LineDirection, Object, Pivot, Point, Polygon, Position,
     Region, Scene, Surface, TangentLine, TangentPlane, Taylor, TransformStep, VectorField, View,
+    WignerSeitz,
 };
 use crate::transform::{Affine, MapFn, Transform, Vector3};
 use crate::validate::curve_expressions;
@@ -717,6 +718,9 @@ fn compile_object(
         Object::Taylor(taylor) => compile_taylor(taylor, env)
             .map(Plot::Taylor)
             .map_err(|kind| Error::in_object(&taylor.id, kind)),
+        Object::WignerSeitz(cell) => compile_wigner_seitz(cell, env)
+            .map(Plot::Polygon)
+            .map_err(|kind| Error::in_object(&cell.id, kind)),
         Object::FieldLine(line) => compile_field_line(line, env, view, scope, transform)
             .map(Plot::FieldLine)
             .map_err(|kind| Error::in_object(&line.id, kind)),
@@ -2060,6 +2064,146 @@ fn compile_field_line(
         }
     }
     Ok(FieldLinePlot { lines })
+}
+
+/// Wigner-Seitz胞を切り出す始めの正方形の半分の大きさの，基本ベクトルの長さの和に対する比．
+const CELL_START_RATIO: f64 = 2.0;
+/// 簡約した基本ベクトルで，垂直二等分線を引く格子点の係数の範囲(-2から2まで)．
+const CELL_NEIGHBOR_END: i32 = 2;
+/// 頂点が重なるか，3つの頂点が一直線に並ぶかを比べる，大きさに対する許容．
+const CELL_EPSILON: f64 = 1e-9;
+/// 簡約した基底の，射影の比の上限．
+const REDUCED_RATIO: f64 = 0.5;
+/// 簡約の繰り返しの上限．
+const REDUCTION_LIMIT: usize = 64;
+
+fn dot2(a: [f64; 2], b: [f64; 2]) -> f64 {
+    a[0] * b[0] + a[1] * b[1]
+}
+
+/// Lagrange-Gaussの方法で，同じ格子を張る，いちばん短い基本ベクトルの組にする．
+fn reduced_basis(mut first: [f64; 2], mut second: [f64; 2]) -> ([f64; 2], [f64; 2]) {
+    // 射影がちょうど±1/2のときは，丸めても短くならず，同じ組を行き来する．±1/2以内で止め，
+    // 数でない値でも終わるように，回数にも上限を付ける．
+    for _ in 0..REDUCTION_LIMIT {
+        if dot2(second, second) < dot2(first, first) {
+            std::mem::swap(&mut first, &mut second);
+        }
+        let ratio = dot2(first, second) / dot2(first, first);
+        if ratio.abs() <= REDUCED_RATIO || ratio.is_nan() {
+            break;
+        }
+        let factor = ratio.round();
+        second = [second[0] - factor * first[0], second[1] - factor * first[1]];
+    }
+    (first, second)
+}
+
+/// 凸多角形を，半平面`p・normal ≤ limit`で切り取る(Sutherland-Hodgmanの方法)．
+fn clip_half_plane(polygon: &[[f64; 2]], normal: [f64; 2], limit: f64) -> Vec<[f64; 2]> {
+    let mut result = Vec::with_capacity(polygon.len().saturating_add(1));
+    for (current, next) in polygon.iter().zip(polygon.iter().cycle().skip(1)) {
+        let (current, next) = (*current, *next);
+        let (a, b) = (dot2(current, normal) - limit, dot2(next, normal) - limit);
+        if a <= 0.0 {
+            result.push(current);
+        }
+        if (a < 0.0 && b > 0.0) || (a > 0.0 && b < 0.0) {
+            let t = a / (a - b);
+            result.push([
+                current[0] + t * (next[0] - current[0]),
+                current[1] + t * (next[1] - current[1]),
+            ]);
+        }
+    }
+    result
+}
+
+/// 重なる頂点と，隣の2つと一直線に並ぶ頂点を除く．
+fn tidy_polygon(polygon: Vec<[f64; 2]>, size: f64) -> Vec<[f64; 2]> {
+    let tolerance = CELL_EPSILON * size;
+    let mut points: Vec<[f64; 2]> = Vec::with_capacity(polygon.len());
+    for point in polygon {
+        let repeated = points.last().is_some_and(|last: &[f64; 2]| {
+            (last[0] - point[0]).hypot(last[1] - point[1]) < tolerance
+        });
+        if !repeated {
+            points.push(point);
+        }
+    }
+    if points.len() > 1
+        && let (Some(first), Some(last)) = (points.first(), points.last())
+        && (first[0] - last[0]).hypot(first[1] - last[1]) < tolerance
+    {
+        points.pop();
+    }
+    // 各頂点を，1つ前の頂点と1つ後の頂点と組にする(周をひと回りする)．
+    let previous = points.iter().cycle().skip(points.len().saturating_sub(1));
+    let next = points.iter().cycle().skip(1);
+    points
+        .iter()
+        .zip(previous)
+        .zip(next)
+        .filter(|((current, previous), next)| {
+            let cross = (current[0] - previous[0]) * (next[1] - current[1])
+                - (current[1] - previous[1]) * (next[0] - current[0]);
+            cross.abs() > tolerance * size
+        })
+        .map(|((current, _), _)| *current)
+        .collect()
+}
+
+/// Wigner-Seitz胞．中心の格子点のまわりの，近くの格子点との垂直二等分線で囲まれた凸多角形を求める．
+fn compile_wigner_seitz(cell: &WignerSeitz, env: &Env) -> Result<PolygonPlot, ErrorKind> {
+    let vector = |bounds: &[Bound], field: &'static str| -> Result<[f64; 2], ErrorKind> {
+        let values = bounds
+            .iter()
+            .enumerate()
+            .map(|(index, bound)| evaluate_bound(field, bound, index, env))
+            .collect::<Result<Vec<_>, _>>()?;
+        match values.as_slice() {
+            [x, y] if x.is_finite() && y.is_finite() => Ok([*x, *y]),
+            _ => Err(ErrorKind::Invalid(format!(
+                "Wigner-Seitz胞の`{field}`は，2個の有限の数にする．"
+            ))),
+        }
+    };
+    let (Some(first), Some(second)) = (cell.basis.first(), cell.basis.get(1)) else {
+        return Err(ErrorKind::Invalid(
+            "Wigner-Seitz胞の基本ベクトル(`basis`)は，2つ並べる．".to_owned(),
+        ));
+    };
+    let (first, second) = (vector(first, "basis")?, vector(second, "basis")?);
+    let size = first[0].hypot(first[1]) + second[0].hypot(second[1]);
+    let determinant = first[0] * second[1] - first[1] * second[0];
+    let parallel = determinant.abs() <= CELL_EPSILON * size * size || determinant.is_nan();
+    if parallel {
+        return Err(ErrorKind::Invalid(
+            "Wigner-Seitz胞の基本ベクトル(`basis`)は，平行でない2つのベクトルにする．".to_owned(),
+        ));
+    }
+    let center = match &cell.center {
+        Some(center) => vector(center, "center")?,
+        None => [0.0, 0.0],
+    };
+    let (first, second) = reduced_basis(first, second);
+    let half = CELL_START_RATIO * size;
+    let mut polygon = vec![[-half, -half], [half, -half], [half, half], [-half, half]];
+    for m in -CELL_NEIGHBOR_END..=CELL_NEIGHBOR_END {
+        for n in -CELL_NEIGHBOR_END..=CELL_NEIGHBOR_END {
+            if m == 0 && n == 0 {
+                continue;
+            }
+            let (m, n) = (f64::from(m), f64::from(n));
+            let point = [m * first[0] + n * second[0], m * first[1] + n * second[1]];
+            polygon = clip_half_plane(&polygon, point, dot2(point, point) / 2.0);
+        }
+    }
+    let vertices = tidy_polygon(polygon, size)
+        .into_iter()
+        .map(|[x, y]| [x + center[0], y + center[1]])
+        .collect();
+    Ok(PolygonPlot { vertices })
 }
 
 fn evaluate_bound(
