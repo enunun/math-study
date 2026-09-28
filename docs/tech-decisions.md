@@ -61,6 +61,7 @@ The technical decisions for the mathematics study site, and the facts verified a
 - Response headers cannot be configured. `cache-control` is `max-age=600` and only gzip compression is used, so JS and fonts loaded by the browser should stay small.
 - A published site can be up to 1 GB, with a soft bandwidth limit of 100 GB per month.
 - The limit of 10 builds per hour does not apply when publishing with Actions.
+- A push to `main` cancels the workflow run still in progress for the same ref (workflow-level `concurrency`, `cancel-in-progress` true for everything but pull requests): only the newest build is published, so finishing an older one is wasted time. A cancelled deploy leaves the previous site in place, because Pages switches to a new deployment only when it completes. Pull request runs get their own group (`github.run_id`), so they are never cancelled; a shared group with `cancel-in-progress: false` would not be enough, since a newer pending run replaces an older pending one in the same group. The deploy job keeps its own `pages` group, which serializes deployments.
 
 ### Tool behavior
 

@@ -9,6 +9,13 @@ on:
 permissions:
   contents: read
 
+# 同じブランチへのpushで新しい実行が始まったら，前の実行(ビルドとデプロイ)は止める．公開されるのは
+# 最新の版だけなので，古い版を最後まで作るのは無駄である．PRのチェックは，実行ごとに別のグループ
+# (run_id)にして，止めることも，待たせて置き換えることもしない．
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'pull_request' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
