@@ -6,7 +6,7 @@ import { initSync, renderScene } from '@/wasm/figure';
 
 import { stringifyDraft } from './draft';
 import type { SceneDraft } from './draft';
-import { arrayOf, objectOf, stringOf } from './json';
+import { arrayOf, stringOf } from './json';
 import type { JsonObject } from './json';
 import { RECIPROCAL_PLANE_SAMPLES, RECIPROCAL_SPACE_SAMPLES } from './reciprocal-sample-scenes';
 
@@ -62,40 +62,11 @@ function valuesText(draft: SceneDraft): string {
   );
 }
 
-/** 位置の比較の許容(cm)． */
-const TOLERANCE = 1e-9;
-
 describe('逆格子の見本は，スライダーのどの値でも描ける', () => {
   it.each([...RECIPROCAL_PLANE_SAMPLES, ...RECIPROCAL_SPACE_SAMPLES])('$label', ({ scene }) => {
     for (const draft of variants(scene)) {
       const outcome = renderScene(stringifyDraft(draft));
       expect(outcome.status, `${valuesText(draft)}：${JSON.stringify(outcome)}`).toBe('ok');
-    }
-  });
-});
-
-describe('平面の逆格子の見本の点の印は，スライダーのどの値でも，見える範囲に収まる', () => {
-  // 見える範囲の外の点は，SVGでは切れるが，TikZの図を広げてしまう．
-  it.each(RECIPROCAL_PLANE_SAMPLES)('$label', ({ scene }) => {
-    const unit = Number(stringOf(objectOf(scene.view, 'unit'), 'x').replace('cm', ''));
-    const [xMin, xMax] = numbers(arrayOf(scene.view, 'x')).map((value) => value * unit);
-    const [yMin, yMax] = numbers(arrayOf(scene.view, 'y')).map((value) => value * unit);
-    for (const draft of variants(scene)) {
-      const outcome = renderScene(stringifyDraft(draft));
-      if (outcome.status !== 'ok') {
-        throw new Error(valuesText(draft));
-      }
-      for (const item of outcome.figure.items) {
-        if (item.type === 'dot') {
-          const [x, y] = item.at;
-          const inside =
-            x >= (xMin ?? 0) - TOLERANCE &&
-            x <= (xMax ?? 0) + TOLERANCE &&
-            y >= (yMin ?? 0) - TOLERANCE &&
-            y <= (yMax ?? 0) + TOLERANCE;
-          expect(inside, `${valuesText(draft)}：(${x}, ${y})`).toBe(true);
-        }
-      }
     }
   });
 });

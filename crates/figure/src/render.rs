@@ -35,6 +35,8 @@ pub const GRID_WIDTH: f64 = 0.3;
 const GRID_EPSILON: f64 = 1e-9;
 /// 目盛の線の，軸から片側への長さ(pt)．
 const TICK_HALF_LENGTH: f64 = 3.0;
+/// 点が見える範囲の中かを比べるときの許容(cm)．縁の上の点を，丸めの誤差で落とさない．
+const WINDOW_EPSILON: f64 = 1e-9;
 /// 見える範囲の外側に足す余白(cm)．軸の名前が，範囲の端の外に出る分である．
 pub const MARGIN: f64 = 0.6;
 
@@ -169,7 +171,7 @@ fn object_items(
         (Object::Grid(grid), Plot::Grid(grid_plot)) => {
             grid_items(&grid.style, grid_plot, transform, scale, window)
         }
-        (Object::Point(point), Plot::Point(placed)) => point_items(point, placed, scale),
+        (Object::Point(point), Plot::Point(placed)) => point_items(point, placed, scale, window),
         (Object::Vector(vector), Plot::Link(link)) => {
             link_item(&vector.style, vector.arrow, link, scale)
                 .into_iter()
@@ -297,12 +299,24 @@ fn label_item(label: &Label, placed: &LabelPlot, scale: Scale) -> Option<LabelIt
 pub const DOT_RADIUS: f64 = 2.0;
 
 /// 点の印と，点の名前．名前の箱は，既定では，点の右上に置く．
-fn point_items(point: &Point, placed: &PointPlot, scale: Scale) -> Vec<Item> {
+/// 点の印と名前．見える範囲(cm)の外の点は，TikZの図を広げないよう，描かない(縁の上の点は描く)．
+fn point_items(
+    point: &Point,
+    placed: &PointPlot,
+    scale: Scale,
+    [min, max]: [[f64; 2]; 2],
+) -> Vec<Item> {
     // 座標の数は，検査で確かめてある．
     let [x, y] = placed.at.as_slice() else {
         return Vec::new();
     };
     let at = scale.point(*x, *y);
+    let inside = |value: f64, low: f64, high: f64| {
+        value >= low - WINDOW_EPSILON && value <= high + WINDOW_EPSILON
+    };
+    if !(inside(at[0], min[0], max[0]) && inside(at[1], min[1], max[1])) {
+        return Vec::new();
+    }
     let mut items = Vec::new();
     if point.dot {
         items.push(Item::Dot(DotItem {

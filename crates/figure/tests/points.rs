@@ -565,3 +565,19 @@ fn 点のidは_関数や定数の名前にできない() {
     assert_eq!(error.kind, ErrorKind::ReservedName("e".to_owned()));
     assert_eq!(error.object.as_deref(), Some("e"));
 }
+
+#[test]
+fn 見える範囲の外の点は_印も名前も描かない() {
+    // 見える範囲は[-5, 5]^2．範囲の外の点は，TikZの図を広げないよう，描かない．縁の上の点は描く．
+    let figure = figure_of(
+        r#"{ "id": "A", "type": "point", "at": [6, 0], "dot": true, "label": "A" },
+           { "id": "B", "type": "point", "at": [5, -5], "dot": true, "label": "B" },
+           { "id": "C", "type": "point", "at": ["A_x - 7", 0], "dot": true }"#,
+    );
+    assert_eq!(dots(&figure).len(), 2);
+    let names: Vec<&str> = labels(&figure)
+        .iter()
+        .map(|label| label.tex.as_str())
+        .collect();
+    assert_eq!(names, ["$B$"]);
+}

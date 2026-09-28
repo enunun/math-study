@@ -10,6 +10,7 @@ import {
   SPACE_CURVE_SAMPLES,
   SURFACE_SAMPLES,
 } from './sample-scenes';
+import { SYMMETRY_SAMPLES } from './symmetry-sample-scenes';
 import type { SceneTemplate } from './template-types';
 import { VECTOR_FIELD_SAMPLES } from './vector-field-sample-scenes';
 
@@ -82,6 +83,7 @@ const SAMPLE_GROUPS: readonly SampleGroup[] = [
     ],
   },
   { label: '平面：ベクトル場', samples: VECTOR_FIELD_SAMPLES },
+  { label: '平面：格子の対称性', samples: SYMMETRY_SAMPLES },
   { label: '平面：結晶と逆格子', samples: PLANE_CRYSTAL_SAMPLES },
   {
     label: '空間：曲面',

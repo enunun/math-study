@@ -84,11 +84,11 @@ fn 平面の外積は_z成分の数である() {
 
 #[test]
 fn ベクトルの関数の値は_数の関数にも入れられる() {
-    // B・C = 6なので，sqrt(B・C - 2) = 2．
+    // B・C = 6なので，sqrt(B・C - 2) = 2．点は見える範囲[-5, 5]^2に収める．
     let at = plane_dot(&format!(
-        r#"{B}, {C}, {{ "id": "D", "type": "point", "at": "sqrt(dot(B, C) - 2) * C", "dot": true }}"#
+        r#"{B}, {C}, {{ "id": "D", "type": "point", "at": "sqrt(dot(B, C) - 2) * C / 4", "dot": true }}"#
     ));
-    assert!(close(at, [2.0, 6.0]), "{at:?}");
+    assert!(close(at, [0.5, 1.5]), "{at:?}");
 }
 
 #[test]
