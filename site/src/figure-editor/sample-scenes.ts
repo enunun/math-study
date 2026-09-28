@@ -4,6 +4,7 @@ import type { SceneDraft } from './draft';
 import { EWALD_SECTION_SAMPLE, EWALD_SPHERE_SAMPLE } from './ewald-sample-scenes';
 import { FOUR_SPACE_SAMPLE_SCENES } from './four-space-sample-scenes';
 import type { JsonObject } from './json';
+import { RECIPROCAL_PLANE_SAMPLES, RECIPROCAL_SPACE_SAMPLES } from './reciprocal-sample-scenes';
 import { SPACE_AZIMUTH, SPACE_ELEVATION, SPACE_UNIT, spaceAxes } from './sample-parts';
 import { SURFACE_SAMPLE_SCENES } from './surface-sample-scenes';
 import type { SceneTemplate } from './template-types';
@@ -213,22 +214,56 @@ const TREFOIL_SCENE: SceneDraft = {
   ],
 };
 
-/** 記事の図とは別に，ここで書いた見本．`samples.ts`が，記事の図の見本と並べる． */
-const PLANE_SAMPLE_SCENES: readonly SceneTemplate[] = [
-  { id: 'ellipseFoci', label: '楕円と焦点', scene: ELLIPSE_FOCI_SCENE },
-  ...ANALYSIS_SAMPLE_SCENES,
+const ELLIPSE_FOCI_SAMPLE: SceneTemplate = {
+  id: 'ellipseFoci',
+  label: '楕円と焦点',
+  scene: ELLIPSE_FOCI_SCENE,
+};
+
+/** 空間の曲線の見本． */
+const SPACE_CURVE_SAMPLES: readonly SceneTemplate[] = [
+  { id: 'helix', label: '円柱の上のらせん', scene: HELIX_SCENE },
+  { id: 'trefoil', label: '三葉結び目', scene: TREFOIL_SCENE },
+];
+
+/** 曲面の見本(4次元を除く)． */
+const SURFACE_SAMPLES: readonly SceneTemplate[] = [
+  { id: 'cylinderCut', label: '円柱と平面の切り口', scene: CYLINDER_CUT_SCENE },
+  { id: 'torus', label: 'トーラス', scene: TORUS_SCENE },
+  { id: 'mobius', label: 'Möbiusの帯', scene: MOBIUS_STRIP_SCENE },
+  ...SURFACE_SAMPLE_SCENES,
+];
+
+/** 結晶の見本(Ewald球と逆格子)． */
+const PLANE_CRYSTAL_SAMPLES: readonly SceneTemplate[] = [
   EWALD_SECTION_SAMPLE,
+  ...RECIPROCAL_PLANE_SAMPLES,
+];
+const SPACE_CRYSTAL_SAMPLES: readonly SceneTemplate[] = [
+  EWALD_SPHERE_SAMPLE,
+  ...RECIPROCAL_SPACE_SAMPLES,
+];
+
+/** 記事の図とは別に，ここで書いた見本の全部(平面と空間)．`samples.ts`が，記事の図の見本と合わせて分類する． */
+const PLANE_SAMPLE_SCENES: readonly SceneTemplate[] = [
+  ELLIPSE_FOCI_SAMPLE,
+  ...ANALYSIS_SAMPLE_SCENES,
+  ...PLANE_CRYSTAL_SAMPLES,
 ];
 
 const SPACE_SAMPLE_SCENES: readonly SceneTemplate[] = [
-  { id: 'cylinderCut', label: '円柱と平面の切り口', scene: CYLINDER_CUT_SCENE },
-  { id: 'helix', label: '円柱の上のらせん', scene: HELIX_SCENE },
-  { id: 'torus', label: 'トーラス', scene: TORUS_SCENE },
-  { id: 'mobius', label: 'Möbiusの帯', scene: MOBIUS_STRIP_SCENE },
-  { id: 'trefoil', label: '三葉結び目', scene: TREFOIL_SCENE },
-  ...SURFACE_SAMPLE_SCENES,
+  ...SPACE_CURVE_SAMPLES,
+  ...SURFACE_SAMPLES,
   ...FOUR_SPACE_SAMPLE_SCENES,
-  EWALD_SPHERE_SAMPLE,
+  ...SPACE_CRYSTAL_SAMPLES,
 ];
 
-export { PLANE_SAMPLE_SCENES, SPACE_SAMPLE_SCENES };
+export {
+  ELLIPSE_FOCI_SAMPLE,
+  PLANE_CRYSTAL_SAMPLES,
+  PLANE_SAMPLE_SCENES,
+  SPACE_CRYSTAL_SAMPLES,
+  SPACE_CURVE_SAMPLES,
+  SPACE_SAMPLE_SCENES,
+  SURFACE_SAMPLES,
+};

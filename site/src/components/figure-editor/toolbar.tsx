@@ -1,17 +1,16 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import type { ReactElement } from 'react';
 
 import { copyText, downloadText } from '@/figure-editor/download';
 import { parseDraft } from '@/figure-editor/draft';
 import type { SceneDraft, ViewKind } from '@/figure-editor/draft';
 import type { JsonObject } from '@/figure-editor/json';
-import { EDITOR_SAMPLES } from '@/figure-editor/samples';
-import { OBJECT_TEMPLATE_GROUPS, SCENE_TEMPLATES } from '@/figure-editor/templates';
-import type { ObjectTemplateGroup } from '@/figure-editor/templates';
+import { SAMPLE_GROUPS } from '@/figure-editor/samples';
+import { OBJECT_TEMPLATE_CATEGORIES, SCENE_TEMPLATES } from '@/figure-editor/templates';
 import { fileName, standaloneDocument } from '@/figure-editor/tikz-document';
 import type { Figure } from '@/wasm/figure';
 
-import { SelectInput } from './field-inputs';
+import { GroupedPicker } from './grouped-picker';
 import { ImageExportControls } from './image-export-controls';
 
 const STEM = 'figure';
@@ -23,62 +22,29 @@ interface Props {
   onMessage: (message: string) => void;
 }
 
-/** 見本(そのまま使える完成した図)の選択．見本は，今の図を置き換える． */
+/** 見本(そのまま使える完成した図)の選択．平面・空間と分野で分けた分類から選ぶ．見本は，今の図を置き換える． */
 function Samples({ onLoad }: Pick<Props, 'onLoad'>): ReactElement {
+  const categories = SAMPLE_GROUPS.map((group) => ({
+    label: group.label,
+    groups: [{ label: group.label, items: group.samples }],
+  }));
   return (
-    <div className="fe-buttons" role="group" aria-label="見本">
-      <span>見本：</span>
-      {EDITOR_SAMPLES.map((sample) => (
-        <button
-          key={sample.id}
-          type="button"
-          onClick={() => {
-            onLoad(sample.scene);
-          }}
-        >
-          {sample.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-/** 部品として組み合わせるテンプレート(正多角形・2次曲線・Bézier曲面など)を，種類ごとに選んで，今の図に挿入する． */
-function ObjectTemplatePicker({
-  group,
-  onInsert,
-}: {
-  group: ObjectTemplateGroup;
-  onInsert: (objects: readonly JsonObject[]) => void;
-}): ReactElement {
-  const { templates } = group;
-  const [choice, setChoice] = useState(templates[0]?.id ?? '');
-  const current = templates.find((template) => template.id === choice) ?? templates[0];
-  return (
-    <span className="fe-template-picker">
-      <SelectInput
-        label={group.label}
-        value={choice}
-        options={templates.map((template) => [template.id, template.label])}
-        onChange={setChoice}
-      />
-      <button
-        type="button"
-        onClick={() => {
-          if (current !== undefined) {
-            onInsert(current.objects);
-          }
-        }}
-      >
-        挿入
-      </button>
-    </span>
+    <GroupedPicker
+      title="見本"
+      name="見本"
+      categories={categories}
+      action="読み込む"
+      onPick={(sample) => {
+        onLoad(sample.scene);
+      }}
+    />
   );
 }
 
 /**
- * 部品のテンプレートの一覧．今の図の種類(平面・空間)で使えないものは出さない．平面と空間の両方を持つ
- * まとまりもあるので，図の種類が変わったら，選択欄を作り直す(`key`に種類を含める)．
+ * 部品のテンプレート(正多角形・2次曲線・Bézier曲面など)を，分類とまとまりから選んで，今の図に挿入する．
+ * 今の図の種類(平面・空間)で使えないものは出さない．平面と空間の両方を持つまとまりもあるので，図の種類が
+ * 変わったら，選択欄を作り直す(`key`に種類を含める)．
  */
 function ObjectTemplates({
   kind,
@@ -87,17 +53,26 @@ function ObjectTemplates({
   kind: ViewKind;
   onInsert: (objects: readonly JsonObject[]) => void;
 }): ReactElement {
-  const groups = OBJECT_TEMPLATE_GROUPS.map((group) => ({
-    label: group.label,
-    templates: group.templates.filter((template) => template.kind === kind),
-  })).filter((group) => group.templates.length > 0);
+  const categories = OBJECT_TEMPLATE_CATEGORIES.map((category) => ({
+    label: category.label,
+    groups: category.groups
+      .map((group) => ({
+        label: group.label,
+        items: group.templates.filter((template) => template.kind === kind),
+      }))
+      .filter((group) => group.items.length > 0),
+  })).filter((category) => category.groups.length > 0);
   return (
-    <div className="fe-buttons" role="group" aria-label="部品のテンプレート">
-      <span>テンプレート(部品)：</span>
-      {groups.map((group) => (
-        <ObjectTemplatePicker key={`${kind}-${group.label}`} group={group} onInsert={onInsert} />
-      ))}
-    </div>
+    <GroupedPicker
+      key={kind}
+      title="テンプレート(部品)"
+      name="部品"
+      categories={categories}
+      action="挿入"
+      onPick={(template) => {
+        onInsert(template.objects);
+      }}
+    />
   );
 }
 

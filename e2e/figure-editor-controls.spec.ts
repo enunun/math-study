@@ -2,6 +2,8 @@ import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
+import { insertTemplate, loadSample } from './figure-editor-pickers';
+
 const PAGE = 'tools/graphics/figure-editor/';
 
 function editor(page: Page): Locator {
@@ -30,7 +32,7 @@ test.describe('曲面・球・曲線の制御点', () => {
   test('見本の曲面はワイヤーフレームがオンで，外すと，編集中の図とプレビュー，どちらからも線が減る', async ({
     page,
   }) => {
-    await editor(page).getByRole('button', { name: '放物面と座標軸', exact: true }).click();
+    await loadSample(page, '空間：曲面', '放物面と座標軸');
     await editor(page)
       .getByRole('list', { name: 'オブジェクトの一覧' })
       .getByRole('button', { name: /曲面/u })
@@ -50,7 +52,7 @@ test.describe('曲面・球・曲線の制御点', () => {
   });
 
   test('球のフォームにも，ワイヤーフレームの選択がある', async ({ page }) => {
-    await editor(page).getByRole('button', { name: '球と座標軸', exact: true }).click();
+    await loadSample(page, '空間：曲面', '球と座標軸');
     await editor(page)
       .getByRole('list', { name: 'オブジェクトの一覧' })
       .getByRole('button', { name: /球/u })
@@ -62,9 +64,7 @@ test.describe('曲面・球・曲線の制御点', () => {
     page,
   }) => {
     await editor(page).getByRole('button', { name: '座標軸(空間)', exact: true }).click();
-    const picker = editor(page).locator('.fe-template-picker').filter({ hasText: 'Bézier曲面' });
-    await picker.getByLabel('Bézier曲面').selectOption({ label: '双3次Bézier曲面(制御点4×4個)' });
-    await picker.getByRole('button', { name: '挿入' }).click();
+    await insertTemplate(page, '曲面', '双3次Bézier曲面(制御点4×4個)');
     await editor(page)
       .getByRole('list', { name: 'オブジェクトの一覧' })
       .getByRole('button', { name: /曲面/u })
@@ -130,7 +130,7 @@ test.describe('曲面・球・曲線の制御点', () => {
   });
 
   test('接線は，グラフを選んで接する点を決めると描ける', async ({ page }) => {
-    await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
+    await loadSample(page, '平面：関数とグラフ', '関数のグラフ');
     const before = await preview(page).locator('path').count();
     await addObject(page, '接線');
     await expect(async () => {
@@ -140,7 +140,7 @@ test.describe('曲面・球・曲線の制御点', () => {
   });
 
   test('接平面は，曲面を選んで接する点を決めると描ける', async ({ page }) => {
-    await editor(page).getByRole('button', { name: '放物面と座標軸', exact: true }).click();
+    await loadSample(page, '空間：曲面', '放物面と座標軸');
     const before = await preview(page).locator('path').count();
     await addObject(page, '接平面');
     // 既定の接する点(原点)は，このサンプルの極座標では特異点になるので，ずらす．
@@ -209,7 +209,7 @@ test.describe('ラベル', () => {
     async ({ page }) => {
       // ブラウザのMathJaxは，拡張をその場で読み込む．読み込めないと，式の文字列がそのまま残る．
       await page.goto(PAGE);
-      await editor(page).getByRole('button', { name: 'Ewald球(断面)', exact: true }).click();
+      await loadSample(page, '平面：結晶と逆格子', 'Ewald球(断面)');
       const labels = editor(page).locator('.fe-edit-preview .inline-math');
       await expect(labels.first()).toBeVisible();
       const count = await labels.count();

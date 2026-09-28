@@ -12,10 +12,16 @@ interface ObjectTemplate {
   objects: readonly JsonObject[];
 }
 
-/** 部品のテンプレートの，種類ごとのまとまり．ツールバーでは，まとまりごとに1つの選択欄になる． */
+/** 部品のテンプレートの，種類ごとのまとまり．ツールバーの選択欄では，まとまりごとに見出しが付く． */
 interface ObjectTemplateGroup {
   label: string;
   templates: readonly ObjectTemplate[];
+}
+
+/** 部品のテンプレートの分類(図形，曲線など)．ツールバーでは，分類を選んでから部品を選ぶ． */
+interface ObjectTemplateCategory {
+  label: string;
+  groups: readonly ObjectTemplateGroup[];
 }
 
 /** 図全体を置き換える，図のテンプレートと見本．どちらも，シーンをそのまま持つ． */
@@ -25,4 +31,4 @@ interface SceneTemplate {
   scene: SceneDraft;
 }
 
-export type { ObjectTemplate, ObjectTemplateGroup, SceneTemplate };
+export type { ObjectTemplate, ObjectTemplateCategory, ObjectTemplateGroup, SceneTemplate };

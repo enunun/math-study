@@ -4,6 +4,8 @@ import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
+import { insertTemplate, loadSample } from './figure-editor-pickers';
+
 const PAGE = 'tools/graphics/figure-editor/';
 
 function editor(page: Page): Locator {
@@ -76,7 +78,7 @@ test.describe('図の作成', () => {
   });
 
   test('見本を読み込むと，図が描かれ，TikZが得られる', async ({ page }) => {
-    await editor(page).getByRole('button', { name: '球と座標軸', exact: true }).click();
+    await loadSample(page, '空間：曲面', '球と座標軸');
     await expect(preview(page)).toBeVisible();
     await openTab(page, 'TikZ');
     await expect(editor(page).getByRole('textbox', { name: 'TikZ' })).toHaveValue(
@@ -95,7 +97,7 @@ test.describe('図の作成', () => {
   });
 
   test('空間の図は，プレビューをドラッグすると，見る向きが変わる', async ({ page }) => {
-    await editor(page).getByRole('button', { name: '球と座標軸', exact: true }).click();
+    await loadSample(page, '空間：曲面', '球と座標軸');
     const azimuth = editor(page).getByLabel('方位角(度)');
     const elevation = editor(page).getByLabel('仰角(度)');
     const before = { azimuth: await azimuth.inputValue(), elevation: await elevation.inputValue() };
@@ -115,7 +117,7 @@ test.describe('図の作成', () => {
   });
 
   test('平面の図には，ドラッグの案内も，ドラッグできる領域もない', async ({ page }) => {
-    await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
+    await loadSample(page, '平面：関数とグラフ', '関数のグラフ');
     await expect(editor(page).locator('.fe-draggable')).toHaveCount(0);
     await expect(editor(page).getByText('ドラッグすると')).toHaveCount(0);
   });
@@ -140,7 +142,7 @@ test.describe('図の作成', () => {
   });
 
   test('JSONを書き出して，読み込み直すと，同じ図になる', async ({ page }) => {
-    await editor(page).getByRole('button', { name: 'ベクトルの和', exact: true }).click();
+    await loadSample(page, '平面：図形', 'ベクトルの和');
     const exported = await downloaded(page, 'JSONを書き出す');
     expect(exported.file).toBe('figure.json');
     expect(JSON.parse(exported.text)).toMatchObject({ version: '0.1.0' });
@@ -170,7 +172,7 @@ test.describe('図の作成', () => {
   });
 
   test('TikZの断片と，単体の文書を書き出せる', async ({ page }) => {
-    await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
+    await loadSample(page, '平面：関数とグラフ', '関数のグラフ');
     await expect(editor(page).getByRole('button', { name: /TikZを書き出す/u })).toBeEnabled();
     const fragment = await downloaded(page, 'TikZを書き出す(.tikz)');
     expect(fragment.file).toBe('figure.tikz');
@@ -227,7 +229,7 @@ test.describe('図の作成', () => {
 
   test('見本「Sierpińskiの三角形」は，誤りなく描ける', async ({ page }) => {
     // 見本の図の正しさはビルドとscene-schema.test.tsが確かめるので，読み込みの仕組みだけを確かめる．
-    await editor(page).getByRole('button', { name: 'Sierpińskiの三角形', exact: true }).click();
+    await loadSample(page, '平面：図形', 'Sierpińskiの三角形');
     await expect(preview(page)).toBeVisible();
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
@@ -242,9 +244,7 @@ test.describe('図の作成', () => {
       .getByRole('list', { name: 'オブジェクトの一覧' })
       .getByRole('listitem');
     const before = await items.count();
-    const picker = editor(page).locator('.fe-template-picker').filter({ hasText: '正多角形' });
-    await picker.getByLabel('正多角形').selectOption({ label: '正六角形' });
-    await picker.getByRole('button', { name: '挿入' }).click();
+    await insertTemplate(page, '図形', '正六角形');
     await expect(items).toHaveCount(before + HEXAGON_OBJECT_COUNT);
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
@@ -253,10 +253,8 @@ test.describe('図の作成', () => {
     // 隠れ方の判定そのもの(どの稜が隠れるか)は，crates/figure/tests/complex.rsで確かめているので，
     // ここでは，正多面体(polyhedron，複体として描く)の隠れ方が，実際のSVGの出力(破線と実線)にまで
     // 届いていることだけを確かめる．
-    await editor(page).getByRole('button', { name: '空間のベクトルの和', exact: true }).click();
-    const picker = editor(page).locator('.fe-template-picker').filter({ hasText: '正多面体' });
-    await picker.getByLabel('正多面体').selectOption({ label: '正4面体' });
-    await picker.getByRole('button', { name: '挿入' }).click();
+    await loadSample(page, '空間：曲線とベクトル', '空間のベクトルの和');
+    await insertTemplate(page, '図形', '正4面体');
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
     const edges = outputPreview(page).locator('path');
     const dashArrays = await edges.evaluateAll((paths) =>
@@ -268,7 +266,7 @@ test.describe('図の作成', () => {
 
   test('コードで書いた見本「Möbiusの帯」は，誤りなく描ける', async ({ page }) => {
     // 記事の図のファイルではなく，sample-scenes.tsのシーンを読み込む見本も，同じように動くことを確かめる．
-    await editor(page).getByRole('button', { name: 'Möbiusの帯', exact: true }).click();
+    await loadSample(page, '空間：曲面', 'Möbiusの帯');
     await expect(preview(page)).toBeVisible();
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
@@ -276,7 +274,7 @@ test.describe('図の作成', () => {
   test('図のテンプレート「座標軸(空間)」を選ぶと，3本の座標軸と原点の名前だけの空間の図になる', async ({
     page,
   }) => {
-    await editor(page).getByRole('button', { name: '関数のグラフ', exact: true }).click();
+    await loadSample(page, '平面：関数とグラフ', '関数のグラフ');
     await editor(page).getByRole('button', { name: '座標軸(空間)', exact: true }).click();
     const items = editor(page)
       .getByRole('list', { name: 'オブジェクトの一覧' })
@@ -288,7 +286,7 @@ test.describe('図の作成', () => {
 
   for (const tab of ['フォーム', 'JSON', 'TikZ']) {
     test(`アクセシビリティ：${tab}の表示に，違反がない`, async ({ page }) => {
-      await editor(page).getByRole('button', { name: '円錐と切り口', exact: true }).click();
+      await loadSample(page, '空間：曲面', '円錐と切り口');
       await expect(preview(page)).toBeVisible();
       await openTab(page, tab);
       const { violations } = await new AxeBuilder({ page }).analyze();

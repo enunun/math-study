@@ -2,6 +2,8 @@ import { readFile } from 'node:fs/promises';
 
 import { expect, test } from '@playwright/test';
 
+import { loadSample } from './figure-editor-pickers';
+
 const PAGE = 'tools/graphics/figure-reference/';
 
 /** JSONの値の，項目`key`の値．オブジェクトでなければ`undefined`． */
@@ -45,10 +47,7 @@ test.describe('図のシーンのリファレンス', () => {
 
   test('図の作成のフォームから，選んだ種類の節を開ける', async ({ page }) => {
     await page.goto('tools/graphics/figure-editor/');
-    await page
-      .locator('.figure-editor')
-      .getByRole('button', { name: '円錐と切り口', exact: true })
-      .click();
+    await loadSample(page, '空間：曲面', '円錐と切り口');
     await page
       .getByRole('button', { name: /切り口「/u })
       .first()

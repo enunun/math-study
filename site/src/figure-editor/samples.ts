@@ -1,7 +1,15 @@
+import { ANALYSIS_SAMPLE_SCENES } from './analysis-sample-scenes';
 import { parseDraft } from './draft';
 import type { SceneDraft } from './draft';
+import { FOUR_SPACE_SAMPLE_SCENES } from './four-space-sample-scenes';
 import type { JsonObject } from './json';
-import { PLANE_SAMPLE_SCENES, SPACE_SAMPLE_SCENES } from './sample-scenes';
+import {
+  ELLIPSE_FOCI_SAMPLE,
+  PLANE_CRYSTAL_SAMPLES,
+  SPACE_CRYSTAL_SAMPLES,
+  SPACE_CURVE_SAMPLES,
+  SURFACE_SAMPLES,
+} from './sample-scenes';
 import type { SceneTemplate } from './template-types';
 
 const files = import.meta.glob<string>('../figures/*.json', {
@@ -44,25 +52,60 @@ function articleSample(id: string, label: string, file: string): SceneTemplate {
   return { id, label, scene: withAllSurfaceAids(parsed.draft) };
 }
 
+/** 見本のまとまり．見本の一覧は，平面・空間と分野で分けて見せる． */
+interface SampleGroup {
+  label: string;
+  samples: readonly SceneTemplate[];
+}
+
 /**
  * 見本．そのまま使える，完成した図である．記事の図と，ここで書いた図(`sample-scenes.ts`)があり，
- * 平面の図，空間の図の順に並べる．選ぶと，今の図を置き換える．
+ * 平面の図，空間の図の順に，分野ごとにまとめる．選ぶと，今の図を置き換える．
  */
-const EDITOR_SAMPLES: readonly SceneTemplate[] = [
-  articleSample('graphs', '関数のグラフ', 'sine-and-shifted-sine'),
-  articleSample('vectors', 'ベクトルの和', 'vector-addition'),
-  articleSample('region', '2つのグラフの間の領域', 'sine-cosine-region'),
-  articleSample('tangentLine', '接線', 'tangent-line-on-parabola'),
-  articleSample('sierpinski', 'Sierpińskiの三角形', 'sierpinski-triangle'),
-  ...PLANE_SAMPLE_SCENES,
-  articleSample('sphere', '球と座標軸', 'sphere-with-axes'),
-  articleSample('paraboloid', '放物面と座標軸', 'paraboloid-with-axes'),
-  articleSample('spaceVectors', '空間のベクトルの和', 'space-vector-addition'),
-  articleSample('circles', '球の上の円', 'sphere-with-circles'),
-  articleSample('tangentPlane', '接平面', 'tangent-plane-on-paraboloid'),
-  articleSample('cone', '円錐と切り口', 'cone-with-cuts'),
-  articleSample('cylinder', '球と円柱の交線', 'sphere-and-cylinder'),
-  ...SPACE_SAMPLE_SCENES,
+const SAMPLE_GROUPS: readonly SampleGroup[] = [
+  {
+    label: '平面：関数とグラフ',
+    samples: [
+      articleSample('graphs', '関数のグラフ', 'sine-and-shifted-sine'),
+      articleSample('region', '2つのグラフの間の領域', 'sine-cosine-region'),
+      articleSample('tangentLine', '接線', 'tangent-line-on-parabola'),
+      ...ANALYSIS_SAMPLE_SCENES,
+    ],
+  },
+  {
+    label: '平面：図形',
+    samples: [
+      articleSample('vectors', 'ベクトルの和', 'vector-addition'),
+      ELLIPSE_FOCI_SAMPLE,
+      articleSample('sierpinski', 'Sierpińskiの三角形', 'sierpinski-triangle'),
+    ],
+  },
+  { label: '平面：結晶と逆格子', samples: PLANE_CRYSTAL_SAMPLES },
+  {
+    label: '空間：曲面',
+    samples: [
+      articleSample('sphere', '球と座標軸', 'sphere-with-axes'),
+      articleSample('paraboloid', '放物面と座標軸', 'paraboloid-with-axes'),
+      articleSample('circles', '球の上の円', 'sphere-with-circles'),
+      articleSample('tangentPlane', '接平面', 'tangent-plane-on-paraboloid'),
+      articleSample('cone', '円錐と切り口', 'cone-with-cuts'),
+      articleSample('cylinder', '球と円柱の交線', 'sphere-and-cylinder'),
+      ...SURFACE_SAMPLES,
+    ],
+  },
+  {
+    label: '空間：曲線とベクトル',
+    samples: [
+      articleSample('spaceVectors', '空間のベクトルの和', 'space-vector-addition'),
+      ...SPACE_CURVE_SAMPLES,
+    ],
+  },
+  { label: '空間：4次元', samples: FOUR_SPACE_SAMPLE_SCENES },
+  { label: '空間：結晶と逆格子', samples: SPACE_CRYSTAL_SAMPLES },
 ];
 
-export { EDITOR_SAMPLES };
+/** 見本の全部(まとまりの順)． */
+const EDITOR_SAMPLES: readonly SceneTemplate[] = SAMPLE_GROUPS.flatMap((group) => group.samples);
+
+export { EDITOR_SAMPLES, SAMPLE_GROUPS };
+export type { SampleGroup };

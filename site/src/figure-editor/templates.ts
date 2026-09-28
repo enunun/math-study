@@ -4,7 +4,7 @@ import { CONIC_TEMPLATES, PLANE_CURVE_TEMPLATES, SPACE_CURVE_TEMPLATES } from '.
 import { FRACTAL_TEMPLATES } from './fractal-templates';
 import { FUNCTION_TEMPLATES } from './function-templates';
 import { OTHER_SURFACE_TEMPLATES, QUADRIC_TEMPLATES } from './surface-templates';
-import type { ObjectTemplate, ObjectTemplateGroup } from './template-types';
+import type { ObjectTemplate, ObjectTemplateCategory, ObjectTemplateGroup } from './template-types';
 
 const TRIANGLE_SIDES = 3;
 const SQUARE_SIDES = 4;
@@ -60,26 +60,51 @@ const POLYHEDRON_TEMPLATES: readonly ObjectTemplate[] = POLYHEDRON_SPECS.map(
 );
 
 /**
- * 部品のテンプレートのまとまり．今編集している図に，オブジェクトとして挿入する．ツールバーは，
- * 今の図の種類(平面・空間)で使えるものだけを出すので，平面と空間の両方を持つまとまりもある．
- * 図全体を置き換える図のテンプレート(`scene-templates.ts`)は，座標軸だけの出発点である．
+ * 部品のテンプレートの分類．分類の中に，種類ごとのまとまりがある．今編集している図に，オブジェクトとして
+ * 挿入する．ツールバーは，今の図の種類(平面・空間)で使えるものだけを出すので，平面と空間の両方を持つ
+ * まとまりもある．図全体を置き換える図のテンプレート(`scene-templates.ts`)は，座標軸だけの出発点である．
  * そのまま使える完成した図は，見本(`samples.ts`)に置く．
  */
-const OBJECT_TEMPLATE_GROUPS: readonly ObjectTemplateGroup[] = [
-  { label: '正多角形', templates: POLYGON_TEMPLATES },
-  { label: '2次曲線', templates: CONIC_TEMPLATES },
-  { label: '平面曲線', templates: PLANE_CURVE_TEMPLATES },
-  { label: '関数のグラフ', templates: FUNCTION_TEMPLATES },
-  { label: 'フラクタル', templates: FRACTAL_TEMPLATES },
-  { label: 'Bézier曲線・スプライン曲線', templates: BEZIER_SPLINE_TEMPLATES },
-  { label: '空間曲線', templates: SPACE_CURVE_TEMPLATES },
-  { label: '正多面体', templates: POLYHEDRON_TEMPLATES },
-  { label: 'Bravais格子', templates: BRAVAIS_TEMPLATES },
-  { label: '2次曲面', templates: QUADRIC_TEMPLATES },
-  { label: 'Bézier曲面', templates: BEZIER_SURFACE_TEMPLATES },
-  { label: 'いろいろな曲面', templates: OTHER_SURFACE_TEMPLATES },
+const OBJECT_TEMPLATE_CATEGORIES: readonly ObjectTemplateCategory[] = [
+  {
+    label: '図形',
+    groups: [
+      { label: '正多角形', templates: POLYGON_TEMPLATES },
+      { label: '正多面体', templates: POLYHEDRON_TEMPLATES },
+      { label: 'フラクタル', templates: FRACTAL_TEMPLATES },
+    ],
+  },
+  {
+    label: '曲線',
+    groups: [
+      { label: '2次曲線', templates: CONIC_TEMPLATES },
+      { label: '平面曲線', templates: PLANE_CURVE_TEMPLATES },
+      { label: '関数のグラフ', templates: FUNCTION_TEMPLATES },
+      { label: 'Bézier曲線・スプライン曲線', templates: BEZIER_SPLINE_TEMPLATES },
+      { label: '空間曲線', templates: SPACE_CURVE_TEMPLATES },
+    ],
+  },
+  {
+    label: '曲面',
+    groups: [
+      { label: '2次曲面', templates: QUADRIC_TEMPLATES },
+      { label: 'Bézier曲面', templates: BEZIER_SURFACE_TEMPLATES },
+      { label: 'いろいろな曲面', templates: OTHER_SURFACE_TEMPLATES },
+    ],
+  },
+  { label: '結晶', groups: [{ label: 'Bravais格子', templates: BRAVAIS_TEMPLATES }] },
 ];
 
-export { OBJECT_TEMPLATE_GROUPS };
+/** 部品のテンプレートの，種類ごとのまとまりの全部(分類の順)． */
+const OBJECT_TEMPLATE_GROUPS: readonly ObjectTemplateGroup[] = OBJECT_TEMPLATE_CATEGORIES.flatMap(
+  (category) => category.groups,
+);
+
+export { OBJECT_TEMPLATE_CATEGORIES, OBJECT_TEMPLATE_GROUPS };
 export { SCENE_TEMPLATES } from './scene-templates';
-export type { ObjectTemplate, ObjectTemplateGroup, SceneTemplate } from './template-types';
+export type {
+  ObjectTemplate,
+  ObjectTemplateCategory,
+  ObjectTemplateGroup,
+  SceneTemplate,
+} from './template-types';
