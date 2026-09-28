@@ -83,9 +83,16 @@ fn 引数の数が違えば誤りになる() {
 }
 
 #[test]
-fn 組み込みの関数は引数を1つだけとる() {
+fn 組み込みの関数は決まった数の引数をとる() {
     let error = Expr::compile("sin(1, 2)", &[]).expect_err("誤りになる");
-    assert_eq!(error.kind, ExprErrorKind::UnexpectedToken(",".to_owned()));
+    assert_eq!(
+        error.kind,
+        ExprErrorKind::ArgumentCount {
+            name: "sin".to_owned(),
+            expected: 1,
+            found: 2
+        }
+    );
 }
 
 #[test]

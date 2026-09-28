@@ -20,6 +20,17 @@
     { "names": ["bessely0", "bessely1"], "meaning": "第2種Bessel関数(0次，1次)" },
     { "names": ["besseli0", "besseli1"], "meaning": "第1種変形Bessel関数(0次，1次)" },
     { "names": ["besselk0", "besselk1"], "meaning": "第2種変形Bessel関数(0次，1次)" },
+    { "names": ["ellipk", "ellipe"], "meaning": "第1種，第2種の完全楕円積分K(k)，E(k)．kは母数" },
+    {
+      "names": ["ellipf", "ellipeinc"],
+      "meaning": "第1種，第2種の不完全楕円積分F(φ, k)，E(φ, k)．φは振幅"
+    },
+    { "names": ["sn", "cn", "dn"], "meaning": "Jacobiの楕円関数sn(u, k)，cn(u, k)，dn(u, k)" },
+    { "names": ["am"], "meaning": "Jacobiの振幅関数am(u, k)．ellipf(φ, k)の逆関数" },
+    {
+      "names": ["wp", "wpd"],
+      "meaning": "Weierstrassの楕円関数℘(z; g2, g3)と，その導関数℘'(z; g2, g3)．不変量g2，g3は実数"
+    },
     { "names": ["dot"], "meaning": "内積dot(A, B)．点の式でだけ使える" },
     {
       "names": ["cross"],

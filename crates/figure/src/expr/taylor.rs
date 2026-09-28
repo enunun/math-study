@@ -72,7 +72,11 @@ impl Expander<'_> {
                     BinaryOp::Pow => self.power(&left, &right),
                 }
             }
-            Node::Call(function, argument) => self.call(*function, &self.expand(argument)?),
+            // 引数が2つ以上の関数(楕円関数)は，展開しない．
+            Node::Call(function, arguments) => match arguments.as_slice() {
+                [argument] => self.call(*function, &self.expand(argument)?),
+                _ => None,
+            },
             // ベクトルの関数は，数の式にはない．
             Node::Vector(..) => None,
         }
@@ -150,7 +154,17 @@ impl Expander<'_> {
             | Function::BesselI0
             | Function::BesselI1
             | Function::BesselK0
-            | Function::BesselK1 => None,
+            | Function::BesselK1
+            | Function::EllipK
+            | Function::EllipE
+            | Function::EllipF
+            | Function::EllipEInc
+            | Function::Am
+            | Function::Sn
+            | Function::Cn
+            | Function::Dn
+            | Function::Wp
+            | Function::Wpd => None,
         }
     }
 }

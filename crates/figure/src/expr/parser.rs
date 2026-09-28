@@ -6,7 +6,7 @@
 //! unary  = ("-" | "+") unary | power
 //! power  = atom [ "^" unary ]          (右に結ぶ．-x^2は-(x^2)，x^-2も読める)
 //! atom   = number | name | name "(" expr { "," expr } ")" | "(" expr ")"
-//!                                    (引数を複数とれるのは，利用者が定義した関数だけ)
+//!                                    (引数の数は，関数ごとに決まっている)
 //! ```
 
 use super::lexer::{Token, TokenKind};
@@ -225,11 +225,21 @@ impl Parser<'_> {
             })?;
             self.advance();
             self.enter(span)?;
-            let argument = self.expression();
+            let arguments = self.arguments();
             self.leave();
-            let argument = argument?;
+            let arguments = arguments?;
             self.expect_close()?;
-            return Ok(Node::Call(function, Box::new(argument)));
+            if arguments.len() != function.arity() {
+                return Err(error_at(
+                    ExprErrorKind::ArgumentCount {
+                        name: name.to_owned(),
+                        expected: function.arity(),
+                        found: arguments.len(),
+                    },
+                    span.clone(),
+                ));
+            }
+            return Ok(Node::Call(function, arguments));
         }
         if let Some(index) = self.names.iter().position(|candidate| *candidate == name) {
             return Ok(Node::Variable(index));

@@ -137,12 +137,20 @@ impl Node {
                 left.eval_vector(value_of)?,
                 right.eval_vector(value_of)?,
             ),
-            Self::Call(function, argument) => match argument.eval_vector(value_of)? {
-                Value::Number(value) => Ok(Value::Number(function.apply(value))),
-                Value::Vector(_) => {
-                    Err("点を数の関数(`sin`など)に入れることはできない．長さは`norm(A)`で書く．")
+            Self::Call(function, arguments) => {
+                let mut values = Vec::with_capacity(arguments.len());
+                for argument in arguments {
+                    match argument.eval_vector(value_of)? {
+                        Value::Number(value) => values.push(value),
+                        Value::Vector(_) => {
+                            return Err(
+                                "点を数の関数(`sin`など)に入れることはできない．長さは`norm(A)`で書く．",
+                            );
+                        }
+                    }
                 }
-            },
+                Ok(Value::Number(function.apply(&values)))
+            }
             Self::Vector(function, arguments) => {
                 let values = arguments
                     .iter()
@@ -157,7 +165,8 @@ impl Node {
     pub(super) fn uses_vector_functions(&self) -> bool {
         match self {
             Self::Number(_) | Self::Variable(_) => false,
-            Self::Neg(operand) | Self::Call(_, operand) => operand.uses_vector_functions(),
+            Self::Neg(operand) => operand.uses_vector_functions(),
+            Self::Call(_, arguments) => arguments.iter().any(Self::uses_vector_functions),
             Self::Binary(_, left, right) => {
                 left.uses_vector_functions() || right.uses_vector_functions()
             }

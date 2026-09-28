@@ -2,6 +2,7 @@
 
 use std::ops::Range;
 
+mod elliptic;
 mod functions;
 mod lexer;
 mod parser;
@@ -113,10 +114,30 @@ enum Function {
     BesselK0,
     /// 1次の第2種変形Bessel関数．
     BesselK1,
+    /// 第1種完全楕円積分`K(k)`．
+    EllipK,
+    /// 第2種完全楕円積分`E(k)`．
+    EllipE,
+    /// 第1種不完全楕円積分`F(φ, k)`．
+    EllipF,
+    /// 第2種不完全楕円積分`E(φ, k)`．
+    EllipEInc,
+    /// Jacobiの振幅関数`am(u, k)`．
+    Am,
+    /// Jacobiの楕円関数`sn(u, k)`．
+    Sn,
+    /// Jacobiの楕円関数`cn(u, k)`．
+    Cn,
+    /// Jacobiの楕円関数`dn(u, k)`．
+    Dn,
+    /// Weierstrassの楕円関数`℘(z; g2, g3)`．
+    Wp,
+    /// Weierstrassの楕円関数の導関数`℘'(z; g2, g3)`．
+    Wpd,
 }
 
 /// 関数の名前と関数．`log`と`ln`，`loggamma`と`lgamma`は，それぞれ同じ関数である．
-const FUNCTIONS: [(&str, Function); 29] = [
+const FUNCTIONS: [(&str, Function); 39] = [
     ("sin", Function::Sin),
     ("cos", Function::Cos),
     ("tan", Function::Tan),
@@ -146,6 +167,16 @@ const FUNCTIONS: [(&str, Function); 29] = [
     ("besseli1", Function::BesselI1),
     ("besselk0", Function::BesselK0),
     ("besselk1", Function::BesselK1),
+    ("ellipk", Function::EllipK),
+    ("ellipe", Function::EllipE),
+    ("ellipf", Function::EllipF),
+    ("ellipeinc", Function::EllipEInc),
+    ("am", Function::Am),
+    ("sn", Function::Sn),
+    ("cn", Function::Cn),
+    ("dn", Function::Dn),
+    ("wp", Function::Wp),
+    ("wpd", Function::Wpd),
 ];
 
 impl Function {
@@ -157,7 +188,19 @@ impl Function {
             .map(|(_, function)| *function)
     }
 
-    fn apply(self, x: f64) -> f64 {
+    /// 引数の数．
+    const fn arity(self) -> usize {
+        match self {
+            Self::EllipF | Self::EllipEInc | Self::Am | Self::Sn | Self::Cn | Self::Dn => 2,
+            Self::Wp | Self::Wpd => 3,
+            _ => 1,
+        }
+    }
+
+    /// 引数の値に施す．`arguments`の長さは`arity`である(読むときに確かめる)．足りない引数は非数とする．
+    fn apply(self, arguments: &[f64]) -> f64 {
+        let at = |index: usize| arguments.get(index).copied().unwrap_or(f64::NAN);
+        let x = at(0);
         match self {
             Self::Sin => x.sin(),
             Self::Cos => x.cos(),
@@ -186,6 +229,16 @@ impl Function {
             Self::BesselI1 => puruspe::In(1, x),
             Self::BesselK0 => puruspe::Kn(0, x),
             Self::BesselK1 => puruspe::Kn(1, x),
+            Self::EllipK => elliptic::ellipk(x),
+            Self::EllipE => elliptic::ellipe(x),
+            Self::EllipF => elliptic::ellipf(x, at(1)),
+            Self::EllipEInc => elliptic::ellipeinc(x, at(1)),
+            Self::Am => elliptic::jacobi(x, at(1)).am,
+            Self::Sn => elliptic::jacobi(x, at(1)).sn,
+            Self::Cn => elliptic::jacobi(x, at(1)).cn,
+            Self::Dn => elliptic::jacobi(x, at(1)).dn,
+            Self::Wp => elliptic::weierstrass(x, at(1), at(2)).0,
+            Self::Wpd => elliptic::weierstrass(x, at(1), at(2)).1,
         }
     }
 }
@@ -219,7 +272,7 @@ enum Node {
     Variable(usize),
     Neg(Box<Node>),
     Binary(BinaryOp, Box<Node>, Box<Node>),
-    Call(Function, Box<Node>),
+    Call(Function, Vec<Node>),
     /// ベクトルの関数の呼び出し．点の式でだけ値を持つ．
     Vector(VectorFunction, Vec<Node>),
 }
@@ -240,7 +293,13 @@ impl Node {
                     BinaryOp::Pow => left.powf(right),
                 }
             }
-            Self::Call(function, argument) => function.apply(argument.eval(values)),
+            Self::Call(function, arguments) => {
+                let values: Vec<f64> = arguments
+                    .iter()
+                    .map(|argument| argument.eval(values))
+                    .collect();
+                function.apply(&values)
+            }
             // ベクトルの関数は，点の式でだけ使える(`uses_vector_functions`で断る)．
             Self::Vector(..) => f64::NAN,
         }
