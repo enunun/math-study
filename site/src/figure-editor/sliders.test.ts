@@ -58,4 +58,18 @@ describe('媒介変数のスライダー', () => {
     expect(playedValue(slider, 2900, period)).toBeCloseTo(1.95);
     expect(playedValue(slider, 3500, period)).toBeCloseTo(0.25);
   });
+
+  it('刻みのある媒介変数は，書き込む値も再生する値も，下端から刻みの倍数の所に丸める', () => {
+    const draft = draftWith([{ id: 'h', type: 'parameter', value: 0, range: [-3, 3], step: 1 }]);
+    const [slider] = slidersOf(draft);
+    expect(slider).toEqual({ id: 'h', value: 0, min: -3, max: 3, step: 1 });
+    expect(withParameterValue(draft, 'h', 1.4).objects[0]).toMatchObject({ value: 1 });
+    expect(withParameterValue(draft, 'h', -2.6).objects[0]).toMatchObject({ value: -3 });
+    if (slider === undefined) {
+      throw new Error('スライダーがない');
+    }
+    const period = 6000;
+    expect(playedValue(slider, 1100, period)).toBe(1);
+    expect(playedValue(slider, 3900, period)).toBe(-2);
+  });
 });

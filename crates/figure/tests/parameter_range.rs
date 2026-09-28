@@ -72,3 +72,35 @@ fn 値は_範囲の中にある() {
         assert!(parse_scene(&json).is_ok(), "{value}");
     }
 }
+
+#[test]
+fn 範囲のある媒介変数は_刻みを持てる() {
+    let json =
+        scene(r#"{ "id": "h", "type": "parameter", "value": 1, "range": [-3, 3], "step": 1 }"#);
+    let parsed = parse_scene(&json).expect("読める");
+    let Object::Parameter(parameter) = &parsed.objects[0] else {
+        panic!("媒介変数である");
+    };
+    assert_eq!(parameter.step, Some(1.0));
+    let written = serde_json::to_string(&parsed).expect("書き出せる");
+    assert_eq!(parse_scene(&written).expect("読み直せる"), parsed);
+    let without = parse_scene(&scene(
+        r#"{ "id": "t", "type": "parameter", "value": 0.5, "range": [0, 1] }"#,
+    ))
+    .expect("読める");
+    let written = serde_json::to_string(&without).expect("書き出せる");
+    assert!(!written.contains("step"), "{written}");
+}
+
+#[test]
+fn 刻みは_正の数で_範囲と一緒に書く() {
+    for step in ["0", "-1"] {
+        let error = error_of(&format!(
+            r#"{{ "id": "h", "type": "parameter", "value": 0, "range": [-3, 3], "step": {step} }}"#
+        ));
+        assert!(error.to_string().contains("step"), "{error}");
+        assert_eq!(error.object.as_deref(), Some("h"));
+    }
+    let error = error_of(r#"{ "id": "h", "type": "parameter", "value": 0, "step": 1 }"#);
+    assert!(error.to_string().contains("range"), "{error}");
+}

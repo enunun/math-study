@@ -306,6 +306,10 @@ pub struct Parameter {
     /// 値は範囲の中(端を含む)にある．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub range: Option<[f64; 2]>,
+    /// スライダーの刻み．正の数で，範囲と一緒に書く．スライダーは，範囲の下端から刻みの倍数の値だけを取る
+    /// (整数の指数なら1にする)．描画には使わない．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step: Option<f64>,
 }
 
 /// 定義域の端．数か式．

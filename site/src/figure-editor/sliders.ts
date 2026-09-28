@@ -8,6 +8,8 @@ interface Slider {
   value: number;
   min: number;
   max: number;
+  /** 刻み．あれば，値は下端から刻みの倍数の所だけを取る． */
+  step?: number;
 }
 
 /** 書き込む値の細かさ．範囲の幅をこの数で割った刻みに丸め，JSONに長い小数が入らないようにする． */
@@ -31,7 +33,19 @@ function sliderOf(object: JsonObject): Slider | undefined {
   ) {
     return undefined;
   }
-  return { id: stringOf(object, 'id'), value, min, max };
+  const { step } = object;
+  const slider = { id: stringOf(object, 'id'), value, min, max };
+  return typeof step === 'number' && step > 0 ? { ...slider, step } : slider;
+}
+
+/** 刻みのあるスライダーの値を，下端から刻みの倍数の所に丸める(上端は越えない)．刻みがなければ，そのまま． */
+function snapped(slider: Slider, value: number): number {
+  const { step, min, max } = slider;
+  if (step === undefined) {
+    return value;
+  }
+  const multiple = Math.round((value - min) / step);
+  return Math.min(max, Number((min + multiple * step).toPrecision(VALUE_PRECISION)));
 }
 
 /** 図の中の，範囲のある媒介変数(並びの順)．範囲の形が崩れているものは除く(エンジンが誤りを示す)． */
@@ -42,15 +56,18 @@ function slidersOf(draft: SceneDraft): Slider[] {
   });
 }
 
-/** 媒介変数`id`の値を書き換えた図．値は，範囲の幅の`VALUE_DIVISIONS`分の1に丸める． */
+/** 媒介変数`id`の値を書き換えた図．値は，刻みがあれば刻みに，なければ範囲の幅の`VALUE_DIVISIONS`分の1に丸める． */
 function withParameterValue(draft: SceneDraft, id: string, value: number): SceneDraft {
   const objects = draft.objects.map((object) => {
     const slider = sliderOf(object);
     if (slider === undefined || slider.id !== id) {
       return object;
     }
-    const step = (slider.max - slider.min) / VALUE_DIVISIONS;
-    const rounded = Number((Math.round(value / step) * step).toPrecision(VALUE_PRECISION));
+    const fine = (slider.max - slider.min) / VALUE_DIVISIONS;
+    const rounded =
+      slider.step === undefined
+        ? Number((Math.round(value / fine) * fine).toPrecision(VALUE_PRECISION))
+        : snapped(slider, value);
     return { ...object, value: rounded };
   });
   return { ...draft, objects };
@@ -63,7 +80,7 @@ function withParameterValue(draft: SceneDraft, id: string, value: number): Scene
 function playedValue(slider: Slider, elapsed: number, period: number): number {
   const width = slider.max - slider.min;
   const phase = (slider.value - slider.min) / width + elapsed / period;
-  return slider.min + (phase - Math.floor(phase)) * width;
+  return snapped(slider, slider.min + (phase - Math.floor(phase)) * width);
 }
 
 export { playedValue, slidersOf, withParameterValue };

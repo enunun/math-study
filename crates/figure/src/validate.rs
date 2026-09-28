@@ -155,6 +155,18 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
 
 /// 範囲のある媒介変数は，範囲が小さい方から書かれ，値がその中(端を含む)にある．
 fn validate_parameter(parameter: &Parameter) -> Result<(), ErrorKind> {
+    if let Some(step) = parameter.step {
+        if !(step.is_finite() && step > 0.0) {
+            return Err(ErrorKind::Invalid(format!(
+                "スライダーの刻み(`step`)は，正の数にする(今は{step})．"
+            )));
+        }
+        if parameter.range.is_none() {
+            return Err(ErrorKind::Invalid(
+                "スライダーの刻み(`step`)は，範囲(`range`)と一緒に書く．".to_owned(),
+            ));
+        }
+    }
     let Some(range) = parameter.range else {
         return Ok(());
     };

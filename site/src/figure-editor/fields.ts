@@ -66,6 +66,7 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
       count: PAIR,
       optional: true,
     },
+    { kind: 'number', key: 'step', label: 'スライダーの刻み', optional: true },
   ],
   graph: [
     { kind: 'text', key: 'var', label: '変数の名前' },

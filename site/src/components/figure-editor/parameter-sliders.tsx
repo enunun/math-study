@@ -48,7 +48,7 @@ interface RowProps {
 }
 
 function SliderRow({ slider, playing, onValue, onPlay }: RowProps): ReactElement {
-  const { id, value, min, max } = slider;
+  const { id, value, min, max, step } = slider;
   return (
     <div className="fe-slider">
       <label>
@@ -57,7 +57,7 @@ function SliderRow({ slider, playing, onValue, onPlay }: RowProps): ReactElement
           type="range"
           min={min}
           max={max}
-          step={(max - min) / SLIDER_DIVISIONS}
+          step={step ?? (max - min) / SLIDER_DIVISIONS}
           value={value}
           onChange={(event) => {
             onValue(event.currentTarget.valueAsNumber);
