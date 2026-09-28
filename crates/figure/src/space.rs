@@ -394,6 +394,16 @@ pub fn render_space(scene: &Scene, view: &SpaceView, compiled: &Compiled) -> Fig
             (Object::Segment(segment), Plot::Link(link)) => {
                 items.extend(link_items(&segment.style, Arrow::None, link, &space));
             }
+            (Object::FieldLine(line), Plot::FieldLine(placed)) => {
+                for points in &placed.lines {
+                    let rims: Vec<Rim> = points
+                        .iter()
+                        .filter_map(|point| point3(point))
+                        .map(|point| (point, [0.0; 3]))
+                        .collect();
+                    items.extend(polyline_items(&rims, &line.style, &space));
+                }
+            }
             (Object::VectorField(field), Plot::VectorField(placed)) => {
                 for link in &placed.arrows {
                     items.extend(link_items(&field.style, Arrow::Stealth, link, &space));

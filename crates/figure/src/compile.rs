@@ -8,9 +8,9 @@ use crate::expr::{Expr, Functions, Value, is_reserved_name};
 use crate::fractal;
 use crate::image::transform_of;
 use crate::scene::{
-    Anchor, ArrowLength, Axis, Bound, Curve, Cut, Direction, Factor, Fractal, Graph, Grid, Label,
-    LevelCurve, Object, Pivot, Point, Polygon, Position, Region, Scene, Surface, TangentLine,
-    TangentPlane, Taylor, TransformStep, VectorField, View,
+    Anchor, ArrowLength, Axis, Bound, Curve, Cut, Direction, Factor, FieldLine, Fractal, Graph,
+    Grid, Label, LevelCurve, LineDirection, Object, Pivot, Point, Polygon, Position, Region, Scene,
+    Surface, TangentLine, TangentPlane, Taylor, TransformStep, VectorField, View,
 };
 use crate::transform::{Affine, MapFn, Transform, Vector3};
 use crate::validate::curve_expressions;
@@ -187,6 +187,8 @@ pub enum Plot {
     LevelCurve(LevelCurvePlot),
     /// ベクトル場．
     VectorField(VectorFieldPlot),
+    /// 流線．
+    FieldLine(FieldLinePlot),
     /// 式のないオブジェクト．
     None,
 }
@@ -196,6 +198,12 @@ pub struct VectorFieldPlot {
     /// 矢印の根元と先端(数学の座標，図の次元の数の成分)．変換を施してある．値が有限でない格子点と，
     /// 長さ0の矢印は除いてある．
     pub arrows: Vec<LinkPlot>,
+}
+
+/// 式を読んだ後の，流線．
+pub struct FieldLinePlot {
+    /// 起点ごとの曲線の点(数学の座標，図の次元の数の成分)．変換を施してある．
+    pub lines: Vec<Vec<Vec<f64>>>,
 }
 
 /// 式を読んだ後の，多角形．
@@ -667,6 +675,9 @@ fn compile_object(
         Object::Taylor(taylor) => compile_taylor(taylor, env)
             .map(Plot::Taylor)
             .map_err(|kind| Error::in_object(&taylor.id, kind)),
+        Object::FieldLine(line) => compile_field_line(line, env, view, scope, transform)
+            .map(Plot::FieldLine)
+            .map_err(|kind| Error::in_object(&line.id, kind)),
         Object::VectorField(field) => compile_vector_field(field, env, view, scope, transform)
             .map(Plot::VectorField)
             .map_err(|kind| Error::in_object(&field.id, kind)),
@@ -1501,11 +1512,11 @@ const AXIS_SUFFIXES: [&str; 3] = ["x", "y", "z"];
 /// ベクトル場の式を読む．位置ベクトルの名前とその成分の名前(`r_x`など，図の次元の数だけ)が，
 /// ほかの名前とぶつかれば誤りにする．
 fn compile_field_expr(
-    field: &VectorField,
+    var: &str,
+    field: &Position,
     env: &Env,
     scope: &VectorScope,
 ) -> Result<FieldExpr, ErrorKind> {
-    let var = field.var.as_str();
     let components: Vec<String> = AXIS_SUFFIXES
         .iter()
         .take(scope.dimension)
@@ -1525,7 +1536,7 @@ fn compile_field_expr(
         .map(String::as_str)
         .chain(env.names.iter().copied())
         .collect();
-    match &field.field {
+    match field {
         Position::Vector(source) => {
             let names: Vec<&str> = std::iter::once(var)
                 .chain(scalar_names)
@@ -1710,7 +1721,7 @@ fn compile_vector_field(
     };
     let scale = optional("scale", &field.scale)?;
     let max_length = optional("max_length", &field.max_length)?.unwrap_or(default_length);
-    let expr = compile_field_expr(field, env, scope)?;
+    let expr = compile_field_expr(&field.var, &field.field, env, scope)?;
     let mut arrows = Vec::new();
     for at in grid_points(&levels) {
         let Some(value) = field_value(&expr, &at, env, scope)? else {
@@ -1745,6 +1756,197 @@ fn compile_vector_field(
         }
     }
     Ok(VectorFieldPlot { arrows })
+}
+
+/// 流線の既定の長さ(片側)と，長さに対する既定の刻みの比．
+const FIELD_LINE_LENGTH: f64 = 10.0;
+const FIELD_LINE_DIVISIONS: f64 = 400.0;
+
+/// 場の向き(単位ベクトル)．値が有限でないか0なら`None`．
+fn field_direction(
+    expr: &FieldExpr,
+    at: &[f64],
+    env: &Env,
+    scope: &VectorScope,
+) -> Result<Option<Vec<f64>>, ErrorKind> {
+    let Some(value) = field_value(expr, at, env, scope)? else {
+        return Ok(None);
+    };
+    let norm = value.iter().map(|c| c * c).sum::<f64>().sqrt();
+    Ok((norm.is_finite() && norm > 0.0).then(|| value.iter().map(|c| c / norm).collect()))
+}
+
+/// 流線の積分の設定．
+struct Trace<'a> {
+    expr: &'a FieldExpr,
+    env: &'a Env<'a>,
+    scope: &'a VectorScope<'a>,
+    /// 刻み(符号つき．負なら場と逆向きに進む)．
+    step: f64,
+    /// 刻みの数．
+    steps: usize,
+    /// 平面の図の見える範囲．ここを外れたら，外に出た1点を加えて止める．
+    view: Option<[[f64; 2]; 2]>,
+}
+
+/// 点`p`から，`k`の`scale`倍だけ進んだ点．
+fn advanced(p: &[f64], k: &[f64], scale: f64) -> Vec<f64> {
+    p.iter()
+        .zip(k)
+        .map(|(a, b)| scale.mul_add(*b, *a))
+        .collect()
+}
+
+/// Runge-Kutta法の1段．始めの点の向きk1と，平均の傾き．
+struct Slope {
+    first: Vec<f64>,
+    mean: Vec<f64>,
+}
+
+/// 4次のRunge-Kutta法の傾き(k1 + 2k2 + 2k3 + k4) / 6．途中で場が有限でないか0になれば`None`．
+fn runge_kutta_slope(trace: &Trace, current: &[f64]) -> Result<Option<Slope>, ErrorKind> {
+    let direction = |at: &[f64]| field_direction(trace.expr, at, trace.env, trace.scope);
+    let half = trace.step / 2.0;
+    let Some(k1) = direction(current)? else {
+        return Ok(None);
+    };
+    let Some(k2) = direction(&advanced(current, &k1, half))? else {
+        return Ok(None);
+    };
+    let Some(k3) = direction(&advanced(current, &k2, half))? else {
+        return Ok(None);
+    };
+    let Some(k4) = direction(&advanced(current, &k3, trace.step))? else {
+        return Ok(None);
+    };
+    let mean = k1
+        .iter()
+        .zip(&k2)
+        .zip(&k3)
+        .zip(&k4)
+        .map(|(((a, b), c), d)| (a + 2.0 * b + 2.0 * c + d) / 6.0)
+        .collect();
+    Ok(Some(Slope { first: k1, mean }))
+}
+
+/// 起点`seed`から，場の向きに沿って進んだ点の並び(起点を含む)．場が有限でないか0の所，向きが反転した所
+/// (点電荷を飛び越えたとき)，見える範囲の外で止まる．
+fn trace_line(trace: &Trace, seed: &[f64]) -> Result<Vec<Vec<f64>>, ErrorKind> {
+    let mut points = vec![seed.to_vec()];
+    let mut current = seed.to_vec();
+    for _ in 0..trace.steps {
+        let Some(Slope { first: k1, mean }) = runge_kutta_slope(trace, &current)? else {
+            break;
+        };
+        let next = advanced(&current, &mean, trace.step);
+        // 進んだ先で場の向きが逆を向いていれば，特異点(点電荷)を飛び越えたので，進まずに止める．
+        let after = field_direction(trace.expr, &next, trace.env, trace.scope)?;
+        if after.is_none_or(|after| after.iter().zip(&k1).map(|(a, b)| a * b).sum::<f64>() < 0.0) {
+            break;
+        }
+        points.push(next.clone());
+        let outside = trace
+            .view
+            .is_some_and(|[[x_low, x_high], [y_low, y_high]]| {
+                let (x, y) = (
+                    next.first().copied().unwrap_or(0.0),
+                    next.get(1).copied().unwrap_or(0.0),
+                );
+                !((x_low..=x_high).contains(&x) && (y_low..=y_high).contains(&y))
+            });
+        if outside {
+            break;
+        }
+        current = next;
+    }
+    Ok(points)
+}
+
+/// 流線の長さと刻みを評価し，刻みの数を確かめる．刻みは，長さをちょうど等分する大きさに直す．
+fn field_line_steps(line: &FieldLine, env: &Env) -> Result<(f64, usize), ErrorKind> {
+    let positive =
+        |name: &'static str, bound: Option<&Bound>, default: f64| -> Result<f64, ErrorKind> {
+            let value = match bound {
+                Some(bound) => evaluate_bound(name, bound, 0, env)?,
+                None => default,
+            };
+            if value.is_finite() && value > 0.0 {
+                Ok(value)
+            } else {
+                Err(ErrorKind::Invalid(format!(
+                    "流線の`{name}`は，正の有限の数にする．"
+                )))
+            }
+        };
+    let length = positive("length", line.length.as_ref(), FIELD_LINE_LENGTH)?;
+    let step = positive("step", line.step.as_ref(), length / FIELD_LINE_DIVISIONS)?;
+    let count = (length / step - FIELD_STEP_EPSILON).ceil().max(1.0);
+    let limit = f64::from(u32::try_from(FieldLine::MAX_STEPS).unwrap_or(u32::MAX));
+    if count > limit {
+        return Err(ErrorKind::Invalid(format!(
+            "流線の点が多すぎる(片側{count}点．上限は{limit}点)．刻み(`step`)を大きくするか，長さ(`length`)を短くする．"
+        )));
+    }
+    let steps = (1_u32..=u32::try_from(FieldLine::MAX_STEPS).unwrap_or(u32::MAX))
+        .take_while(|k| f64::from(*k) <= count)
+        .count();
+    Ok((length / count, steps))
+}
+
+/// 流線．起点ごとに，向きに従って前と後ろへ積分し，1本の点の並びにつないで，変換を施す．
+fn compile_field_line(
+    line: &FieldLine,
+    env: &Env,
+    view: &View,
+    scope: &VectorScope,
+    transform: &Transform,
+) -> Result<FieldLinePlot, ErrorKind> {
+    let (step, steps) = field_line_steps(line, env)?;
+    let expr = compile_field_expr(&line.var, &line.field, env, scope)?;
+    let plane_view = match view {
+        View::Plane(plane) => Some([plane.x, plane.y]),
+        View::Space(_) => None,
+    };
+    let trace = |sign: f64| Trace {
+        expr: &expr,
+        env,
+        scope,
+        step: sign * step,
+        steps,
+        view: plane_view,
+    };
+    let (backward, forward) = (trace(-1.0), trace(1.0));
+    let mut lines = Vec::new();
+    for (index, seed) in line.seeds.iter().enumerate() {
+        let seed = seed
+            .iter()
+            .map(|bound| evaluate_bound("seeds", bound, index, env))
+            .collect::<Result<Vec<_>, _>>()?;
+        if !seed.iter().all(|c| c.is_finite()) {
+            return Err(ErrorKind::Invalid(format!(
+                "流線の起点(`seeds`の{}番目)は，有限の数にする．",
+                index.saturating_add(1)
+            )));
+        }
+        let before = match line.direction {
+            LineDirection::Forward => vec![seed.clone()],
+            LineDirection::Both | LineDirection::Backward => trace_line(&backward, &seed)?,
+        };
+        let after = match line.direction {
+            LineDirection::Backward => Vec::new(),
+            LineDirection::Both | LineDirection::Forward => trace_line(&forward, &seed)?,
+        };
+        let points: Vec<Vec<f64>> = before
+            .into_iter()
+            .rev()
+            .chain(after.into_iter().skip(1))
+            .filter_map(|point| transform.apply(&point))
+            .collect();
+        if points.len() > 1 {
+            lines.push(points);
+        }
+    }
+    Ok(FieldLinePlot { lines })
 }
 
 fn evaluate_bound(

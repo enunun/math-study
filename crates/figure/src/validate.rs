@@ -6,7 +6,7 @@ use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::image::{expand_images, transform_of};
 use crate::scene::{
-    ArrowLength, Axis, Bound, CM_PER_PT, Complex, Curve, Cut, Direction, Fill, Fractal,
+    ArrowLength, Axis, Bound, CM_PER_PT, Complex, Curve, Cut, Direction, FieldLine, Fill, Fractal,
     FunctionDef, Graph, Grid, Intersection, Label, LevelCurve, MAX_TRANSFORM_STEPS, MAX_WIDTH_PT,
     Map, Object, Parameter, Point, Polygon, Position, Region, Scene, SpaceView, Sphere, Style,
     Surface, TangentPlane, Taylor, TransformStep, VectorField, View,
@@ -148,6 +148,7 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::Map(map) => validate_map(map),
         Object::Taylor(taylor) => plane_only("taylor", view).and_then(|()| validate_taylor(taylor)),
         Object::VectorField(field) => validate_vector_field(field, view),
+        Object::FieldLine(line) => validate_field_line(line, view),
         // 像は，検査の前に，元のオブジェクトの複製に置き換えてある．
         Object::Parameter(parameter) => validate_parameter(parameter),
         Object::Image(_) | Object::Vector(_) | Object::Segment(_) => Ok(()),
@@ -248,9 +249,40 @@ fn validate_vector_field(field: &VectorField, view: &View) -> Result<(), ErrorKi
     Ok(())
 }
 
+/// 流線．位置ベクトルの名前，起点の数と座標の数，長さと刻み(数なら正)を確かめる．
+/// 式で書いた長さと刻みと，刻みの数は，評価してから`compile.rs`で確かめる．
+fn validate_field_line(line: &FieldLine, view: &View) -> Result<(), ErrorKind> {
+    check_variable(&line.var)?;
+    if let Position::Vector(source) = &line.field {
+        non_empty("field", source)?;
+    }
+    if line.seeds.is_empty() || line.seeds.len() > FieldLine::MAX_SEEDS {
+        return Err(ErrorKind::Invalid(format!(
+            "流線の起点(`seeds`)は，1個以上{}個以下を並べる．",
+            FieldLine::MAX_SEEDS
+        )));
+    }
+    let dimension = curve_expressions(view);
+    if let Some(index) = line.seeds.iter().position(|seed| seed.len() != dimension) {
+        return Err(ErrorKind::Invalid(format!(
+            "流線の起点(`seeds`の{}番目)は，{dimension}個の座標で書く．",
+            index.saturating_add(1)
+        )));
+    }
+    for (name, bound) in [("length", &line.length), ("step", &line.step)] {
+        if matches!(bound, Some(Bound::Number(value)) if !(value.is_finite() && *value > 0.0)) {
+            return Err(ErrorKind::Invalid(format!(
+                "流線の`{name}`は，正の有限の数にする．"
+            )));
+        }
+    }
+    Ok(())
+}
+
 fn style_of(object: &Object) -> Option<&Style> {
     match object {
         Object::VectorField(o) => Some(&o.style),
+        Object::FieldLine(o) => Some(&o.style),
         Object::Axis(o) => Some(&o.style),
         Object::Graph(o) => Some(&o.style),
         Object::Curve(o) => Some(&o.style),

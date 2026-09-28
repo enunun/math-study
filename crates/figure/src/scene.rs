@@ -173,6 +173,8 @@ pub enum Object {
     Taylor(Taylor),
     /// ベクトル場．格子点ごとに場の値の矢印を置く．
     VectorField(VectorField),
+    /// 流線．起点から，場の向きに沿って積分した曲線．
+    FieldLine(FieldLine),
 }
 
 /// 軸の向き．
@@ -1029,6 +1031,66 @@ impl VectorField {
     pub const MAX_POINTS: usize = 5000;
 }
 
+/// 流線をどちらの向きに伸ばすか．
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum LineDirection {
+    /// 場の向きと逆向きの両方．
+    #[default]
+    Both,
+    /// 場の向きだけ．
+    Forward,
+    /// 場と逆向きだけ．
+    Backward,
+}
+
+/// 流線．起点(`seeds`)から，場の向き(単位ベクトル)に沿って，4次のRunge-Kutta法で積分した曲線である．
+///
+/// 場は，ベクトル場(`vector_field`)と同じく，ベクトルの式か成分の式の並びで書く．起点は座標で書き，
+/// 媒介変数や点の座標の名前(`Q_x`など)を使える．場が有限でない所，0の所，向きが急に反転した所
+/// (点電荷を飛び越えたとき)と，平面の図では見える範囲を大きく外れた所で止まる．平面の図では見える範囲で
+/// 切り取り，空間の図では曲面に隠れる部分を隠れた線で描く．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct FieldLine {
+    /// 識別子．
+    pub id: String,
+    /// 位置ベクトルの名前．既定は`r`で，成分は`r_x`，`r_y`(空間の図では`r_z`も)になる．
+    #[serde(
+        default = "default_field_var",
+        skip_serializing_if = "is_default_field_var"
+    )]
+    pub var: String,
+    /// 場の式．ベクトルの式か，成分の式の並び．
+    pub field: Position,
+    /// 起点の並び．各起点は，座標の数か式の並び(平面の図では2個，空間の図では3個)である．
+    pub seeds: Vec<Vec<Bound>>,
+    /// 起点から，片側に伸ばす長さ(曲線に沿った長さ)．既定は10．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub length: Option<Bound>,
+    /// 積分の刻み(曲線に沿った長さ)．既定は長さの400分の1．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step: Option<Bound>,
+    /// 伸ばす向き．
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub direction: LineDirection,
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+    /// 変換．書いた順に施す．曲線の点に施す．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
+}
+
+impl FieldLine {
+    /// 起点の数の上限．
+    pub const MAX_SEEDS: usize = 200;
+    /// 1本の流線の，片側の刻みの数の上限．
+    pub const MAX_STEPS: usize = 20_000;
+}
+
 /// 曲面．空間の点を，2つの変数の式か，Bézier曲面の制御点の網で表す．輪郭と，曲面に隠れる線を，三角形の網から求める．
 ///
 /// 曲面は不透明な殻で，ほかのオブジェクトの線を隠す．輪郭は，視線が曲面に接する所である．
@@ -1338,6 +1400,7 @@ impl Object {
             Self::Cut(o) => &o.id,
             Self::LevelCurve(o) => &o.id,
             Self::VectorField(o) => &o.id,
+            Self::FieldLine(o) => &o.id,
             Self::Intersection(o) => &o.id,
             Self::TangentPlane(o) => &o.id,
             Self::Complex(o) => &o.id,
@@ -1371,6 +1434,7 @@ impl Object {
             Self::Cut(_) => "cut",
             Self::LevelCurve(_) => "level_curve",
             Self::VectorField(_) => "vector_field",
+            Self::FieldLine(_) => "field_line",
             Self::Intersection(_) => "intersection",
             Self::TangentPlane(_) => "tangent_plane",
             Self::Complex(_) => "complex",

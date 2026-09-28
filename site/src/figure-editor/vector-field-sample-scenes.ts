@@ -47,10 +47,28 @@ function chargePoint(id: string, x: number, color: string): JsonObject {
   };
 }
 
+/** 電気力線の起点の数と，電荷Q_1からの距離． */
+const SEED_COUNT = 12;
+const SEED_RADIUS = 0.15;
+const FULL_TURN = 360;
+
+/** 電荷のまわりの円に，等間隔に並べた起点．電荷をドラッグすると，起点もついてくる． */
+function seedsAround(center: string): string[][] {
+  return Array.from({ length: SEED_COUNT }, (_, k) => {
+    const degrees = (FULL_TURN * k) / SEED_COUNT;
+    return [
+      `${center}_x + ${SEED_RADIUS}*cos(${degrees}*pi/180)`,
+      `${center}_y + ${SEED_RADIUS}*sin(${degrees}*pi/180)`,
+    ];
+  });
+}
+
+const DIPOLE_FIELD = 'q1 * (r - Q1) / norm(r - Q1)^3 + q2 * (r - Q2) / norm(r - Q2)^3';
+
 const DIPOLE_SCENE: SceneDraft = {
   version: SCENE_VERSION,
   description:
-    '2つの点電荷の電場．点Q_1，Q_2にある電荷q_1，q_2がつくる電場E(r) = q_1 (r − Q_1)/|r − Q_1|^3 + q_2 (r − Q_2)/|r − Q_2|^3(定数は省く)を，向きだけをそろえた矢印で描く．場は，教科書の式のまま，ベクトルの式で書いてある．編集中の図で電荷の点をドラッグして動かし，スライダーで電荷の大きさや符号を変えると，場が追従する．',
+    '2つの点電荷の電場．点Q_1，Q_2にある電荷q_1，q_2がつくる電場E(r) = q_1 (r − Q_1)/|r − Q_1|^3 + q_2 (r − Q_2)/|r − Q_2|^3(定数は省く)を，向きだけをそろえた矢印(灰色)と，Q_1のまわりから引いた電気力線(青の流線)で描く．場は，教科書の式のまま，ベクトルの式で書いてある．編集中の図で電荷の点をドラッグして動かし，スライダーで電荷の大きさや符号を変えると，場と電気力線が追従する．',
   view: view(),
   objects: [
     charge('q1', CHARGE_VALUE),
@@ -60,11 +78,19 @@ const DIPOLE_SCENE: SceneDraft = {
     {
       id: 'E',
       type: 'vector_field',
-      field: 'q1 * (r - Q1) / norm(r - Q1)^3 + q2 * (r - Q2) / norm(r - Q2)^3',
+      field: DIPOLE_FIELD,
       x_step: STEP,
       y_step: STEP,
       length: 'normalized',
       scale: ARROW_LENGTH,
+      style: { color: 'gray' },
+    },
+    {
+      id: 'lines',
+      type: 'field_line',
+      field: DIPOLE_FIELD,
+      seeds: seedsAround('Q1'),
+      style: { color: 'blue' },
     },
   ],
 };
@@ -123,6 +149,8 @@ const GRADIENT_SCENE: SceneDraft = {
 const WIRE_END = 2;
 const WIRE_Z_END = 1;
 const WIRE_ARROW = 0.6;
+/** 磁力線(同心円)の起点の，z軸からの距離． */
+const WIRE_SEEDS = [1, WIRE_END];
 const WIRE_LENGTH = 1.8;
 const SPACE_AZIMUTH = 35;
 const SPACE_ELEVATION = 25;
@@ -130,7 +158,7 @@ const SPACE_ELEVATION = 25;
 const MAGNETIC_SCENE: SceneDraft = {
   version: SCENE_VERSION,
   description:
-    '直線電流のまわりの磁場．z軸に沿って流れる電流(赤の矢印)がつくる磁場B(r) = (e_z × r)/(r_x^2 + r_y^2)(定数は省く)を，向きだけをそろえた矢印で描く．e_zは点Zの位置ベクトルで，場は外積crossのまま書いてある．磁場は電流を軸とする円に沿って回り，右ねじの向きを向く．z軸の上では値が有限でないので，矢印を描かない．',
+    '直線電流のまわりの磁場．z軸に沿って流れる電流(赤の矢印)がつくる磁場B(r) = (e_z × r)/(r_x^2 + r_y^2)(定数は省く)を，向きだけをそろえた矢印(灰色)と，磁力線(青の流線．z = 0の面の同心円)で描く．e_zは点Zの位置ベクトルで，場は外積crossのまま書いてある．磁場は電流を軸とする円に沿って回り，右ねじの向きを向く．z軸の上では値が有限でないので，矢印を描かない．',
   view: { azimuth: SPACE_AZIMUTH, elevation: SPACE_ELEVATION, unit: UNIT },
   objects: [
     { id: 'Z', type: 'point', at: [0, 0, 1] },
@@ -155,6 +183,15 @@ const MAGNETIC_SCENE: SceneDraft = {
       z_range: [-WIRE_Z_END, WIRE_Z_END],
       length: 'normalized',
       scale: WIRE_ARROW,
+      style: { color: 'gray' },
+    },
+    {
+      id: 'lines',
+      type: 'field_line',
+      field: 'cross(Z, r) / (r_x^2 + r_y^2)',
+      seeds: WIRE_SEEDS.map((radius) => [radius, 0, 0]),
+      length: `2*pi*${WIRE_END}`,
+      direction: 'forward',
       style: { color: 'blue' },
     },
   ],

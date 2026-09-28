@@ -165,6 +165,23 @@
     },
     "cut": { "space": { "type": "cut", "surface": "", "normal": [0, 0, 1], "offset": 0 } },
     "intersection": { "space": { "type": "intersection", "surfaces": [] } },
+    "field_line": {
+      "plane": {
+        "type": "field_line",
+        "field": ["-r_y", "r_x"],
+        "seeds": [
+          [1, 0],
+          [2, 0]
+        ],
+        "length": 7
+      },
+      "space": {
+        "type": "field_line",
+        "field": ["-r_y", "r_x", 0.2],
+        "seeds": [[1, 0, 0]],
+        "length": 10
+      }
+    },
     "vector_field": {
       "plane": {
         "type": "vector_field",

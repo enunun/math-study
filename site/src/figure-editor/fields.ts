@@ -1,7 +1,14 @@
 import { COORDINATE_NAMES, gridFields, vectorFieldFields } from './coordinate-fields';
 import { listedType, TRANSFORMABLE } from './create';
 import type { ViewKind } from './draft';
-import { ANCHORS, ARROWS, PLANE_DIRECTIONS, SOLIDS, SPACE_DIRECTIONS } from './field-options';
+import {
+  ANCHORS,
+  ARROWS,
+  LINE_DIRECTIONS,
+  PLANE_DIRECTIONS,
+  SOLIDS,
+  SPACE_DIRECTIONS,
+} from './field-options';
 import type { FieldSpec } from './field-spec';
 import { stringOf } from './json';
 import type { JsonObject } from './json';
@@ -67,6 +74,20 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
       optional: true,
     },
     { kind: 'number', key: 'step', label: 'スライダーの刻み', optional: true },
+  ],
+  field_line: [
+    { kind: 'position', key: 'field', label: '場の式(ベクトルの式か成分)' },
+    { kind: 'text', key: 'var', label: '位置ベクトルの名前(既定はr)', optional: true },
+    { kind: 'json', key: 'seeds', label: '起点の並び', hint: '[[1, 0], ["Q_x + 0.2", "Q_y"]]' },
+    { kind: 'bound', key: 'length', label: '片側の長さ(既定は10)', optional: true },
+    { kind: 'bound', key: 'step', label: '刻み(既定は長さの400分の1)', optional: true },
+    {
+      kind: 'select',
+      key: 'direction',
+      label: '伸ばす向き',
+      options: LINE_DIRECTIONS,
+      optional: true,
+    },
   ],
   graph: [
     { kind: 'text', key: 'var', label: '変数の名前' },

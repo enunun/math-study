@@ -6,8 +6,9 @@ use crate::arrow::Stealth;
 use crate::bezier::bezier_curve_point;
 use crate::clip::{clip_polygon, clip_polyline};
 use crate::compile::{
-    Compiled, CurvePlot, FractalPlot, GraphPlot, GridPlot, LabelPlot, LevelCurvePlot, LinkPlot,
-    Plot, PointPlot, PolygonPlot, TangentLinePlot, TaylorPlot, TickPlot, VectorFieldPlot, compile,
+    Compiled, CurvePlot, FieldLinePlot, FractalPlot, GraphPlot, GridPlot, LabelPlot,
+    LevelCurvePlot, LinkPlot, Plot, PointPlot, PolygonPlot, TangentLinePlot, TaylorPlot, TickPlot,
+    VectorFieldPlot, compile,
 };
 use crate::derivative::central_difference_point;
 use crate::error::Error;
@@ -193,6 +194,9 @@ fn object_items(
         }
         (Object::LevelCurve(curve), Plot::LevelCurve(placed)) => {
             level_curve_items(curve, placed, transform, context)
+        }
+        (Object::FieldLine(line), Plot::FieldLine(placed)) => {
+            field_line_items(placed, line.style, scale, window)
         }
         (Object::VectorField(field), Plot::VectorField(placed)) => vector_field_items(placed, view)
             .filter_map(|link| link_item(&field.style, Arrow::Stealth, link, scale))
@@ -731,6 +735,29 @@ fn mapped_line_items(
     .flat_map(|points| clip_polyline(points, min, max))
     .map(|points| Item::Path(curve_path(points, tangent.style)))
     .collect()
+}
+
+/// 流線を，見える範囲で切り取った折れ線．
+fn field_line_items(
+    plot: &FieldLinePlot,
+    style: Style,
+    scale: Scale,
+    [min, max]: [[f64; 2]; 2],
+) -> Vec<Item> {
+    plot.lines
+        .iter()
+        .flat_map(|line| {
+            let points: Vec<[f64; 2]> = line
+                .iter()
+                .filter_map(|point| match point.as_slice() {
+                    [x, y] => Some(scale.point(*x, *y)),
+                    _ => None,
+                })
+                .collect();
+            clip_polyline(&points, min, max)
+        })
+        .map(|points| Item::Path(curve_path(points, style)))
+        .collect()
 }
 
 /// ベクトル場の矢印のうち，両端が見える範囲にあるもの．はみ出す矢印は，矢じりごと切ることになるので描かない．

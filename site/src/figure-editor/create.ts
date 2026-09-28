@@ -44,6 +44,7 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'fractal', label: 'フラクタル', kinds: PLANE },
   { type: 'taylor', label: 'Taylor展開', kinds: PLANE },
   { type: 'vector_field', label: 'ベクトル場', kinds: BOTH },
+  { type: 'field_line', label: '流線', kinds: BOTH },
   { type: 'function', label: '関数', kinds: BOTH },
   { type: 'map', label: '写像', kinds: BOTH },
   { type: 'image', label: '像(変換した図形)', kinds: BOTH },

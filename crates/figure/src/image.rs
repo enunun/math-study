@@ -108,6 +108,7 @@ fn parts_of(object: &mut Object) -> Option<Parts<'_>> {
         Object::Intersection(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
         Object::TangentPlane(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
         Object::VectorField(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::FieldLine(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
         _ => return None,
     })
 }
@@ -138,6 +139,7 @@ pub fn transform_of(object: &Object) -> Option<&[TransformStep]> {
         Object::Intersection(o) => &o.transform,
         Object::TangentPlane(o) => &o.transform,
         Object::VectorField(o) => &o.transform,
+        Object::FieldLine(o) => &o.transform,
         _ => return None,
     })
 }

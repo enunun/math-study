@@ -46,5 +46,21 @@ const PIVOTS: readonly Option[] = [
   ['tail', '根元を格子点に'],
 ];
 
-export { ANCHORS, ARROWS, ARROW_LENGTHS, PIVOTS, PLANE_DIRECTIONS, SOLIDS, SPACE_DIRECTIONS };
+/** 流線を伸ばす向き． */
+const LINE_DIRECTIONS: readonly Option[] = [
+  ['both', '両方'],
+  ['forward', '場の向き'],
+  ['backward', '場と逆向き'],
+];
+
+export {
+  ANCHORS,
+  ARROWS,
+  ARROW_LENGTHS,
+  LINE_DIRECTIONS,
+  PIVOTS,
+  PLANE_DIRECTIONS,
+  SOLIDS,
+  SPACE_DIRECTIONS,
+};
 export type { Option };

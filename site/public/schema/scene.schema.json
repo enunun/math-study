@@ -1033,6 +1033,53 @@
         "transform": { "$ref": "#/$defs/transform" }
       }
     },
+    "field_line": {
+      "type": "object",
+      "required": ["id", "type", "field", "seeds"],
+      "additionalProperties": false,
+      "description": "流線．起点(`seeds`)から，場の向き(単位ベクトル)に沿って，4次のRunge-Kutta法で積分した曲線．電気力線などに使う．場は，ベクトル場(`vector_field`)と同じく，ベクトルの式か成分の式の並びで書く．場が有限でない所，0の所，向きが急に反転した所(点電荷を飛び越えたとき)と，平面の図では見える範囲の外で止まる．平面の図では見える範囲で切り取り，空間の図では曲面に隠れる部分を隠れた線で描く．",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "field_line" },
+        "var": {
+          "$ref": "#/$defs/identifier",
+          "description": "位置ベクトルの名前．既定は`r`で，成分は`r_x`，`r_y`(空間の図では`r_z`も)の名前で使える．"
+        },
+        "field": {
+          "description": "場の式．ベクトルの式(文字列)か，成分の数か式の並び(平面の図では2個，空間の図では3個)．",
+          "oneOf": [
+            { "$ref": "#/$defs/nonBlankString" },
+            { "type": "array", "items": { "$ref": "#/$defs/bound" }, "minItems": 2, "maxItems": 3 }
+          ]
+        },
+        "seeds": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/bound" },
+            "minItems": 2,
+            "maxItems": 3
+          },
+          "minItems": 1,
+          "maxItems": 200,
+          "description": "起点の並び．各起点は座標の数か式の並びで，平面の図では2個，空間の図では3個にする(スキーマでは表せない)．式には，媒介変数や点の座標の名前(`Q_x`など)を使える．起点ごとに1本の流線を引く．"
+        },
+        "length": {
+          "$ref": "#/$defs/bound",
+          "description": "起点から片側に伸ばす，曲線に沿った長さ．正の数か式．既定は10．"
+        },
+        "step": {
+          "$ref": "#/$defs/bound",
+          "description": "積分の刻み(曲線に沿った長さ)．正の数か式．既定は長さの400分の1．片側の点は20000個まで(スキーマでは表せない)．"
+        },
+        "direction": {
+          "enum": ["both", "forward", "backward"],
+          "description": "伸ばす向き．`both`(既定)は場の向きと逆向きの両方，`forward`は場の向きだけ，`backward`は逆向きだけ．"
+        },
+        "style": { "$ref": "#/$defs/style" },
+        "transform": { "$ref": "#/$defs/transform" }
+      }
+    },
     "taylor": {
       "type": "object",
       "required": ["id", "type", "of", "at", "order"],
@@ -1088,7 +1135,8 @@
         { "$ref": "#/$defs/map" },
         { "$ref": "#/$defs/image" },
         { "$ref": "#/$defs/taylor" },
-        { "$ref": "#/$defs/vector_field" }
+        { "$ref": "#/$defs/vector_field" },
+        { "$ref": "#/$defs/field_line" }
       ]
     }
   }
