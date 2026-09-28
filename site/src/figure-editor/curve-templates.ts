@@ -119,8 +119,41 @@ const PLANE_CURVE_TEMPLATES: readonly ObjectTemplate[] = [
   },
 ];
 
+/** 傾いた円の半径と，傾きの角度(度)の既定の値と範囲． */
+const TILTED_RADIUS = 1.5;
+const TILT_VALUE = 30;
+const TILT_MAX = 90;
+
+/**
+ * 傾いた円．中心C，直交する2つの向きU，V(長さは半径)で，ベクトルの式`C + cos(t)*U + sin(t)*V`と書く．
+ * Vは，xy平面から角tilt(度)だけ起こした向きである．U，Vは位置ベクトルとして使う点で，印は付けない．
+ */
+const TILTED_CIRCLE: readonly JsonObject[] = [
+  { id: 'tilt', type: 'parameter', value: TILT_VALUE, range: [0, TILT_MAX] },
+  { id: 'C', type: 'point', at: [0, 0, 0], label: 'C', dot: true },
+  { id: 'U', type: 'point', at: [TILTED_RADIUS, 0, 0] },
+  {
+    id: 'V',
+    type: 'point',
+    at: [0, `${TILTED_RADIUS}*cos(tilt*pi/180)`, `${TILTED_RADIUS}*sin(tilt*pi/180)`],
+  },
+  {
+    id: 'c',
+    type: 'curve',
+    var: 't',
+    expr: 'C + cos(t)*U + sin(t)*V',
+    domain: [0, '2*pi'],
+  },
+];
+
 /** 空間曲線．どれも，既定の軸の範囲(`[-3, 3]`)に収まる大きさにする． */
 const SPACE_CURVE_TEMPLATES: readonly ObjectTemplate[] = [
+  {
+    id: 'tilted-circle',
+    label: '傾いた円(ベクトルの式)',
+    kind: 'space',
+    objects: TILTED_CIRCLE,
+  },
   {
     id: 'helix',
     label: 'らせん',

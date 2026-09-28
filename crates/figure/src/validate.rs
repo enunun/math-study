@@ -6,10 +6,11 @@ use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::image::{expand_images, transform_of};
 use crate::scene::{
-    ArrowLength, Axis, Bound, CM_PER_PT, Complex, Curve, Cut, Direction, FieldLine, Fill, Fractal,
-    FunctionDef, Graph, Grid, ImplicitCurve, Intersection, Label, MAX_TRANSFORM_STEPS,
-    MAX_WIDTH_PT, Map, Object, Parameter, Point, Polygon, Position, Region, Scene, SpaceView,
-    Sphere, Style, Surface, TangentPlane, Taylor, TransformStep, VectorField, View,
+    ArrowLength, Axis, Bound, CM_PER_PT, Complex, Curve, CurveExpr, Cut, Direction, FieldLine,
+    Fill, Fractal, FunctionDef, Graph, Grid, ImplicitCurve, Intersection, Label,
+    MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object, Parameter, Point, Polygon, Position, Region,
+    Scene, SpaceView, Sphere, Style, Surface, TangentPlane, Taylor, TransformStep, VectorField,
+    View,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -930,15 +931,22 @@ fn validate_curve_formula(curve: &Curve, view: &View) -> Result<(), ErrorKind> {
         return Err(ErrorKind::Invalid(CURVE_FORM_HINT.to_owned()));
     };
     check_variable(var)?;
-    let expected = curve_expressions(view);
-    if curve.expr.len() != expected {
-        return Err(ErrorKind::ExpressionCount {
-            expected,
-            found: curve.expr.len(),
-        });
-    }
-    for expr in &curve.expr {
-        non_empty("expr", expr)?;
+    match &curve.expr {
+        CurveExpr::Vector(source) => non_empty("expr", source)?,
+        CurveExpr::Components(list) => {
+            let expected = curve_expressions(view);
+            if list.len() != expected {
+                return Err(ErrorKind::ExpressionCount {
+                    expected,
+                    found: list.len(),
+                });
+            }
+            for bound in list {
+                if let Bound::Expression(expr) = bound {
+                    non_empty("expr", expr)?;
+                }
+            }
+        }
     }
     let Some(domain) = &curve.domain else {
         return Err(ErrorKind::Invalid(CURVE_FORM_HINT.to_owned()));

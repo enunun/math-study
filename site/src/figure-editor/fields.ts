@@ -96,7 +96,7 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
   ],
   curve: [
     { kind: 'text', key: 'var', label: '変数の名前' },
-    { kind: 'list', key: 'expr', label: '座標の式', item: 'text', count: 'dimension' },
+    { kind: 'position', key: 'expr', label: '曲線の式(成分かベクトルの式)' },
     DOMAIN,
   ],
   bezierCurve: [

@@ -1337,6 +1337,32 @@ pub struct Graph {
     pub transform: Vec<TransformStep>,
 }
 
+/// 曲線の式．成分の数か式の並び(平面では2個，空間では3個)か，点の式と同じベクトルの式(媒介変数は数，
+/// 先に置いた点はベクトルとして使う．例：`"C + cos(t)*U + sin(t)*V"`)．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(untagged)]
+pub enum CurveExpr {
+    /// ベクトルの式．
+    Vector(String),
+    /// 成分の数か式の並び．
+    Components(Vec<Bound>),
+}
+
+impl Default for CurveExpr {
+    fn default() -> Self {
+        Self::Components(Vec::new())
+    }
+}
+
+impl CurveExpr {
+    /// 式がないか(Bézier曲線・スプライン曲線)．書き出さない．
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        matches!(self, Self::Components(list) if list.is_empty())
+    }
+}
+
 /// 媒介変数表示の曲線．式(`var`，`expr`，`domain`)か，Bézier曲線の制御点(`bezier`)か，
 /// スプライン曲線が通る点(`spline`)の，どれか1つで書く．2つ以上は書けない．
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1348,9 +1374,9 @@ pub struct Curve {
     /// 媒介変数の名前．式で書く曲線だけが持つ．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub var: Option<String>,
-    /// 各座標の式．式で書く曲線だけが持つ．
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub expr: Vec<String>,
+    /// 曲線の式．式で書く曲線だけが持つ．成分の式の並びか，ベクトルの式である．
+    #[serde(default, skip_serializing_if = "CurveExpr::is_empty")]
+    pub expr: CurveExpr,
     /// 媒介変数の範囲．式で書く曲線だけが持つ．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub domain: Option<[Bound; 2]>,

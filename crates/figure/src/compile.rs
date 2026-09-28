@@ -8,9 +8,9 @@ use crate::expr::{Expr, Functions, Value, is_reserved_name};
 use crate::fractal;
 use crate::image::transform_of;
 use crate::scene::{
-    Anchor, ArrowLength, Axis, Bound, Curve, Cut, Direction, Factor, FieldLine, Fractal, Graph,
-    Grid, ImplicitCurve, Label, LineDirection, Object, Pivot, Point, Polygon, Position, Region,
-    Scene, Surface, TangentLine, TangentPlane, Taylor, TransformStep, VectorField, View,
+    Anchor, ArrowLength, Axis, Bound, Curve, CurveExpr, Cut, Direction, Factor, FieldLine, Fractal,
+    Graph, Grid, ImplicitCurve, Label, LineDirection, Object, Pivot, Point, Polygon, Position,
+    Region, Scene, Surface, TangentLine, TangentPlane, Taylor, TransformStep, VectorField, View,
 };
 use crate::transform::{Affine, MapFn, Transform, Vector3};
 use crate::validate::curve_expressions;
@@ -25,15 +25,57 @@ pub struct GraphPlot {
 
 /// 式を読んだ後の，媒介変数表示の曲線．
 pub struct CurvePlot {
-    /// 各座標の式(平面では2個，空間では3個)．Bézier曲線・スプライン曲線では空．
+    /// 各座標の式(平面では2個，空間では3個)．Bézier曲線・スプライン曲線と，ベクトルの式の曲線では空．
     /// 名前の順は，変数，媒介変数である．
     pub exprs: Vec<Expr>,
+    /// ベクトルの式で書いた曲線の式．それ以外の曲線では`None`．
+    pub vector: Option<VectorCurve>,
     /// 評価した媒介変数の範囲．Bézier曲線・スプライン曲線では`[0.0, 1.0]`である．
     pub domain: [f64; 2],
     /// Bézier曲線の制御点の座標(各点，平面では2個，空間では3個)．それ以外の曲線では`None`．
     pub net: Option<Vec<Vec<f64>>>,
     /// スプライン曲線が順に通る点の座標(各点，平面では2個，空間では3個)．それ以外の曲線では`None`．
     pub spline: Option<Vec<Vec<f64>>>,
+}
+
+/// ベクトルの式で書いた曲線．名前の順は，変数，媒介変数と点の座標(`scalars`個)，先に置いた点である．
+pub struct VectorCurve {
+    expr: Expr,
+    scalars: usize,
+    /// 先に置いた点の座標(式を読んだときの値)．
+    points: Vec<Vec<f64>>,
+}
+
+impl CurvePlot {
+    /// 媒介変数`t`の点．`parameters`は，媒介変数と点の座標の値である(`Compiled::parameters`)．
+    /// Bézier曲線・スプライン曲線は，ここでは扱わない．値がなければ`None`．
+    #[must_use]
+    pub fn formula_point(&self, t: f64, parameters: &[f64]) -> Option<Vec<f64>> {
+        let Some(vector) = &self.vector else {
+            let mut values = Vec::with_capacity(parameters.len().saturating_add(1));
+            values.push(t);
+            values.extend_from_slice(parameters);
+            return Some(self.exprs.iter().map(|expr| expr.eval(&values)).collect());
+        };
+        let value_of = |index: usize| -> Value {
+            if index == 0 {
+                return Value::Number(t);
+            }
+            let rest = index.saturating_sub(1);
+            if rest < vector.scalars {
+                return Value::Number(parameters.get(rest).copied().unwrap_or(f64::NAN));
+            }
+            rest.checked_sub(vector.scalars)
+                .and_then(|at| vector.points.get(at))
+                .map_or(Value::Number(f64::NAN), |point| {
+                    Value::Vector(point.clone())
+                })
+        };
+        match vector.expr.eval_vector(&value_of) {
+            Ok(Value::Vector(point)) => Some(point),
+            _ => None,
+        }
+    }
 }
 
 /// 式を読んだ後の，接線．
@@ -639,7 +681,7 @@ fn compile_object(
         Object::Graph(graph) => compile_graph(graph, env)
             .map(Plot::Graph)
             .map_err(|kind| Error::in_object(&graph.id, kind)),
-        Object::Curve(curve) => compile_curve(curve, env, curve_expressions(view))
+        Object::Curve(curve) => compile_curve(curve, env, curve_expressions(view), scope)
             .map(Plot::Curve)
             .map_err(|kind| Error::in_object(&curve.id, kind)),
         Object::TangentLine(tangent) => compile_tangent_line(tangent, env)
@@ -742,11 +784,17 @@ fn compile_graph(graph: &Graph, env: &Env) -> Result<GraphPlot, ErrorKind> {
 const CURVE_FORM_HINT: &str = "曲線は，式(`var`，`expr`，`domain`)か，Bézier曲線の制御点(`bezier`)か，\
      スプライン曲線の点(`spline`)で書く．";
 
-fn compile_curve(curve: &Curve, env: &Env, size: usize) -> Result<CurvePlot, ErrorKind> {
+fn compile_curve(
+    curve: &Curve,
+    env: &Env,
+    size: usize,
+    scope: &VectorScope,
+) -> Result<CurvePlot, ErrorKind> {
     if let Some(net) = &curve.bezier {
         let evaluated = compile_curve_points(net, env, size, "bezier")?;
         return Ok(CurvePlot {
             exprs: Vec::new(),
+            vector: None,
             domain: [0.0, 1.0],
             net: Some(evaluated),
             spline: None,
@@ -756,6 +804,7 @@ fn compile_curve(curve: &Curve, env: &Env, size: usize) -> Result<CurvePlot, Err
         let evaluated = compile_curve_points(points, env, size, "spline")?;
         return Ok(CurvePlot {
             exprs: Vec::new(),
+            vector: None,
             domain: [0.0, 1.0],
             net: None,
             spline: Some(evaluated),
@@ -765,11 +814,32 @@ fn compile_curve(curve: &Curve, env: &Env, size: usize) -> Result<CurvePlot, Err
         return Err(ErrorKind::Invalid(CURVE_FORM_HINT.to_owned()));
     };
     let with_var = expression_names(var, env.names)?;
-    let exprs = curve
-        .expr
+    let Some(domain) = &curve.domain else {
+        return Err(ErrorKind::Invalid(CURVE_FORM_HINT.to_owned()));
+    };
+    let domain = evaluate_domain(domain, env)?;
+    let list = match &curve.expr {
+        CurveExpr::Vector(source) => {
+            let vector = compile_vector_curve(source, &with_var, env, scope)?;
+            return Ok(CurvePlot {
+                exprs: Vec::new(),
+                vector: Some(vector),
+                domain,
+                net: None,
+                spline: None,
+            });
+        }
+        CurveExpr::Components(list) => list,
+    };
+    let exprs = list
         .iter()
         .enumerate()
-        .map(|(index, source)| compile_expr("expr", index, source, &with_var, env.functions))
+        .map(|(index, bound)| match bound {
+            Bound::Number(value) => Ok(Expr::constant(*value)),
+            Bound::Expression(source) => {
+                compile_expr("expr", index, source, &with_var, env.functions)
+            }
+        })
         .collect::<Result<Vec<_>, _>>()?;
     if exprs.len() != size {
         return Err(ErrorKind::ExpressionCount {
@@ -777,16 +847,56 @@ fn compile_curve(curve: &Curve, env: &Env, size: usize) -> Result<CurvePlot, Err
             found: exprs.len(),
         });
     }
-    let Some(domain) = &curve.domain else {
-        return Err(ErrorKind::Invalid(CURVE_FORM_HINT.to_owned()));
-    };
-    let domain = evaluate_domain(domain, env)?;
     Ok(CurvePlot {
         exprs,
+        vector: None,
         domain,
         net: None,
         spline: None,
     })
+}
+
+/// ベクトルの式の曲線．媒介変数の範囲の中ほどで1度評価し，値が点(図の次元のベクトル)になる式かを確かめる．
+fn compile_vector_curve(
+    source: &str,
+    with_var: &[&str],
+    env: &Env,
+    scope: &VectorScope,
+) -> Result<VectorCurve, ErrorKind> {
+    let names: Vec<&str> = with_var
+        .iter()
+        .copied()
+        .chain(scope.points.iter().map(|(id, _)| *id))
+        .collect();
+    let expr = Expr::compile_with(source, &names, env.functions).map_err(|error| {
+        ErrorKind::Expression {
+            field: "expr",
+            index: 0,
+            error,
+        }
+    })?;
+    let vector = VectorCurve {
+        expr,
+        scalars: env.names.len(),
+        points: scope.points.iter().map(|(_, at)| at.clone()).collect(),
+    };
+    let value_of = |index: usize| -> Value {
+        match index {
+            0 => Value::Number(0.0),
+            _ if index <= vector.scalars => Value::Number(0.0),
+            _ => Value::Vector(vec![0.0; scope.dimension]),
+        }
+    };
+    match vector.expr.eval_vector(&value_of) {
+        Ok(Value::Vector(_)) => Ok(vector),
+        Ok(Value::Number(_)) => Err(ErrorKind::Invalid(
+            "曲線のベクトルの式の値は，点(ベクトル)にする．数になる式(内積や長さだけの式など)は書けない．"
+                .to_owned(),
+        )),
+        Err(reason) => Err(ErrorKind::Invalid(format!(
+            "曲線の式が，ベクトルの式になっていない．{reason}"
+        ))),
+    }
 }
 
 /// Bézier曲線・スプライン曲線に共通の，点の座標を評価する処理．座標は，媒介変数と定数を使え，

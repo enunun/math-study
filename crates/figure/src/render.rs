@@ -278,8 +278,7 @@ fn curve_point(plot: &CurvePlot, t: f64, parameters: &[f64]) -> Option<[f64; 2]>
     } else if let Some(points) = &plot.spline {
         catmull_rom_point(points, t)?
     } else {
-        let values = with_variable(t, parameters);
-        plot.exprs.iter().map(|expr| expr.eval(&values)).collect()
+        plot.formula_point(t, parameters)?
     };
     match point.as_slice() {
         [x, y] => Some([*x, *y]),

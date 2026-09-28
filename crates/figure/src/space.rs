@@ -20,7 +20,6 @@ use crate::derivative::central_difference_point;
 use crate::figure::{ArrowHead, Bounds, DotItem, Figure, Item, LabelItem, Path, Stroke};
 use crate::render::{
     AXIS_WIDTH, CURVE_WIDTH, DOT_RADIUS, GRID_WIDTH, MARGIN, arrow_head, multiples, stroke_of,
-    with_variable,
 };
 use crate::sample::{sample, sample_with_parameters};
 use crate::scene::{
@@ -612,8 +611,7 @@ fn curve_items(
         } else if let Some(points) = &plot.spline {
             catmull_rom_point(points, t)?
         } else {
-            let values = with_variable(t, &compiled.parameters);
-            plot.exprs.iter().map(|expr| expr.eval(&values)).collect()
+            plot.formula_point(t, &compiled.parameters)?
         };
         let point = point3(&point)?;
         if point.iter().all(|c| c.is_finite()) {

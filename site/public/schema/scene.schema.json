@@ -294,11 +294,11 @@
         "type": { "const": "curve" },
         "var": { "$ref": "#/$defs/identifier" },
         "expr": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/nonBlankString" },
-          "minItems": 2,
-          "maxItems": 3,
-          "description": "各座標の式．平面の図では2個，空間の図では3個でなければならない．どちらの数にするかは`view`で決まる．"
+          "description": "曲線の式．各座標の数か式の並び(平面の図では2個，空間の図では3個．数は`view`で決まる)か，点の式と同じベクトルの式(文字列)で書く．ベクトルの式では，媒介変数は数，先に置いた点はベクトルとして使え，内積`dot`，外積`cross`，長さ`norm`も使える．例：中心C，直交する単位ベクトルU，Vの円は`\"C + cos(t)*U + sin(t)*V\"`．",
+          "oneOf": [
+            { "$ref": "#/$defs/nonBlankString" },
+            { "type": "array", "items": { "$ref": "#/$defs/bound" }, "minItems": 2, "maxItems": 3 }
+          ]
         },
         "domain": {
           "$ref": "#/$defs/boundPair",

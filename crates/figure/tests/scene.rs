@@ -8,7 +8,9 @@
     clippy::panic
 )]
 
-use figure::scene::{Anchor, Arrow, Bound, Direction, Length, LengthUnit, Line, Object, Position};
+use figure::scene::{
+    Anchor, Arrow, Bound, CurveExpr, Direction, Length, LengthUnit, Line, Object, Position,
+};
 use figure::{Scene, parse_scene};
 
 const SINE_AND_SHIFTED_SINE: &str =
@@ -131,7 +133,13 @@ fn 媒介変数表示の曲線を読める() {
     ) else {
         panic!("曲線である");
     };
-    assert_eq!(curve.expr, ["cos(t)", "sin(t)"]);
+    assert_eq!(
+        curve.expr,
+        CurveExpr::Components(vec![
+            Bound::Expression("cos(t)".to_owned()),
+            Bound::Expression("sin(t)".to_owned())
+        ])
+    );
     assert_eq!(
         curve.domain,
         Some([Bound::Number(0.0), Bound::Expression("2*pi".to_owned())])
