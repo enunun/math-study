@@ -206,7 +206,7 @@ describe('シーンのJSON Schemaは，記事とサイトの見本のシーン�
     ).toBe(true);
   });
 
-  it('複体(正4面体)は，スキーマに合う', () => {
+  it('複体(正四面体)は，スキーマに合う', () => {
     const space = minimalObject('space');
     expect(
       validate({

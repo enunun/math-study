@@ -249,12 +249,12 @@ test.describe('図の作成', () => {
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
   });
 
-  test('部品のテンプレート「正4面体」は，見える稜と隠れた稜の両方を描く', async ({ page }) => {
+  test('部品のテンプレート「正四面体」は，見える稜と隠れた稜の両方を描く', async ({ page }) => {
     // 隠れ方の判定そのもの(どの稜が隠れるか)は，crates/figure/tests/complex.rsで確かめているので，
     // ここでは，正多面体(polyhedron，複体として描く)の隠れ方が，実際のSVGの出力(破線と実線)にまで
     // 届いていることだけを確かめる．
     await loadSample(page, '空間：曲線とベクトル', '空間のベクトルの和');
-    await insertTemplate(page, '図形', '正4面体');
+    await insertTemplate(page, '図形', '正四面体');
     await expect(editor(page).getByRole('alert')).toHaveCount(0);
     const edges = outputPreview(page).locator('path');
     const dashArrays = await edges.evaluateAll((paths) =>

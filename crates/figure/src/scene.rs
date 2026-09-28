@@ -577,15 +577,15 @@ pub struct TangentPlane {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Solid {
-    /// 正4面体．
+    /// 正四面体．
     Tetrahedron,
-    /// 正6面体(立方体)．
+    /// 正六面体(立方体)．
     Cube,
-    /// 正8面体．
+    /// 正八面体．
     Octahedron,
-    /// 正12面体．
+    /// 正十二面体．
     Dodecahedron,
-    /// 正20面体．
+    /// 正二十面体．
     Icosahedron,
 }
 

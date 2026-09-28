@@ -780,7 +780,7 @@
         "type": { "const": "polyhedron" },
         "solid": {
           "enum": ["tetrahedron", "cube", "octahedron", "dodecahedron", "icosahedron"],
-          "description": "種類．正4面体，正6面体(立方体)，正8面体，正12面体，正20面体．"
+          "description": "種類．正四面体，正六面体(立方体)，正八面体，正十二面体，正二十面体．"
         },
         "center": {
           "type": "array",

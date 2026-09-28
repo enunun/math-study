@@ -42,11 +42,11 @@ const POLYGON_TEMPLATES: readonly ObjectTemplate[] = POLYGON_SPECS.map(({ n, lab
 const POLYHEDRON_RADIUS = 2;
 
 const POLYHEDRON_SPECS: readonly { solid: string; label: string }[] = [
-  { solid: 'tetrahedron', label: '正4面体' },
-  { solid: 'cube', label: '正6面体(立方体)' },
-  { solid: 'octahedron', label: '正8面体' },
-  { solid: 'dodecahedron', label: '正12面体' },
-  { solid: 'icosahedron', label: '正20面体' },
+  { solid: 'tetrahedron', label: '正四面体' },
+  { solid: 'cube', label: '正六面体(立方体)' },
+  { solid: 'octahedron', label: '正八面体' },
+  { solid: 'dodecahedron', label: '正十二面体' },
+  { solid: 'icosahedron', label: '正二十面体' },
 ];
 
 /** 正多面体は，種類と中心と半径だけを持つ`polyhedron`で書く．頂点と面はエンジンが決める． */
