@@ -1228,7 +1228,7 @@
         },
         "range": {
           "$ref": "#/$defs/boundPair",
-          "description": "色の両端に対応させる値．省くと，値の最小と最大(`coolwarm`では0を中心にした範囲)．外の値は端の色になる．"
+          "description": "色の両端に対応させる値．省くと，値の最小と最大(`coolwarm`では0を中心にした範囲，対数の目盛では最大から6桁下まで)．外の値は端の色になる．"
         },
         "colormap": {
           "enum": ["viridis", "gray", "gray_inverse", "coolwarm"],

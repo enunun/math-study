@@ -1143,7 +1143,8 @@ pub struct Heatmap {
     /// 画像を置く範囲(`[[xの下端, 上端], [yの下端, 上端]]`)．なければ見える範囲である．見える範囲の外は切り取る．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub domain: Option<[[Bound; 2]; 2]>,
-    /// 色の両端に対応させる値の範囲．なければ，値の最小と最大(`coolwarm`では，0を中心にした範囲)である．
+    /// 色の両端に対応させる値の範囲．なければ，値の最小と最大(`coolwarm`では，0を中心にした範囲，対数の目盛では，
+    /// 最大から6桁下まで)である．
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub range: Option<[Bound; 2]>,
     /// 値と色の対応．
