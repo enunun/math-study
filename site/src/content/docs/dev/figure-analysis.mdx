@@ -1,0 +1,70 @@
+---
+title: 解析と結晶の図
+description: 楕円曲線，楕円関数，複素関数の色塗り，フーリエ級数とフーリエ変換，結晶の回折図形を，シーン(JSON)からビルド時に描画した図である．
+sidebar:
+  hidden: true
+pagefind: false
+head:
+  - tag: meta
+    attrs:
+      name: robots
+      content: noindex
+---
+
+楕円曲線，楕円関数，複素数の式，値を色で表す画像，フーリエ変換，回折図形を使った図である．どれも`site/src/figures/`のシーンから，ビルド時に描画した．図の作成の見本にも，同じ図が入っている．
+
+## 楕円曲線と楕円関数
+
+楕円曲線$y^2=x^3-2x+2$の上の点$P$，$Q$の和の作図である．$P$と$Q$を通る直線が曲線と交わる3つ目の点を，$x$軸について折り返すと$P+Q$になる．
+
+<Figure src="elliptic-curve-addition" />
+
+楕円曲線$y^2=x^3-x$の上の点$P$の2倍の作図である．実の点は，閉じた卵形と右へ伸びる枝に分かれる．
+
+<Figure src="elliptic-curve-doubling" />
+
+Jacobiの楕円関数$\mathrm{sn}(u,k)$(黒の実線)，$\mathrm{cn}(u,k)$(青の破線)，$\mathrm{dn}(u,k)$(赤の点線)のグラフである．
+
+<Figure src="jacobi-elliptic-functions" />
+
+## 値を色で表す図と複素関数
+
+関数$\sin x\cos y$の値を，正を赤，負を青で塗り，等高線を重ねた図である．
+
+<Figure src="heatmap-with-contours" />
+
+ガンマ関数とWeierstrassの楕円関数$\wp(z;4,0)$の色塗りである．偏角を色相で，絶対値を明るさの縞で表す．
+
+<Figure src="gamma-domain-coloring" />
+
+<Figure src="weierstrass-p-domain-coloring" />
+
+## フーリエ級数とフーリエ変換
+
+矩形波の部分和と，振幅のスペクトルである．
+
+<Figure src="fourier-series-square-wave" />
+
+<Figure src="fourier-series-spectrum" />
+
+幅$2a$の箱形の関数のフーリエ変換である．
+
+<Figure src="fourier-transform-box" />
+
+## 回折図形
+
+円形の開口と二重スリットのFraunhofer回折の強さである．開口の関数の2次元のフーリエ変換の絶対値の2乗を表す．
+
+<Figure src="fraunhofer-circular-aperture" />
+
+<Figure src="fraunhofer-double-slit" />
+
+面心立方格子の$[111]$晶帯と，岩塩型の結晶の$[110]$晶帯の回折図形である．点の面積は，回折の強さに比例する．
+
+<Figure src="diffraction-fcc-zones" />
+
+<Figure src="diffraction-rock-salt" />
+
+有限の2次元の結晶の回折の強さと，第1Brillouinゾーン(破線)である．
+
+<Figure src="diffraction-finite-crystal" />
