@@ -1,0 +1,44 @@
+{
+  "version": "0.1.0",
+  "description": "Jacobiの楕円関数sn(z, 0.8)の色塗り．実軸の向きに周期4K，虚軸の向きに周期2iK'をもつ．長方形は，周期の長方形の1つである．",
+  "view": {
+    "x": [-5, 9],
+    "y": [-3.8, 3.8],
+    "unit": {
+      "x": "0.55cm",
+      "y": "0.55cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "coloring",
+      "type": "domain_coloring",
+      "expr": "sn(z, 0.8)"
+    },
+    {
+      "id": "cell",
+      "type": "polygon",
+      "vertices": [
+        [0, 0],
+        [7.981211, 0],
+        [7.981211, 3.501508],
+        [0, 3.501508]
+      ],
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "label": "\\mathrm{Re}\\,z"
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y",
+      "label": "\\mathrm{Im}\\,z"
+    }
+  ]
+}

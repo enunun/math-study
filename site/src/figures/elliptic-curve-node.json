@@ -1,0 +1,39 @@
+{
+  "version": "0.1.0",
+  "description": "特異な3次曲線y^2 = x^3 - 3x + 2 = (x - 1)^2(x + 2)．点(1, 0)で曲線が自分自身と交わる(結節点)．",
+  "view": {
+    "x": [-2.8, 3],
+    "y": [-3, 3],
+    "unit": {
+      "x": "0.7cm",
+      "y": "0.7cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "label": "x"
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y",
+      "label": "y"
+    },
+    {
+      "id": "origin_label",
+      "type": "label",
+      "at": [0, 0],
+      "anchor": "north east",
+      "tex": "$O$"
+    },
+    {
+      "id": "curve",
+      "type": "elliptic_curve",
+      "a": -3,
+      "b": 2
+    }
+  ]
+}

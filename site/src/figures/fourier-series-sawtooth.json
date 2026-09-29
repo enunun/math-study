@@ -1,0 +1,61 @@
+{
+  "version": "0.1.0",
+  "description": "のこぎり波f(x) = x(-π < x < π)と，そのフーリエ級数のN次までの部分和．",
+  "view": {
+    "x": [-7, 7],
+    "y": [-4, 4],
+    "unit": {
+      "x": "0.7cm",
+      "y": "0.55cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "label": "x"
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y",
+      "label": "y"
+    },
+    {
+      "id": "origin_label",
+      "type": "label",
+      "at": [0, 0],
+      "anchor": "north east",
+      "tex": "$O$"
+    },
+    {
+      "id": "n",
+      "type": "parameter",
+      "value": 8,
+      "range": [1, 60],
+      "step": 1
+    },
+    {
+      "id": "sawtooth",
+      "type": "graph",
+      "var": "x",
+      "expr": "2*atan(tan(x/2))",
+      "domain": [-7, 7],
+      "style": {
+        "line": "dotted",
+        "color": "gray"
+      }
+    },
+    {
+      "id": "partial_sum",
+      "type": "fourier_series",
+      "expr": "x",
+      "period": ["-pi", "pi"],
+      "terms": "n",
+      "style": {
+        "color": "blue"
+      }
+    }
+  ]
+}

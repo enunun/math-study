@@ -1,0 +1,195 @@
+---
+title: 逆格子と回折の条件
+description: 結晶の格子から逆格子を定め，格子面との関係を示す．Braggの条件とLaueの条件が同じであることを証明し，Ewald球の作図で回折の起こる向きを求める．
+date: 2026-09-29
+pageId: recip
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+import { Detail, Proof } from '@/components/fold';
+import { Definition, Proposition } from '@/components/statement';
+
+結晶に，原子の間隔と同じ程度の波長のX線や電子線を当てると，特定の向きにだけ強く回折する．その向きは，結晶の格子から作る逆格子で決まる．このページでは，逆格子を定義し，回折の条件を逆格子で表す．定義と証明は3次元で書く．図では，見やすさのため2次元の格子を使うが，2次元でも同じことが成り立つ．
+
+## 結晶格子
+
+<Definition id="lattice" name="格子">
+
+1次独立なベクトル$\boldsymbol{a}_1,\boldsymbol{a}_2,\boldsymbol{a}_3$に対して，次の集合を格子という．
+
+$$
+L = \set{n_1\boldsymbol{a}_1 + n_2\boldsymbol{a}_2 + n_3\boldsymbol{a}_3 \mid n_1, n_2, n_3 \in \Integers}
+$$
+
+$\boldsymbol{a}_1,\boldsymbol{a}_2,\boldsymbol{a}_3$を基本ベクトル，これらが張る平行六面体を単位胞という．
+
+</Definition>
+
+結晶は，単位胞の中の原子の並びを，格子の各点へ平行移動して並べたものである．格子は，結晶の繰り返しの仕方だけを表す．
+
+## 逆格子
+
+<Definition id="reciprocal" name="逆格子">
+
+格子$L$の基本ベクトル$\boldsymbol{a}_i$に対して，次を満たすベクトル$\boldsymbol{b}_j$を，逆格子の基本ベクトルという．
+
+$$
+\boldsymbol{a}_i \cdot \boldsymbol{b}_j = \delta_{ij} \quad (i, j = 1, 2, 3)
+$$
+
+これらで張る格子$L^*$を，$L$の逆格子という．
+
+</Definition>
+
+単位胞の体積を$V = \boldsymbol{a}_1 \cdot (\boldsymbol{a}_2 \times \boldsymbol{a}_3)$とすると，逆格子の基本ベクトルは次の式で求まる．
+
+$$
+\boldsymbol{b}_1 = \frac{\boldsymbol{a}_2 \times \boldsymbol{a}_3}{V}, \quad \boldsymbol{b}_2 = \frac{\boldsymbol{a}_3 \times \boldsymbol{a}_1}{V}, \quad \boldsymbol{b}_3 = \frac{\boldsymbol{a}_1 \times \boldsymbol{a}_2}{V}
+$$
+
+実際，$\boldsymbol{a}_2 \times \boldsymbol{a}_3$は，$\boldsymbol{a}_2$と$\boldsymbol{a}_3$に垂直である．また$\boldsymbol{a}_1$との内積は$V$である．$\boldsymbol{b}_1$の長さは，$\boldsymbol{a}_2$と$\boldsymbol{a}_3$が張る面の間隔の逆数である．そのため，実格子の間隔が長い向きほど，逆格子の間隔は短くなる．<Ref to="fig-real-reciprocal" />に2次元の例を示す．
+
+<Figure
+  src="crystal-real-and-reciprocal"
+  id="fig-real-reciprocal"
+  caption="2次元の実格子(左)と逆格子(右)．$\boldsymbol{b}_1$は$\boldsymbol{a}_2$に，$\boldsymbol{b}_2$は$\boldsymbol{a}_1$に垂直である．"
+/>
+
+物理学では，$\boldsymbol{a}_i \cdot \boldsymbol{b}_j = 2\pi\delta_{ij}$と$2\pi$を掛けて定めることも多い．このページは，$2\pi$を掛けない結晶学の約束に従う．
+
+逆格子は，基本ベクトルの選び方によらず，格子$L$だけで決まる．次の命題がそれを示す．
+
+<Proposition id="dual" name="逆格子の特徴づけ">
+
+逆格子$L^*$は，格子$L$のすべての点$\boldsymbol{r}$との内積$\boldsymbol{G} \cdot \boldsymbol{r}$が整数になるベクトル$\boldsymbol{G}$全体である．
+
+</Proposition>
+
+<Proof of="dual">
+
+$L^*$の点$\boldsymbol{G} = \sum_j h_j\boldsymbol{b}_j$と，$L$の点$\boldsymbol{r} = \sum_i n_i\boldsymbol{a}_i$をとる．内積は$\sum_i n_i h_i$で，整数である．
+
+逆に，ベクトル$\boldsymbol{G}$と$L$のすべての点との内積が整数であるとする．$\boldsymbol{b}_j$は1次独立である．和$\sum_j c_j\boldsymbol{b}_j$が0なら，$\boldsymbol{a}_i$との内積から$c_i = 0$となるからである．そこで$\boldsymbol{G} = \sum_j c_j\boldsymbol{b}_j$と書ける．$\boldsymbol{a}_i$との内積をとると，$c_i = \boldsymbol{G} \cdot \boldsymbol{a}_i$は整数である．したがって$\boldsymbol{G} \in L^*$である．
+
+</Proof>
+
+## 格子面と逆格子ベクトル
+
+格子点を3つ以上含む平面を格子面という．互いに平行な格子面の族は，逆格子ベクトルで表せる．
+
+<Proposition id="planes" name="格子面の族">
+
+最大公約数が1の整数$h,k,l$に対して，$\boldsymbol{G} = h\boldsymbol{b}_1 + k\boldsymbol{b}_2 + l\boldsymbol{b}_3$とおく．整数$n$ごとに平面$P_n = \set{\boldsymbol{r} \mid \boldsymbol{G} \cdot \boldsymbol{r} = n}$を考える．このとき，次が成り立つ．
+
+1. 格子のどの点も，ただ1つの$P_n$の上にある．
+2. どの$P_n$も格子面である．
+3. 平面は$\boldsymbol{G}$に垂直で，隣り合う平面の間隔は$\frac{1}{|\boldsymbol{G}|}$である．
+
+</Proposition>
+
+<Proof of="planes">
+
+格子の点$\boldsymbol{r}$について，$\boldsymbol{G} \cdot \boldsymbol{r}$は整数である(<Ref to="dual" />)．その値を$n$とすれば，$\boldsymbol{r}$は$P_n$の上にある．平面は互いに交わらないので，$n$はただ1つである．
+
+$h,k,l$の最大公約数は1なので，$hn_1 + kn_2 + ln_3 = 1$を満たす整数$n_i$がある．$\boldsymbol{r}_1 = \sum_i n_i\boldsymbol{a}_i$とおけば，$m\boldsymbol{r}_1$は$P_m$の上の格子点である．
+
+写像$\boldsymbol{r} \mapsto \boldsymbol{G} \cdot \boldsymbol{r}$を，$L$から$\Integers$への準同型とみる．その核$P_0 \cap L$は，階数2の部分格子である．<Detail>$\Integers^3$から$\Integers$への全射の核は，階数2の自由加群である．</Detail>$P_m \cap L$は，これを$m\boldsymbol{r}_1$だけ平行移動したものである．したがって，同じ直線の上にない格子点を3つ以上含む．
+
+平面$P_n$の法線ベクトルは$\boldsymbol{G}$である．$P_n$と$P_{n+1}$の点は，$\boldsymbol{G}$の向きの成分が$\frac{1}{|\boldsymbol{G}|}$だけ違う．これが間隔である．
+
+</Proof>
+
+この族を，Millerの指数を使って格子面$(hkl)$と呼び，間隔を$d_{hkl}$と書く．<Ref to="fig-planes" />は，2次元の格子の格子面$(12)$である．赤い矢印は$\frac{\boldsymbol{G}}{|\boldsymbol{G}|^2}$である．原点から隣の面へ，面に垂直に引いた線分になる．
+
+<Figure
+  src="crystal-lattice-planes"
+  id="fig-planes"
+  caption="2次元の格子の格子面$(12)$の族(青)．どの面も格子点を通り，間隔は$d_{12} = \frac{1}{|\boldsymbol{b}_1 + 2\boldsymbol{b}_2|}$である．"
+/>
+
+## Braggの条件とLaueの条件
+
+波長$\lambda$の平面波を，波数ベクトル$\boldsymbol{k}$で表す．向きは進む向き，長さは$|\boldsymbol{k}| = \frac{1}{\lambda}$とする．結晶で散乱された波のうち，波数ベクトル$\boldsymbol{k}'$の向きに進むものを考える．散乱で波長は変わらないとし，$|\boldsymbol{k}'| = |\boldsymbol{k}|$とする．
+
+格子点$\boldsymbol{r}$と原点で散乱された波の，位相の差は$2\pi(\boldsymbol{k}' - \boldsymbol{k}) \cdot \boldsymbol{r}$である．すべての格子点からの波が強め合うのは，どの格子点でも，この値が$2\pi$の整数倍になるときである．<Ref to="dual" />より，これは次の条件と同じである．
+
+<Definition id="laue" name="Laueの条件">
+
+散乱の前後の波数ベクトルの差が，逆格子ベクトルに等しいこと．
+
+$$
+\boldsymbol{k}' - \boldsymbol{k} = \boldsymbol{G}, \quad \boldsymbol{G} \in L^* \label{laue-condition}
+$$
+
+</Definition>
+
+一方，格子面での反射として回折を説明するのが，Braggの条件である．入射波が格子面$(hkl)$となす角を$\theta$とすると，隣り合う面で反射した波の道のりの差は$2d_{hkl}\sin\theta$である．これが波長の整数倍になるとき，反射した波が強め合う．
+
+<Proposition id="bragg" name="BraggとLaueの条件">
+
+$\boldsymbol{G} = n\boldsymbol{G}_{hkl}$($n$は正の整数，$\boldsymbol{G}_{hkl}$は格子面$(hkl)$の逆格子ベクトル)とする．$|\boldsymbol{k} + \boldsymbol{G}| = |\boldsymbol{k}|$が成り立つことと，次のBraggの条件が成り立つことは同値である．ただし$\theta$は，$\boldsymbol{k}$と格子面のなす角で，$\boldsymbol{k} \cdot \boldsymbol{G} < 0$の向きに$\boldsymbol{G}$をとる．
+
+$$
+2d_{hkl}\sin\theta = n\lambda
+$$
+
+</Proposition>
+
+<Proof of="bragg">
+
+$\boldsymbol{k}$と格子面のなす角が$\theta$なので，$\boldsymbol{k}$と面の法線$\boldsymbol{G}$のなす角は$\frac{\pi}{2} + \theta$である．したがって$\boldsymbol{k} \cdot \boldsymbol{G} = -|\boldsymbol{k}||\boldsymbol{G}|\sin\theta$である．
+
+$$
+|\boldsymbol{k} + \boldsymbol{G}|^2 - |\boldsymbol{k}|^2 = 2\boldsymbol{k} \cdot \boldsymbol{G} + |\boldsymbol{G}|^2 = |\boldsymbol{G}|\left(|\boldsymbol{G}| - 2|\boldsymbol{k}|\sin\theta\right)
+$$
+
+$|\boldsymbol{G}| > 0$なので，左辺が0になることは$|\boldsymbol{G}| = 2|\boldsymbol{k}|\sin\theta$と同値である．$|\boldsymbol{G}| = \frac{n}{d_{hkl}}$，$|\boldsymbol{k}| = \frac{1}{\lambda}$を代入すると，Braggの条件になる．
+
+</Proof>
+
+<Ref to="laue-condition" />の$\boldsymbol{k}'$は$\boldsymbol{k} + \boldsymbol{G}$なので，Laueの条件と波長が変わらないことを合わせたものは，Braggの条件と同じである．
+
+## Ewald球
+
+Laueの条件を満たす向きは，次の作図で求まる．
+
+<Proposition id="ewald" name="Ewald球の作図">
+
+入射波の波数ベクトル$\boldsymbol{k}$を，終点が逆格子の原点$O$に来るように置き，始点を$C$とする．$C$を中心とする半径$|\boldsymbol{k}|$の球を，Ewald球という．逆格子点$\boldsymbol{G}$がEwald球の上にあることは，次と同値である．
+
+$$
+|\boldsymbol{k} + \boldsymbol{G}| = |\boldsymbol{k}|
+$$
+
+</Proposition>
+
+<Proof of="ewald">
+
+$C$から$\boldsymbol{G}$へのベクトルは$\boldsymbol{k} + \boldsymbol{G}$である．この長さが半径$|\boldsymbol{k}|$と等しいとき，$\boldsymbol{G}$は球の上にある．
+
+</Proof>
+
+<Figure
+  src="crystal-ewald-circle"
+  id="fig-ewald"
+  caption="Ewald球の断面．$C$から球の上の逆格子点$G$へ向かうベクトルが，回折波の波数ベクトル$\boldsymbol{k}'$である．"
+/>
+
+<Ref to="fig-ewald" />では，逆格子点$G$だけが球の上にあり，その向きに回折が起こる．X線の波長は格子の間隔と同じ程度なので，球の半径は逆格子の間隔の数倍にとどまる．球の上に逆格子点が乗ることはまれなので，結晶を回したり，いろいろな波長を混ぜたりして，回折を起こす．
+
+## 電子線の回折図形
+
+電子顕微鏡の電子線は，波長がX線より2桁ほど短い．Ewald球の半径は逆格子の間隔よりずっと大きく，原点の近くでは，球は入射の向きに垂直な平面とみなせる．そのため，原点の近くでその平面に乗る逆格子点が，ほぼ同時に回折を起こす．
+
+写真の乾板に写る回折図形は，入射の向きに垂直な逆格子の断面を，そのまま拡大したものになる．<Ref to="fig-oblique" />は，<Ref to="fig-real-reciprocal" />の格子の回折図形である．点は逆格子点にあり，添えた$(hk)$は逆格子ベクトル$h\boldsymbol{b}_1 + k\boldsymbol{b}_2$の指数である．
+
+<Figure
+  src="crystal-oblique-diffraction"
+  id="fig-oblique"
+  caption="斜交格子の回折図形．破線は，逆格子の原点のWigner-Seitz胞(第1Brillouinゾーン)である．"
+/>
+
+この図では，すべての点が同じ大きさである．単位胞に原子が1つしかない格子を考えたからである．単位胞に原子がいくつもあると，点ごとに強さが変わり，消える点も出る．その計算は「構造因子と消滅則」で扱う．
+
+<LinkCard title="構造因子と消滅則" href="../structure-factor/" />

@@ -97,6 +97,10 @@ const SAMPLE_TIERS: readonly SampleTier[] = [
           articleSample('ellipticAddition', '楕円曲線の点の和', 'elliptic-curve-addition'),
           articleSample('ellipticDoubling', '楕円曲線の点の2倍', 'elliptic-curve-doubling'),
           articleSample('jacobiFunctions', 'Jacobiの楕円関数', 'jacobi-elliptic-functions'),
+          articleSample('ellipticNode', '結節点のある3次曲線', 'elliptic-curve-node'),
+          articleSample('ellipticCusp', '尖点のある3次曲線', 'elliptic-curve-cusp'),
+          articleSample('rationalPoints', '楕円曲線の有理点の和', 'elliptic-curve-rational-points'),
+          articleSample('weierstrassCurve', '℘関数と楕円曲線', 'weierstrass-p-curve'),
         ],
       },
       {
@@ -109,6 +113,7 @@ const SAMPLE_TIERS: readonly SampleTier[] = [
             'Weierstrassの℘の色塗り',
             'weierstrass-p-domain-coloring',
           ),
+          articleSample('snColoring', 'Jacobiのsnの色塗り', 'jacobi-sn-domain-coloring'),
         ],
       },
       {
@@ -117,18 +122,41 @@ const SAMPLE_TIERS: readonly SampleTier[] = [
           articleSample('squareWave', '矩形波の部分和', 'fourier-series-square-wave'),
           articleSample('squareSpectrum', '矩形波のスペクトル', 'fourier-series-spectrum'),
           articleSample('boxTransform', '箱形の関数のフーリエ変換', 'fourier-transform-box'),
+          articleSample('sawtooth', 'のこぎり波の部分和', 'fourier-series-sawtooth'),
         ],
       },
       { label: 'ベクトル場', samples: VECTOR_FIELD_SAMPLES },
       ...PLANE_SYMMETRY_GROUPS,
-      { label: '結晶と逆格子', samples: PLANE_CRYSTAL_SAMPLES },
+      {
+        label: '結晶と逆格子',
+        samples: [
+          articleSample(
+            'realReciprocal',
+            '実格子と逆格子の基本ベクトル',
+            'crystal-real-and-reciprocal',
+          ),
+          articleSample('latticePlaneFamily', '格子面の族', 'crystal-lattice-planes'),
+          articleSample('ewaldCircle', 'Ewald球の作図', 'crystal-ewald-circle'),
+          ...PLANE_CRYSTAL_SAMPLES,
+        ],
+      },
       {
         label: '回折図形',
         samples: [
           articleSample('fccDiffraction', '面心立方格子の[111]晶帯', 'diffraction-fcc-zones'),
+          articleSample('obliqueDiffraction', '斜交格子の回折図形', 'crystal-oblique-diffraction'),
+          articleSample('scDiffraction', '単純立方格子の[001]晶帯', 'crystal-sc-001'),
+          articleSample('bccDiffraction', '体心立方格子の[001]晶帯', 'crystal-bcc-001'),
+          articleSample('fcc001Diffraction', '面心立方格子の[001]晶帯', 'crystal-fcc-001'),
+          articleSample('laueFunction', 'Laue関数', 'crystal-laue-function'),
           articleSample('rockSaltDiffraction', '岩塩型の[110]晶帯', 'diffraction-rock-salt'),
           articleSample('finiteCrystal', '有限の結晶の回折の強さ', 'diffraction-finite-crystal'),
           articleSample('circularAperture', '円形の開口の回折', 'fraunhofer-circular-aperture'),
+          articleSample(
+            'rectangularAperture',
+            '長方形の開口の回折',
+            'fraunhofer-rectangular-aperture',
+          ),
           articleSample('doubleSlit', '二重スリットの回折', 'fraunhofer-double-slit'),
         ],
       },
@@ -159,7 +187,14 @@ const SAMPLE_TIERS: readonly SampleTier[] = [
       { label: '4次元', samples: FOUR_SPACE_SAMPLE_SCENES },
       { label: 'ベクトル場', samples: SPACE_VECTOR_FIELD_SAMPLES },
       ...SPACE_SYMMETRY_GROUPS,
-      { label: '結晶と逆格子', samples: SPACE_CRYSTAL_SAMPLES },
+      {
+        label: '結晶と逆格子',
+        samples: [
+          articleSample('bccCell', '体心立方格子の単位胞', 'crystal-bcc-cell'),
+          articleSample('fccCell', '面心立方格子の単位胞', 'crystal-fcc-cell'),
+          ...SPACE_CRYSTAL_SAMPLES,
+        ],
+      },
     ],
   },
 ];

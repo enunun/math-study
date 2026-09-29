@@ -1,0 +1,139 @@
+---
+title: 有限の結晶の回折
+description: 有限の大きさの結晶の回折の強さを求める．格子からの波の和はLaue関数になり，結晶が大きいほど逆格子点に鋭く集まる．回折の強さが電子密度のフーリエ変換の2乗であることも述べる．
+date: 2026-09-29
+pageId: finite
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+import { Proof } from '@/components/fold';
+import { Proposition } from '@/components/statement';
+
+「構造因子と消滅則」では，結晶が無限に広がっているとして，回折の強さを逆格子点だけで考えた．実際の結晶は有限の大きさなので，強さは逆格子点のまわりにも広がる．このページでは，その広がり方を求める．
+
+<LinkCard title="構造因子と消滅則" href="../structure-factor/" />
+
+## 1次元の格子の和
+
+直線の上に，間隔$\boldsymbol{a}$で$N$個の点$n\boldsymbol{a}$($n = 0, 1, \dots, N - 1$)が並んでいるとする．散乱の前後の波数ベクトルの差を$\boldsymbol{q}$とし，$\varphi = \boldsymbol{q} \cdot \boldsymbol{a}$とおく．各点で散乱された波の和は，次の式になる．
+
+$$
+S_N(\varphi) = \sum_{n=0}^{N-1} e^{-2\pi i n \varphi}
+$$
+
+<Proposition id="laue-function" name="Laue関数">
+
+$\varphi$が整数でなければ，次の式が成り立つ．$\varphi$が整数なら，$|S_N(\varphi)|^2 = N^2$である．
+
+$$
+|S_N(\varphi)|^2 = \frac{\sin^2(\pi N\varphi)}{\sin^2(\pi\varphi)} \label{laue}
+$$
+
+</Proposition>
+
+<Proof of="laue-function">
+
+$\varphi$が整数なら，各項が1なので$S_N = N$である．整数でなければ，等比数列の和の公式より，次の式になる．
+
+$$
+S_N(\varphi) = \frac{1 - e^{-2\pi i N\varphi}}{1 - e^{-2\pi i\varphi}}
+$$
+
+実数$\theta$について$|1 - e^{-i\theta}| = 2\left|\sin\frac{\theta}{2}\right|$なので，分母と分子の絶対値から<Ref to="laue" />を得る．
+
+</Proof>
+
+<Ref to="laue" />の右辺をLaue関数という．<Ref to="fig-laue" />は，これを$N^2$で割って，最大を1にそろえたものである．図の作成で開くと，$N$をスライダーで動かせる．
+
+<Figure
+  src="crystal-laue-function"
+  id="fig-laue"
+  caption="Laue関数を$N^2$で割ったもの($N = 6$)．整数のところに高さ1の山があり，その間に$N - 2$個の小さな山が並ぶ．"
+/>
+
+## Laue関数の性質
+
+<Proposition id="laue-properties" name="Laue関数の性質">
+
+$N \ge 2$とする．Laue関数$|S_N(\varphi)|^2$は，次の性質をもつ．
+
+1. 周期1の関数で，整数のところで最大値$N^2$をとる．
+2. 0になるのは，$\varphi = \frac{m}{N}$($m$は$N$の倍数でない整数)のところである．隣り合う整数の間に，0が$N - 1$個ある．
+3. 1周期の積分は$N$である．
+
+$$
+\int_0^1 |S_N(\varphi)|^2 \, d\varphi = N
+$$
+
+</Proposition>
+
+<Proof of="laue-properties">
+
+$S_N$の各項は周期1なので，Laue関数も周期1である．三角不等式より$|S_N| \le N$で，等号は整数のところで成り立つ．
+
+<Ref to="laue" />の分子は，$N\varphi$が整数のとき0になる．整数のところでは値が$N^2$なので，0になるのは，$\varphi = \frac{m}{N}$で$m$が$N$の倍数でないときである．区間$(0, 1)$には，$m = 1, \dots, N - 1$の$N - 1$個がある．
+
+最後に，$|S_N|^2 = S_N\overline{S_N}$を展開する．
+
+$$
+|S_N(\varphi)|^2 = \sum_{n=0}^{N-1}\sum_{m=0}^{N-1} e^{-2\pi i (n - m)\varphi}
+$$
+
+$n \ne m$の項の1周期の積分は0で，$n = m$の項の積分は1である．したがって積分は$N$である．
+
+</Proof>
+
+0と0の間には山が1つずつあるので，整数と整数の間には，小さな山が$N - 2$個並ぶ．整数のところの山は，高さが$N^2$，隣の0までの幅が$\frac{1}{N}$である．$N$を大きくすると，山は高く細くなるが，面積は$N$に保たれる．強さの合計は，散乱する点の数に比例する．$N \to \infty$では，強さは整数の点だけに集まり，Laueの条件$\boldsymbol{q} \cdot \boldsymbol{a} \in \Integers$に戻る．
+
+## 3次元の結晶
+
+基本ベクトル$\boldsymbol{a}_1,\boldsymbol{a}_2,\boldsymbol{a}_3$の向きに，単位胞が$N_1,N_2,N_3$個ずつ並んだ平行六面体の結晶を考える．構造因子を，逆格子点でない$\boldsymbol{q}$にも広げておく．
+
+$$
+F(\boldsymbol{q}) = \sum_{j=1}^{n} f_j e^{-2\pi i \boldsymbol{q} \cdot \boldsymbol{r}_j}
+$$
+
+<Proposition id="finite-intensity" name="有限の結晶の回折の強さ">
+
+この結晶の回折の強さは，次の式に比例する．
+
+$$
+I(\boldsymbol{q}) = |F(\boldsymbol{q})|^2 \prod_{i=1}^{3} |S_{N_i}(\boldsymbol{q} \cdot \boldsymbol{a}_i)|^2
+$$
+
+</Proposition>
+
+<Proof of="finite-intensity">
+
+格子点は$\boldsymbol{R} = \sum_i n_i\boldsymbol{a}_i$($0 \le n_i < N_i$)である．$\boldsymbol{R}$にある単位胞の波は，$F(\boldsymbol{q})$に$e^{-2\pi i \boldsymbol{q} \cdot \boldsymbol{R}}$を掛けたものである．すべての単位胞について足すと，次の式になる．
+
+$$
+F(\boldsymbol{q}) \sum_{n_1, n_2, n_3} e^{-2\pi i \sum_i n_i \boldsymbol{q} \cdot \boldsymbol{a}_i} = F(\boldsymbol{q}) \prod_{i=1}^{3} S_{N_i}(\boldsymbol{q} \cdot \boldsymbol{a}_i)
+$$
+
+絶対値の2乗をとればよい．
+
+</Proof>
+
+<Ref to="fig-finite" />は，2次元の三角格子で，$N_1 = N_2 = N$とした強さである．図の作成で開くと，$N$をスライダーで動かせる．強さは逆格子点のまわりに集まり，$N$を大きくすると鋭くなる．点の形は，結晶の外形を映している．平行四辺形の結晶では，山の幅は，$\varphi_i = \boldsymbol{q} \cdot \boldsymbol{a}_i$で測って，どちらの向きも$\frac{1}{N}$程度である．
+
+<Figure
+  src="diffraction-finite-crystal"
+  id="fig-finite"
+  caption="$N \times N$個の単位胞からなる2次元の三角格子の回折の強さ($N = 5$)．破線は，逆格子の原点のWigner-Seitz胞である．"
+/>
+
+## フーリエ変換との関係
+
+原子の位置に，原子散乱因子の重みの点があるとみなす．結晶の散乱の強さの分布を$\rho(\boldsymbol{r})$とすると，回折波の振幅は，$\rho$のフーリエ変換である．
+
+$$
+A(\boldsymbol{q}) = \int \rho(\boldsymbol{r}) e^{-2\pi i \boldsymbol{q} \cdot \boldsymbol{r}} \, d\boldsymbol{r}
+$$
+
+<Ref to="finite-intensity" />は，点の並びについて，この積分を計算したものである．回折の強さは，散乱体の分布のフーリエ変換の絶対値の2乗である．光を小さな穴に通したときの回折も，同じ形の式で書ける．その計算は，フーリエ解析の「フーリエ変換とFraunhofer回折」で扱う．そちらでは，指数に$2\pi$を入れず$e^{-ikx}$と書くので，$k = 2\pi q$と読み替える．
+
+<LinkCard title="フーリエ変換とFraunhofer回折" href="../../fourier/fraunhofer/" />
+
+回折で測れるのは強さ$|A|^2$だけで，振幅の位相は失われる．そのため，回折図形から逆のフーリエ変換で$\rho$を直接求めることはできない．これを位相問題という．結晶の構造を決めるには，位相を別の方法で補う必要がある．

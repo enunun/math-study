@@ -1,0 +1,185 @@
+{
+  "version": "0.1.0",
+  "description": "面心立方格子の単位胞．立方体の頂点(黒)と，6つの面の中心(赤)に格子点がある．",
+  "view": {
+    "azimuth": -32,
+    "elevation": 20,
+    "unit": "2.2cm"
+  },
+  "objects": [
+    {
+      "id": "c0",
+      "type": "point",
+      "at": [0, 0, 0],
+      "dot": true
+    },
+    {
+      "id": "c1",
+      "type": "point",
+      "at": [0, 0, 1],
+      "dot": true
+    },
+    {
+      "id": "c2",
+      "type": "point",
+      "at": [0, 1, 0],
+      "dot": true
+    },
+    {
+      "id": "c3",
+      "type": "point",
+      "at": [0, 1, 1],
+      "dot": true
+    },
+    {
+      "id": "c4",
+      "type": "point",
+      "at": [1, 0, 0],
+      "dot": true
+    },
+    {
+      "id": "c5",
+      "type": "point",
+      "at": [1, 0, 1],
+      "dot": true
+    },
+    {
+      "id": "c6",
+      "type": "point",
+      "at": [1, 1, 0],
+      "dot": true
+    },
+    {
+      "id": "c7",
+      "type": "point",
+      "at": [1, 1, 1],
+      "dot": true
+    },
+    {
+      "id": "edge0",
+      "type": "segment",
+      "from": "c0",
+      "to": "c1"
+    },
+    {
+      "id": "edge1",
+      "type": "segment",
+      "from": "c0",
+      "to": "c2"
+    },
+    {
+      "id": "edge2",
+      "type": "segment",
+      "from": "c0",
+      "to": "c4"
+    },
+    {
+      "id": "edge3",
+      "type": "segment",
+      "from": "c1",
+      "to": "c3"
+    },
+    {
+      "id": "edge4",
+      "type": "segment",
+      "from": "c1",
+      "to": "c5"
+    },
+    {
+      "id": "edge5",
+      "type": "segment",
+      "from": "c2",
+      "to": "c3"
+    },
+    {
+      "id": "edge6",
+      "type": "segment",
+      "from": "c2",
+      "to": "c6"
+    },
+    {
+      "id": "edge7",
+      "type": "segment",
+      "from": "c3",
+      "to": "c7"
+    },
+    {
+      "id": "edge8",
+      "type": "segment",
+      "from": "c4",
+      "to": "c5"
+    },
+    {
+      "id": "edge9",
+      "type": "segment",
+      "from": "c4",
+      "to": "c6"
+    },
+    {
+      "id": "edge10",
+      "type": "segment",
+      "from": "c5",
+      "to": "c7"
+    },
+    {
+      "id": "edge11",
+      "type": "segment",
+      "from": "c6",
+      "to": "c7"
+    },
+    {
+      "id": "m0",
+      "type": "point",
+      "at": [0.5, 0.5, 0],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "m1",
+      "type": "point",
+      "at": [0.5, 0.5, 1],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "m2",
+      "type": "point",
+      "at": [0.5, 0, 0.5],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "m3",
+      "type": "point",
+      "at": [0.5, 1, 0.5],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "m4",
+      "type": "point",
+      "at": [0, 0.5, 0.5],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "m5",
+      "type": "point",
+      "at": [1, 0.5, 0.5],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    }
+  ]
+}

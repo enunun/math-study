@@ -1,0 +1,131 @@
+---
+title: 楕円曲線の群法則
+description: Weierstrassの標準形の3次曲線について，特異点のない条件と実の点の形を調べる．曲線の上の点どうしの和を，直線との交点で定め，その計算の式を導く．有理点の例で和を計算する．
+date: 2026-09-29
+pageId: ecurve
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+import { Proof } from '@/components/fold';
+import { Definition, Example, Proposition, Theorem } from '@/components/statement';
+
+3次曲線$y^2 = x^3 + ax + b$の上の点どうしには，直線との交点を使って和が定まる．この和で，曲線の点全体は可換な群になる．このページでは，曲線の形と，和の定め方と計算の仕方を扱う．係数$a,b$は実数とし，曲線の実数の点を図に描く．
+
+## Weierstrassの標準形
+
+<Definition id="elliptic-curve" name="楕円曲線">
+
+実数$a,b$が$4a^3 + 27b^2 \ne 0$を満たすとき，次の式で表される曲線を楕円曲線という．
+
+$$
+y^2 = x^3 + ax + b \label{weierstrass}
+$$
+
+</Definition>
+
+条件$4a^3 + 27b^2 \ne 0$は，曲線がとがったり，自分自身と交わったりしないための条件である．
+
+<Proposition id="singular" name="特異点の条件">
+
+$F(x, y) = y^2 - x^3 - ax - b$とおく．$F$と2つの偏導関数が同時に0になる点(特異点)が曲線にあることは，$4a^3 + 27b^2 = 0$と同値である．
+
+</Proposition>
+
+<Proof of="singular">
+
+$p(x) = x^3 + ax + b$とおく．$F_y = 2y$と$F = 0$から，特異点は$y = 0$，$p(x) = 0$を満たす．$F_x = -p'(x)$なので，$p'(x) = 0$も成り立つ．したがって特異点があることは，$p$が重根をもつことと同値である．3次式$x^3 + ax + b$の判別式は$-(4a^3 + 27b^2)$なので，重根をもつことは$4a^3 + 27b^2 = 0$と同値である．
+
+</Proof>
+
+$4a^3 + 27b^2 < 0$なら，$p$は異なる実根を3つもつ．$p(x) \ge 0$となる$x$の範囲は2つの区間からなり，曲線は，閉じた卵形と右へ伸びる枝の2つである(<Ref to="fig-two" />)．$4a^3 + 27b^2 > 0$なら，実根は1つで，曲線は1つの枝である(<Ref to="fig-one" />)．どちらの場合も，曲線は$x$軸について対称で，根のところで$x$軸と垂直に交わる．
+
+<Figure src="elliptic-curve-doubling" id="fig-two" caption="楕円曲線$y^2 = x^3 - x$．実根が3つあり，卵形と枝に分かれる．" />
+
+<Figure src="elliptic-curve-addition" id="fig-one" caption="楕円曲線$y^2 = x^3 - 2x + 2$．実根は1つである．" />
+
+特異点のある曲線は，楕円曲線ではない．<Ref to="fig-node" />は重根が1つ，<Ref to="fig-cusp" />は3重根の例である．
+
+<Figure src="elliptic-curve-node" id="fig-node" caption="$y^2 = (x - 1)^2(x + 2)$．点$(1, 0)$で自分自身と交わる．" />
+
+<Figure src="elliptic-curve-cusp" id="fig-cusp" caption="$y^2 = x^3$．原点でとがる．" />
+
+## 直線との交点
+
+<Proposition id="third-point" name="3つ目の交点">
+
+楕円曲線の上の2点$P = (x_1, y_1)$，$Q = (x_2, y_2)$を通る直線が，$y$軸に平行でないとする．その傾きを$\lambda$とすると，直線は，$x$座標が次の値の点で，もう一度曲線と交わる．
+
+$$
+x_3 = \lambda^2 - x_1 - x_2
+$$
+
+$P = Q$のときは，$P$での接線を考え，$\lambda$をその傾きとする．
+
+</Proposition>
+
+<Proof of="third-point">
+
+直線の式$y = \lambda(x - x_1) + y_1$を，<Ref to="weierstrass" />に代入する．整理すると，$x$の3次方程式$x^3 - \lambda^2x^2 + \cdots = 0$になる．$x_1$と$x_2$はその根である．根と係数の関係より，3つの根の和は$\lambda^2$なので，残りの根は$x_3 = \lambda^2 - x_1 - x_2$である．これは実数なので，直線の上の点$(x_3, \lambda(x_3 - x_1) + y_1)$が，曲線の上にある．
+
+$P = Q$で接線を考えるときは，$x_1$が重根になる．このときも，同じ計算で残りの根が求まる．
+
+</Proof>
+
+2点を通る直線の傾きは$\lambda = \frac{y_2 - y_1}{x_2 - x_1}$である．接線の傾きは，<Ref to="weierstrass" />を微分した$2yy' = 3x^2 + a$より，$\lambda = \frac{3x_1^2 + a}{2y_1}$である．
+
+## 群法則
+
+直線が$y$軸に平行なときは，3つ目の交点がない．そこで，曲線に，$y$軸の向きの無限遠にある点$O$を1つ加える．$y$軸に平行な直線は，$O$を通るとみなす．
+
+<Definition id="addition" name="楕円曲線の点の和">
+
+楕円曲線の点$P,Q$を通る直線が曲線と交わる3つ目の点を，$R$とする．$R$を$x$軸について折り返した点を，$P + Q$と定める．$P,Q$を通る直線が$y$軸に平行なときは，$P + Q = O$とする．また$P + O = O + P = P$とする．
+
+</Definition>
+
+<Ref to="third-point" />より，$P + Q = (x_3, y_3)$の座標は次のとおりである．
+
+$$
+x_3 = \lambda^2 - x_1 - x_2, \quad y_3 = \lambda(x_1 - x_3) - y_1 \label{addition-formula}
+$$
+
+<Ref to="fig-addition" />は，この作図である．図の作成で開くと，$P$と$Q$の$x$座標をスライダーで動かせる．<Ref to="fig-doubling" />は，$P = Q$の場合で，接線を使う．
+
+<Figure
+  src="elliptic-curve-addition"
+  id="fig-addition"
+  caption="点の和の作図．$P$と$Q$を通る直線の3つ目の交点$-(P+Q)$を，$x$軸について折り返すと$P + Q$になる．"
+/>
+
+<Figure
+  src="elliptic-curve-doubling"
+  id="fig-doubling"
+  caption="点の2倍の作図．$P$での接線が曲線と交わる点を，$x$軸について折り返すと$2P$になる．"
+/>
+
+<Theorem id="group" name="楕円曲線の群">
+
+楕円曲線の点に$O$を加えた集合は，<Ref to="addition" />の和について，$O$を単位元とする可換群である．点$(x, y)$の逆元は$(x, -y)$である．
+
+</Theorem>
+
+交換法則は，直線が2点の順によらないことから分かる．$P$と$(x, -y)$を通る直線は$y$軸に平行なので，和は$O$である．難しいのは結合法則$(P + Q) + R = P + (Q + R)$である．<Ref to="addition-formula" />を使って直接計算するか，「楕円関数」による表示を使って示す．ここでは証明を省く．
+
+<LinkCard title="楕円関数" href="../elliptic-functions/" />
+
+## 有理点
+
+係数$a,b$が有理数で，座標が有理数の点を，有理点という．<Ref to="addition-formula" />は四則演算だけでできているので，有理点どうしの和は，また有理点である．
+
+<Example id="rational" name="有理点の和">
+
+楕円曲線$y^2 = x^3 + 17$の有理点$P = (-2, 3)$，$Q = (-1, 4)$の和を求める．傾きは$\lambda = \frac{4 - 3}{-1 + 2} = 1$である．<Ref to="addition-formula" />より，$x_3 = 1 + 2 + 1 = 4$，$y_3 = 1 \cdot (-2 - 4) - 3 = -9$である．したがって$P + Q = (4, -9)$で，実際に$(-9)^2 = 4^3 + 17$を満たす．
+
+同じく$2P$を求める．接線の傾きは$\lambda = \frac{3 \cdot 4}{2 \cdot 3} = 2$なので，$2P = (8, -23)$である．
+
+</Example>
+
+<Figure src="elliptic-curve-rational-points" id="fig-rational" caption="$y^2 = x^3 + 17$の有理点$P,Q$と，その和$P + Q = (4, -9)$．" />
+
+有理点の全体は，楕円曲線の群の部分群になる．Mordellの定理により，この部分群は有限個の点から生成される．

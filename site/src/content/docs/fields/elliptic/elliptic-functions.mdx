@@ -1,0 +1,200 @@
+---
+title: 楕円関数
+description: 楕円積分の逆関数としてJacobiの楕円関数を定め，恒等式，導関数，周期を示す．複素数に広げると2つの周期をもつことを，色塗りの図で確かめる．Weierstrassの℘関数の微分方程式を証明し，楕円曲線とのつながりを述べる．
+date: 2026-09-29
+pageId: efunc
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+import { Detail, Proof } from '@/components/fold';
+import { Definition, Proposition, Theorem } from '@/components/statement';
+
+三角関数$\sin$は，積分$\int_0^x \frac{dt}{\sqrt{1 - t^2}}$の逆関数である．根号の中を4次式にした積分の逆関数を考えると，楕円関数が得られる．このページでは，Jacobiの楕円関数とWeierstrassの℘関数を定め，その性質を図とともに調べる．
+
+## 楕円積分
+
+<Definition id="elliptic-integral" name="楕円積分">
+
+$0 \le k < 1$とする．次の積分を，それぞれ第一種，第二種の楕円積分という．$k$を母数という．
+
+$$
+F(\varphi, k) = \int_0^{\varphi}\frac{d\theta}{\sqrt{1 - k^2\sin^2\theta}}, \quad E(\varphi, k) = \int_0^{\varphi}\sqrt{1 - k^2\sin^2\theta} \, d\theta
+$$
+
+$\varphi = \frac{\pi}{2}$での値$K(k)$，$E(k)$を，完全楕円積分という．
+
+</Definition>
+
+名前は，楕円の弧の長さから来ている．
+
+<Proposition id="arc-length" name="楕円の弧の長さ">
+
+楕円$x = a\sin\theta$，$y = b\cos\theta$($a > b > 0$)の，$0 \le \theta \le \varphi$の部分の弧の長さは，$aE(\varphi, e)$である．ただし$e = \frac{\sqrt{a^2 - b^2}}{a}$は，離心率である．
+
+</Proposition>
+
+<Proof of="arc-length">
+
+弧の長さの被積分関数は，$\sqrt{a^2\cos^2\theta + b^2\sin^2\theta}$である．これは$a\sqrt{1 - e^2\sin^2\theta}$に等しい．<Detail>$a^2\cos^2\theta + b^2\sin^2\theta = a^2 - (a^2 - b^2)\sin^2\theta$である．</Detail>
+
+</Proof>
+
+## Jacobiの楕円関数
+
+$F(\varphi, k)$は$\varphi$について狭義単調増加なので，逆関数がある．
+
+<Definition id="jacobi" name="Jacobiの楕円関数">
+
+$u = F(\varphi, k)$の逆関数を$\varphi = \mathrm{am}(u, k)$と書き，振幅関数という．次の3つの関数を，Jacobiの楕円関数という．
+
+$$
+\mathrm{sn}\,u = \sin\mathrm{am}\,u, \quad \mathrm{cn}\,u = \cos\mathrm{am}\,u, \quad \mathrm{dn}\,u = \sqrt{1 - k^2\,\mathrm{sn}^2u}
+$$
+
+</Definition>
+
+母数$k$が決まっているときは，引数から$k$を省いて書く．定義から，次の恒等式が成り立つ．
+
+$$
+\mathrm{sn}^2u + \mathrm{cn}^2u = 1, \quad \mathrm{dn}^2u + k^2\,\mathrm{sn}^2u = 1
+$$
+
+<Proposition id="derivatives" name="Jacobiの楕円関数の導関数">
+
+次の式が成り立つ．
+
+$$
+\frac{d}{du}\mathrm{am}\,u = \mathrm{dn}\,u, \quad \frac{d}{du}\mathrm{sn}\,u = \mathrm{cn}\,u\,\mathrm{dn}\,u, \quad \frac{d}{du}\mathrm{cn}\,u = -\mathrm{sn}\,u\,\mathrm{dn}\,u
+$$
+
+</Proposition>
+
+<Proof of="derivatives">
+
+逆関数の微分より，$\frac{d\varphi}{du} = \sqrt{1 - k^2\sin^2\varphi}$である．$\varphi = \mathrm{am}\,u$なので，これは$\mathrm{dn}\,u$である．$\mathrm{sn}$と$\mathrm{cn}$は，$\sin$と$\cos$に合成関数の微分を使えばよい．
+
+</Proof>
+
+<Proposition id="real-period" name="実の周期">
+
+$\mathrm{sn}(u + 2K) = -\mathrm{sn}\,u$，$\mathrm{cn}(u + 2K) = -\mathrm{cn}\,u$である．したがって，$\mathrm{sn}$と$\mathrm{cn}$は周期$4K$をもつ．
+
+</Proposition>
+
+<Proof of="real-period">
+
+被積分関数$\frac{1}{\sqrt{1 - k^2\sin^2\theta}}$は周期$\pi$をもち，対称性から1周期の積分は$2K$である．したがって$F(\varphi + \pi, k) = F(\varphi, k) + 2K$で，逆関数について$\mathrm{am}(u + 2K) = \mathrm{am}\,u + \pi$である．$\sin$と$\cos$は，$\pi$ずらすと符号が変わる．
+
+</Proof>
+
+$k = 0$なら，$F(\varphi, 0) = \varphi$なので，$\mathrm{sn} = \sin$，$\mathrm{cn} = \cos$，$\mathrm{dn} = 1$である．$k \to 1$では$K \to \infty$で，$\mathrm{sn}\,u \to \tanh u$である．<Ref to="fig-jacobi" />は$k = 0.8$のグラフで，図の作成で開くと$k$をスライダーで動かせる．
+
+<Figure
+  src="jacobi-elliptic-functions"
+  id="fig-jacobi"
+  caption="$\mathrm{sn}(u, 0.8)$(黒)，$\mathrm{cn}(u, 0.8)$(青の破線)，$\mathrm{dn}(u, 0.8)$(赤の点線)．"
+/>
+
+## 複素数への拡張
+
+Jacobiの楕円関数は，複素数の引数に広げられる．広げた関数は，極を除いて正則な関数(有理型関数)になる．次の定理は，Jacobiの虚数変換から導かれる．
+
+<Theorem id="double-period" name="2つの周期">
+
+補母数を$k' = \sqrt{1 - k^2}$，$K' = K(k')$とする．$\mathrm{sn}(z, k)$は，$4K$と$2iK'$の2つの周期をもつ．$m,n$を整数とすると，零点は$2mK + 2niK'$である．極は$2mK + (2n + 1)iK'$である．どれも1位である．
+
+</Theorem>
+
+複素関数は，値の偏角を色相で，絶対値を明るさで表して図にする．偏角0を赤，$\frac{\pi}{2}$を黄緑，$\pi$を青緑，$\frac{3\pi}{2}$を紫で表す．明るさの縞は，絶対値が2倍になるたび1本ずつ増える．零点と極の位数は，そのまわりの色相の回り方で読める．
+
+<Proposition id="winding" name="零点と極のまわりの色相">
+
+$f$が点$a$に$m$位の零点をもつとき，$a$を小さく反時計回りに1周すると，$f$の偏角は$2\pi m$だけ増える．$m$位の極なら，偏角は$2\pi m$だけ減る．
+
+</Proposition>
+
+<Proof of="winding">
+
+$m$位の零点では，$a$の近くで$f(z) = (z - a)^m g(z)$，$g(a) \ne 0$と書ける．$z = a + re^{it}$と回ると，$(z - a)^m$の偏角は$mt$である．$g$の偏角は，$r$が小さければほとんど変わらない．極では，$m$を$-m$に替えればよい．
+
+</Proof>
+
+<Ref to="fig-sn" />は，$\mathrm{sn}(z, 0.8)$の色塗りである．長方形は周期の長方形で，横が$4K = 7.98$，縦が$2K' = 3.50$である．実軸の上の$0$と$2K$が零点で，そのまわりを反時計回りにたどると，色相は赤，黄，緑，青の順に変わる．$iK'$と$2K + iK'$が極で，色相は逆向きに回る．長方形の外は，中と同じ色の並びをくり返す．
+
+<Figure
+  src="jacobi-sn-domain-coloring"
+  id="fig-sn"
+  caption="$\mathrm{sn}(z, 0.8)$の色塗り．長方形は，周期$4K$と$2iK'$の長方形である．"
+/>
+
+## Weierstrassの℘関数
+
+2つの周期をもつ有理型関数を，楕円関数という．楕円関数は，周期の格子だけから作ることもできる．
+
+<Definition id="weierstrass-p" name="Weierstrassの℘関数">
+
+比が実数でない複素数$\omega_1,\omega_3$について，次の格子を$\Lambda$とおく．
+
+$$
+\Lambda = \set{2m\omega_1 + 2n\omega_3 \mid m, n \in \Integers}
+$$
+次の関数を，Weierstrassの℘関数という．$\sum'$は，$\omega = 0$を除いた和である．
+
+$$
+\wp(z) = \frac{1}{z^2} + {\sum_{\omega \in \Lambda}}' \left(\frac{1}{(z - \omega)^2} - \frac{1}{\omega^2}\right)
+$$
+
+</Definition>
+
+和は，$\Lambda$に含まれない$z$で広義一様に絶対収束する．℘は偶関数で，$\Lambda$の各点を周期とし，格子点に2位の極をもつ．<Ref to="fig-wp" />は，正方形の格子の℘の色塗りである．各格子点で，色相は逆向きに2周する．
+
+<Figure
+  src="weierstrass-p-domain-coloring"
+  id="fig-wp"
+  caption="$\wp(z)$の色塗り(不変量$g_2 = 4$，$g_3 = 0$の正方形の格子)．格子点に2位の極がある．"
+/>
+
+<Theorem id="differential-equation" name="℘の微分方程式">
+
+$G_k = {\sum}'_{\omega \in \Lambda}\omega^{-k}$とし，$g_2 = 60G_4$，$g_3 = 140G_6$とおく．次の式が成り立つ．
+
+$$
+\wp'(z)^2 = 4\wp(z)^3 - g_2\wp(z) - g_3 \label{wp-equation}
+$$
+
+</Theorem>
+
+<Proof of="differential-equation">
+
+原点の近くで，$\frac{1}{(z - \omega)^2} - \frac{1}{\omega^2}$を$z$のべき級数に展開して足す．奇数次の項は，$\omega$と$-\omega$の項が打ち消し合う．
+
+$$
+\wp(z) = \frac{1}{z^2} + 3G_4z^2 + 5G_6z^4 + O(z^6)
+$$
+
+これを微分して，$\wp' = -\frac{2}{z^3} + 6G_4z + 20G_6z^3 + O(z^5)$である．2乗と3乗を計算する．
+
+$$
+\wp'^2 = \frac{4}{z^6} - \frac{24G_4}{z^2} - 80G_6 + O(z^2), \quad 4\wp^3 = \frac{4}{z^6} + \frac{36G_4}{z^2} + 60G_6 + O(z^2)
+$$
+
+$f = \wp'^2 - 4\wp^3 + g_2\wp + g_3$とおくと，$f = O(z^2)$である．$f$は$\Lambda$を周期とし，極は格子点にしかないが，原点で正則である．したがって$f$は極のない楕円関数で，有界な整関数になる．Liouvilleの定理より$f$は定数で，$f(0) = 0$より$f = 0$である．
+
+</Proof>
+
+## 楕円曲線との関係
+
+<Ref to="wp-equation" />は，点$(\wp(z), \wp'(z))$が曲線$y^2 = 4x^3 - g_2x - g_3$の上にあることを表す．$Y = \frac{y}{2}$とおけば，「楕円曲線の群法則」の標準形$Y^2 = x^3 - \frac{g_2}{4}x - \frac{g_3}{4}$になる．
+
+<LinkCard title="楕円曲線の群法則" href="../elliptic-curve/" />
+
+<Ref to="fig-curve" />は，$g_2 = 4$，$g_3 = 0$の場合である．楕円曲線は$Y^2 = x^3 - x$である．$z$が実数の周期$2\omega_1$を動くと，点$(\wp(z), \frac{1}{2}\wp'(z))$は右の枝を1周する(青)．$z$を虚の周期の半分$\omega_3$だけずらした直線の上を動かすと，点は卵形を1周する．
+
+<Figure
+  src="weierstrass-p-curve"
+  id="fig-curve"
+  caption="楕円曲線$Y^2 = x^3 - x$(灰色)と，実数$t$についての点$(\wp(t), \frac{1}{2}\wp'(t))$(青)．"
+/>
+
+写像$z \mapsto (\wp(z), \frac{1}{2}\wp'(z))$は，周期の格子で割った$\ComplexNumbers / \Lambda$から，楕円曲線に$O$を加えた集合への全単射である．原点は$O$に移る．さらにこの写像は，$\ComplexNumbers$の足し算を，楕円曲線の点の和に移す．楕円曲線の群法則の結合法則は，この事実から，足し算の結合法則として従う．

@@ -1,0 +1,186 @@
+---
+title: フーリエ変換とFraunhofer回折
+description: フーリエ変換を定義し，箱形の関数の変換と，関数の幅と変換の幅の関係を示す．遠くで見る光の回折図形が開口のフーリエ変換で書けることを使い，長方形と円形の開口，二重スリットの回折図形を求める．
+date: 2026-09-29
+pageId: fraun
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+import { Proof } from '@/components/fold';
+import { Definition, Proposition } from '@/components/statement';
+
+「フーリエ級数」は，周期関数を，周期の整数分の1の周期をもつ三角関数に分けた．周期のない関数では，すべての周期の波が必要になり，和は積分になる．このページでは，その積分であるフーリエ変換を定義し，光の回折に使う．
+
+<LinkCard title="フーリエ級数" href="../fourier-series/" />
+
+## フーリエ変換
+
+<Definition id="fourier-transform" name="フーリエ変換">
+
+実数の上で絶対可積分な関数$f$に対して，次の関数$\hat{f}$を$f$のフーリエ変換という．
+
+$$
+\hat{f}(k) = \int_{-\infty}^{\infty} f(x)e^{-ikx} \, dx \label{transform}
+$$
+
+</Definition>
+
+$e^{-ikx}$は，波数$k$の波である．$\hat{f}(k)$は，$f$に含まれる波数$k$の波の大きさと位相を表す．
+
+<Proposition id="box" name="箱形の関数の変換">
+
+$|x| \le a$で1，それ以外で0の関数を$\chi_a$とする．その変換は次のとおりである．$k = 0$では$\hat{\chi}_a(0) = 2a$である．
+
+$$
+\hat{\chi}_a(k) = \frac{2\sin ak}{k}
+$$
+
+</Proposition>
+
+<Proof of="box">
+
+$k \ne 0$なら，$\int_{-a}^{a} e^{-ikx}dx = \frac{e^{-ika} - e^{ika}}{-ik} = \frac{2\sin ak}{k}$である．$k = 0$なら，区間の長さ$2a$である．
+
+</Proof>
+
+<Ref to="fig-box" />は，$a = 1$のときの変換である．図の作成で開くと，$a$をスライダーで動かせる．箱を狭くすると，変換は低く広がる．最初の0は$k = \frac{\pi}{a}$にあり，箱の幅に反比例する．
+
+<Figure src="fourier-transform-box" id="fig-box" caption="幅$2a$の箱形の関数のフーリエ変換($a = 1$)．" />
+
+この反比例は，一般の関数でも成り立つ．
+
+<Proposition id="scaling" name="幅と変換の幅">
+
+$s > 0$について$g(x) = f\left(\frac{x}{s}\right)$とおくと，$\hat{g}(k) = s\hat{f}(sk)$である．
+
+</Proposition>
+
+<Proof of="scaling">
+
+<Ref to="transform" />で$x = sy$と置き換えると，$\hat{g}(k) = \int f(y)e^{-iksy}s \, dy = s\hat{f}(sk)$である．
+
+</Proof>
+
+関数の幅が$s$倍なら，変換の幅は$\frac{1}{s}$倍である．狭い関数ほど，多くの波数の波を含む．
+
+## Fraunhofer回折
+
+平らな板に穴(開口)をあけ，板に垂直に，波長$\lambda$の平らな光を当てる．開口を通った光は，いろいろな向きに広がる．開口から十分に遠いところで見た光の分布を，Fraunhofer回折という．
+
+板を$xy$平面に置き，光の進む向きを$z$軸にとる．開口の点$(x, y)$から出た光を，$z$軸から少し傾いた向きで遠くから見る．その向きの単位ベクトルの$x$成分を$\sin\theta_x$，$y$成分を$\sin\theta_y$とする．開口の点$(x, y)$から出た光の道のりは，原点から出た光より$x\sin\theta_x + y\sin\theta_y$だけ短い．Huygensの原理により，開口の各点から出た光を足し合わせる．
+
+$$
+k_x = \frac{2\pi}{\lambda}\sin\theta_x, \quad k_y = \frac{2\pi}{\lambda}\sin\theta_y
+$$
+
+開口の内側で1，外側で0の関数を$f(x, y)$とする．遠くで見る光の振幅は，定数倍を除いて，$f$の2次元のフーリエ変換になる．
+
+$$
+\hat{f}(k_x, k_y) = \iint f(x, y)e^{-i(k_x x + k_y y)} \, dx \, dy \label{fraunhofer}
+$$
+
+光の強さは，振幅の絶対値の2乗$|\hat{f}|^2$である．このページの回折図形は，横軸を$k_x$，縦軸を$k_y$として，$|\hat{f}|^2$を画像の中の最大で割り，明るさで表したものである．
+
+## 長方形の開口
+
+<Proposition id="rectangle" name="長方形の開口">
+
+開口$|x| \le a$，$|y| \le b$の回折の振幅は，次の式である．
+
+$$
+\hat{f}(k_x, k_y) = \frac{2\sin ak_x}{k_x}\cdot\frac{2\sin bk_y}{k_y}
+$$
+
+</Proposition>
+
+<Proof of="rectangle">
+
+$f(x, y) = \chi_a(x)\chi_b(y)$なので，<Ref to="fraunhofer" />の2重積分は，$x$と$y$の積分の積になる．それぞれに<Ref to="box" />を使う．
+
+</Proof>
+
+<Ref to="fig-rectangle" />は，$a = 1$，$b = \frac{1}{2}$の強さを，対数の目盛で表したものである．<Ref to="scaling" />のとおり，開口の狭い$y$の向きに，図形は広がる．
+
+<Figure
+  src="fraunhofer-rectangular-aperture"
+  id="fig-rectangle"
+  caption="横2，縦1の長方形の開口の回折の強さ．明るさは強さの対数で，最大から4桁下までを表す．"
+/>
+
+## 円形の開口
+
+円形の開口の回折図形は，第一種Bessel関数$J_0,J_1$で書ける．Bessel関数は，次の積分で表せる．
+
+$$
+J_0(x) = \frac{1}{2\pi}\int_0^{2\pi} e^{-ix\cos\phi} \, d\phi, \quad \frac{d}{dx}\bigl(xJ_1(x)\bigr) = xJ_0(x)
+$$
+
+<Proposition id="airy" name="円形の開口">
+
+半径$a$の円形の開口の回折の振幅は，$k = \sqrt{k_x^2 + k_y^2}$だけの関数で，次の式になる．
+
+$$
+\hat{f}(k_x, k_y) = 2\pi a^2 \, \frac{J_1(ka)}{ka}
+$$
+
+</Proposition>
+
+<Proof of="airy">
+
+開口の点を極座標$(r, \phi)$で表す．$(k_x, k_y)$と点のなす角を$\phi$にとると，$k_x x + k_y y = kr\cos\phi$である．
+
+$$
+\hat{f} = \int_0^a\int_0^{2\pi} e^{-ikr\cos\phi} \, d\phi \, r \, dr = 2\pi\int_0^a J_0(kr) \, r \, dr
+$$
+
+$u = kr$と置き換えると，$\frac{2\pi}{k^2}\int_0^{ka} uJ_0(u) \, du = \frac{2\pi}{k^2} \, kaJ_1(ka)$である．これは示すべき式に等しい．
+
+</Proof>
+
+強さを中心の値で割ると，$\left(\frac{2J_1(ka)}{ka}\right)^2$になる．これをAiryの図形という．$J_1$の最初の正の零点は$3.8317\ldots$なので，中央の明るい円盤は$ka = 3.8317\ldots$まで広がる．<Ref to="fig-circle" />では，その外に，暗い環と弱い明るい環が交互に並ぶ．外側の環は中央の百分の一より暗いので，対数の目盛で表した．
+
+<Figure
+  src="fraunhofer-circular-aperture"
+  id="fig-circle"
+  caption="半径1の円形の開口の回折の強さ(Airyの図形)．明るさは強さの対数である．"
+/>
+
+望遠鏡のレンズも円形の開口なので，星の像はAiryの円盤に広がる．2つの星の像を見分けられる角度の目安は，円盤の半径である．
+
+$$
+\sin\theta = \frac{3.8317}{2\pi}\cdot\frac{\lambda}{a} = 1.22\,\frac{\lambda}{2a}
+$$
+これをRayleighの基準という．
+
+## 二重スリット
+
+<Proposition id="shift" name="平行移動と位相">
+
+$g(x) = f(x - d)$なら，$\hat{g}(k) = e^{-ikd}\hat{f}(k)$である．
+
+</Proposition>
+
+<Proof of="shift">
+
+<Ref to="transform" />で$x = y + d$と置き換える．
+
+</Proof>
+
+幅$2w$のスリットを，中心が$x = \pm d$に来るように2本並べる．開口は$\chi_w(x - d) + \chi_w(x + d)$で，<Ref to="shift" />より，振幅は次の式になる．
+
+$$
+(e^{-ikd} + e^{ikd})\,\hat{\chi}_w(k) = 2\cos(kd)\cdot\frac{2\sin wk}{k}
+$$
+
+強さは，$4\cos^2(kd)$の縞に，1本のスリットの強さを掛けたものである．縞の間隔は$\frac{\pi}{d}$で，スリットの間隔に反比例する．包絡線の最初の0は$\frac{\pi}{w}$にあり，スリットの幅に反比例する．<Ref to="fig-slits" />のスリットは縦にも有限の長さなので，縦にも少し広がる．図の作成で開くと，$d$と$w$をスライダーで動かせる．
+
+<Figure
+  src="fraunhofer-double-slit"
+  id="fig-slits"
+  caption="間隔$2d$の二重スリットの回折の強さ($d = 1$，$w = 0.15$)．"
+/>
+
+スリットを周期的に$N$本並べると，強さは，「有限の結晶の回折」のLaue関数に，1本の強さを掛けたものになる．X線の結晶による回折は，原子の並びを開口とみた，3次元のFraunhofer回折である．
+
+<LinkCard title="有限の結晶の回折" href="../../crystallography/finite-crystal/" />

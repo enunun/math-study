@@ -1,0 +1,44 @@
+{
+  "version": "0.1.0",
+  "description": "横2，縦1の長方形の開口のFraunhofer回折の強さ(対数の目盛)．横に狭い開口ほど，回折図形は横に広がる．",
+  "view": {
+    "x": [-16, 16],
+    "y": [-16, 16],
+    "unit": {
+      "x": "0.25cm",
+      "y": "0.25cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "pattern",
+      "type": "fourier_intensity",
+      "expr": "1",
+      "support": [
+        [-1, 1],
+        [-0.5, 0.5]
+      ],
+      "samples": 96,
+      "scale": "log",
+      "range": [0.0001, 1]
+    },
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "label": "k_x",
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y",
+      "label": "k_y",
+      "style": {
+        "color": "gray"
+      }
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "version": "0.1.0",
+  "description": "N個の格子点からの波の和の強さを，N^2で割ったもの(Laue関数)．φが整数のところで1になる．Nを大きくすると，山は幅1/N程度に鋭くなり，山の間にN - 2個の小さな山が並ぶ．",
+  "view": {
+    "x": [-1.8, 1.8],
+    "y": [-0.15, 1.25],
+    "unit": {
+      "x": "2.2cm",
+      "y": "3.2cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "label": "\\varphi"
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y"
+    },
+    {
+      "id": "n",
+      "type": "parameter",
+      "value": 6,
+      "range": [1, 20],
+      "step": 1
+    },
+    {
+      "id": "laue",
+      "type": "graph",
+      "var": "x",
+      "expr": "sin(n*pi*x)^2 / (n^2 * sin(pi*x)^2)",
+      "domain": [-1.73, 1.71],
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "one",
+      "type": "label",
+      "at": [0, 1],
+      "anchor": "south west",
+      "tex": "$1$"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "version": "0.1.0",
+  "description": "楕円曲線y^2 = x^3 - x(黒)と，実数tについての点(℘(t), ℘'(t)/2)の軌跡(青)．不変量はg2 = 4，g3 = 0である．tが実の周期2ωを動くと，点は右の枝を一周する．",
+  "view": {
+    "x": [-2, 3.5],
+    "y": [-3.5, 3.5],
+    "unit": {
+      "x": "0.8cm",
+      "y": "0.8cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "label": "x"
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y",
+      "label": "y"
+    },
+    {
+      "id": "origin_label",
+      "type": "label",
+      "at": [0, 0],
+      "anchor": "north east",
+      "tex": "$O$"
+    },
+    {
+      "id": "curve",
+      "type": "elliptic_curve",
+      "a": -1,
+      "b": 0,
+      "style": {
+        "width": "2.5pt",
+        "color": "gray"
+      }
+    },
+    {
+      "id": "orbit",
+      "type": "curve",
+      "var": "t",
+      "expr": ["wp(t, 4, 0)", "wpd(t, 4, 0) / 2"],
+      "domain": [0.3, 2.322058],
+      "style": {
+        "color": "blue"
+      }
+    }
+  ]
+}

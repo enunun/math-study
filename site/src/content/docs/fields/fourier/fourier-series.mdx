@@ -1,0 +1,177 @@
+---
+title: フーリエ級数
+description: 周期関数を三角関数の和で表すフーリエ級数を定義し，矩形波とのこぎり波の係数を求める．部分和が関数に近づく様子と，不連続点の近くに残る行き過ぎ(Gibbs現象)を，図で確かめ，証明する．
+date: 2026-09-29
+pageId: fseries
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+import { Proof } from '@/components/fold';
+import { Definition, Proposition, Theorem } from '@/components/statement';
+
+周期関数を，いろいろな周期の三角関数の和で表すことを考える．このページでは，その係数の求め方と，和を有限で打ち切ったものが元の関数に近づく様子を扱う．
+
+## フーリエ係数
+
+区間$[-\pi, \pi]$で積分できる関数$f$を，周期$2\pi$の関数に広げて考える．
+
+<Definition id="coefficients" name="フーリエ係数と部分和">
+
+$f$のフーリエ係数を，次の式で定める($n = 0, 1, 2, \dots$)．
+
+$$
+a_n = \frac{1}{\pi}\int_{-\pi}^{\pi} f(x)\cos nx \, dx, \quad b_n = \frac{1}{\pi}\int_{-\pi}^{\pi} f(x)\sin nx \, dx
+$$
+
+次の関数を，$N$次までの部分和という．
+
+$$
+S_N(x) = \frac{a_0}{2} + \sum_{n=1}^{N} (a_n\cos nx + b_n\sin nx) \label{partial-sum}
+$$
+
+</Definition>
+
+係数の式は，三角関数の直交性から来る．
+
+<Proposition id="orthogonality" name="三角関数の直交性">
+
+正の整数$m,n$について，次の式が成り立つ．
+
+$$
+\int_{-\pi}^{\pi} \cos mx\cos nx \, dx = \int_{-\pi}^{\pi} \sin mx\sin nx \, dx = \pi\delta_{mn}, \quad \int_{-\pi}^{\pi} \sin mx\cos nx \, dx = 0
+$$
+
+</Proposition>
+
+<Proof of="orthogonality">
+
+積を和に直すと，$\cos mx\cos nx = \frac{1}{2}\bigl(\cos(m - n)x + \cos(m + n)x\bigr)$である．整数$j \ne 0$について$\cos jx$の1周期の積分は0で，$j = 0$なら$2\pi$である．$m + n \ge 2$なので，積分は$m = n$のとき$\pi$，それ以外で0である．ほかの2つも，同じく積を和に直せば分かる．
+
+</Proof>
+
+$f$が三角関数の有限個の和なら，両辺に$\cos nx$や$\sin nx$を掛けて積分すると，<Ref to="orthogonality" />により係数が取り出せる．その係数が，<Ref to="coefficients" />の$a_n,b_n$である．周期が$L$の関数では，$nx$を$\frac{2\pi n x}{L}$に，$\frac{1}{\pi}$を$\frac{2}{L}$に替えればよい．
+
+## 矩形波
+
+<Proposition id="square-wave" name="矩形波のフーリエ係数">
+
+次の関数$f$を，周期$2\pi$に広げたものを矩形波という．
+
+$$
+f(x) = \begin{cases} 1 & (0 < x < \pi) \\ -1 & (-\pi < x < 0) \end{cases}
+$$
+
+このとき$a_n = 0$である．$b_n$は次のとおりである．
+
+$$
+b_n = \begin{cases} \frac{4}{n\pi} & (n \text{ が奇数}) \\ 0 & (n \text{ が偶数}) \end{cases}
+$$
+
+</Proposition>
+
+<Proof of="square-wave">
+
+$f$は奇関数なので，$f(x)\cos nx$も奇関数で，$a_n = 0$である．$f(x)\sin nx$は偶関数なので，次の式になる．
+
+$$
+b_n = \frac{2}{\pi}\int_0^{\pi} \sin nx \, dx = \frac{2}{n\pi}(1 - \cos n\pi) = \frac{2}{n\pi}\bigl(1 - (-1)^n\bigr)
+$$
+
+</Proof>
+
+<Ref to="fig-square" />は，矩形波(点線)と部分和である．図の作成で開くと，次数$N$をスライダーで動かせる．$N$を上げるほど，部分和は矩形波に近づく．ただし，不連続点のすぐそばで，部分和は1を超えて行き過ぎる．この行き過ぎは，$N$を上げても小さくならない．
+
+<Figure
+  src="fourier-series-square-wave"
+  id="fig-square"
+  caption="矩形波(点線)と，そのフーリエ級数の9次までの部分和．"
+/>
+
+係数の大きさ$A_n = \sqrt{a_n^2 + b_n^2}$を次数ごとに並べたものを，振幅のスペクトルという．<Ref to="fig-spectrum" />のように，矩形波のスペクトルは奇数次だけにあり，$\frac{1}{n}$で小さくなる．
+
+<Figure src="fourier-series-spectrum" id="fig-spectrum" caption="矩形波の振幅のスペクトル．" />
+
+## のこぎり波
+
+<Proposition id="sawtooth" name="のこぎり波のフーリエ係数">
+
+$-\pi < x < \pi$で$f(x) = x$とする．このとき$a_n = 0$，$b_n = \frac{2(-1)^{n+1}}{n}$である．
+
+</Proposition>
+
+<Proof of="sawtooth">
+
+$f$は奇関数なので，$a_n = 0$である．部分積分より，次の式になる．
+
+$$
+b_n = \frac{2}{\pi}\int_0^{\pi} x\sin nx \, dx = \frac{2}{\pi}\left[-\frac{x\cos nx}{n}\right]_0^{\pi} + \frac{2}{n\pi}\int_0^{\pi}\cos nx \, dx = \frac{2(-1)^{n+1}}{n}
+$$
+
+</Proof>
+
+<Figure
+  src="fourier-series-sawtooth"
+  id="fig-sawtooth"
+  caption="のこぎり波(点線)と，そのフーリエ級数の8次までの部分和．"
+/>
+
+矩形波とのこぎり波の係数は，どちらも$\frac{1}{n}$の速さでしか小さくならない．どちらの関数も，周期に広げると跳びがあるからである．滑らかな周期関数の係数は，もっと速く小さくなる．
+
+## 収束とGibbs現象
+
+部分和が元の関数に近づくことは，次の定理で保証される．
+
+<Theorem id="dirichlet" name="Dirichletの定理">
+
+$f$が区分的に滑らかな周期$2\pi$の関数なら，各点$x$で次の式が成り立つ．$f(x \pm 0)$は，右と左からの極限である．
+
+$$
+\lim_{N \to \infty} S_N(x) = \frac{f(x + 0) + f(x - 0)}{2}
+$$
+
+</Theorem>
+
+証明は，部分和をDirichlet核との畳み込みで表して示す．フーリエ解析の教科書にある．$f$が連続な点では，部分和は$f(x)$に収束する．跳びの点では，左右の値の中点に収束する．
+
+各点で収束しても，収束が一様でない．<Ref to="fig-square" />の行き過ぎの山は，跳びに近づきながら，同じ高さを保つ．その大きさを求める．
+
+<Proposition id="gibbs" name="Gibbs現象">
+
+矩形波の部分和$S_{2M-1}$の，$x = 0$の右の最初の極大値は，$M \to \infty$で次の値に収束する．
+
+$$
+\frac{2}{\pi}\int_0^{\pi}\frac{\sin u}{u} \, du = 1.17897\ldots
+$$
+
+</Proposition>
+
+<Proof of="gibbs">
+
+<Ref to="square-wave" />より，$S_{2M-1}(x) = \frac{4}{\pi}\sum_{m=1}^{M}\frac{\sin(2m-1)x}{2m-1}$である．微分して，余弦の和を積に直す．
+
+$$
+S_{2M-1}'(x) = \frac{4}{\pi}\sum_{m=1}^{M}\cos(2m-1)x = \frac{2}{\pi}\cdot\frac{\sin 2Mx}{\sin x}
+$$
+
+和を積に直すには，$2\sin x\cos(2m-1)x = \sin 2mx - \sin(2m-2)x$を$m$について足す．$S_{2M-1}(0) = 0$なので，次の式を得る．
+
+$$
+S_{2M-1}(x) = \frac{2}{\pi}\int_0^x\frac{\sin 2Mt}{\sin t} \, dt
+$$
+
+導関数は，$0 < x < \frac{\pi}{2M}$では正である．$x = \frac{\pi}{2M}$で初めて0になり，符号が変わる．したがって最初の極大値は，$x = \frac{\pi}{2M}$での値である．$u = 2Mt$と置き換える．
+
+$$
+S_{2M-1}\left(\frac{\pi}{2M}\right) = \frac{2}{\pi}\int_0^{\pi}\frac{\sin u}{2M\sin\frac{u}{2M}} \, du
+$$
+
+$0 < u \le \pi$で，$2M\sin\frac{u}{2M}$は$u$に一様に近づき，$\frac{2}{\pi}u$以上である．被積分関数は有界なまま$\frac{\sin u}{u}$に一様に収束するので，積分も収束する．
+
+</Proof>
+
+跳びの大きさは2なので，行き過ぎは跳びの約9%である．この割合は，跳びのあるどの区分的に滑らかな関数でも同じになる．<Ref to="fig-sawtooth" />でも，跳びの手前で部分和が$\pi$を超える様子が見える．
+
+周期のない関数では，和の代わりに積分を使う．その積分であるフーリエ変換と，光の回折への応用は，次のページで扱う．
+
+<LinkCard title="フーリエ変換とFraunhofer回折" href="../fraunhofer/" />

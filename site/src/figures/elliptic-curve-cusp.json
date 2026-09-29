@@ -1,0 +1,39 @@
+{
+  "version": "0.1.0",
+  "description": "特異な3次曲線y^2 = x^3．原点で曲線がとがる(尖点)．",
+  "view": {
+    "x": [-1.5, 3],
+    "y": [-3, 3],
+    "unit": {
+      "x": "0.7cm",
+      "y": "0.7cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "label": "x"
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y",
+      "label": "y"
+    },
+    {
+      "id": "origin_label",
+      "type": "label",
+      "at": [0, 0],
+      "anchor": "north east",
+      "tex": "$O$"
+    },
+    {
+      "id": "curve",
+      "type": "elliptic_curve",
+      "a": 0,
+      "b": 0
+    }
+  ]
+}

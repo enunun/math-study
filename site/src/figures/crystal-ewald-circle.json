@@ -1,0 +1,537 @@
+{
+  "version": "0.1.0",
+  "description": "Ewald球の作図(断面)．入射波の波数ベクトルkを，終点が逆格子の原点Oに来るように置き，始点Cを中心に半径|k|の球を描く．球の上にある逆格子点Gについて，k' = k + Gの向きに回折が起こる．",
+  "view": {
+    "x": [-3.5, 3.5],
+    "y": [-1.5, 6.0],
+    "unit": {
+      "x": "0.7cm",
+      "y": "0.7cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "g_9_11",
+      "type": "point",
+      "at": [-3, -1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_9_12",
+      "type": "point",
+      "at": [-3, 0],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_9_13",
+      "type": "point",
+      "at": [-3, 1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_9_14",
+      "type": "point",
+      "at": [-3, 2],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_9_15",
+      "type": "point",
+      "at": [-3, 3],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_9_16",
+      "type": "point",
+      "at": [-3, 4],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_9_17",
+      "type": "point",
+      "at": [-3, 5],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_10_11",
+      "type": "point",
+      "at": [-2, -1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_10_12",
+      "type": "point",
+      "at": [-2, 0],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_10_13",
+      "type": "point",
+      "at": [-2, 1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_10_14",
+      "type": "point",
+      "at": [-2, 2],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_10_15",
+      "type": "point",
+      "at": [-2, 3],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_10_16",
+      "type": "point",
+      "at": [-2, 4],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_10_17",
+      "type": "point",
+      "at": [-2, 5],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_11_11",
+      "type": "point",
+      "at": [-1, -1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_11_12",
+      "type": "point",
+      "at": [-1, 0],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_11_13",
+      "type": "point",
+      "at": [-1, 1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_11_14",
+      "type": "point",
+      "at": [-1, 2],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_11_15",
+      "type": "point",
+      "at": [-1, 3],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_11_16",
+      "type": "point",
+      "at": [-1, 4],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_11_17",
+      "type": "point",
+      "at": [-1, 5],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_12_11",
+      "type": "point",
+      "at": [0, -1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_12_12",
+      "type": "point",
+      "at": [0, 0],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_12_13",
+      "type": "point",
+      "at": [0, 1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_12_14",
+      "type": "point",
+      "at": [0, 2],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_12_15",
+      "type": "point",
+      "at": [0, 3],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_12_16",
+      "type": "point",
+      "at": [0, 4],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_12_17",
+      "type": "point",
+      "at": [0, 5],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_13_11",
+      "type": "point",
+      "at": [1, -1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_13_12",
+      "type": "point",
+      "at": [1, 0],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_13_13",
+      "type": "point",
+      "at": [1, 1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_13_14",
+      "type": "point",
+      "at": [1, 2],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_13_15",
+      "type": "point",
+      "at": [1, 3],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_13_16",
+      "type": "point",
+      "at": [1, 4],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_13_17",
+      "type": "point",
+      "at": [1, 5],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_14_11",
+      "type": "point",
+      "at": [2, -1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_14_12",
+      "type": "point",
+      "at": [2, 0],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_14_13",
+      "type": "point",
+      "at": [2, 1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_14_14",
+      "type": "point",
+      "at": [2, 2],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_14_15",
+      "type": "point",
+      "at": [2, 3],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_14_16",
+      "type": "point",
+      "at": [2, 4],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_14_17",
+      "type": "point",
+      "at": [2, 5],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_15_11",
+      "type": "point",
+      "at": [3, -1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_15_12",
+      "type": "point",
+      "at": [3, 0],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_15_13",
+      "type": "point",
+      "at": [3, 1],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_15_14",
+      "type": "point",
+      "at": [3, 2],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_15_15",
+      "type": "point",
+      "at": [3, 3],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_15_16",
+      "type": "point",
+      "at": [3, 4],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "g_15_17",
+      "type": "point",
+      "at": [3, 5],
+      "dot": true,
+      "style": {
+        "color": "gray"
+      }
+    },
+    {
+      "id": "C",
+      "type": "point",
+      "at": [-0.049762, 2.599524],
+      "dot": true,
+      "label": "C",
+      "anchor": "south east"
+    },
+    {
+      "id": "O",
+      "type": "point",
+      "at": [0, 0],
+      "dot": true,
+      "label": "O",
+      "anchor": "north east",
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "G",
+      "type": "point",
+      "at": [2.0, 1.0],
+      "dot": true,
+      "label": "G",
+      "anchor": "west",
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "sphere",
+      "type": "curve",
+      "var": "t",
+      "expr": ["C_x + 2.6*cos(t)", "C_y + 2.6*sin(t)"],
+      "domain": [0, "2*pi"],
+      "style": {
+        "color": "blue"
+      }
+    },
+    {
+      "id": "incident",
+      "type": "vector",
+      "from": "C",
+      "to": "O",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "scattered",
+      "type": "vector",
+      "from": "C",
+      "to": "G",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "transfer",
+      "type": "vector",
+      "from": "O",
+      "to": "G",
+      "style": {
+        "color": "red",
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "name_k",
+      "type": "label",
+      "at": [-0.024881, 1.299762],
+      "anchor": "east",
+      "tex": "$\\boldsymbol{k}$"
+    },
+    {
+      "id": "name_k2",
+      "type": "label",
+      "at": [0.975119, 1.799762],
+      "anchor": "south west",
+      "tex": "$\\boldsymbol{k}'$"
+    }
+  ]
+}

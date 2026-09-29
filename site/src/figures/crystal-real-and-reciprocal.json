@@ -1,0 +1,557 @@
+{
+  "version": "0.1.0",
+  "description": "2次元の実格子(左)と逆格子(右)．実格子の基本ベクトルa1，a2と，逆格子の基本ベクトルb1，b2は，a_i・b_j = δ_ijを満たす．b1はa2に，b2はa1に垂直である．",
+  "view": {
+    "x": [-6.8, 6.8],
+    "y": [-2.4, 2.9],
+    "unit": {
+      "x": "0.75cm",
+      "y": "0.75cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "r_9_14",
+      "type": "point",
+      "at": [-6.3, 2.0],
+      "dot": true
+    },
+    {
+      "id": "r_10_11",
+      "type": "point",
+      "at": [-6.45, -1.0],
+      "dot": true
+    },
+    {
+      "id": "r_10_12",
+      "type": "point",
+      "at": [-6.0, 0.0],
+      "dot": true
+    },
+    {
+      "id": "r_10_13",
+      "type": "point",
+      "at": [-5.55, 1.0],
+      "dot": true
+    },
+    {
+      "id": "r_10_14",
+      "type": "point",
+      "at": [-5.1, 2.0],
+      "dot": true
+    },
+    {
+      "id": "r_11_10",
+      "type": "point",
+      "at": [-5.7, -2.0],
+      "dot": true
+    },
+    {
+      "id": "r_11_11",
+      "type": "point",
+      "at": [-5.25, -1.0],
+      "dot": true
+    },
+    {
+      "id": "r_11_12",
+      "type": "point",
+      "at": [-4.8, 0.0],
+      "dot": true
+    },
+    {
+      "id": "r_11_13",
+      "type": "point",
+      "at": [-4.35, 1.0],
+      "dot": true
+    },
+    {
+      "id": "r_11_14",
+      "type": "point",
+      "at": [-3.9, 2.0],
+      "dot": true
+    },
+    {
+      "id": "r_12_10",
+      "type": "point",
+      "at": [-4.5, -2.0],
+      "dot": true
+    },
+    {
+      "id": "r_12_11",
+      "type": "point",
+      "at": [-4.05, -1.0],
+      "dot": true
+    },
+    {
+      "id": "r_12_12",
+      "type": "point",
+      "at": [-3.6, 0.0],
+      "dot": true
+    },
+    {
+      "id": "r_12_13",
+      "type": "point",
+      "at": [-3.15, 1.0],
+      "dot": true
+    },
+    {
+      "id": "r_12_14",
+      "type": "point",
+      "at": [-2.7, 2.0],
+      "dot": true
+    },
+    {
+      "id": "r_13_10",
+      "type": "point",
+      "at": [-3.3, -2.0],
+      "dot": true
+    },
+    {
+      "id": "r_13_11",
+      "type": "point",
+      "at": [-2.85, -1.0],
+      "dot": true
+    },
+    {
+      "id": "r_13_12",
+      "type": "point",
+      "at": [-2.4, 0.0],
+      "dot": true
+    },
+    {
+      "id": "r_13_13",
+      "type": "point",
+      "at": [-1.95, 1.0],
+      "dot": true
+    },
+    {
+      "id": "r_13_14",
+      "type": "point",
+      "at": [-1.5, 2.0],
+      "dot": true
+    },
+    {
+      "id": "r_14_10",
+      "type": "point",
+      "at": [-2.1, -2.0],
+      "dot": true
+    },
+    {
+      "id": "r_14_11",
+      "type": "point",
+      "at": [-1.65, -1.0],
+      "dot": true
+    },
+    {
+      "id": "r_14_12",
+      "type": "point",
+      "at": [-1.2, 0.0],
+      "dot": true
+    },
+    {
+      "id": "r_14_13",
+      "type": "point",
+      "at": [-0.75, 1.0],
+      "dot": true
+    },
+    {
+      "id": "r_15_10",
+      "type": "point",
+      "at": [-0.9, -2.0],
+      "dot": true
+    },
+    {
+      "id": "k_9_9",
+      "type": "point",
+      "at": [1.1, -1.875],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_9_10",
+      "type": "point",
+      "at": [1.1, -0.875],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_9_11",
+      "type": "point",
+      "at": [1.1, 0.125],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_9_12",
+      "type": "point",
+      "at": [1.1, 1.125],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_9_13",
+      "type": "point",
+      "at": [1.1, 2.125],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_10_10",
+      "type": "point",
+      "at": [1.933333, -1.25],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_10_11",
+      "type": "point",
+      "at": [1.933333, -0.25],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_10_12",
+      "type": "point",
+      "at": [1.933333, 0.75],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_10_13",
+      "type": "point",
+      "at": [1.933333, 1.75],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_11_10",
+      "type": "point",
+      "at": [2.766667, -1.625],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_11_11",
+      "type": "point",
+      "at": [2.766667, -0.625],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_11_12",
+      "type": "point",
+      "at": [2.766667, 0.375],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_11_13",
+      "type": "point",
+      "at": [2.766667, 1.375],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_12_10",
+      "type": "point",
+      "at": [3.6, -2.0],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_12_11",
+      "type": "point",
+      "at": [3.6, -1.0],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_12_12",
+      "type": "point",
+      "at": [3.6, 0.0],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_12_13",
+      "type": "point",
+      "at": [3.6, 1.0],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_12_14",
+      "type": "point",
+      "at": [3.6, 2.0],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_13_11",
+      "type": "point",
+      "at": [4.433333, -1.375],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_13_12",
+      "type": "point",
+      "at": [4.433333, -0.375],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_13_13",
+      "type": "point",
+      "at": [4.433333, 0.625],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_13_14",
+      "type": "point",
+      "at": [4.433333, 1.625],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_14_11",
+      "type": "point",
+      "at": [5.266667, -1.75],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_14_12",
+      "type": "point",
+      "at": [5.266667, -0.75],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_14_13",
+      "type": "point",
+      "at": [5.266667, 0.25],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_14_14",
+      "type": "point",
+      "at": [5.266667, 1.25],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_15_11",
+      "type": "point",
+      "at": [6.1, -2.125],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_15_12",
+      "type": "point",
+      "at": [6.1, -1.125],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_15_13",
+      "type": "point",
+      "at": [6.1, -0.125],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_15_14",
+      "type": "point",
+      "at": [6.1, 0.875],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "k_15_15",
+      "type": "point",
+      "at": [6.1, 1.875],
+      "dot": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "O",
+      "type": "point",
+      "at": [-3.6, 0.0],
+      "label": "O",
+      "anchor": "north east"
+    },
+    {
+      "id": "A1",
+      "type": "point",
+      "at": [-2.4, 0.0]
+    },
+    {
+      "id": "A2",
+      "type": "point",
+      "at": [-3.15, 1.0]
+    },
+    {
+      "id": "vector_a1",
+      "type": "vector",
+      "from": "O",
+      "to": "A1",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "vector_a2",
+      "type": "vector",
+      "from": "O",
+      "to": "A2",
+      "style": {
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "name_a1",
+      "type": "label",
+      "at": [-3.0, -0.05],
+      "anchor": "north",
+      "tex": "$\\boldsymbol{a}_1$"
+    },
+    {
+      "id": "name_a2",
+      "type": "label",
+      "at": [-3.375, 0.5],
+      "anchor": "east",
+      "tex": "$\\boldsymbol{a}_2$"
+    },
+    {
+      "id": "Q",
+      "type": "point",
+      "at": [3.6, 0.0],
+      "label": "O",
+      "anchor": "north east"
+    },
+    {
+      "id": "B1",
+      "type": "point",
+      "at": [4.433333, -0.375]
+    },
+    {
+      "id": "B2",
+      "type": "point",
+      "at": [3.6, 1.0]
+    },
+    {
+      "id": "vector_b1",
+      "type": "vector",
+      "from": "Q",
+      "to": "B1",
+      "style": {
+        "color": "red",
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "vector_b2",
+      "type": "vector",
+      "from": "Q",
+      "to": "B2",
+      "style": {
+        "color": "red",
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "name_b1",
+      "type": "label",
+      "at": [4.016667, -0.1875],
+      "anchor": "north",
+      "tex": "$\\boldsymbol{b}_1$"
+    },
+    {
+      "id": "name_b2",
+      "type": "label",
+      "at": [3.6, 0.5],
+      "anchor": "east",
+      "tex": "$\\boldsymbol{b}_2$"
+    },
+    {
+      "id": "title_real",
+      "type": "label",
+      "at": [-3.6, 2.45],
+      "anchor": "south",
+      "tex": "実格子"
+    },
+    {
+      "id": "title_reciprocal",
+      "type": "label",
+      "at": [3.6, 2.45],
+      "anchor": "south",
+      "tex": "逆格子"
+    }
+  ]
+}

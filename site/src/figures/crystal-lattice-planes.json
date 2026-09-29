@@ -1,0 +1,233 @@
+{
+  "version": "0.1.0",
+  "description": "実格子の格子面(12)の族(青)．どの面も格子点を通り，隣り合う面の間隔はd12である．赤い矢印は，逆格子ベクトルG = b1 + 2b2の向きで，長さがd12である．",
+  "view": {
+    "x": [-3.4, 3.4],
+    "y": [-2.4, 2.4],
+    "unit": {
+      "x": "0.85cm",
+      "y": "0.85cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "r_9_13",
+      "type": "point",
+      "at": [-3.15, 1.0],
+      "dot": true
+    },
+    {
+      "id": "r_9_14",
+      "type": "point",
+      "at": [-2.7, 2.0],
+      "dot": true
+    },
+    {
+      "id": "r_10_10",
+      "type": "point",
+      "at": [-3.3, -2.0],
+      "dot": true
+    },
+    {
+      "id": "r_10_11",
+      "type": "point",
+      "at": [-2.85, -1.0],
+      "dot": true
+    },
+    {
+      "id": "r_10_12",
+      "type": "point",
+      "at": [-2.4, 0.0],
+      "dot": true
+    },
+    {
+      "id": "r_10_13",
+      "type": "point",
+      "at": [-1.95, 1.0],
+      "dot": true
+    },
+    {
+      "id": "r_10_14",
+      "type": "point",
+      "at": [-1.5, 2.0],
+      "dot": true
+    },
+    {
+      "id": "r_11_10",
+      "type": "point",
+      "at": [-2.1, -2.0],
+      "dot": true
+    },
+    {
+      "id": "r_11_11",
+      "type": "point",
+      "at": [-1.65, -1.0],
+      "dot": true
+    },
+    {
+      "id": "r_11_12",
+      "type": "point",
+      "at": [-1.2, 0.0],
+      "dot": true
+    },
+    {
+      "id": "r_11_13",
+      "type": "point",
+      "at": [-0.75, 1.0],
+      "dot": true
+    },
+    {
+      "id": "r_11_14",
+      "type": "point",
+      "at": [-0.3, 2.0],
+      "dot": true
+    },
+    {
+      "id": "r_12_10",
+      "type": "point",
+      "at": [-0.9, -2.0],
+      "dot": true
+    },
+    {
+      "id": "r_12_11",
+      "type": "point",
+      "at": [-0.45, -1.0],
+      "dot": true
+    },
+    {
+      "id": "r_12_12",
+      "type": "point",
+      "at": [0.0, 0.0],
+      "dot": true
+    },
+    {
+      "id": "r_12_13",
+      "type": "point",
+      "at": [0.45, 1.0],
+      "dot": true
+    },
+    {
+      "id": "r_12_14",
+      "type": "point",
+      "at": [0.9, 2.0],
+      "dot": true
+    },
+    {
+      "id": "r_13_10",
+      "type": "point",
+      "at": [0.3, -2.0],
+      "dot": true
+    },
+    {
+      "id": "r_13_11",
+      "type": "point",
+      "at": [0.75, -1.0],
+      "dot": true
+    },
+    {
+      "id": "r_13_12",
+      "type": "point",
+      "at": [1.2, 0.0],
+      "dot": true
+    },
+    {
+      "id": "r_13_13",
+      "type": "point",
+      "at": [1.65, 1.0],
+      "dot": true
+    },
+    {
+      "id": "r_13_14",
+      "type": "point",
+      "at": [2.1, 2.0],
+      "dot": true
+    },
+    {
+      "id": "r_14_10",
+      "type": "point",
+      "at": [1.5, -2.0],
+      "dot": true
+    },
+    {
+      "id": "r_14_11",
+      "type": "point",
+      "at": [1.95, -1.0],
+      "dot": true
+    },
+    {
+      "id": "r_14_12",
+      "type": "point",
+      "at": [2.4, 0.0],
+      "dot": true
+    },
+    {
+      "id": "r_14_13",
+      "type": "point",
+      "at": [2.85, 1.0],
+      "dot": true
+    },
+    {
+      "id": "r_14_14",
+      "type": "point",
+      "at": [3.3, 2.0],
+      "dot": true
+    },
+    {
+      "id": "r_15_10",
+      "type": "point",
+      "at": [2.7, -2.0],
+      "dot": true
+    },
+    {
+      "id": "r_15_11",
+      "type": "point",
+      "at": [3.15, -1.0],
+      "dot": true
+    },
+    {
+      "id": "planes",
+      "type": "implicit_curve",
+      "vars": ["u", "v"],
+      "expr": ["u", "v"],
+      "domain": [
+        [-3.5, 3.5],
+        [-2.5, 2.5]
+      ],
+      "level": "1*(0.833333*u + -0.375*v) + 2*(-0.0*u + 1.0*v)",
+      "values": [-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6],
+      "style": {
+        "color": "blue",
+        "width": "0.5pt"
+      }
+    },
+    {
+      "id": "O",
+      "type": "point",
+      "at": [0, 0],
+      "label": "O",
+      "anchor": "north east"
+    },
+    {
+      "id": "T",
+      "type": "point",
+      "at": [0.24987, 0.487246]
+    },
+    {
+      "id": "normal",
+      "type": "vector",
+      "from": "O",
+      "to": "T",
+      "style": {
+        "color": "red",
+        "width": "1pt"
+      }
+    },
+    {
+      "id": "name_d",
+      "type": "label",
+      "at": [0.124935, 0.243623],
+      "anchor": "north west",
+      "tex": "$d_{12}$"
+    }
+  ]
+}

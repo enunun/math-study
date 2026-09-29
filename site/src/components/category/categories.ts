@@ -29,6 +29,28 @@ const CATEGORIES: readonly Category[] = [
     ],
   },
   {
+    directory: 'fields',
+    label: '分野別',
+    description: '数学と，数学を使う分野の解説である．分野ごとの小分類にまとめる．',
+    sections: [
+      {
+        directory: 'crystallography',
+        label: '結晶学',
+        description: '結晶の格子と，X線や電子線の回折を扱う．逆格子，構造因子，回折の強さ．',
+      },
+      {
+        directory: 'fourier',
+        label: 'フーリエ解析',
+        description: '関数を波の重ね合わせに分ける．フーリエ級数とフーリエ変換，光の回折．',
+      },
+      {
+        directory: 'elliptic',
+        label: '楕円関数と楕円曲線',
+        description: '楕円積分から生まれた関数と，3次曲線の上の点の演算を扱う．',
+      },
+    ],
+  },
+  {
     directory: 'graphics',
     label: 'グラフィックス',
     description: '図を描くための数学の解説である．',

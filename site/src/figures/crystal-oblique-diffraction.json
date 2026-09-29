@@ -1,0 +1,38 @@
+{
+  "version": "0.1.0",
+  "description": "2次元の斜交格子(a1 = (1.2, 0)，a2 = (0.45, 1))の回折図形．点は逆格子点にあり，指数(hk)を添える．破線は，逆格子の原点のWigner-Seitz胞(第1Brillouinゾーン)である．",
+  "view": {
+    "x": [-2.6, 2.6],
+    "y": [-2.3, 2.3],
+    "unit": {
+      "x": "1.0cm",
+      "y": "1.0cm"
+    }
+  },
+  "objects": [
+    {
+      "id": "pattern",
+      "type": "diffraction",
+      "basis": [
+        [1.2, 0.0],
+        [0.45, 1.0]
+      ],
+      "labels": true,
+      "style": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "zone",
+      "type": "wigner_seitz",
+      "basis": [
+        [0.833333, -0.375],
+        [-0.0, 1.0]
+      ],
+      "style": {
+        "color": "gray",
+        "line": "dashed"
+      }
+    }
+  ]
+}

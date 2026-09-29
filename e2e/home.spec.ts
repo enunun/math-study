@@ -9,6 +9,15 @@ const RECENT_COUNT = 5;
 // カテゴリのページには記事の一覧を，サイドバーには入れ子のグループを並べる．
 const CATEGORIES = [
   { name: '単発ネタ', directory: 'topics', sections: [['大学受験', 'exam']] },
+  {
+    name: '分野別',
+    directory: 'fields',
+    sections: [
+      ['結晶学', 'crystallography'],
+      ['フーリエ解析', 'fourier'],
+      ['楕円関数と楕円曲線', 'elliptic'],
+    ],
+  },
   { name: 'グラフィックス', directory: 'graphics', sections: [] },
   {
     name: 'ツール',
