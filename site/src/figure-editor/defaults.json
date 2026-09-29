@@ -192,6 +192,15 @@
         ]
       }
     },
+    "diffraction": {
+      "plane": {
+        "type": "diffraction",
+        "basis": [
+          [1, 0],
+          [0.5, 0.866]
+        ]
+      }
+    },
     "elliptic_curve": {
       "plane": { "type": "elliptic_curve", "a": -2, "b": 2, "p": -1, "q": 0.5 }
     },

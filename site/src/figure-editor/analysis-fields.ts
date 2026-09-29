@@ -104,6 +104,43 @@ const ANALYSIS_FIELDS: Readonly<Record<string, readonly FieldSpec[]>> = {
     { kind: 'select', key: 'scale', label: '目盛', options: VALUE_SCALES, optional: true },
     ...RASTER_RESOLUTIONS,
   ],
+  diffraction: [
+    {
+      kind: 'json',
+      key: 'basis',
+      label: '実格子の基本ベクトル(2つか3つ)',
+      hint: '[[1, 0, 0], [0, 1, 0], [0, 0, 1]]',
+    },
+    {
+      kind: 'json',
+      key: 'atoms',
+      label: '単位胞の中の原子(分率座標と散乱因子)',
+      optional: true,
+      hint: '[{"position": [0, 0, 0]}, {"position": [0.5, 0.5, 0.5], "factor": 2}]',
+    },
+    { kind: 'list', key: 'zone', label: '晶帯軸[u v w]', item: 'number', count: 3, optional: true },
+    { kind: 'bound', key: 'radius', label: '|G|の上限', optional: true },
+    { kind: 'text', key: 'spot', label: '最も強い点の半径(3ptなど)', optional: true },
+    { kind: 'checkbox', key: 'labels', label: '指数の名前を置く', initial: false },
+    {
+      kind: 'json',
+      key: 'cells',
+      label: '有限の結晶の単位胞の数(書くと画像)',
+      optional: true,
+      hint: '[8, 8, 8]',
+    },
+    {
+      kind: 'list',
+      key: 'range',
+      label: '画像の色の両端の値',
+      item: 'bound',
+      count: PAIR,
+      optional: true,
+    },
+    { kind: 'select', key: 'colormap', label: '画像の色', options: COLORMAPS, optional: true },
+    { kind: 'select', key: 'scale', label: '画像の目盛', options: VALUE_SCALES, optional: true },
+    ...RASTER_RESOLUTIONS,
+  ],
 };
 
 export { ANALYSIS_FIELDS };

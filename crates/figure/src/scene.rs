@@ -189,6 +189,8 @@ pub enum Object {
     FourierTransform(FourierTransform),
     /// 2次元のフーリエ変換の強さ．
     FourierIntensity(FourierIntensity),
+    /// 結晶の回折図形．
+    Diffraction(Diffraction),
 }
 
 /// 軸の向き．
@@ -1436,6 +1438,77 @@ fn is_gray(colormap: &Colormap) -> bool {
     *colormap == Colormap::Gray
 }
 
+/// 結晶の回折図形．基本ベクトル`basis`で張る格子と，単位胞の中の原子`atoms`から，逆格子点
+/// `G = h b1 + k b2 (+ l b3)`(`a_i · b_j = δ_ij`)ごとの構造因子`F = Σ f_j exp(-2πi(h x_j + k y_j + l z_j))`を
+/// 求め，`|F|`に比例する半径(強さ`|F|^2`に比例する面積)の点を置く．3次元の結晶は，晶帯軸`zone`に垂直な
+/// 逆格子の断面(ゼロ次のLaueゾーン)を描く．`cells`を与えると，その数の単位胞からなる有限の結晶の強さを，
+/// 画像にする．平面の図でだけ使える．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct Diffraction {
+    /// 識別子．
+    pub id: String,
+    /// 実格子の基本ベクトル．2個の座標のベクトルを2つ(平面の格子)か，3個の座標のベクトルを3つ(結晶)．
+    pub basis: Vec<Vec<Bound>>,
+    /// 単位胞の中の原子．なければ，原点に散乱因子1の原子が1つある．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub atoms: Vec<Atom>,
+    /// 晶帯軸`[u, v, w]`(実格子の向き`u a1 + v a2 + w a3`)．3次元の結晶でだけ書く．既定は`[0, 0, 1]`である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub zone: Option<[i32; 3]>,
+    /// 描く逆格子点の`|G|`の上限．数か式．なければ見える範囲を覆う．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub radius: Option<Bound>,
+    /// 最も強い点の半径．既定は3ptである．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spot: Option<Length>,
+    /// 点に指数の名前(`(1\bar{1}0)`など)を置くか．
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub labels: bool,
+    /// 有限の結晶の，各基本ベクトルの向きの単位胞の数．数か式で，式の値は整数に丸める．書くと，点ではなく
+    /// 強さの画像にする．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cells: Option<Vec<Bound>>,
+    /// 画像の色の両端の値(最大を1にそろえた値)．`cells`があるときに使う．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub range: Option<[Bound; 2]>,
+    /// 画像の値と色の対応．既定は`gray`である．
+    #[serde(default = "default_gray", skip_serializing_if = "is_gray")]
+    pub colormap: Colormap,
+    /// 画像の値の目盛．
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub scale: ValueScale,
+    /// SVGの画像の，長い辺の画素の数．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resolution: Option<u32>,
+    /// `TikZ`の出力の，長い辺の升目の数．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tikz_resolution: Option<u32>,
+    /// スタイル．`color`が点の色になる．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+}
+
+impl Diffraction {
+    /// 単位胞の数の上限．
+    pub const MAX_CELLS: f64 = 1000.0;
+    /// 原子の数の上限．
+    pub const MAX_ATOMS: usize = 64;
+}
+
+/// 単位胞の中の原子．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct Atom {
+    /// 位置．基本ベクトルを単位にした座標(分率座標)で，基本ベクトルの数だけ並べる．
+    pub position: Vec<Bound>,
+    /// 散乱因子．数か，逆格子ベクトルの長さ`q`の式．なければ1である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub factor: Option<Bound>,
+}
+
 /// 流線をどちらの向きに伸ばすか．
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -1839,6 +1912,7 @@ impl Object {
             Self::FourierSeries(o) => &o.id,
             Self::FourierTransform(o) => &o.id,
             Self::FourierIntensity(o) => &o.id,
+            Self::Diffraction(o) => &o.id,
             Self::Intersection(o) => &o.id,
             Self::TangentPlane(o) => &o.id,
             Self::Complex(o) => &o.id,
@@ -1880,6 +1954,7 @@ impl Object {
             Self::FourierSeries(_) => "fourier_series",
             Self::FourierTransform(_) => "fourier_transform",
             Self::FourierIntensity(_) => "fourier_intensity",
+            Self::Diffraction(_) => "diffraction",
             Self::Intersection(_) => "intersection",
             Self::TangentPlane(_) => "tangent_plane",
             Self::Complex(_) => "complex",

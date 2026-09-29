@@ -1462,8 +1462,116 @@
         }
       }
     },
+    "diffraction": {
+      "type": "object",
+      "required": ["id", "type", "basis"],
+      "additionalProperties": false,
+      "description": "結晶の回折図形．基本ベクトルで張る格子と，単位胞の中の原子から，逆格子点G = h b1 + k b2 (+ l b3)(a_i・b_j = δ_ij)ごとの構造因子F = Σ f_j exp(-2πi(h x_j + k y_j + l z_j))を求め，|F|に比例する半径(強さ|F|^2に比例する面積)の点を置く．強さが最大の10^-10倍より弱い点(消滅則で消える点)は描かない．3次元の結晶は，晶帯軸`zone`に垂直な逆格子の断面(ゼロ次のLaueゾーン)を描く．`cells`を書くと，有限の結晶の強さを画像にする．平面の図でだけ使える．",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "type": {
+          "const": "diffraction"
+        },
+        "basis": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/bound"
+            },
+            "minItems": 2,
+            "maxItems": 3
+          },
+          "minItems": 2,
+          "maxItems": 3,
+          "description": "実格子の基本ベクトル．2個の座標のベクトルを2つ(平面の格子)か，3個の座標のベクトルを3つ(結晶)並べる．平行であってはならない(スキーマでは表せない)．"
+        },
+        "atoms": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "required": ["position"],
+            "additionalProperties": false,
+            "properties": {
+              "position": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/bound"
+                },
+                "minItems": 2,
+                "maxItems": 3,
+                "description": "分率座標(基本ベクトルを単位にした座標)．基本ベクトルの数だけ並べる(スキーマでは表せない)．"
+              },
+              "factor": {
+                "$ref": "#/$defs/bound",
+                "description": "散乱因子．数か，逆格子ベクトルの長さqの式．省くと1．"
+              }
+            }
+          },
+          "description": "単位胞の中の原子．省くと，原点に散乱因子1の原子が1つある．"
+        },
+        "zone": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "晶帯軸[u, v, w](実格子の向きu a1 + v a2 + w a3)．3次元の結晶でだけ書く．省くと[0, 0, 1]．"
+        },
+        "radius": {
+          "$ref": "#/$defs/bound",
+          "description": "描く逆格子点の|G|の上限．省くと見える範囲を覆う．"
+        },
+        "spot": {
+          "$ref": "#/$defs/length",
+          "description": "最も強い点の半径．省くと3pt．"
+        },
+        "labels": {
+          "type": "boolean",
+          "description": "点に指数の名前((1\\bar{1}0)など)を置くか．"
+        },
+        "cells": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/bound" },
+          "minItems": 2,
+          "maxItems": 3,
+          "description": "有限の結晶の，各基本ベクトルの向きの単位胞の数．数か式で，式の値は整数に丸め，1以上1000以下にする．基本ベクトルの数だけ並べる(スキーマでは表せない)．書くと，点ではなく強さの画像にする．"
+        },
+        "range": {
+          "$ref": "#/$defs/boundPair",
+          "description": "画像の色の両端の値(最大を1にそろえた値)．`cells`があるときに使う．"
+        },
+        "colormap": {
+          "enum": ["viridis", "gray", "gray_inverse", "coolwarm"],
+          "description": "画像の値と色の対応．省くと`gray`．"
+        },
+        "scale": {
+          "enum": ["linear", "log"],
+          "description": "画像の値の目盛．"
+        },
+        "resolution": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "SVGの画像の，長い辺の画素の数．省くと200．"
+        },
+        "tikz_resolution": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "description": "TikZの出力の，長い辺の升目の数．省くと40．"
+        },
+        "style": {
+          "$ref": "#/$defs/style"
+        }
+      }
+    },
     "object": {
-      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`，`wigner_seitz`，`elliptic_curve`，`heatmap`，`domain_coloring`，`fourier_series`，`fourier_transform`，`fourier_intensity`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
+      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`，`wigner_seitz`，`elliptic_curve`，`heatmap`，`domain_coloring`，`fourier_series`，`fourier_transform`，`fourier_intensity`，`diffraction`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },
@@ -1498,7 +1606,8 @@
         { "$ref": "#/$defs/domain_coloring" },
         { "$ref": "#/$defs/fourier_series" },
         { "$ref": "#/$defs/fourier_transform" },
-        { "$ref": "#/$defs/fourier_intensity" }
+        { "$ref": "#/$defs/fourier_intensity" },
+        { "$ref": "#/$defs/diffraction" }
       ]
     }
   }

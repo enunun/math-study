@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use crate::diffraction::{DiffractionPlot, compile_diffraction};
 use crate::elliptic_curve::{EllipticCurvePlot, compile_elliptic_curve};
 use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, Functions, Value, is_reserved_name};
@@ -250,6 +251,8 @@ pub enum Plot {
     FourierTransform(FourierTransformPlot),
     /// 2次元のフーリエ変換の強さ．
     FourierIntensity(FourierIntensityPlot),
+    /// 結晶の回折図形．
+    Diffraction(DiffractionPlot),
     /// 式のないオブジェクト．
     None,
 }
@@ -762,6 +765,14 @@ fn compile_object(
         Object::FourierIntensity(intensity) => compile_fourier_intensity(intensity, env)
             .map(Plot::FourierIntensity)
             .map_err(|kind| Error::in_object(&intensity.id, kind)),
+        Object::Diffraction(diffraction) => {
+            let area = view
+                .as_plane()
+                .map_or([[-1.0, 1.0]; 2], |plane| [plane.x, plane.y]);
+            compile_diffraction(diffraction, env, area)
+                .map(Plot::Diffraction)
+                .map_err(|kind| Error::in_object(&diffraction.id, kind))
+        }
         Object::FieldLine(line) => compile_field_line(line, env, view, scope, transform)
             .map(Plot::FieldLine)
             .map_err(|kind| Error::in_object(&line.id, kind)),

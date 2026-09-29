@@ -117,13 +117,21 @@ const SAMPLE_TIERS: readonly SampleTier[] = [
           articleSample('squareWave', '矩形波の部分和', 'fourier-series-square-wave'),
           articleSample('squareSpectrum', '矩形波のスペクトル', 'fourier-series-spectrum'),
           articleSample('boxTransform', '箱形の関数のフーリエ変換', 'fourier-transform-box'),
-          articleSample('circularAperture', '円形の開口の回折', 'fraunhofer-circular-aperture'),
-          articleSample('doubleSlit', '二重スリットの回折', 'fraunhofer-double-slit'),
         ],
       },
       { label: 'ベクトル場', samples: VECTOR_FIELD_SAMPLES },
       ...PLANE_SYMMETRY_GROUPS,
       { label: '結晶と逆格子', samples: PLANE_CRYSTAL_SAMPLES },
+      {
+        label: '回折図形',
+        samples: [
+          articleSample('fccDiffraction', '面心立方格子の[111]晶帯', 'diffraction-fcc-zones'),
+          articleSample('rockSaltDiffraction', '岩塩型の[110]晶帯', 'diffraction-rock-salt'),
+          articleSample('finiteCrystal', '有限の結晶の回折の強さ', 'diffraction-finite-crystal'),
+          articleSample('circularAperture', '円形の開口の回折', 'fraunhofer-circular-aperture'),
+          articleSample('doubleSlit', '二重スリットの回折', 'fraunhofer-double-slit'),
+        ],
+      },
     ],
   },
   {

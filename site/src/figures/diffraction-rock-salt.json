@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "description": "岩塩型の結晶の[110]晶帯の回折図形．陽イオンと陰イオンの散乱因子をf1，f2とすると，hklがすべて奇数の点の構造因子は4(f1 - f2)，すべて偶数の点は4(f1 + f2)である．f2をf1に近づけると，奇数の点は弱くなる．",
+  "view": { "x": [-4.6, 4.6], "y": [-4.6, 4.6], "unit": { "x": "0.7cm", "y": "0.7cm" } },
+  "objects": [
+    { "id": "f2", "type": "parameter", "value": 1, "range": [0, 3], "step": 0.1 },
+    {
+      "id": "pattern",
+      "type": "diffraction",
+      "basis": [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1]
+      ],
+      "atoms": [
+        { "position": [0, 0, 0], "factor": 3 },
+        { "position": [0.5, 0.5, 0], "factor": 3 },
+        { "position": [0.5, 0, 0.5], "factor": 3 },
+        { "position": [0, 0.5, 0.5], "factor": 3 },
+        { "position": [0.5, 0, 0], "factor": "f2" },
+        { "position": [0, 0.5, 0], "factor": "f2" },
+        { "position": [0, 0, 0.5], "factor": "f2" },
+        { "position": [0.5, 0.5, 0.5], "factor": "f2" }
+      ],
+      "zone": [1, -1, 0],
+      "spot": "4pt",
+      "labels": true
+    }
+  ]
+}

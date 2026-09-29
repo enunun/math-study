@@ -108,6 +108,7 @@ describe('変換は，座標軸・媒介変数・関数・写像・画像のほ�
     'heatmap',
     'domain_coloring',
     'fourier_intensity',
+    'diffraction',
   ]);
 
   it.each(OBJECT_TYPES)('$labelの変換の項目', ({ type, kinds }) => {

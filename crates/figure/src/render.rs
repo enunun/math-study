@@ -11,6 +11,7 @@ use crate::compile::{
     VectorFieldPlot, compile,
 };
 use crate::derivative::central_difference_point;
+use crate::diffraction::{diffraction_items, diffraction_raster};
 use crate::elliptic_curve::elliptic_curve_items;
 use crate::error::Error;
 use crate::figure::{ArrowHead, Bounds, DotItem, Figure, FillItem, Item, LabelItem, Path, Stroke};
@@ -213,26 +214,44 @@ fn object_items(
         (Object::FieldLine(line), Plot::FieldLine(placed)) => {
             field_line_items(placed, line.style, scale, window)
         }
-        (Object::EllipticCurve(_) | Object::FourierSeries(_) | Object::FourierTransform(_), _) => {
-            sampled_items(
-                object,
-                plot,
-                &placement(transform, scale, window, view),
-                view.x,
-            )
-        }
-        (Object::Heatmap(_) | Object::DomainColoring(_) | Object::FourierIntensity(_), _) => {
-            raster_items(
-                object,
-                plot,
-                &raster_area(view, scale, &compiled.parameters),
-            )
-        }
         (Object::VectorField(field), Plot::VectorField(placed)) => vector_field_items(placed, view)
             .filter_map(|link| link_item(&field.style, Arrow::Stealth, link, scale))
             .collect(),
-        _ => Vec::new(),
+        _ => added_items(object, plot, transform, context),
     })
+}
+
+/// 楕円曲線，画像，フーリエ級数・変換，回折図形の要素．どれも，自分の手順で標本化するか，画像を作る．
+fn added_items(
+    object: &Object,
+    plot: &Plot,
+    transform: &Transform,
+    context: &PlaneContext,
+) -> Vec<Item> {
+    let PlaneContext {
+        view,
+        scale,
+        window,
+        compiled,
+        ..
+    } = *context;
+    let area = raster_area(view, scale, &compiled.parameters);
+    let placement = placement(transform, scale, window, view);
+    match (object, plot) {
+        (Object::Diffraction(diffraction), Plot::Diffraction(placed)) => {
+            diffraction_raster(diffraction, placed, &area).map_or_else(
+                || diffraction_items(diffraction, placed, &placement),
+                |raster| vec![Item::Raster(raster)],
+            )
+        }
+        (Object::EllipticCurve(_) | Object::FourierSeries(_) | Object::FourierTransform(_), _) => {
+            sampled_items(object, plot, &placement, view.x)
+        }
+        (Object::Heatmap(_) | Object::DomainColoring(_) | Object::FourierIntensity(_), _) => {
+            raster_items(object, plot, &area)
+        }
+        _ => Vec::new(),
+    }
 }
 
 /// 楕円曲線とフーリエ級数・変換．自分で標本化して描く．

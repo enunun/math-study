@@ -52,6 +52,7 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'fourier_series', label: 'フーリエ級数', kinds: PLANE },
   { type: 'fourier_transform', label: 'フーリエ変換(1次元)', kinds: PLANE },
   { type: 'fourier_intensity', label: 'フーリエ変換の強さ(2次元，回折)', kinds: PLANE },
+  { type: 'diffraction', label: '結晶の回折図形', kinds: PLANE },
   { type: 'function', label: '関数', kinds: BOTH },
   { type: 'map', label: '写像', kinds: BOTH },
   { type: 'image', label: '像(変換した図形)', kinds: BOTH },
@@ -74,8 +75,11 @@ const REAL_TYPES: Readonly<Record<string, string>> = {
   [VERTEX_POLYGON]: 'polygon',
 };
 
-/** 変換(`transform`)を持てない種類．図形でないもの(媒介変数・関数・写像)と，座標軸である． */
-/** 画像(`heatmap`，`domain_coloring`，`fourier_intensity`)は，座標軸に沿った長方形の升目なので，変換を持たない． */
+/**
+ * 変換(`transform`)を持てない種類．図形でないもの(媒介変数・関数・写像)と，座標軸と，画像である．
+ * 画像(`heatmap`，`domain_coloring`，`fourier_intensity`)は，座標軸に沿った長方形の升目なので，変換を持たない．
+ * 回折図形(`diffraction`)も，単位胞の数を書くと画像になるので，変換を持たない．
+ */
 const UNTRANSFORMABLE: ReadonlySet<string> = new Set([
   'axis',
   'parameter',
@@ -84,6 +88,7 @@ const UNTRANSFORMABLE: ReadonlySet<string> = new Set([
   'heatmap',
   'domain_coloring',
   'fourier_intensity',
+  'diffraction',
 ]);
 
 /** 変換を持てる種類(`type`)．`UNTRANSFORMABLE`のほかのすべてで，像(`image`)の元にできる． */

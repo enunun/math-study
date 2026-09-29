@@ -6,11 +6,11 @@ use crate::compile::compile;
 use crate::error::{Error, ErrorKind};
 use crate::image::{expand_images, transform_of};
 use crate::scene::{
-    ArrowLength, Axis, Bound, CM_PER_PT, Complex, Curve, CurveExpr, Cut, Direction, EllipticCurve,
-    FieldLine, Fill, FourierIntensity, Fractal, FunctionDef, Graph, Grid, ImplicitCurve,
-    Intersection, Label, MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object, Parameter, Point, Polygon,
-    Position, Region, Scene, SpaceView, Sphere, Style, Surface, TangentPlane, Taylor,
-    TransformStep, VectorField, View, WignerSeitz, raster_limits,
+    ArrowLength, Axis, Bound, CM_PER_PT, Complex, Curve, CurveExpr, Cut, Diffraction, Direction,
+    EllipticCurve, FieldLine, Fill, FourierIntensity, Fractal, FunctionDef, Graph, Grid,
+    ImplicitCurve, Intersection, Label, MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object, Parameter,
+    Point, Polygon, Position, Region, Scene, SpaceView, Sphere, Style, Surface, TangentPlane,
+    Taylor, TransformStep, VectorField, View, WignerSeitz, raster_limits,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -185,6 +185,9 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
                 check_named_range("support", &transform.support)?;
                 transform.domain.as_ref().map_or(Ok(()), check_domain)
             })
+        }
+        Object::Diffraction(diffraction) => {
+            plane_only("diffraction", view).and_then(|()| validate_diffraction(diffraction))
         }
         Object::FourierIntensity(intensity) => plane_only("fourier_intensity", view)
             .and_then(|()| validate_fourier_intensity(intensity)),
@@ -366,6 +369,69 @@ fn check_named_range(field: &'static str, range: &[Bound; 2]) -> Result<(), Erro
     check_domain(range).map_err(|_| ErrorKind::InvalidRange(field))
 }
 
+/// 回折図形．基本ベクトルの数と成分の数，原子の座標の数，晶帯軸，単位胞の数，点の大きさ，解像度．
+fn validate_diffraction(diffraction: &Diffraction) -> Result<(), ErrorKind> {
+    let dimension = diffraction.basis.len();
+    if !(dimension == 2 || dimension == 3)
+        || diffraction
+            .basis
+            .iter()
+            .any(|vector| vector.len() != dimension)
+    {
+        return Err(ErrorKind::Invalid(
+            "回折図形の基本ベクトル(`basis`)は，2個の座標のベクトルを2つか，3個の座標のベクトルを3つ並べる．"
+                .to_owned(),
+        ));
+    }
+    if diffraction.atoms.len() > Diffraction::MAX_ATOMS {
+        return Err(ErrorKind::Invalid(format!(
+            "回折図形の原子(`atoms`)は，{}個以下にする．",
+            Diffraction::MAX_ATOMS
+        )));
+    }
+    if diffraction
+        .atoms
+        .iter()
+        .any(|atom| atom.position.len() != dimension)
+    {
+        return Err(ErrorKind::Invalid(format!(
+            "原子の位置(`position`)は，基本ベクトルの数と同じ{dimension}個の座標で書く．"
+        )));
+    }
+    match diffraction.zone {
+        Some(_) if dimension == 2 => {
+            return Err(ErrorKind::Invalid(
+                "晶帯軸(`zone`)は，3次元の結晶(基本ベクトルが3つ)でだけ書く．".to_owned(),
+            ));
+        }
+        Some([0, 0, 0]) => {
+            return Err(ErrorKind::Invalid(
+                "晶帯軸(`zone`)は，0でない整数の組にする．".to_owned(),
+            ));
+        }
+        _ => {}
+    }
+    if let Some(cells) = &diffraction.cells
+        && cells.len() != dimension
+    {
+        return Err(ErrorKind::Invalid(format!(
+            "単位胞の数(`cells`)は，基本ベクトルの数と同じ{dimension}個を並べる．"
+        )));
+    }
+    if diffraction
+        .spot
+        .is_some_and(|length| !(length.value.is_finite() && length.value > 0.0))
+    {
+        return Err(ErrorKind::Invalid(
+            "点の大きさ(`spot`)は，正の長さにする．".to_owned(),
+        ));
+    }
+    if let Some(range) = &diffraction.range {
+        check_named_range("range", range)?;
+    }
+    check_raster(None, diffraction.resolution, diffraction.tikz_resolution)
+}
+
 /// 2次元のフーリエ変換の強さ．変数，式，範囲，標本の数，解像度．
 fn validate_fourier_intensity(intensity: &FourierIntensity) -> Result<(), ErrorKind> {
     if intensity.vars.len() != 2 {
@@ -428,6 +494,7 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::EllipticCurve(o) => Some(&o.style),
         Object::FourierSeries(o) => Some(&o.style),
         Object::FourierTransform(o) => Some(&o.style),
+        Object::Diffraction(o) => Some(&o.style),
         Object::VectorField(o) => Some(&o.style),
         Object::FieldLine(o) => Some(&o.style),
         Object::WignerSeitz(o) => Some(&o.style),

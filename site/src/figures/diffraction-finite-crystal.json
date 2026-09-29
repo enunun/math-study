@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "description": "N × N個の単位胞からなる有限の2次元の結晶の回折の強さ．逆格子点のまわりにだけ強さが集まり，Nを大きくするほど鋭くなる．点の間には，N - 2個の弱い副極大が並ぶ．",
+  "view": { "x": [-2.3, 2.3], "y": [-2.3, 2.3], "unit": { "x": "1.3cm", "y": "1.3cm" } },
+  "objects": [
+    { "id": "n", "type": "parameter", "value": 5, "range": [1, 30], "step": 1 },
+    {
+      "id": "pattern",
+      "type": "diffraction",
+      "basis": [
+        [1, 0],
+        [0.5, 0.866]
+      ],
+      "cells": ["n", "n"],
+      "resolution": 300,
+      "tikz_resolution": 100
+    },
+    {
+      "id": "zone",
+      "type": "wigner_seitz",
+      "basis": [
+        [1, -0.57735],
+        [0, 1.1547]
+      ],
+      "style": { "color": "orange", "line": "dashed" }
+    }
+  ]
+}
