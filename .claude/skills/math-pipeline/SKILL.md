@@ -31,7 +31,7 @@ Source text has no spaces between Japanese and Latin letters, digits, inline cod
 
 ## Inline fractions
 
-`rehype-mathjax.ts` passes the TeX of inline formulas through `slashFractions` (`site/src/math/inline-fraction.ts`, tokenizer in `tex-tokens.ts`) before rendering, turning `\frac{a}{b}` into `a/b` with parentheses only where needed. Display math and figure labels (math inside `span.figure-label`, kept stacked to match the TikZ export and the editor) are not rewritten. The rules and the rejected alternative (redefining `\frac`) are in `docs/tech-decisions.md`. A malformed `\frac` is passed through unchanged so MathJax still reports the error; keep it that way, because the error message shows the source TeX, not the rewritten one.
+`rehype-mathjax.ts` passes the TeX of inline formulas through `slashFractions` (`site/src/math/inline-fraction.ts`, tokenizer in `tex-tokens.ts`) before rendering, turning `\frac{a}{b}` into `a/b` with parentheses only where needed. Display math and figure labels (math inside `span.figure-label`, kept stacked to match the TikZ export and the editor) are not rewritten. The rules and the rejected alternative (redefining `\frac`) are in `docs/tech-decisions.md`. A malformed `\frac` is passed through unchanged so MathJax still reports the error; keep it that way, because the error message shows the source TeX, not the rewritten one. The rewritten pieces are joined by `join`, which puts a space between a control word and a following letter: without it `\sin\frac{u}{2}` became `\sinu/2`, an undefined control sequence that fails the build.
 
 ## Macros
 

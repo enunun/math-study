@@ -28,6 +28,13 @@ describe('slashFractions', () => {
     expect(slashFractions(String.raw`\frac{1}{x^2}`)).toBe('1/x^2');
   });
 
+  it('命令の直後の分数は，命令の名前とつながらないよう，空白を挟む', () => {
+    expect(slashFractions(String.raw`\sin\frac{u}{2M}`)).toBe(String.raw`\sin u/(2M)`);
+    // 命令の直後の命令は，空白がなくても区切られる．
+    expect(slashFractions(String.raw`2\cos\frac{\pi}{3}`)).toBe(String.raw`2\cos\pi/3`);
+    expect(slashFractions(String.raw`\sin \frac{u}{2}`)).toBe(String.raw`\sin u/2`);
+  });
+
   it('入れ子の分数は，内側を括弧で囲む', () => {
     expect(slashFractions(String.raw`\frac{\frac{a}{b}}{c}`)).toBe('(a/b)/c');
     expect(slashFractions(String.raw`\sqrt{\frac12}`)).toBe(String.raw`\sqrt{1/2}`);

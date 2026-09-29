@@ -208,6 +208,18 @@ function rewriteAt(
   return { text: fraction.wrap ? parenthesize(text) : text, end: fraction.end };
 }
 
+/**
+ * 書き換えた字句をつなぐ．命令の名前(`\sin`)の直後に英字が来ると，1つの長い命令(`\sinu`)と読まれるので，
+ * 間に空白を挟む．`\sin\frac{u}{2}`の分数を書き換えると，この並びになる．
+ */
+function join(parts: readonly string[]): string {
+  let text = '';
+  for (const part of parts) {
+    text += /\\[A-Za-z]+$/u.test(text) && /^[A-Za-z]/u.test(part) ? ` ${part}` : part;
+  }
+  return text;
+}
+
 /** 行内の式のTeXの，すべての`\frac`を，斜線の分数に書き換える．群の内側の分数も書き換える． */
 function slashFractions(tex: string): string {
   const tokens = tokenize(tex);
@@ -217,7 +229,7 @@ function slashFractions(tex: string): string {
     parts.push(text);
     index = end;
   }
-  return parts.join('');
+  return join(parts);
 }
 
 export { slashFractions };
