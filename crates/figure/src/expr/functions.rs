@@ -40,7 +40,7 @@ impl Functions {
         names: &[&str],
     ) -> Result<(), ExprError> {
         let scope: Vec<&str> = vars.iter().chain(names).copied().collect();
-        let body = parse_source(source, &scope, self)?;
+        let body = parse_source(source, &scope, self, false)?;
         self.entries.push(UserFunction {
             name: name.to_owned(),
             arity: vars.len(),
@@ -97,6 +97,7 @@ fn substitute(
     let recurse = |child: &Node| substitute(child, arguments, globals, names).map(Box::new);
     Ok(match node {
         Node::Number(value) => Node::Number(*value),
+        Node::Imaginary => Node::Imaginary,
         Node::Variable(index) => {
             if let Some(argument) = arguments.get(*index) {
                 argument.clone()
@@ -135,7 +136,7 @@ impl Node {
     /// 構文木の節の数．
     fn size(&self) -> usize {
         match self {
-            Self::Number(_) | Self::Variable(_) => 1,
+            Self::Number(_) | Self::Imaginary | Self::Variable(_) => 1,
             Self::Neg(operand) => operand.size().saturating_add(1),
             Self::Binary(_, left, right) => {
                 left.size().saturating_add(right.size()).saturating_add(1)

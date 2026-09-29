@@ -7,6 +7,7 @@ use crate::elliptic_curve::{EllipticCurvePlot, compile_elliptic_curve};
 use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, Functions, Value, is_reserved_name};
 use crate::fractal;
+use crate::heatmap::{DomainColoringPlot, HeatmapPlot, compile_domain_coloring, compile_heatmap};
 use crate::image::transform_of;
 use crate::scene::{
     Anchor, ArrowLength, Axis, Bound, Curve, CurveExpr, Cut, Direction, Factor, FieldLine, Fractal,
@@ -235,6 +236,10 @@ pub enum Plot {
     FieldLine(FieldLinePlot),
     /// 楕円曲線．
     EllipticCurve(EllipticCurvePlot),
+    /// 値を色で表す図．
+    Heatmap(HeatmapPlot),
+    /// 複素関数の色塗り．
+    DomainColoring(DomainColoringPlot),
     /// 式のないオブジェクト．
     None,
 }
@@ -294,13 +299,13 @@ pub struct Compiled {
 
 /// 式を読むときに使える名前と，その値と，利用者が定義した関数．
 #[derive(Clone, Copy)]
-struct Env<'a> {
+pub struct Env<'a> {
     /// 名前．媒介変数と，先に置いた点の座標である．
-    names: &'a [&'a str],
+    pub names: &'a [&'a str],
     /// 名前の値．`names`より長くてもよい(先頭の部分だけを使う)．
-    parameters: &'a [f64],
+    pub parameters: &'a [f64],
     /// 利用者が定義した関数．
-    functions: &'a Functions,
+    pub functions: &'a Functions,
 }
 
 /// シーンの式をすべて読み，定義域を評価する．
@@ -729,6 +734,12 @@ fn compile_object(
                 .map(Plot::EllipticCurve)
                 .map_err(|kind| Error::in_object(&curve.id, kind))
         }
+        Object::Heatmap(heatmap) => compile_heatmap(heatmap, env)
+            .map(Plot::Heatmap)
+            .map_err(|kind| Error::in_object(&heatmap.id, kind)),
+        Object::DomainColoring(coloring) => compile_domain_coloring(coloring, env)
+            .map(Plot::DomainColoring)
+            .map_err(|kind| Error::in_object(&coloring.id, kind)),
         Object::FieldLine(line) => compile_field_line(line, env, view, scope, transform)
             .map(Plot::FieldLine)
             .map_err(|kind| Error::in_object(&line.id, kind)),
@@ -1571,7 +1582,7 @@ fn compile_axis(axis: &Axis, env: &Env, view: &View) -> Result<AxisPlot, ErrorKi
 }
 
 /// 定義域の端を評価し，有限の数で，下端が上端より小さいことを確かめる．端の式は，変数を使えない．
-fn evaluate_domain(domain: &[Bound; 2], env: &Env) -> Result<[f64; 2], ErrorKind> {
+pub fn evaluate_domain(domain: &[Bound; 2], env: &Env) -> Result<[f64; 2], ErrorKind> {
     let [low, high] = domain;
     let low = evaluate_bound("domain", low, 0, env)?;
     let high = evaluate_bound("domain", high, 1, env)?;

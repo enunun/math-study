@@ -10,6 +10,8 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+# 図の画像(PNG)を圧縮する．
+miniz_oxide = "0.8"
 puruspe = "0.4"
 semver = { version = "1", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }

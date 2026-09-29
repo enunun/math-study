@@ -98,6 +98,16 @@ export type FillItem = {
   opacity: number;
 };
 
+/** 画像．min，maxは左下と右上(cm)，hrefはPNGのデータURLである．columns，rowsは画素の数． */
+export type RasterItem = {
+  type: "raster";
+  min: [number, number];
+  max: [number, number];
+  columns: number;
+  rows: number;
+  href: string;
+};
+
 /** ラベル．texは，$…$で数式を含められるTeXの文字列である． */
 export type LabelItem = {
   type: "label";
@@ -110,7 +120,7 @@ export type LabelItem = {
 export type Figure = {
   description: string;
   bounds: { min: [number, number]; max: [number, number] };
-  items: (PathItem | LabelItem | DotItem | FillItem)[];
+  items: (PathItem | LabelItem | DotItem | FillItem | RasterItem)[];
 };
 
 /** 描画の結果． */

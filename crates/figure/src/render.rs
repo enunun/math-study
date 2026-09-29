@@ -14,6 +14,7 @@ use crate::derivative::central_difference_point;
 use crate::elliptic_curve::{Placement, elliptic_curve_items, view_extent};
 use crate::error::Error;
 use crate::figure::{ArrowHead, Bounds, DotItem, Figure, FillItem, Item, LabelItem, Path, Stroke};
+use crate::heatmap::{Area, domain_coloring_item, heatmap_item};
 use crate::image::expand_images;
 use crate::region::region_items;
 use crate::sample::sample;
@@ -220,11 +221,37 @@ fn object_items(
                 extent: view_extent(view.x, view.y),
             },
         ),
+        (Object::Heatmap(_) | Object::DomainColoring(_), _) => raster_items(
+            object,
+            plot,
+            &raster_area(view, scale, &compiled.parameters),
+        ),
         (Object::VectorField(field), Plot::VectorField(placed)) => vector_field_items(placed, view)
             .filter_map(|link| link_item(&field.style, Arrow::Stealth, link, scale))
             .collect(),
         _ => Vec::new(),
     })
+}
+
+/// 値を色で表す図と，複素関数の色塗りの画像．
+fn raster_items(object: &Object, plot: &Plot, area: &Area) -> Vec<Item> {
+    let raster = match (object, plot) {
+        (Object::Heatmap(heatmap), Plot::Heatmap(placed)) => heatmap_item(heatmap, placed, area),
+        (Object::DomainColoring(coloring), Plot::DomainColoring(placed)) => {
+            domain_coloring_item(coloring, placed, area)
+        }
+        _ => None,
+    };
+    raster.map(Item::Raster).into_iter().collect()
+}
+
+/// 画像を置く範囲の決め方．見える範囲と，単位の長さ．
+fn raster_area<'a>(view: &PlaneView, scale: Scale, parameters: &'a [f64]) -> Area<'a> {
+    Area {
+        view: [view.x, view.y],
+        unit: [scale.x, scale.y],
+        parameters,
+    }
 }
 
 /// グラフを，`id`から引けるようにする．領域が挟むグラフを探すために使う．

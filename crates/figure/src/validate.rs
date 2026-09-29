@@ -10,7 +10,7 @@ use crate::scene::{
     FieldLine, Fill, Fractal, FunctionDef, Graph, Grid, ImplicitCurve, Intersection, Label,
     MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object, Parameter, Point, Polygon, Position, Region,
     Scene, SpaceView, Sphere, Style, Surface, TangentPlane, Taylor, TransformStep, VectorField,
-    View, WignerSeitz,
+    View, WignerSeitz, raster_limits,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -156,6 +156,31 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
         Object::EllipticCurve(curve) => {
             plane_only("elliptic_curve", view).and_then(|()| validate_elliptic_curve(curve))
         }
+        Object::Heatmap(heatmap) => plane_only("heatmap", view).and_then(|()| {
+            if heatmap.vars.len() != 2 {
+                return Err(ErrorKind::Invalid(
+                    "値を色で表す図の変数(`vars`)は，2つの名前で書く．".to_owned(),
+                ));
+            }
+            for var in &heatmap.vars {
+                check_variable(var)?;
+            }
+            non_empty("expr", &heatmap.expr)?;
+            check_raster(
+                heatmap.domain.as_ref(),
+                heatmap.resolution,
+                heatmap.tikz_resolution,
+            )
+        }),
+        Object::DomainColoring(coloring) => plane_only("domain_coloring", view).and_then(|()| {
+            check_variable(&coloring.var)?;
+            non_empty("expr", &coloring.expr)?;
+            check_raster(
+                coloring.domain.as_ref(),
+                coloring.resolution,
+                coloring.tikz_resolution,
+            )
+        }),
         // 像は，検査の前に，元のオブジェクトの複製に置き換えてある．
         Object::Parameter(parameter) => validate_parameter(parameter),
         Object::Image(_) | Object::Vector(_) | Object::Segment(_) => Ok(()),
@@ -320,6 +345,34 @@ fn validate_elliptic_curve(curve: &EllipticCurve) -> Result<(), ErrorKind> {
     Ok(())
 }
 
+/// 画像の範囲と解像度．解像度は，1以上，上限以下である．
+fn check_raster(
+    domain: Option<&[[Bound; 2]; 2]>,
+    resolution: Option<u32>,
+    tikz_resolution: Option<u32>,
+) -> Result<(), ErrorKind> {
+    for axis in domain.into_iter().flatten() {
+        check_domain(axis)?;
+    }
+    for (field, value, max) in [
+        ("resolution", resolution, raster_limits::MAX_RESOLUTION),
+        (
+            "tikz_resolution",
+            tikz_resolution,
+            raster_limits::MAX_TIKZ_RESOLUTION,
+        ),
+    ] {
+        if let Some(value) = value
+            && !(1..=max).contains(&value)
+        {
+            return Err(ErrorKind::Invalid(format!(
+                "画像の解像度`{field}`は，1以上{max}以下にする(今は{value})．"
+            )));
+        }
+    }
+    Ok(())
+}
+
 fn style_of(object: &Object) -> Option<&Style> {
     match object {
         Object::EllipticCurve(o) => Some(&o.style),
@@ -347,7 +400,12 @@ fn style_of(object: &Object) -> Option<&Style> {
         Object::Polygon(o) => Some(&o.style),
         Object::Image(o) => Some(&o.style),
         Object::Taylor(o) => Some(&o.style),
-        Object::Label(_) | Object::Parameter(_) | Object::Function(_) | Object::Map(_) => None,
+        Object::Label(_)
+        | Object::Parameter(_)
+        | Object::Function(_)
+        | Object::Map(_)
+        | Object::Heatmap(_)
+        | Object::DomainColoring(_) => None,
     }
 }
 

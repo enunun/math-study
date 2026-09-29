@@ -179,6 +179,10 @@ pub enum Object {
     WignerSeitz(WignerSeitz),
     /// 楕円曲線．
     EllipticCurve(EllipticCurve),
+    /// 値を色で表す図．
+    Heatmap(Heatmap),
+    /// 複素関数の色塗り．
+    DomainColoring(DomainColoring),
 }
 
 /// 軸の向き．
@@ -1111,6 +1115,140 @@ impl EllipticCurve {
     pub const MAX_MULTIPLES: u32 = 64;
 }
 
+/// 値を色で表す図．2つの変数の式の値を，点ごとに色へ対応させた画像にする．平面の図でだけ使える．
+///
+/// 式は複素数の式として読む(`i`は虚数単位)．値の虚部が0でない点と，値が有限でない点は，透明にする．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct Heatmap {
+    /// 識別子．
+    pub id: String,
+    /// 2つの変数の名前．既定は`x`と`y`である．
+    #[serde(
+        default = "default_plane_vars",
+        skip_serializing_if = "is_default_plane_vars"
+    )]
+    pub vars: Vec<String>,
+    /// 値の式．
+    pub expr: String,
+    /// 画像を置く範囲(`[[xの下端, 上端], [yの下端, 上端]]`)．なければ見える範囲である．見える範囲の外は切り取る．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domain: Option<[[Bound; 2]; 2]>,
+    /// 色の両端に対応させる値の範囲．なければ，値の最小と最大(`coolwarm`では，0を中心にした範囲)である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub range: Option<[Bound; 2]>,
+    /// 値と色の対応．
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub colormap: Colormap,
+    /// 値の目盛．`log`では，常用対数をとってから色に対応させる(正でない値は透明にする)．
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub scale: ValueScale,
+    /// SVGの画像の，長い辺の画素の数．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resolution: Option<u32>,
+    /// `TikZ`の出力の，長い辺の升目の数．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tikz_resolution: Option<u32>,
+}
+
+/// 複素関数の色塗り．複素数`z`の関数の値の偏角を色相で表した画像にする．平面の図でだけ使える．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct DomainColoring {
+    /// 識別子．
+    pub id: String,
+    /// 複素数の変数の名前．既定は`z`で，点`x + i y`の値になる．
+    #[serde(
+        default = "default_complex_var",
+        skip_serializing_if = "is_default_complex_var"
+    )]
+    pub var: String,
+    /// 関数の式．複素数の式として読む．
+    pub expr: String,
+    /// 画像を置く範囲．なければ見える範囲である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domain: Option<[[Bound; 2]; 2]>,
+    /// 明るさの陰影．
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub shading: Shading,
+    /// SVGの画像の，長い辺の画素の数．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resolution: Option<u32>,
+    /// `TikZ`の出力の，長い辺の升目の数．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tikz_resolution: Option<u32>,
+}
+
+/// 画像の解像度の既定と上限．
+pub mod raster_limits {
+    /// SVGの画像の，長い辺の画素の数の既定．
+    pub const RESOLUTION: u32 = 200;
+    /// SVGの画像の，長い辺の画素の数の上限．
+    pub const MAX_RESOLUTION: u32 = 1000;
+    /// `TikZ`の升目の数の既定．
+    pub const TIKZ_RESOLUTION: u32 = 40;
+    /// `TikZ`の升目の数の上限．
+    pub const MAX_TIKZ_RESOLUTION: u32 = 200;
+}
+
+/// 値と色の対応．
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum Colormap {
+    /// 暗い紫から，青緑を経て，明るい黄へ(明るさが一様に増える)．
+    #[default]
+    Viridis,
+    /// 黒から白へ．
+    Gray,
+    /// 白から黒へ(回折図形の写真のように，強いところを黒くする)．
+    GrayInverse,
+    /// 青から，白を経て，赤へ．正負を分けて見せる．
+    Coolwarm,
+}
+
+/// 値の目盛．
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum ValueScale {
+    /// そのまま．
+    #[default]
+    Linear,
+    /// 常用対数．
+    Log,
+}
+
+/// 複素関数の色塗りの，明るさの陰影．
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum Shading {
+    /// 絶対値の2を底とする対数の小数部分で，明るさを変える(絶対値が2倍になるごとに縞が1本)．
+    #[default]
+    Modulus,
+    /// 陰影なし．色相だけで偏角を表す．
+    None,
+}
+
+fn default_plane_vars() -> Vec<String> {
+    vec!["x".to_owned(), "y".to_owned()]
+}
+
+fn is_default_plane_vars(vars: &[String]) -> bool {
+    vars == ["x", "y"]
+}
+
+fn default_complex_var() -> String {
+    "z".to_owned()
+}
+
+fn is_default_complex_var(var: &str) -> bool {
+    var == "z"
+}
+
 /// 流線をどちらの向きに伸ばすか．
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -1509,6 +1647,8 @@ impl Object {
             Self::FieldLine(o) => &o.id,
             Self::WignerSeitz(o) => &o.id,
             Self::EllipticCurve(o) => &o.id,
+            Self::Heatmap(o) => &o.id,
+            Self::DomainColoring(o) => &o.id,
             Self::Intersection(o) => &o.id,
             Self::TangentPlane(o) => &o.id,
             Self::Complex(o) => &o.id,
@@ -1545,6 +1685,8 @@ impl Object {
             Self::FieldLine(_) => "field_line",
             Self::WignerSeitz(_) => "wigner_seitz",
             Self::EllipticCurve(_) => "elliptic_curve",
+            Self::Heatmap(_) => "heatmap",
+            Self::DomainColoring(_) => "domain_coloring",
             Self::Intersection(_) => "intersection",
             Self::TangentPlane(_) => "tangent_plane",
             Self::Complex(_) => "complex",

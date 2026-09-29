@@ -1,0 +1,10 @@
+{
+  "version": "0.1.0",
+  "description": "Weierstrassの楕円関数℘(z; 4, 0)の色塗り．偏角を色相で表す．極(2位)は周期格子の点にあり，そのまわりで色相が逆向きに2周する．",
+  "view": { "x": [-3, 3], "y": [-3, 3], "unit": { "x": "1cm", "y": "1cm" } },
+  "objects": [
+    { "id": "coloring", "type": "domain_coloring", "expr": "wp(z, 4, 0)" },
+    { "id": "x_axis", "type": "axis", "direction": "x", "label": "\\mathrm{Re}\\,z" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "label": "\\mathrm{Im}\\,z" }
+  ]
+}

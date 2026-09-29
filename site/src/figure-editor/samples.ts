@@ -90,6 +90,18 @@ const SAMPLE_GROUPS: readonly SampleGroup[] = [
       articleSample('jacobiFunctions', 'Jacobiの楕円関数', 'jacobi-elliptic-functions'),
     ],
   },
+  {
+    label: '平面：色で表す図と複素関数',
+    samples: [
+      articleSample('heatmapContours', '値の色と等高線', 'heatmap-with-contours'),
+      articleSample('gammaColoring', 'ガンマ関数の色塗り', 'gamma-domain-coloring'),
+      articleSample(
+        'weierstrassColoring',
+        'Weierstrassの℘の色塗り',
+        'weierstrass-p-domain-coloring',
+      ),
+    ],
+  },
   { label: '平面：ベクトル場', samples: VECTOR_FIELD_SAMPLES },
   ...PLANE_SYMMETRY_GROUPS,
   { label: '平面：結晶と逆格子', samples: PLANE_CRYSTAL_SAMPLES },

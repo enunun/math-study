@@ -1,0 +1,10 @@
+{
+  "version": "0.1.0",
+  "description": "ガンマ関数Γ(z)の色塗り．偏角を色相で，絶対値を明るさの縞で表す．0と負の整数に1位の極があり，そのまわりで色相が逆向きに1周する．",
+  "view": { "x": [-4.5, 3.5], "y": [-2.5, 2.5], "unit": { "x": "1cm", "y": "1cm" } },
+  "objects": [
+    { "id": "coloring", "type": "domain_coloring", "expr": "gamma(z)" },
+    { "id": "x_axis", "type": "axis", "direction": "x", "label": "\\mathrm{Re}\\,z" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "label": "\\mathrm{Im}\\,z" }
+  ]
+}

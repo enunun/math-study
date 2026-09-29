@@ -410,6 +410,7 @@ fn 塗りを指定すると_領域が色つきの多角形になり_斜線も引
         .skip(2)
         .map(|item| match item {
             Item::Fill(_) => "fill",
+            Item::Raster(_) => "raster",
             Item::Path(_) => "path",
             _ => "other",
         })

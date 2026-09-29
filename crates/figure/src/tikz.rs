@@ -5,8 +5,9 @@
 use std::fmt::Write as _;
 
 use crate::error::Error;
-use crate::figure::{DotItem, Figure, FillItem, Item, LabelItem, Path};
+use crate::figure::{DotItem, Figure, FillItem, Item, LabelItem, Path, RasterItem};
 use crate::parse::parse_scene;
+use crate::raster::count_to_f64;
 use crate::render::render;
 use crate::scene::{Anchor, Arrow, Color, Line};
 use crate::version::engine_version;
@@ -50,6 +51,7 @@ pub fn to_tikz(figure: &Figure) -> String {
             Item::Label(label) => write_label(&mut out, label),
             Item::Dot(dot) => write_dot(&mut out, dot),
             Item::Fill(fill) => write_fill(&mut out, fill),
+            Item::Raster(raster) => write_raster(&mut out, raster),
         }
     }
     out.push_str("\\end{tikzpicture}\n");
@@ -91,6 +93,58 @@ fn write_fill(out: &mut String, fill: &FillItem) {
     let _ = write!(out, "\\fill[{}]", options.join(", "));
     write_points(out, &fill.points);
     out.push_str(" -- cycle;\n");
+}
+
+/// 隣の升目との継ぎ目が見えないよう，升目を右と上へ延ばす長さ(cm)．
+const CELL_OVERLAP: f64 = 0.005;
+
+/// 画像．粗い升目を，塗った長方形として書く．横に続く同じ色の升目は，1つの長方形にまとめる．
+/// 透明な升目は描かない．
+fn write_raster(out: &mut String, raster: &RasterItem) {
+    let cells = &raster.coarse;
+    if cells.columns == 0 || cells.rows == 0 {
+        return;
+    }
+    let [x0, y0] = raster.min;
+    let [x1, y1] = raster.max;
+    let width = (x1 - x0) / count_to_f64(cells.columns);
+    let height = (y1 - y0) / count_to_f64(cells.rows);
+    for (row, colors) in cells.pixels.chunks(cells.columns).enumerate() {
+        let top = height.mul_add(-count_to_f64(row), y1);
+        let bottom = top - height;
+        // 上の行とは，継ぎ目が見えないよう重ねる．いちばん上の行は重ねない．
+        let upper = if row > 0 { top + CELL_OVERLAP } else { top };
+        let mut start = 0;
+        while let Some(&color) = colors.get(start) {
+            let end = colors
+                .iter()
+                .skip(start)
+                .position(|other| *other != color)
+                .map_or(colors.len(), |offset| start.saturating_add(offset));
+            if color[3] > 0 {
+                let left = width.mul_add(count_to_f64(start), x0);
+                let overlap = if end < colors.len() {
+                    CELL_OVERLAP
+                } else {
+                    0.0
+                };
+                let right = width.mul_add(count_to_f64(end), x0) + overlap;
+                let [red, green, blue, alpha] = color;
+                let opacity = if alpha < 255 {
+                    format!(", opacity={}", number(f64::from(alpha) / 255.0))
+                } else {
+                    String::new()
+                };
+                let _ = writeln!(
+                    out,
+                    "\\fill[color={{rgb,255:red,{red};green,{green};blue,{blue}}}{opacity}] {} rectangle {};",
+                    coordinate([left, bottom]),
+                    coordinate([right, upper])
+                );
+            }
+            start = end;
+        }
+    }
 }
 
 fn write_path(out: &mut String, path: &Path) {

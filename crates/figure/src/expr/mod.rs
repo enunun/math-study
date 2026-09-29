@@ -2,6 +2,7 @@
 
 use std::ops::Range;
 
+mod complex;
 mod elliptic;
 mod functions;
 mod lexer;
@@ -9,6 +10,7 @@ mod parser;
 mod taylor;
 mod vector;
 
+pub use complex::Complex;
 pub use functions::Functions;
 pub use vector::Value;
 use vector::{VECTOR_FUNCTIONS, VectorFunction};
@@ -134,10 +136,18 @@ enum Function {
     Wp,
     /// Weierstrassの楕円関数の導関数`℘'(z; g2, g3)`．
     Wpd,
+    /// 実部．
+    Re,
+    /// 虚部．
+    Im,
+    /// 共役．
+    Conj,
+    /// 偏角．
+    Arg,
 }
 
 /// 関数の名前と関数．`log`と`ln`，`loggamma`と`lgamma`は，それぞれ同じ関数である．
-const FUNCTIONS: [(&str, Function); 39] = [
+const FUNCTIONS: [(&str, Function); 43] = [
     ("sin", Function::Sin),
     ("cos", Function::Cos),
     ("tan", Function::Tan),
@@ -177,6 +187,10 @@ const FUNCTIONS: [(&str, Function); 39] = [
     ("dn", Function::Dn),
     ("wp", Function::Wp),
     ("wpd", Function::Wpd),
+    ("re", Function::Re),
+    ("im", Function::Im),
+    ("conj", Function::Conj),
+    ("arg", Function::Arg),
 ];
 
 impl Function {
@@ -239,6 +253,10 @@ impl Function {
             Self::Dn => elliptic::jacobi(x, at(1)).dn,
             Self::Wp => elliptic::weierstrass(x, at(1), at(2)).0,
             Self::Wpd => elliptic::weierstrass(x, at(1), at(2)).1,
+            // 実数の式では，実部と共役はそのまま，虚部は0，偏角は0か`π`である．
+            Self::Re | Self::Conj => x,
+            Self::Im => 0.0 * x,
+            Self::Arg => 0.0_f64.atan2(x),
         }
     }
 }
@@ -268,6 +286,8 @@ pub fn is_reserved_name(name: &str) -> bool {
 #[derive(Debug, Clone, PartialEq)]
 enum Node {
     Number(f64),
+    /// 虚数単位`i`．複素数の式にだけ現れる．
+    Imaginary,
     /// `compile`に渡した名前の，何番目か．
     Variable(usize),
     Neg(Box<Node>),
@@ -300,8 +320,9 @@ impl Node {
                     .collect();
                 function.apply(&values)
             }
-            // ベクトルの関数は，点の式でだけ使える(`uses_vector_functions`で断る)．
-            Self::Vector(..) => f64::NAN,
+            // ベクトルの関数は，点の式でだけ使える(`uses_vector_functions`で断る)．虚数単位は，
+            // 実数の値をもたない．
+            Self::Imaginary | Self::Vector(..) => f64::NAN,
         }
     }
 }
@@ -333,8 +354,28 @@ impl Expr {
         names: &[&str],
         functions: &Functions,
     ) -> Result<Self, ExprError> {
-        let root = parse_source(source, names, functions)?;
+        let root = parse_source(source, names, functions, false)?;
         Ok(Self { root })
+    }
+
+    /// 複素数の式として読む．`i`は虚数単位で，`names`にあっても変数にならない．評価は`eval_complex`で行う．
+    ///
+    /// # Errors
+    ///
+    /// 構文の誤り，使えない名前，引数の数の違い，長さや深さの上限の超過があると，誤りを返す．
+    pub fn compile_complex(
+        source: &str,
+        names: &[&str],
+        functions: &Functions,
+    ) -> Result<Self, ExprError> {
+        let root = parse_source(source, names, functions, true)?;
+        Ok(Self { root })
+    }
+
+    /// 複素数で評価する．`values`は，`compile_complex`に渡した`names`と同じ順に並べる．
+    #[must_use]
+    pub fn eval_complex(&self, values: &[Complex]) -> Complex {
+        self.root.eval_complex(values)
     }
 
     /// 定数だけの式．
@@ -357,7 +398,12 @@ impl Expr {
 }
 
 /// 式の文字列を，構文木の根にする．関数の本体を読むときにも使う．
-fn parse_source(source: &str, names: &[&str], functions: &Functions) -> Result<Node, ExprError> {
+fn parse_source(
+    source: &str,
+    names: &[&str],
+    functions: &Functions,
+    complex: bool,
+) -> Result<Node, ExprError> {
     let chars: Vec<char> = source.chars().collect();
     if chars.len() > MAX_INPUT_CHARS {
         return Err(ExprError {
@@ -366,7 +412,7 @@ fn parse_source(source: &str, names: &[&str], functions: &Functions) -> Result<N
         });
     }
     let tokens = lexer::tokenize(&chars)?;
-    parser::parse(&tokens, names, functions)
+    parser::parse(&tokens, names, functions, complex)
 }
 
 impl Expr {

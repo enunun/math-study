@@ -47,6 +47,8 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'field_line', label: '流線', kinds: BOTH },
   { type: 'wigner_seitz', label: 'Wigner-Seitz胞(Brillouinゾーン)', kinds: PLANE },
   { type: 'elliptic_curve', label: '楕円曲線', kinds: PLANE },
+  { type: 'heatmap', label: '値を色で表す図', kinds: PLANE },
+  { type: 'domain_coloring', label: '複素関数の色塗り', kinds: PLANE },
   { type: 'function', label: '関数', kinds: BOTH },
   { type: 'map', label: '写像', kinds: BOTH },
   { type: 'image', label: '像(変換した図形)', kinds: BOTH },
@@ -70,7 +72,15 @@ const REAL_TYPES: Readonly<Record<string, string>> = {
 };
 
 /** 変換(`transform`)を持てない種類．図形でないもの(媒介変数・関数・写像)と，座標軸である． */
-const UNTRANSFORMABLE: ReadonlySet<string> = new Set(['axis', 'parameter', 'function', 'map']);
+/** 画像(`heatmap`，`domain_coloring`)は，座標軸に沿った長方形の升目なので，変換を持たない． */
+const UNTRANSFORMABLE: ReadonlySet<string> = new Set([
+  'axis',
+  'parameter',
+  'function',
+  'map',
+  'heatmap',
+  'domain_coloring',
+]);
 
 /** 変換を持てる種類(`type`)．`UNTRANSFORMABLE`のほかのすべてで，像(`image`)の元にできる． */
 const TRANSFORMABLE: readonly string[] = [

@@ -265,28 +265,76 @@ fn weierstrass_roots(g2: f64, g3: f64) -> Result<[f64; 3], f64> {
     }
 }
 
+/// Weierstrassの`℘`を，Jacobiの楕円関数で書くための定数．
+pub enum WeierstrassForm {
+    /// 判別式が0以上(実根が3つ)．`℘ = e3 + spread / sn^2(scale z, k)`．
+    ThreeRoots {
+        /// いちばん小さい根`e3`．
+        e3: f64,
+        /// `e1 - e3`．
+        spread: f64,
+        /// `sqrt(e1 - e3)`．
+        scale: f64,
+        /// 母数`k = sqrt((e2 - e3) / (e1 - e3))`．
+        k: f64,
+    },
+    /// 判別式が負(実根が1つ)．`℘ = e2 + h (1 + cn(2 root z, k)) / (1 - cn(2 root z, k))`．
+    OneRoot {
+        /// 実根`e2`．
+        e2: f64,
+        /// `H = sqrt(3 e2^2 - g2/4)`．
+        h: f64,
+        /// `sqrt(H)`．
+        root: f64,
+        /// 母数`k = sqrt(1/2 - 3 e2 / (4H))`．
+        k: f64,
+    },
+}
+
+/// 不変量から，`℘`をJacobiの楕円関数で書くための定数を求める．
+#[must_use]
+pub fn weierstrass_form(g2: f64, g3: f64) -> WeierstrassForm {
+    match weierstrass_roots(g2, g3) {
+        Ok([e1, e2, e3]) => {
+            let spread = e1 - e3;
+            WeierstrassForm::ThreeRoots {
+                e3,
+                spread,
+                scale: spread.sqrt(),
+                k: ((e2 - e3) / spread).clamp(0.0, 1.0).sqrt(),
+            }
+        }
+        Err(e2) => {
+            let h = (3.0 * e2).mul_add(e2, -g2 / 4.0).sqrt();
+            WeierstrassForm::OneRoot {
+                e2,
+                h,
+                root: h.sqrt(),
+                k: (0.5 - 3.0 * e2 / (4.0 * h)).clamp(0.0, 1.0).sqrt(),
+            }
+        }
+    }
+}
+
 /// Weierstrassの`℘(z; g2, g3)`と，その導関数`℘'(z)`．不変量は実数に限る．
 #[must_use]
 pub fn weierstrass(z: f64, g2: f64, g3: f64) -> (f64, f64) {
     if g2 == 0.0 && g3 == 0.0 {
         return (1.0 / (z * z), -2.0 / (z * z * z));
     }
-    match weierstrass_roots(g2, g3) {
-        Ok([e1, e2, e3]) => {
-            // ℘ = e3 + (e1 - e3) / sn^2(λ z, k)，λ = sqrt(e1 - e3)，k^2 = (e2 - e3) / (e1 - e3)．
-            let spread = e1 - e3;
-            let lambda = spread.sqrt();
-            let k = ((e2 - e3) / spread).clamp(0.0, 1.0).sqrt();
-            let Jacobi { sn, cn, dn, .. } = jacobi(lambda * z, k);
+    match weierstrass_form(g2, g3) {
+        WeierstrassForm::ThreeRoots {
+            e3,
+            spread,
+            scale,
+            k,
+        } => {
+            let Jacobi { sn, cn, dn, .. } = jacobi(scale * z, k);
             let value = e3 + spread / (sn * sn);
-            let slope = -2.0 * spread * lambda * cn * dn / (sn * sn * sn);
+            let slope = -2.0 * spread * scale * cn * dn / (sn * sn * sn);
             (value, slope)
         }
-        Err(e2) => {
-            // ℘ = e2 + H (1 + cn) / (1 - cn)，cn = cn(2 sqrt(H) z, k)，H^2 = 3 e2^2 - g2 / 4，k^2 = 1/2 - 3 e2 / (4H)．
-            let h = (3.0 * e2 * e2 - g2 / 4.0).sqrt();
-            let k = (0.5 - 3.0 * e2 / (4.0 * h)).clamp(0.0, 1.0).sqrt();
-            let root = h.sqrt();
+        WeierstrassForm::OneRoot { e2, h, root, k } => {
             let Jacobi { sn, cn, dn, .. } = jacobi(2.0 * root * z, k);
             let value = e2 + h * (1.0 + cn) / (1.0 - cn);
             let slope = -4.0 * h * root * sn * dn / ((1.0 - cn) * (1.0 - cn));

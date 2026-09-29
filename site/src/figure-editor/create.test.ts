@@ -99,8 +99,15 @@ describe('新しいオブジェクトの初期値を，エンジンが読める'
   });
 });
 
-describe('変換は，座標軸・媒介変数・関数・写像のほかのすべてに使える', () => {
-  const untransformable = new Set(['axis', 'parameter', 'function', 'map']);
+describe('変換は，座標軸・媒介変数・関数・写像・画像のほかのすべてに使える', () => {
+  const untransformable = new Set([
+    'axis',
+    'parameter',
+    'function',
+    'map',
+    'heatmap',
+    'domain_coloring',
+  ]);
 
   it.each(OBJECT_TYPES)('$labelの変換の項目', ({ type, kinds }) => {
     const [kind] = kinds;

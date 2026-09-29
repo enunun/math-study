@@ -83,6 +83,39 @@ pub struct FillItem {
     pub opacity: f64,
 }
 
+/// 画像．点ごとに色を決めた，升目の並びである．SVGには，`href`のPNGを埋め込む．`TikZ`には，`coarse`の
+/// 升目を，塗った長方形として書く．
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct RasterItem {
+    /// 左下(cm)．
+    pub min: [f64; 2],
+    /// 右上(cm)．
+    pub max: [f64; 2],
+    /// 横の画素の数．
+    pub columns: usize,
+    /// 縦の画素の数．
+    pub rows: usize,
+    /// PNGの画像のデータURL．
+    pub href: String,
+    /// 画素(赤，緑，青，不透明度)．行は上から，列は左から並べる．
+    #[serde(skip)]
+    pub pixels: Vec<[u8; 4]>,
+    /// `TikZ`に書く，粗い升目．
+    #[serde(skip)]
+    pub coarse: Cells,
+}
+
+/// 粗い升目．`TikZ`の出力に使う．
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct Cells {
+    /// 横の升目の数．
+    pub columns: usize,
+    /// 縦の升目の数．
+    pub rows: usize,
+    /// 升目の色．行は上から，列は左から並べる．
+    pub pixels: Vec<[u8; 4]>,
+}
+
 /// 描く要素．
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -95,6 +128,8 @@ pub enum Item {
     Dot(DotItem),
     /// 塗った多角形．
     Fill(FillItem),
+    /// 画像．
+    Raster(RasterItem),
 }
 
 /// 描画の中間表現．

@@ -1192,8 +1192,115 @@
         }
       }
     },
+    "heatmap": {
+      "type": "object",
+      "required": ["id", "type", "expr"],
+      "additionalProperties": false,
+      "description": "値を色で表す図．2つの変数の式の値を，点ごとに色へ対応させた画像にする．式は複素数の式として読み(iは虚数単位)，値の虚部が0でない点と，値が有限でない点は透明にする．SVGではPNGの画像を埋め込み，TikZでは粗い升目の塗りつぶしにする．平面の図でだけ使える．",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "type": {
+          "const": "heatmap"
+        },
+        "vars": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/identifier"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "2つの変数の名前．省くと`[\"x\", \"y\"]`．"
+        },
+        "expr": {
+          "$ref": "#/$defs/nonBlankString",
+          "description": "値の式．"
+        },
+        "domain": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/boundPair"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "画像を置く範囲[[xの下端, 上端], [yの下端, 上端]]．省くと見える範囲．見える範囲の外は切り取る．"
+        },
+        "range": {
+          "$ref": "#/$defs/boundPair",
+          "description": "色の両端に対応させる値．省くと，値の最小と最大(`coolwarm`では0を中心にした範囲)．外の値は端の色になる．"
+        },
+        "colormap": {
+          "enum": ["viridis", "gray", "gray_inverse", "coolwarm"],
+          "description": "値と色の対応．`viridis`(既定，暗い紫から黄へ)，`gray`(黒から白)，`gray_inverse`(白から黒)，`coolwarm`(青から白を経て赤)．"
+        },
+        "scale": {
+          "enum": ["linear", "log"],
+          "description": "値の目盛．`log`では常用対数をとってから色に対応させ，正でない値は透明にする．"
+        },
+        "resolution": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "SVGの画像の，長い辺の画素の数．省くと200．"
+        },
+        "tikz_resolution": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "description": "TikZの出力の，長い辺の升目の数．省くと40．"
+        }
+      }
+    },
+    "domain_coloring": {
+      "type": "object",
+      "required": ["id", "type", "expr"],
+      "additionalProperties": false,
+      "description": "複素関数の色塗り．複素数zの関数の値の偏角を色相(正の実数が赤，負の実数が青緑)で表した画像にする．零点のまわりでは色相が一周し，極では値がなく透明になる．平面の図でだけ使える．",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "type": {
+          "const": "domain_coloring"
+        },
+        "var": {
+          "$ref": "#/$defs/identifier",
+          "description": "複素数の変数の名前．省くと`z`で，点(x, y)ではx + iyの値になる．"
+        },
+        "expr": {
+          "$ref": "#/$defs/nonBlankString",
+          "description": "関数の式．複素数の式として読み，iは虚数単位である．"
+        },
+        "domain": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/boundPair"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "画像を置く範囲[[xの下端, 上端], [yの下端, 上端]]．省くと見える範囲．"
+        },
+        "shading": {
+          "enum": ["modulus", "none"],
+          "description": "明るさの陰影．`modulus`(既定)は，絶対値が2倍になるごとに明るさの縞を1本入れる．`none`は色相だけ．"
+        },
+        "resolution": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "SVGの画像の，長い辺の画素の数．省くと200．"
+        },
+        "tikz_resolution": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "description": "TikZの出力の，長い辺の升目の数．省くと40．"
+        }
+      }
+    },
     "object": {
-      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`，`wigner_seitz`，`elliptic_curve`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
+      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`，`wigner_seitz`，`elliptic_curve`，`heatmap`，`domain_coloring`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },
@@ -1223,7 +1330,9 @@
         { "$ref": "#/$defs/vector_field" },
         { "$ref": "#/$defs/field_line" },
         { "$ref": "#/$defs/wigner_seitz" },
-        { "$ref": "#/$defs/elliptic_curve" }
+        { "$ref": "#/$defs/elliptic_curve" },
+        { "$ref": "#/$defs/heatmap" },
+        { "$ref": "#/$defs/domain_coloring" }
       ]
     }
   }

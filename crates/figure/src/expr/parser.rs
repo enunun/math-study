@@ -19,6 +19,9 @@ const MAX_DEPTH: usize = 128;
 /// 定数の名前と値．
 const CONSTANTS: [(&str, f64); 2] = [("pi", std::f64::consts::PI), ("e", std::f64::consts::E)];
 
+/// 複素数の式での，虚数単位の名前．
+pub const IMAGINARY_UNIT: &str = "i";
+
 /// 定数の名前．
 pub fn constant_names() -> impl Iterator<Item = &'static str> {
     CONSTANTS.iter().map(|(name, _)| *name)
@@ -35,13 +38,19 @@ pub fn is_constant(name: &str) -> bool {
 /// # Errors
 ///
 /// 構文の誤り，使えない名前，入れ子の深すぎる式があると，誤りを返す．
-pub fn parse(tokens: &[Token], names: &[&str], functions: &Functions) -> Result<Node, ExprError> {
+pub fn parse(
+    tokens: &[Token],
+    names: &[&str],
+    functions: &Functions,
+    complex: bool,
+) -> Result<Node, ExprError> {
     let mut parser = Parser {
         tokens,
         position: 0,
         names,
         functions,
         depth: 0,
+        complex,
     };
     let node = parser.expression()?;
     let token = parser.peek()?;
@@ -58,6 +67,8 @@ struct Parser<'a> {
     names: &'a [&'a str],
     functions: &'a Functions,
     depth: usize,
+    /// 複素数の式か．複素数の式では，`i`が虚数単位になる．
+    complex: bool,
 }
 
 fn unexpected(token: &Token) -> ExprError {
@@ -240,6 +251,9 @@ impl Parser<'_> {
                 ));
             }
             return Ok(Node::Call(function, arguments));
+        }
+        if self.complex && name == IMAGINARY_UNIT {
+            return Ok(Node::Imaginary);
         }
         if let Some(index) = self.names.iter().position(|candidate| *candidate == name) {
             return Ok(Node::Variable(index));

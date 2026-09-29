@@ -77,8 +77,8 @@ impl Expander<'_> {
                 [argument] => self.call(*function, &self.expand(argument)?),
                 _ => None,
             },
-            // ベクトルの関数は，数の式にはない．
-            Node::Vector(..) => None,
+            // ベクトルの関数は，数の式にはない．虚数単位は，実数の級数にならない．
+            Node::Imaginary | Node::Vector(..) => None,
         }
     }
 
@@ -164,7 +164,11 @@ impl Expander<'_> {
             | Function::Cn
             | Function::Dn
             | Function::Wp
-            | Function::Wpd => None,
+            | Function::Wpd
+            | Function::Re
+            | Function::Im
+            | Function::Conj
+            | Function::Arg => None,
         }
     }
 }

@@ -8,6 +8,7 @@ import type {
   Figure,
   LabelItem,
   PathItem,
+  RasterItem,
 } from '@/wasm/figure';
 
 import { anchorShift, labelToMath } from './label';
@@ -136,6 +137,19 @@ function dotElement(item: DotItem): Element {
   });
 }
 
+/** 画像．PNGのデータURLを，範囲いっぱいに引き伸ばして置く．拡大はブラウザの補間に任せる． */
+function rasterElement(item: RasterItem): Element {
+  const [left, top] = svgPoint([item.min[0], item.max[1]]);
+  return element('image', {
+    href: item.href,
+    x: format(left),
+    y: format(top),
+    width: format(item.max[0] - item.min[0]),
+    height: format(item.max[1] - item.min[1]),
+    preserveAspectRatio: 'none',
+  });
+}
+
 /** 位置を割合で置き，アンカーの分だけ箱をずらした，ラベル．数式は，後段のMathJaxが描画する． */
 function labelElement(item: LabelItem, figure: Figure): Element {
   const { min, max } = figure.bounds;
@@ -154,7 +168,7 @@ function labelElement(item: LabelItem, figure: Figure): Element {
   ]);
 }
 
-/** ラベル以外(線，矢じり，塗り，点)の，SVGの要素．座標はcmで，yは下向きである． */
+/** ラベル以外(線，矢じり，塗り，点，画像)の，SVGの要素．座標はcmで，yは下向きである． */
 function drawnElements(figure: Figure): Element[] {
   return figure.items.flatMap((item) => {
     if (item.type === 'path') {
@@ -162,6 +176,9 @@ function drawnElements(figure: Figure): Element[] {
     }
     if (item.type === 'fill') {
       return [fillElement(item)];
+    }
+    if (item.type === 'raster') {
+      return [rasterElement(item)];
     }
     return item.type === 'dot' ? [dotElement(item)] : [];
   });

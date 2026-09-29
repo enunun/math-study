@@ -127,6 +127,7 @@ impl Node {
     ) -> Result<Value, &'static str> {
         match self {
             Self::Number(value) => Ok(Value::Number(*value)),
+            Self::Imaginary => Err("虚数単位`i`は，複素数の式でだけ使える．"),
             Self::Variable(index) => Ok(value_of(*index)),
             Self::Neg(operand) => Ok(match operand.eval_vector(value_of)? {
                 Value::Number(value) => Value::Number(-value),
@@ -164,7 +165,7 @@ impl Node {
     /// ベクトルの関数を使っているか．
     pub(super) fn uses_vector_functions(&self) -> bool {
         match self {
-            Self::Number(_) | Self::Variable(_) => false,
+            Self::Number(_) | Self::Imaginary | Self::Variable(_) => false,
             Self::Neg(operand) => operand.uses_vector_functions(),
             Self::Call(_, arguments) => arguments.iter().any(Self::uses_vector_functions),
             Self::Binary(_, left, right) => {

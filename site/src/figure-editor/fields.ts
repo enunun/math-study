@@ -1,3 +1,4 @@
+import { ANALYSIS_FIELDS } from './analysis-fields';
 import { COORDINATE_NAMES, gridFields, vectorFieldFields } from './coordinate-fields';
 import { listedType, TRANSFORMABLE } from './create';
 import type { ViewKind } from './draft';
@@ -57,6 +58,7 @@ const AXIS: readonly FieldSpec[] = [
 /** 種類ごとの，識別子とスタイル以外の項目．軸の向きは，図の種類で選択肢が変わるので，別に足す． */
 const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
   ...SURFACE_FIELDS,
+  ...ANALYSIS_FIELDS,
   axis: AXIS,
   label: [
     { kind: 'position', key: 'at', label: '位置' },
@@ -158,17 +160,6 @@ const SPECS: Readonly<Record<string, readonly FieldSpec[]>> = {
     { kind: 'list', key: 'center', label: '中心', item: 'bound', count: PAIR, optional: true },
     FILL,
   ],
-  elliptic_curve: [
-    { kind: 'bound', key: 'a', label: '係数a(y^2 = x^3 + ax + b)' },
-    { kind: 'bound', key: 'b', label: '係数b' },
-    { kind: 'bound', key: 'p', label: '点Pのx座標', optional: true },
-    { kind: 'checkbox', key: 'p_lower', label: '点Pを下の枝にとる', initial: false },
-    { kind: 'bound', key: 'q', label: '点Qのx座標(省くと2P)', optional: true },
-    { kind: 'checkbox', key: 'q_lower', label: '点Qを下の枝にとる', initial: false },
-    { kind: 'checkbox', key: 'construction', label: '和の作図を描く', initial: true },
-    { kind: 'number', key: 'multiples', label: '倍数の点の数n(P，…，nP)', optional: true },
-    { kind: 'checkbox', key: 'labels', label: '点の名前を置く', initial: true },
-  ],
   vertexPolygon: [
     { kind: 'json', key: 'vertices', label: '頂点(座標か点の名前)', hint: '[[0,0],[3,0],"A"]' },
     FILL,
@@ -244,7 +235,7 @@ const OWN_FIELDS: Readonly<Record<string, (kind: ViewKind) => readonly FieldSpec
 };
 
 /** スタイルを持たない種類． */
-const UNSTYLED = new Set(['label', 'parameter', 'function', 'map']);
+const UNSTYLED = new Set(['label', 'parameter', 'function', 'map', 'heatmap', 'domain_coloring']);
 
 const ID: FieldSpec = { kind: 'text', key: 'id', label: '識別子' };
 const STYLE: FieldSpec = { kind: 'style' };

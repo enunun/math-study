@@ -53,8 +53,31 @@ const LINE_DIRECTIONS: readonly Option[] = [
   ['backward', '場と逆向き'],
 ];
 
+/** 値を色で表す図の，値と色の対応． */
+const COLORMAPS: readonly Option[] = [
+  ['viridis', 'viridis(紫から黄)'],
+  ['gray', '黒から白'],
+  ['gray_inverse', '白から黒'],
+  ['coolwarm', '青・白・赤(正負)'],
+];
+
+/** 値を色で表す図の，値の目盛． */
+const VALUE_SCALES: readonly Option[] = [
+  ['linear', 'そのまま'],
+  ['log', '対数'],
+];
+
+/** 複素関数の色塗りの，明るさの陰影． */
+const SHADINGS: readonly Option[] = [
+  ['modulus', '絶対値の縞'],
+  ['none', 'なし(色相だけ)'],
+];
+
 export {
   ANCHORS,
+  COLORMAPS,
+  SHADINGS,
+  VALUE_SCALES,
   ARROWS,
   ARROW_LENGTHS,
   LINE_DIRECTIONS,
