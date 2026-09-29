@@ -6,6 +6,10 @@ use std::rc::Rc;
 use crate::elliptic_curve::{EllipticCurvePlot, compile_elliptic_curve};
 use crate::error::{Error, ErrorKind};
 use crate::expr::{Expr, Functions, Value, is_reserved_name};
+use crate::fourier::{
+    FourierIntensityPlot, FourierSeriesPlot, FourierTransformPlot, compile_fourier_intensity,
+    compile_fourier_series, compile_fourier_transform,
+};
 use crate::fractal;
 use crate::heatmap::{DomainColoringPlot, HeatmapPlot, compile_domain_coloring, compile_heatmap};
 use crate::image::transform_of;
@@ -240,6 +244,12 @@ pub enum Plot {
     Heatmap(HeatmapPlot),
     /// 複素関数の色塗り．
     DomainColoring(DomainColoringPlot),
+    /// フーリエ級数．
+    FourierSeries(FourierSeriesPlot),
+    /// 1次元のフーリエ変換．
+    FourierTransform(FourierTransformPlot),
+    /// 2次元のフーリエ変換の強さ．
+    FourierIntensity(FourierIntensityPlot),
     /// 式のないオブジェクト．
     None,
 }
@@ -740,6 +750,18 @@ fn compile_object(
         Object::DomainColoring(coloring) => compile_domain_coloring(coloring, env)
             .map(Plot::DomainColoring)
             .map_err(|kind| Error::in_object(&coloring.id, kind)),
+        Object::FourierSeries(series) => compile_fourier_series(series, env)
+            .map(Plot::FourierSeries)
+            .map_err(|kind| Error::in_object(&series.id, kind)),
+        Object::FourierTransform(transform) => {
+            let view_x = view.as_plane().map_or([-1.0, 1.0], |plane| plane.x);
+            compile_fourier_transform(transform, env, view_x)
+                .map(Plot::FourierTransform)
+                .map_err(|kind| Error::in_object(&transform.id, kind))
+        }
+        Object::FourierIntensity(intensity) => compile_fourier_intensity(intensity, env)
+            .map(Plot::FourierIntensity)
+            .map_err(|kind| Error::in_object(&intensity.id, kind)),
         Object::FieldLine(line) => compile_field_line(line, env, view, scope, transform)
             .map(Plot::FieldLine)
             .map_err(|kind| Error::in_object(&line.id, kind)),
@@ -2225,7 +2247,7 @@ fn compile_wigner_seitz(cell: &WignerSeitz, env: &Env) -> Result<PolygonPlot, Er
     Ok(PolygonPlot { vertices })
 }
 
-fn evaluate_bound(
+pub fn evaluate_bound(
     field: &'static str,
     bound: &Bound,
     index: usize,

@@ -11,11 +11,13 @@ use crate::compile::{
     VectorFieldPlot, compile,
 };
 use crate::derivative::central_difference_point;
-use crate::elliptic_curve::{Placement, elliptic_curve_items, view_extent};
+use crate::elliptic_curve::elliptic_curve_items;
 use crate::error::Error;
 use crate::figure::{ArrowHead, Bounds, DotItem, Figure, FillItem, Item, LabelItem, Path, Stroke};
+use crate::fourier::{fourier_intensity_item, fourier_series_items, fourier_transform_items};
 use crate::heatmap::{Area, domain_coloring_item, heatmap_item};
 use crate::image::expand_images;
+use crate::placement::{Placement, view_extent};
 use crate::region::region_items;
 use crate::sample::sample;
 use crate::scene::{
@@ -211,21 +213,21 @@ fn object_items(
         (Object::FieldLine(line), Plot::FieldLine(placed)) => {
             field_line_items(placed, line.style, scale, window)
         }
-        (Object::EllipticCurve(curve), Plot::EllipticCurve(placed)) => elliptic_curve_items(
-            curve,
-            placed,
-            &Placement {
-                transform,
-                to_cm: &|[x, y]| scale.point(x, y),
-                window,
-                extent: view_extent(view.x, view.y),
-            },
-        ),
-        (Object::Heatmap(_) | Object::DomainColoring(_), _) => raster_items(
-            object,
-            plot,
-            &raster_area(view, scale, &compiled.parameters),
-        ),
+        (Object::EllipticCurve(_) | Object::FourierSeries(_) | Object::FourierTransform(_), _) => {
+            sampled_items(
+                object,
+                plot,
+                &placement(transform, scale, window, view),
+                view.x,
+            )
+        }
+        (Object::Heatmap(_) | Object::DomainColoring(_) | Object::FourierIntensity(_), _) => {
+            raster_items(
+                object,
+                plot,
+                &raster_area(view, scale, &compiled.parameters),
+            )
+        }
         (Object::VectorField(field), Plot::VectorField(placed)) => vector_field_items(placed, view)
             .filter_map(|link| link_item(&field.style, Arrow::Stealth, link, scale))
             .collect(),
@@ -233,12 +235,51 @@ fn object_items(
     })
 }
 
-/// 値を色で表す図と，複素関数の色塗りの画像．
+/// 楕円曲線とフーリエ級数・変換．自分で標本化して描く．
+fn sampled_items(
+    object: &Object,
+    plot: &Plot,
+    placement: &Placement,
+    view_x: [f64; 2],
+) -> Vec<Item> {
+    match (object, plot) {
+        (Object::EllipticCurve(curve), Plot::EllipticCurve(placed)) => {
+            elliptic_curve_items(curve, placed, placement)
+        }
+        (Object::FourierSeries(series), Plot::FourierSeries(placed)) => {
+            fourier_series_items(series, placed, placement, view_x)
+        }
+        (Object::FourierTransform(fourier), Plot::FourierTransform(placed)) => {
+            fourier_transform_items(fourier, placed, placement)
+        }
+        _ => Vec::new(),
+    }
+}
+
+/// 自分で標本化して描くオブジェクトの，座標の置き方．
+fn placement<'a>(
+    transform: &'a Transform,
+    scale: Scale,
+    window: [[f64; 2]; 2],
+    view: &PlaneView,
+) -> Placement<'a> {
+    Placement {
+        transform,
+        unit: [scale.x, scale.y],
+        window,
+        extent: view_extent(view.x, view.y),
+    }
+}
+
+/// 値を色で表す図，複素関数の色塗り，2次元のフーリエ変換の強さの画像．
 fn raster_items(object: &Object, plot: &Plot, area: &Area) -> Vec<Item> {
     let raster = match (object, plot) {
         (Object::Heatmap(heatmap), Plot::Heatmap(placed)) => heatmap_item(heatmap, placed, area),
         (Object::DomainColoring(coloring), Plot::DomainColoring(placed)) => {
             domain_coloring_item(coloring, placed, area)
+        }
+        (Object::FourierIntensity(intensity), Plot::FourierIntensity(placed)) => {
+            fourier_intensity_item(intensity, placed, area)
         }
         _ => None,
     };

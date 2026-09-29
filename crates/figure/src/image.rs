@@ -111,6 +111,8 @@ fn parts_of(object: &mut Object) -> Option<Parts<'_>> {
         Object::FieldLine(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
         Object::WignerSeitz(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
         Object::EllipticCurve(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::FourierSeries(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
+        Object::FourierTransform(o) => (&mut o.id, &mut o.transform, Some(&mut o.style)),
         _ => return None,
     })
 }
@@ -144,6 +146,8 @@ pub fn transform_of(object: &Object) -> Option<&[TransformStep]> {
         Object::FieldLine(o) => &o.transform,
         Object::WignerSeitz(o) => &o.transform,
         Object::EllipticCurve(o) => &o.transform,
+        Object::FourierSeries(o) => &o.transform,
+        Object::FourierTransform(o) => &o.transform,
         _ => return None,
     })
 }

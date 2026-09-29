@@ -176,6 +176,22 @@
     },
     "heatmap": { "plane": { "type": "heatmap", "expr": "sin(x) * cos(y)" } },
     "domain_coloring": { "plane": { "type": "domain_coloring", "expr": "(z^2 - 1) / (z^2 + 1)" } },
+    "fourier_series": {
+      "plane": { "type": "fourier_series", "expr": "x", "period": ["-pi", "pi"], "terms": 5 }
+    },
+    "fourier_transform": {
+      "plane": { "type": "fourier_transform", "expr": "1", "support": [-1, 1], "part": "re" }
+    },
+    "fourier_intensity": {
+      "plane": {
+        "type": "fourier_intensity",
+        "expr": "1",
+        "support": [
+          [-1, 1],
+          [-0.5, 0.5]
+        ]
+      }
+    },
     "elliptic_curve": {
       "plane": { "type": "elliptic_curve", "a": -2, "b": 2, "p": -1, "q": 0.5 }
     },

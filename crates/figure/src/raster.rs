@@ -45,7 +45,8 @@ pub fn count_to_f64(count: usize) -> f64 {
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss
 )]
-fn f64_to_count(value: f64) -> usize {
+#[must_use]
+pub fn f64_to_count(value: f64) -> usize {
     if value.is_finite() && value > 0.0 {
         // 0以上の有限の数で，u32の範囲に収めてある．
         value.min(f64::from(u32::MAX)) as usize
@@ -266,22 +267,26 @@ pub fn sample_cells(
         .collect()
 }
 
-/// 画像の要素を作る．`min`，`max`は図の座標(cm)で，画素と粗い升目は，それぞれの解像度で`color`から求める．
+/// 升目の大きさごとに色の並びを返す関数．範囲と，升目の(横，縦)の数を受け取る．
+pub type GridColors<'a> = &'a dyn Fn([[f64; 2]; 2], (usize, usize)) -> Vec<[u8; 4]>;
+
+/// 画像の要素を作る．`domain`は数学の座標，`min`，`max`は図の座標(cm)で，画素と粗い升目は，
+/// それぞれの解像度で`colors`から求める．
 #[must_use]
 pub fn raster_item(
     domain: [[f64; 2]; 2],
     [min, max]: [[f64; 2]; 2],
     [resolution, coarse_resolution]: [u32; 2],
-    color: &dyn Fn(f64, f64) -> [u8; 4],
+    colors: GridColors,
 ) -> RasterItem {
     let [[x0, x1], [y0, y1]] = domain;
     let (columns, rows) = grid_size(x1 - x0, y1 - y0, resolution);
-    let pixels = sample_cells(domain, (columns, rows), color);
+    let pixels = colors(domain, (columns, rows));
     let coarse_size = grid_size(x1 - x0, y1 - y0, coarse_resolution);
     let coarse = Cells {
         columns: coarse_size.0,
         rows: coarse_size.1,
-        pixels: sample_cells(domain, coarse_size, color),
+        pixels: colors(domain, coarse_size),
     };
     let png = encode_png(columns, rows, &pixels);
     RasterItem {

@@ -1299,8 +1299,171 @@
         }
       }
     },
+    "fourier_series": {
+      "type": "object",
+      "required": ["id", "type", "expr", "period", "terms"],
+      "additionalProperties": false,
+      "description": "フーリエ級数の部分和．1周期の区間`period`の上の関数のフーリエ係数を求め，`terms`次までの部分和のグラフか，振幅のスペクトルを描く．係数は1周期の中点則(8192点以上)で求め，値が有限でない点は0とみなす．平面の図でだけ使える．",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "type": {
+          "const": "fourier_series"
+        },
+        "var": {
+          "$ref": "#/$defs/identifier",
+          "description": "変数の名前．省くと`x`．"
+        },
+        "expr": {
+          "$ref": "#/$defs/nonBlankString",
+          "description": "関数の式．"
+        },
+        "period": {
+          "$ref": "#/$defs/boundPair",
+          "description": "1周期の区間[下端, 上端]．下端は上端より小さい(スキーマでは表せない)．"
+        },
+        "terms": {
+          "$ref": "#/$defs/bound",
+          "description": "部分和の最高次数N．0以上500以下で，式の値は整数に丸める(スキーマでは表せない)．媒介変数にすれば，スライダーで次数を変えられる．"
+        },
+        "mode": {
+          "enum": ["sum", "amplitude"],
+          "description": "描くもの．`sum`(既定)は部分和のグラフ，`amplitude`は，n次の振幅sqrt(a_n^2 + b_n^2)(0次は|a_0|/2)を，x = nの縦の線と点で描く．"
+        },
+        "domain": {
+          "$ref": "#/$defs/boundPair",
+          "description": "部分和を描くxの範囲．省くと見える範囲．"
+        },
+        "style": {
+          "$ref": "#/$defs/style"
+        },
+        "transform": {
+          "$ref": "#/$defs/transform"
+        }
+      }
+    },
+    "fourier_transform": {
+      "type": "object",
+      "required": ["id", "type", "expr", "support"],
+      "additionalProperties": false,
+      "description": "1次元のフーリエ変換F(k) = ∫ f(x) e^{-ikx} dxのグラフ．横軸がkである．fは区間`support`の外で0とし，積分は区間を分けた4点のGauss-Legendre則で求める．平面の図でだけ使える．",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "type": {
+          "const": "fourier_transform"
+        },
+        "var": {
+          "$ref": "#/$defs/identifier",
+          "description": "変数の名前．省くと`x`．"
+        },
+        "expr": {
+          "$ref": "#/$defs/nonBlankString",
+          "description": "関数の式．複素数の式として読み，iは虚数単位である．"
+        },
+        "support": {
+          "$ref": "#/$defs/boundPair",
+          "description": "関数が0でない区間[下端, 上端]．"
+        },
+        "part": {
+          "enum": ["abs", "re", "im", "power"],
+          "description": "描く部分．`abs`(既定)は|F(k)|，`re`は実部，`im`は虚部，`power`は|F(k)|^2．"
+        },
+        "domain": {
+          "$ref": "#/$defs/boundPair",
+          "description": "描くkの範囲．省くと見える範囲．"
+        },
+        "style": {
+          "$ref": "#/$defs/style"
+        },
+        "transform": {
+          "$ref": "#/$defs/transform"
+        }
+      }
+    },
+    "fourier_intensity": {
+      "type": "object",
+      "required": ["id", "type", "expr", "support"],
+      "additionalProperties": false,
+      "description": "2次元のフーリエ変換の強さ．開口の関数f(x, y)(`support`の外で0)のフーリエ変換F(kx, ky)の強さ|F|^2(か振幅|F|)を，図の座標を(kx, ky)として，画像の中の最大を1にそろえて色で表す．Fraunhofer回折の図形である．SVGではPNGの画像，TikZでは粗い升目の塗りつぶしになる．平面の図でだけ使える．",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "type": {
+          "const": "fourier_intensity"
+        },
+        "vars": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/identifier"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "2つの変数の名前．省くと`[\"x\", \"y\"]`．"
+        },
+        "expr": {
+          "$ref": "#/$defs/nonBlankString",
+          "description": "開口の関数の式．複素数の式として読む．値が有限でない点は0とみなす．"
+        },
+        "support": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/boundPair"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "関数が0でない範囲[[xの下端, 上端], [yの下端, 上端]]．"
+        },
+        "samples": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 512,
+          "description": "開口の関数を標本化する，各方向の点の数．省くと128．"
+        },
+        "quantity": {
+          "enum": ["intensity", "amplitude"],
+          "description": "表す量．`intensity`(既定)は強さ|F|^2，`amplitude`は振幅|F|．"
+        },
+        "domain": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/boundPair"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "画像を置く(kx, ky)の範囲．省くと見える範囲．"
+        },
+        "range": {
+          "$ref": "#/$defs/boundPair",
+          "description": "色の両端の値(最大を1にそろえた値)．省くと値の最小と最大(対数の目盛では最大から6桁下まで)．"
+        },
+        "colormap": {
+          "enum": ["viridis", "gray", "gray_inverse", "coolwarm"],
+          "description": "値と色の対応．省くと`gray`(黒い背景に明るい点)．"
+        },
+        "scale": {
+          "enum": ["linear", "log"],
+          "description": "値の目盛．`log`では常用対数をとる．弱い環や副極大を見るのに使う．"
+        },
+        "resolution": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "SVGの画像の，長い辺の画素の数．省くと200．"
+        },
+        "tikz_resolution": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "description": "TikZの出力の，長い辺の升目の数．省くと40．"
+        }
+      }
+    },
     "object": {
-      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`，`wigner_seitz`，`elliptic_curve`，`heatmap`，`domain_coloring`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
+      "description": "図を作るオブジェクト．`type`で種類を選ぶ．`graph`，`region`，`tangent_line`，`fractal`，`polygon`，`taylor`，`wigner_seitz`，`elliptic_curve`，`heatmap`，`domain_coloring`，`fourier_series`，`fourier_transform`，`fourier_intensity`は平面の図でだけ，`sphere`，`surface`，`cut`，`intersection`，`tangent_plane`，`complex`，`polyhedron`は空間の図でだけ使える．",
       "oneOf": [
         { "$ref": "#/$defs/axis" },
         { "$ref": "#/$defs/label" },
@@ -1332,7 +1495,10 @@
         { "$ref": "#/$defs/wigner_seitz" },
         { "$ref": "#/$defs/elliptic_curve" },
         { "$ref": "#/$defs/heatmap" },
-        { "$ref": "#/$defs/domain_coloring" }
+        { "$ref": "#/$defs/domain_coloring" },
+        { "$ref": "#/$defs/fourier_series" },
+        { "$ref": "#/$defs/fourier_transform" },
+        { "$ref": "#/$defs/fourier_intensity" }
       ]
     }
   }

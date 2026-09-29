@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "description": "矩形波と，そのフーリエ級数のN次までの部分和．Nを大きくすると部分和は矩形波に近づくが，不連続点の近くの行き過ぎ(Gibbs現象)は残る．",
+  "view": { "x": [-7, 7], "y": [-1.8, 1.8], "unit": { "x": "0.7cm", "y": "1.4cm" } },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "label": "x" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "label": "y" },
+    { "id": "origin_label", "type": "label", "at": [0, 0], "anchor": "north east", "tex": "$O$" },
+    { "id": "n", "type": "parameter", "value": 9, "range": [0, 60], "step": 1 },
+    {
+      "id": "square",
+      "type": "graph",
+      "var": "x",
+      "expr": "sin(x) / abs(sin(x))",
+      "domain": [-7, 7],
+      "style": { "line": "dotted", "color": "gray" }
+    },
+    {
+      "id": "partial_sum",
+      "type": "fourier_series",
+      "expr": "x / abs(x)",
+      "period": ["-pi", "pi"],
+      "terms": "n",
+      "style": { "color": "blue" }
+    }
+  ]
+}

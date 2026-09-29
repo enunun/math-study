@@ -1,0 +1,33 @@
+{
+  "version": "0.1.0",
+  "description": "半径1の円形の開口のFraunhofer回折の強さ(Airyの図形)．開口の関数の2次元のフーリエ変換の絶対値の2乗を，対数の目盛で表す．中央の明るい円盤のまわりに，暗い環と弱い明るい環が交互に並ぶ．",
+  "view": { "x": [-16, 16], "y": [-16, 16], "unit": { "x": "0.25cm", "y": "0.25cm" } },
+  "objects": [
+    {
+      "id": "pattern",
+      "type": "fourier_intensity",
+      "expr": "(1 - x^2 - y^2) / abs(1 - x^2 - y^2) / 2 + 1/2",
+      "support": [
+        [-1, 1],
+        [-1, 1]
+      ],
+      "samples": 160,
+      "scale": "log",
+      "range": [0.0001, 1]
+    },
+    {
+      "id": "x_axis",
+      "type": "axis",
+      "direction": "x",
+      "label": "k_x",
+      "style": { "color": "gray" }
+    },
+    {
+      "id": "y_axis",
+      "type": "axis",
+      "direction": "y",
+      "label": "k_y",
+      "style": { "color": "gray" }
+    }
+  ]
+}

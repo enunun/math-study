@@ -49,6 +49,9 @@ const OBJECT_TYPES: readonly ObjectType[] = [
   { type: 'elliptic_curve', label: '楕円曲線', kinds: PLANE },
   { type: 'heatmap', label: '値を色で表す図', kinds: PLANE },
   { type: 'domain_coloring', label: '複素関数の色塗り', kinds: PLANE },
+  { type: 'fourier_series', label: 'フーリエ級数', kinds: PLANE },
+  { type: 'fourier_transform', label: 'フーリエ変換(1次元)', kinds: PLANE },
+  { type: 'fourier_intensity', label: 'フーリエ変換の強さ(2次元，回折)', kinds: PLANE },
   { type: 'function', label: '関数', kinds: BOTH },
   { type: 'map', label: '写像', kinds: BOTH },
   { type: 'image', label: '像(変換した図形)', kinds: BOTH },
@@ -72,7 +75,7 @@ const REAL_TYPES: Readonly<Record<string, string>> = {
 };
 
 /** 変換(`transform`)を持てない種類．図形でないもの(媒介変数・関数・写像)と，座標軸である． */
-/** 画像(`heatmap`，`domain_coloring`)は，座標軸に沿った長方形の升目なので，変換を持たない． */
+/** 画像(`heatmap`，`domain_coloring`，`fourier_intensity`)は，座標軸に沿った長方形の升目なので，変換を持たない． */
 const UNTRANSFORMABLE: ReadonlySet<string> = new Set([
   'axis',
   'parameter',
@@ -80,6 +83,7 @@ const UNTRANSFORMABLE: ReadonlySet<string> = new Set([
   'map',
   'heatmap',
   'domain_coloring',
+  'fourier_intensity',
 ]);
 
 /** 変換を持てる種類(`type`)．`UNTRANSFORMABLE`のほかのすべてで，像(`image`)の元にできる． */

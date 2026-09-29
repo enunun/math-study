@@ -5,12 +5,10 @@
 //! 粗くなる．そこで，卵形は`x = (r1 + r2)/2 - (r2 - r1)/2 cos θ`，枝は`x = r3 + t^2`とおき，
 //! `y`の符号を`sin θ`や`t`の符号にとる．どちらも，根の近くで滑らかな媒介変数になる．
 
-use crate::clip::clip_polyline;
 use crate::error::ErrorKind;
-use crate::figure::{DotItem, Item, LabelItem, Path, Stroke};
-use crate::sample::sample;
+use crate::figure::{DotItem, Item, LabelItem, Stroke};
+use crate::placement::Placement;
 use crate::scene::{Anchor, Bound, Color, EllipticCurve, Line};
-use crate::transform::Transform;
 
 /// 点の印の半径(pt)．点(`point`)の印と同じである．
 const DOT_RADIUS: f64 = 2.0;
@@ -235,59 +233,6 @@ pub fn compile_elliptic_curve(
     Ok(plot)
 }
 
-/// 数学の座標を，図の座標(cm)へ移し，見える範囲で切り取る手順．
-pub struct Placement<'a> {
-    /// オブジェクトの変換．
-    pub transform: &'a Transform,
-    /// 変換を施した数学の座標を，図の座標(cm)にする．
-    pub to_cm: &'a dyn Fn([f64; 2]) -> [f64; 2],
-    /// 見える範囲(cm)．
-    pub window: [[f64; 2]; 2],
-    /// 見える範囲を含む，原点を中心とする正方形の半分の幅(数学の座標)．
-    pub extent: f64,
-}
-
-impl Placement<'_> {
-    /// 数学の座標の点を，図の座標(cm)にする．変換が定まらなければ`None`．
-    fn place(&self, point: [f64; 2]) -> Option<[f64; 2]> {
-        match self.transform.apply(&point)?.as_slice() {
-            [x, y] => Some((self.to_cm)([*x, *y])),
-            _ => None,
-        }
-    }
-
-    /// 媒介変数`t`の曲線を標本化して，見える範囲で切り取った線．
-    fn curve(
-        &self,
-        f: impl Fn(f64) -> [f64; 2],
-        [start, end]: [f64; 2],
-        stroke: Stroke,
-    ) -> Vec<Item> {
-        let [min, max] = self.window;
-        sample(|t| self.place(f(t)), start, end)
-            .iter()
-            .flat_map(|points| clip_polyline(points, min, max))
-            .map(|points| {
-                Item::Path(Path {
-                    points,
-                    stroke,
-                    arrow: None,
-                })
-            })
-            .collect()
-    }
-
-    /// 図の座標の点が，見える範囲(縁を含む)にあるか．
-    fn inside(&self, [x, y]: [f64; 2]) -> bool {
-        let [min, max] = self.window;
-        let epsilon = 1e-9;
-        x >= min[0] - epsilon
-            && x <= max[0] + epsilon
-            && y >= min[1] - epsilon
-            && y <= max[1] + epsilon
-    }
-}
-
 /// 楕円曲線を描く要素．曲線，作図の線，点の印と名前の順に並べる．
 #[must_use]
 pub fn elliptic_curve_items(
@@ -402,12 +347,4 @@ fn mark_items(curve: &EllipticCurve, plot: &EllipticCurvePlot, placement: &Place
         }
     }
     items
-}
-
-/// 見える範囲を含む，原点を中心とする正方形の半分の幅．
-#[must_use]
-pub fn view_extent(x: [f64; 2], y: [f64; 2]) -> f64 {
-    x.iter()
-        .chain(&y)
-        .fold(0.0_f64, |extent, value| extent.max(value.abs()))
 }

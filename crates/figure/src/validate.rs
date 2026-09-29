@@ -7,10 +7,10 @@ use crate::error::{Error, ErrorKind};
 use crate::image::{expand_images, transform_of};
 use crate::scene::{
     ArrowLength, Axis, Bound, CM_PER_PT, Complex, Curve, CurveExpr, Cut, Direction, EllipticCurve,
-    FieldLine, Fill, Fractal, FunctionDef, Graph, Grid, ImplicitCurve, Intersection, Label,
-    MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object, Parameter, Point, Polygon, Position, Region,
-    Scene, SpaceView, Sphere, Style, Surface, TangentPlane, Taylor, TransformStep, VectorField,
-    View, WignerSeitz, raster_limits,
+    FieldLine, Fill, FourierIntensity, Fractal, FunctionDef, Graph, Grid, ImplicitCurve,
+    Intersection, Label, MAX_TRANSFORM_STEPS, MAX_WIDTH_PT, Map, Object, Parameter, Point, Polygon,
+    Position, Region, Scene, SpaceView, Sphere, Style, Surface, TangentPlane, Taylor,
+    TransformStep, VectorField, View, WignerSeitz, raster_limits,
 };
 
 /// 仰角の絶対値の上限(度)．
@@ -172,6 +172,22 @@ fn validate_object(object: &Object, view: &View) -> Result<(), ErrorKind> {
                 heatmap.tikz_resolution,
             )
         }),
+        Object::FourierSeries(series) => plane_only("fourier_series", view).and_then(|()| {
+            check_variable(&series.var)?;
+            non_empty("expr", &series.expr)?;
+            check_named_range("period", &series.period)?;
+            series.domain.as_ref().map_or(Ok(()), check_domain)
+        }),
+        Object::FourierTransform(transform) => {
+            plane_only("fourier_transform", view).and_then(|()| {
+                check_variable(&transform.var)?;
+                non_empty("expr", &transform.expr)?;
+                check_named_range("support", &transform.support)?;
+                transform.domain.as_ref().map_or(Ok(()), check_domain)
+            })
+        }
+        Object::FourierIntensity(intensity) => plane_only("fourier_intensity", view)
+            .and_then(|()| validate_fourier_intensity(intensity)),
         Object::DomainColoring(coloring) => plane_only("domain_coloring", view).and_then(|()| {
             check_variable(&coloring.var)?;
             non_empty("expr", &coloring.expr)?;
@@ -345,6 +361,40 @@ fn validate_elliptic_curve(curve: &EllipticCurve) -> Result<(), ErrorKind> {
     Ok(())
 }
 
+/// 範囲．数で書いた端が，下端から上端の順になっている．誤りは，項目の名前`field`で返す．
+fn check_named_range(field: &'static str, range: &[Bound; 2]) -> Result<(), ErrorKind> {
+    check_domain(range).map_err(|_| ErrorKind::InvalidRange(field))
+}
+
+/// 2次元のフーリエ変換の強さ．変数，式，範囲，標本の数，解像度．
+fn validate_fourier_intensity(intensity: &FourierIntensity) -> Result<(), ErrorKind> {
+    if intensity.vars.len() != 2 {
+        return Err(ErrorKind::Invalid(
+            "フーリエ変換の強さの変数(`vars`)は，2つの名前で書く．".to_owned(),
+        ));
+    }
+    for var in &intensity.vars {
+        check_variable(var)?;
+    }
+    non_empty("expr", &intensity.expr)?;
+    for axis in &intensity.support {
+        check_named_range("support", axis)?;
+    }
+    if let Some(samples) = intensity.samples
+        && !(2..=FourierIntensity::MAX_SAMPLES).contains(&samples)
+    {
+        return Err(ErrorKind::Invalid(format!(
+            "標本の点の数`samples`は，2以上{}以下にする(今は{samples})．",
+            FourierIntensity::MAX_SAMPLES
+        )));
+    }
+    check_raster(
+        intensity.domain.as_ref(),
+        intensity.resolution,
+        intensity.tikz_resolution,
+    )
+}
+
 /// 画像の範囲と解像度．解像度は，1以上，上限以下である．
 fn check_raster(
     domain: Option<&[[Bound; 2]; 2]>,
@@ -376,6 +426,8 @@ fn check_raster(
 fn style_of(object: &Object) -> Option<&Style> {
     match object {
         Object::EllipticCurve(o) => Some(&o.style),
+        Object::FourierSeries(o) => Some(&o.style),
+        Object::FourierTransform(o) => Some(&o.style),
         Object::VectorField(o) => Some(&o.style),
         Object::FieldLine(o) => Some(&o.style),
         Object::WignerSeitz(o) => Some(&o.style),
@@ -405,7 +457,8 @@ fn style_of(object: &Object) -> Option<&Style> {
         | Object::Function(_)
         | Object::Map(_)
         | Object::Heatmap(_)
-        | Object::DomainColoring(_) => None,
+        | Object::DomainColoring(_)
+        | Object::FourierIntensity(_) => None,
     }
 }
 

@@ -183,6 +183,12 @@ pub enum Object {
     Heatmap(Heatmap),
     /// 複素関数の色塗り．
     DomainColoring(DomainColoring),
+    /// フーリエ級数の部分和．
+    FourierSeries(FourierSeries),
+    /// 1次元のフーリエ変換．
+    FourierTransform(FourierTransform),
+    /// 2次元のフーリエ変換の強さ．
+    FourierIntensity(FourierIntensity),
 }
 
 /// 軸の向き．
@@ -1249,6 +1255,187 @@ fn is_default_complex_var(var: &str) -> bool {
     var == "z"
 }
 
+/// フーリエ級数の部分和．1周期の区間`period`の上の関数`expr`のフーリエ係数を求め，`terms`次までの部分和の
+/// グラフ(`mode: sum`)か，振幅のスペクトル(`mode: amplitude`)を描く．平面の図でだけ使える．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct FourierSeries {
+    /// 識別子．
+    pub id: String,
+    /// 変数の名前．既定は`x`である．
+    #[serde(
+        default = "default_series_var",
+        skip_serializing_if = "is_default_series_var"
+    )]
+    pub var: String,
+    /// 関数の式．
+    pub expr: String,
+    /// 1周期の区間．
+    pub period: [Bound; 2],
+    /// 部分和の最高次数`N`(0以上)．数か式で，式の値は整数に丸める．
+    pub terms: Bound,
+    /// 描くもの．
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub mode: SeriesMode,
+    /// 部分和を描くxの範囲．なければ見える範囲である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domain: Option<[Bound; 2]>,
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+    /// 変換．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
+}
+
+impl FourierSeries {
+    /// 部分和の次数の上限．
+    pub const MAX_TERMS: f64 = 500.0;
+}
+
+/// フーリエ級数で描くもの．
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum SeriesMode {
+    /// 部分和のグラフ．
+    #[default]
+    Sum,
+    /// 振幅のスペクトル．`n`次の振幅`sqrt(a_n^2 + b_n^2)`(0次は`|a_0|/2`)を，`x = n`の縦の線と点で描く．
+    Amplitude,
+}
+
+/// 1次元のフーリエ変換`F(k) = ∫ f(x) e^{-ikx} dx`のグラフ．`f`は区間`support`の外で0とする．平面の図でだけ
+/// 使える．横軸が`k`である．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct FourierTransform {
+    /// 識別子．
+    pub id: String,
+    /// 変数の名前．既定は`x`である．
+    #[serde(
+        default = "default_series_var",
+        skip_serializing_if = "is_default_series_var"
+    )]
+    pub var: String,
+    /// 関数の式．複素数の式として読む(`i`は虚数単位)．
+    pub expr: String,
+    /// 関数が0でない区間．この外では0とする．
+    pub support: [Bound; 2],
+    /// 描く部分．
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub part: TransformPart,
+    /// 描く`k`の範囲．なければ見える範囲である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domain: Option<[Bound; 2]>,
+    /// スタイル．
+    #[serde(default, skip_serializing_if = "Style::is_default")]
+    pub style: Style,
+    /// 変換．
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transform: Vec<TransformStep>,
+}
+
+/// フーリエ変換のグラフに描く部分．
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum TransformPart {
+    /// 絶対値`|F(k)|`．
+    #[default]
+    Abs,
+    /// 実部．
+    Re,
+    /// 虚部．
+    Im,
+    /// 絶対値の2乗`|F(k)|^2`(パワースペクトル)．
+    Power,
+}
+
+/// 2次元のフーリエ変換の強さ．開口の関数`f(x, y)`(区間`support`の外で0)のフーリエ変換
+/// `F(kx, ky) = ∬ f e^{-i(kx x + ky y)} dx dy`の強さ`|F|^2`(か振幅`|F|`)を，図の座標を`(kx, ky)`として，
+/// 画像の中の最大を1にそろえて色で表す．Fraunhofer回折の図形である．平面の図でだけ使える．
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct FourierIntensity {
+    /// 識別子．
+    pub id: String,
+    /// 2つの変数の名前．既定は`x`と`y`である．
+    #[serde(
+        default = "default_plane_vars",
+        skip_serializing_if = "is_default_plane_vars"
+    )]
+    pub vars: Vec<String>,
+    /// 開口の関数の式．複素数の式として読む．
+    pub expr: String,
+    /// 関数が0でない範囲(`[[xの下端, 上端], [yの下端, 上端]]`)．
+    pub support: [[Bound; 2]; 2],
+    /// 開口の関数を標本化する，各方向の点の数．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub samples: Option<u32>,
+    /// 表す量．
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub quantity: Quantity,
+    /// 画像を置く`(kx, ky)`の範囲．なければ見える範囲である．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domain: Option<[[Bound; 2]; 2]>,
+    /// 色の両端の値(最大を1にそろえた値)．なければ値から決める．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub range: Option<[Bound; 2]>,
+    /// 値と色の対応．既定は`gray`(黒い背景に明るい点)である．
+    #[serde(default = "default_gray", skip_serializing_if = "is_gray")]
+    pub colormap: Colormap,
+    /// 値の目盛．
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub scale: ValueScale,
+    /// SVGの画像の，長い辺の画素の数．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resolution: Option<u32>,
+    /// `TikZ`の出力の，長い辺の升目の数．
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tikz_resolution: Option<u32>,
+}
+
+impl FourierIntensity {
+    /// 標本の点の数の既定．
+    pub const SAMPLES: u32 = 128;
+    /// 標本の点の数の上限．
+    pub const MAX_SAMPLES: u32 = 512;
+}
+
+/// フーリエ変換の強さで表す量．
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum Quantity {
+    /// 強さ`|F|^2`．
+    #[default]
+    Intensity,
+    /// 振幅`|F|`．
+    Amplitude,
+}
+
+fn default_series_var() -> String {
+    "x".to_owned()
+}
+
+fn is_default_series_var(var: &str) -> bool {
+    var == "x"
+}
+
+const fn default_gray() -> Colormap {
+    Colormap::Gray
+}
+
+// serdeの`skip_serializing_if`は，参照を受け取る関数を要る．
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn is_gray(colormap: &Colormap) -> bool {
+    *colormap == Colormap::Gray
+}
+
 /// 流線をどちらの向きに伸ばすか．
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -1649,6 +1836,9 @@ impl Object {
             Self::EllipticCurve(o) => &o.id,
             Self::Heatmap(o) => &o.id,
             Self::DomainColoring(o) => &o.id,
+            Self::FourierSeries(o) => &o.id,
+            Self::FourierTransform(o) => &o.id,
+            Self::FourierIntensity(o) => &o.id,
             Self::Intersection(o) => &o.id,
             Self::TangentPlane(o) => &o.id,
             Self::Complex(o) => &o.id,
@@ -1687,6 +1877,9 @@ impl Object {
             Self::EllipticCurve(_) => "elliptic_curve",
             Self::Heatmap(_) => "heatmap",
             Self::DomainColoring(_) => "domain_coloring",
+            Self::FourierSeries(_) => "fourier_series",
+            Self::FourierTransform(_) => "fourier_transform",
+            Self::FourierIntensity(_) => "fourier_intensity",
             Self::Intersection(_) => "intersection",
             Self::TangentPlane(_) => "tangent_plane",
             Self::Complex(_) => "complex",

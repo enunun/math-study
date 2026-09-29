@@ -73,8 +73,31 @@ const SHADINGS: readonly Option[] = [
   ['none', 'なし(色相だけ)'],
 ];
 
+/** フーリエ級数で描くもの． */
+const SERIES_MODES: readonly Option[] = [
+  ['sum', '部分和'],
+  ['amplitude', '振幅のスペクトル'],
+];
+
+/** フーリエ変換のグラフに描く部分． */
+const TRANSFORM_PARTS: readonly Option[] = [
+  ['abs', '絶対値'],
+  ['re', '実部'],
+  ['im', '虚部'],
+  ['power', '絶対値の2乗'],
+];
+
+/** 2次元のフーリエ変換で表す量． */
+const QUANTITIES: readonly Option[] = [
+  ['intensity', '強さ(絶対値の2乗)'],
+  ['amplitude', '振幅(絶対値)'],
+];
+
 export {
   ANCHORS,
+  QUANTITIES,
+  SERIES_MODES,
+  TRANSFORM_PARTS,
   COLORMAPS,
   SHADINGS,
   VALUE_SCALES,

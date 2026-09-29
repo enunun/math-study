@@ -1,0 +1,18 @@
+{
+  "version": "0.1.0",
+  "description": "幅2aの箱形の関数のフーリエ変換F(k) = 2 sin(ak)/k．箱を狭くすると，変換は広がる．",
+  "view": { "x": [-15, 15], "y": [-1.2, 4.4], "unit": { "x": "0.35cm", "y": "0.9cm" } },
+  "objects": [
+    { "id": "x_axis", "type": "axis", "direction": "x", "label": "k" },
+    { "id": "y_axis", "type": "axis", "direction": "y", "label": "F(k)" },
+    { "id": "a", "type": "parameter", "value": 1, "range": [0.2, 2], "step": 0.05 },
+    {
+      "id": "transform",
+      "type": "fourier_transform",
+      "expr": "1",
+      "support": ["-a", "a"],
+      "part": "re",
+      "style": { "color": "blue" }
+    }
+  ]
+}

@@ -235,7 +235,15 @@ const OWN_FIELDS: Readonly<Record<string, (kind: ViewKind) => readonly FieldSpec
 };
 
 /** スタイルを持たない種類． */
-const UNSTYLED = new Set(['label', 'parameter', 'function', 'map', 'heatmap', 'domain_coloring']);
+const UNSTYLED = new Set([
+  'label',
+  'parameter',
+  'function',
+  'map',
+  'heatmap',
+  'domain_coloring',
+  'fourier_intensity',
+]);
 
 const ID: FieldSpec = { kind: 'text', key: 'id', label: '識別子' };
 const STYLE: FieldSpec = { kind: 'style' };

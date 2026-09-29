@@ -1,4 +1,11 @@
-import { COLORMAPS, SHADINGS, VALUE_SCALES } from './field-options';
+import {
+  COLORMAPS,
+  QUANTITIES,
+  SERIES_MODES,
+  SHADINGS,
+  TRANSFORM_PARTS,
+  VALUE_SCALES,
+} from './field-options';
 import type { FieldSpec } from './field-spec';
 
 const PAIR = 2;
@@ -55,6 +62,46 @@ const ANALYSIS_FIELDS: Readonly<Record<string, readonly FieldSpec[]>> = {
       hint: '[[-2, 2], [-2, 2]]',
     },
     { kind: 'select', key: 'shading', label: '明るさ', options: SHADINGS, optional: true },
+    ...RASTER_RESOLUTIONS,
+  ],
+  fourier_series: [
+    { kind: 'text', key: 'var', label: '変数(省くとx)', optional: true },
+    { kind: 'text', key: 'expr', label: '関数の式' },
+    { kind: 'list', key: 'period', label: '1周期の区間', item: 'bound', count: PAIR },
+    { kind: 'bound', key: 'terms', label: '最高次数N' },
+    { kind: 'select', key: 'mode', label: '描くもの', options: SERIES_MODES, optional: true },
+    { kind: 'list', key: 'domain', label: '描く範囲', item: 'bound', count: PAIR, optional: true },
+  ],
+  fourier_transform: [
+    { kind: 'text', key: 'var', label: '変数(省くとx)', optional: true },
+    { kind: 'text', key: 'expr', label: '関数の式(iは虚数単位)' },
+    { kind: 'list', key: 'support', label: '関数が0でない区間', item: 'bound', count: PAIR },
+    { kind: 'select', key: 'part', label: '描く部分', options: TRANSFORM_PARTS, optional: true },
+    { kind: 'list', key: 'domain', label: 'kの範囲', item: 'bound', count: PAIR, optional: true },
+  ],
+  fourier_intensity: [
+    { kind: 'list', key: 'vars', label: '変数(2つ)', item: 'text', count: PAIR, optional: true },
+    { kind: 'text', key: 'expr', label: '開口の関数の式' },
+    { kind: 'json', key: 'support', label: '関数が0でない範囲', hint: '[[-1, 1], [-1, 1]]' },
+    { kind: 'number', key: 'samples', label: '標本の数(各方向，省くと128)', optional: true },
+    { kind: 'select', key: 'quantity', label: '表す量', options: QUANTITIES, optional: true },
+    {
+      kind: 'json',
+      key: 'domain',
+      label: '画像の範囲(省くと見える範囲)',
+      optional: true,
+      hint: '[[-10, 10], [-10, 10]]',
+    },
+    {
+      kind: 'list',
+      key: 'range',
+      label: '色の両端の値',
+      item: 'bound',
+      count: PAIR,
+      optional: true,
+    },
+    { kind: 'select', key: 'colormap', label: '色', options: COLORMAPS, optional: true },
+    { kind: 'select', key: 'scale', label: '目盛', options: VALUE_SCALES, optional: true },
     ...RASTER_RESOLUTIONS,
   ],
 };

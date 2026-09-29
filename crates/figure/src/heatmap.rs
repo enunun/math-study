@@ -5,7 +5,9 @@ use crate::compile::{Env, evaluate_domain};
 use crate::error::ErrorKind;
 use crate::expr::{Complex, Expr, is_reserved_name};
 use crate::figure::RasterItem;
-use crate::raster::{TRANSPARENT, cell_centers, colormap, grid_size, hsv, raster_item};
+use crate::raster::{
+    GridColors, TRANSPARENT, cell_centers, colormap, grid_size, hsv, raster_item, sample_cells,
+};
 use crate::scene::{Bound, Colormap, DomainColoring, Heatmap, Shading, ValueScale, raster_limits};
 
 /// 式を読んだ後の，値を色で表す図．
@@ -27,7 +29,7 @@ pub struct DomainColoringPlot {
 }
 
 /// 変数の名前を検査し，変数を先頭にした，式の名前の並びを作る．虚数単位`i`は変数にできない．
-fn variable_names<'a>(vars: &'a [String], env: &Env<'a>) -> Result<Vec<&'a str>, ErrorKind> {
+pub fn variable_names<'a>(vars: &'a [String], env: &Env<'a>) -> Result<Vec<&'a str>, ErrorKind> {
     for (index, var) in vars.iter().enumerate() {
         if is_reserved_name(var) || var == "i" {
             return Err(ErrorKind::ReservedName(var.clone()));
@@ -44,7 +46,7 @@ fn variable_names<'a>(vars: &'a [String], env: &Env<'a>) -> Result<Vec<&'a str>,
 }
 
 /// 複素数の式を読む．
-fn complex_expr(source: &str, names: &[&str], env: &Env) -> Result<Expr, ErrorKind> {
+pub fn complex_expr(source: &str, names: &[&str], env: &Env) -> Result<Expr, ErrorKind> {
     let expr = Expr::compile_complex(source, names, env.functions).map_err(|error| {
         ErrorKind::Expression {
             field: "expr",
@@ -122,21 +124,23 @@ pub struct Area<'a> {
 
 impl Area<'_> {
     /// 範囲を，見える範囲で切り取る．重なりがなければ`None`．
-    fn clip(&self, domain: Option<[[f64; 2]; 2]>) -> Option<[[f64; 2]; 2]> {
+    #[must_use]
+    pub fn clip(&self, domain: Option<[[f64; 2]; 2]>) -> Option<[[f64; 2]; 2]> {
         let [[x0, x1], [y0, y1]] = domain.unwrap_or(self.view);
         let [[vx0, vx1], [vy0, vy1]] = self.view;
         let clipped = [[x0.max(vx0), x1.min(vx1)], [y0.max(vy0), y1.min(vy1)]];
-        let [[a, b], [c, d]] = clipped;
-        (a < b && c < d).then_some(clipped)
+        let [[left, right], [bottom, top]] = clipped;
+        (left < right && bottom < top).then_some(clipped)
     }
 
-    /// 範囲の画像を作る．
-    fn raster(
+    /// 範囲の画像を作る．`colors`は，升目の大きさごとに色の並びを返す．
+    #[must_use]
+    pub fn raster(
         &self,
         domain: [[f64; 2]; 2],
         resolution: Option<u32>,
         tikz_resolution: Option<u32>,
-        color: &dyn Fn(f64, f64) -> [u8; 4],
+        colors: GridColors,
     ) -> RasterItem {
         let [[x0, x1], [y0, y1]] = domain;
         raster_item(
@@ -149,12 +153,13 @@ impl Area<'_> {
                 resolution.unwrap_or(raster_limits::RESOLUTION),
                 tikz_resolution.unwrap_or(raster_limits::TIKZ_RESOLUTION),
             ],
-            color,
+            colors,
         )
     }
 
     /// 式に渡す値(変数のあとに，媒介変数と点の座標)．
-    fn values(&self, variables: &[Complex]) -> Vec<Complex> {
+    #[must_use]
+    pub fn values(&self, variables: &[Complex]) -> Vec<Complex> {
         variables
             .iter()
             .copied()
@@ -172,60 +177,126 @@ fn real_value(value: Complex) -> f64 {
     }
 }
 
-/// 値を色で表す図の画像．見える範囲と重ならなければ`None`．
+/// 値から色を決める設定．
+pub struct ColorSettings {
+    /// 値と色の対応．
+    pub colormap: Colormap,
+    /// 値の目盛．
+    pub scale: ValueScale,
+    /// 色の両端の値(目盛をとる前)．なければ値から決める．
+    pub range: Option<[f64; 2]>,
+    /// 値を，画像の中の最大で割るか．
+    pub normalize: bool,
+    /// SVGの画像の，長い辺の画素の数．
+    pub resolution: Option<u32>,
+    /// `TikZ`の升目の数．
+    pub tikz_resolution: Option<u32>,
+}
+
+/// 対数の目盛で範囲を省いたときに，最大から下へとる桁の数．
+const LOG_DECADES: f64 = 6.0;
+
+/// 値の並びから色の画像を作る．`values`は，升目の大きさごとに値の並びを返す．範囲を省くと，細かい升目の
+/// 値の最小と最大(`coolwarm`では0を中心にした範囲，対数の目盛では最大から6桁下まで)にする．
 #[must_use]
-pub fn heatmap_item(heatmap: &Heatmap, plot: &HeatmapPlot, area: &Area) -> Option<RasterItem> {
-    let domain = area.clip(plot.domain)?;
-    let value = |x: f64, y: f64| {
-        let raw = real_value(
-            plot.expr
-                .eval_complex(&area.values(&[Complex::real(x), Complex::real(y)])),
-        );
-        match heatmap.scale {
-            ValueScale::Linear => raw,
-            ValueScale::Log if raw > 0.0 => raw.log10(),
+pub fn value_raster(
+    area: &Area,
+    domain: [[f64; 2]; 2],
+    settings: &ColorSettings,
+    values: &dyn Fn([[f64; 2]; 2], (usize, usize)) -> Vec<f64>,
+) -> RasterItem {
+    let [[x0, x1], [y0, y1]] = domain;
+    let resolution = settings.resolution.unwrap_or(raster_limits::RESOLUTION);
+    let fine = values(domain, grid_size(x1 - x0, y1 - y0, resolution));
+    let peak = fine
+        .iter()
+        .copied()
+        .filter(|value| value.is_finite())
+        .fold(f64::NEG_INFINITY, f64::max);
+    let divisor = if settings.normalize && peak > 0.0 && peak.is_finite() {
+        peak
+    } else {
+        1.0
+    };
+    let scaled = |value: f64| {
+        let value = value / divisor;
+        match settings.scale {
+            ValueScale::Linear => value,
+            ValueScale::Log if value > 0.0 => value.log10(),
             ValueScale::Log => f64::NAN,
         }
     };
-    let [low, high] = match plot.range {
-        Some([low, high]) => match heatmap.scale {
-            ValueScale::Linear => [low, high],
-            ValueScale::Log => [low.log10(), high.log10()],
-        },
-        None => auto_range(heatmap, domain, &value),
+    let [low, high] = settings.range.map_or_else(
+        || auto_range(settings, fine.iter().map(|value| scaled(*value))),
+        |[low, high]| [scaled(low * divisor), scaled(high * divisor)],
+    );
+    let colors = |domain: [[f64; 2]; 2], size: (usize, usize)| -> Vec<[u8; 4]> {
+        values(domain, size)
+            .into_iter()
+            .map(|value| {
+                let t = if high > low {
+                    (scaled(value) - low) / (high - low)
+                } else if scaled(value).is_finite() {
+                    0.5
+                } else {
+                    f64::NAN
+                };
+                colormap(settings.colormap, t)
+            })
+            .collect()
     };
-    let color = |x: f64, y: f64| {
-        let t = (value(x, y) - low) / (high - low);
-        let t = if high > low { t } else { 0.5 };
-        colormap(heatmap.colormap, t)
-    };
-    Some(area.raster(domain, heatmap.resolution, heatmap.tikz_resolution, &color))
+    area.raster(
+        domain,
+        settings.resolution,
+        settings.tikz_resolution,
+        &colors,
+    )
 }
 
-/// 値の最小と最大．`coolwarm`では，0を中心にした範囲にする．値がなければ`[0, 1]`．
-fn auto_range(
-    heatmap: &Heatmap,
-    domain: [[f64; 2]; 2],
-    value: &dyn Fn(f64, f64) -> f64,
-) -> [f64; 2] {
-    let resolution = heatmap.resolution.unwrap_or(raster_limits::RESOLUTION);
-    let [[x0, x1], [y0, y1]] = domain;
-    let size = grid_size(x1 - x0, y1 - y0, resolution);
-    let (low, high) = cell_centers(domain, size)
-        .into_iter()
-        .map(|[x, y]| value(x, y))
-        .filter(|v| v.is_finite())
-        .fold((f64::INFINITY, f64::NEG_INFINITY), |(low, high), v| {
-            (low.min(v), high.max(v))
+/// 値の最小と最大から決める，色の両端．値がなければ`[0, 1]`．
+fn auto_range(settings: &ColorSettings, values: impl Iterator<Item = f64>) -> [f64; 2] {
+    let (low, high) = values
+        .filter(|value| value.is_finite())
+        .fold((f64::INFINITY, f64::NEG_INFINITY), |(low, high), value| {
+            (low.min(value), high.max(value))
         });
     if !(low.is_finite() && high.is_finite()) {
         return [0.0, 1.0];
     }
-    if heatmap.colormap == Colormap::Coolwarm {
+    if settings.colormap == Colormap::Coolwarm {
         let bound = low.abs().max(high.abs());
         return [-bound, bound];
     }
+    if settings.scale == ValueScale::Log {
+        return [low.max(high - LOG_DECADES), high];
+    }
     [low, high]
+}
+
+/// 値を色で表す図の画像．見える範囲と重ならなければ`None`．
+#[must_use]
+pub fn heatmap_item(heatmap: &Heatmap, plot: &HeatmapPlot, area: &Area) -> Option<RasterItem> {
+    let domain = area.clip(plot.domain)?;
+    let settings = ColorSettings {
+        colormap: heatmap.colormap,
+        scale: heatmap.scale,
+        range: plot.range,
+        normalize: false,
+        resolution: heatmap.resolution,
+        tikz_resolution: heatmap.tikz_resolution,
+    };
+    let values = |domain: [[f64; 2]; 2], size: (usize, usize)| -> Vec<f64> {
+        cell_centers(domain, size)
+            .into_iter()
+            .map(|[x, y]| {
+                real_value(
+                    plot.expr
+                        .eval_complex(&area.values(&[Complex::real(x), Complex::real(y)])),
+                )
+            })
+            .collect()
+    };
+    Some(value_raster(area, domain, &settings, &values))
 }
 
 /// 複素関数の色塗りの画像．偏角を色相(正の実数が赤，負の実数が青緑)で，絶対値を明るさの縞で表す．
@@ -255,10 +326,11 @@ pub fn domain_coloring_item(
         };
         hsv(hue, 1.0, brightness)
     };
+    let colors = |domain: [[f64; 2]; 2], size: (usize, usize)| sample_cells(domain, size, &color);
     Some(area.raster(
         domain,
         coloring.resolution,
         coloring.tikz_resolution,
-        &color,
+        &colors,
     ))
 }
