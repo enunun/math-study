@@ -20,9 +20,13 @@ async function pick(
   await picker.getByRole('button', { name: action, exact: true }).click();
 }
 
-/** 図の作成で，見本を分類から選んで読み込む． */
-async function loadSample(page: Page, category: string, label: string): Promise<void> {
+/** 図の作成で，見本を，平面・空間，種別，見本の順に選んで読み込む． */
+async function loadSample(
+  page: Page,
+  [tier, category, label]: readonly [string, string, string],
+): Promise<void> {
   const picker = page.locator('.figure-editor').getByRole('group', { name: '見本', exact: true });
+  await picker.getByLabel('見本の種類', { exact: true }).selectOption({ label: tier });
   await pick(picker, SAMPLES, [category, label]);
 }
 

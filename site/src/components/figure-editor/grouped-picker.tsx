@@ -19,6 +19,12 @@ interface PickerCategory<T extends PickerItem> {
   groups: readonly PickerGroup<T>[];
 }
 
+/** 分類の上の段．選ぶと，分類の選択欄に，その段の分類だけが出る(見本の平面・空間)． */
+interface PickerTier<T extends PickerItem> {
+  label: string;
+  categories: readonly PickerCategory<T>[];
+}
+
 interface Props<T extends PickerItem> {
   /** 選択の見出し(「見本」「テンプレート(部品)」など)． */
   title: string;
@@ -28,6 +34,8 @@ interface Props<T extends PickerItem> {
   /** ボタンの文字(「読み込む」「挿入」など)． */
   action: string;
   onPick: (item: T) => void;
+  /** 分類の選択欄の前に置く要素(上の段の選択欄)． */
+  leading?: ReactElement;
 }
 
 /** 項目の選択欄の値．まとまりが違えば，項目の識別子が同じでも区別する． */
@@ -88,6 +96,7 @@ function GroupedPicker<T extends PickerItem>({
   categories,
   action,
   onPick,
+  leading,
 }: Props<T>): ReactElement {
   const [categoryLabel, setCategoryLabel] = useState(categories[0]?.label ?? '');
   const category =
@@ -101,6 +110,7 @@ function GroupedPicker<T extends PickerItem>({
   return (
     <div className="fe-template-picker" role="group" aria-label={title}>
       <span>{title}：</span>
+      {leading}
       <select
         aria-label={`${name}の分類`}
         value={category?.label ?? ''}
@@ -131,5 +141,42 @@ function GroupedPicker<T extends PickerItem>({
   );
 }
 
-export { GroupedPicker };
-export type { PickerCategory, PickerGroup, PickerItem };
+/**
+ * 段，分類，項目の順に選ぶ選択．段を変えると，分類と項目の選択欄を作り直す(`key`に段を含める)．
+ * 段の選択欄は「〈名前〉の種類」である．
+ */
+function TieredPicker<T extends PickerItem>({
+  tiers,
+  ...props
+}: Omit<Props<T>, 'categories' | 'leading'> & {
+  tiers: readonly PickerTier<T>[];
+}): ReactElement {
+  const [tierLabel, setTierLabel] = useState(tiers[0]?.label ?? '');
+  const tier = tiers.find((candidate) => candidate.label === tierLabel) ?? tiers[0];
+  const leading = (
+    <select
+      aria-label={`${props.name}の種類`}
+      value={tier?.label ?? ''}
+      onChange={(event) => {
+        setTierLabel(event.target.value);
+      }}
+    >
+      {tiers.map(({ label }) => (
+        <option key={label} value={label}>
+          {label}
+        </option>
+      ))}
+    </select>
+  );
+  return (
+    <GroupedPicker
+      key={tier?.label ?? ''}
+      {...props}
+      categories={tier?.categories ?? []}
+      leading={leading}
+    />
+  );
+}
+
+export { GroupedPicker, TieredPicker };
+export type { PickerCategory, PickerGroup, PickerItem, PickerTier };

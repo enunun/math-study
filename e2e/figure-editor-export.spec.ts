@@ -31,7 +31,7 @@ test.describe('図の作成：画像の書き出し', () => {
   });
 
   test('画像をSVG，PNG，JPEGで書き出せ，透過できる形式では背景を透過できる', async ({ page }) => {
-    await loadSample(page, '平面：関数とグラフ', '関数のグラフ');
+    await loadSample(page, ['平面', '関数とグラフ', '関数のグラフ']);
     const format = editor(page).getByLabel('画像の形式');
     const transparent = editor(page).getByLabel(/背景を透過する/u);
 

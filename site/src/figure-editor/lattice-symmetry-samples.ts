@@ -18,18 +18,18 @@ interface SampleGroup {
 
 const PLANE_SYMMETRY_GROUPS: readonly SampleGroup[] = [
   {
-    label: '平面：格子の対称操作',
+    label: '格子の対称操作',
     samples: [...SYMMETRY_SAMPLES, ...PLANE_SYMMETRY_OPERATION_SAMPLES],
   },
-  { label: '平面：格子の点群', samples: PLANE_POINT_GROUP_SAMPLES },
+  { label: '格子の点群', samples: PLANE_POINT_GROUP_SAMPLES },
 ];
 
 const SPACE_SYMMETRY_GROUPS: readonly SampleGroup[] = [
   {
-    label: '空間：格子の対称操作',
+    label: '格子の対称操作',
     samples: [...SPACE_SYMMETRY_SAMPLES, ...SPACE_SYMMETRY_OPERATION_SAMPLES],
   },
-  { label: '空間：格子の点群', samples: SPACE_POINT_GROUP_SAMPLES },
+  { label: '格子の点群', samples: SPACE_POINT_GROUP_SAMPLES },
 ];
 
 export { PLANE_SYMMETRY_GROUPS, SPACE_SYMMETRY_GROUPS };

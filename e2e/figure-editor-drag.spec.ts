@@ -34,7 +34,7 @@ test.describe('点のドラッグ', () => {
     page,
   }) => {
     // 丸めや近い点の選び方はpoint-drag.test.tsで確かめるので，ここでは，実際のポインタの操作が図に届くことを確かめる．
-    await loadSample(page, '平面：ベクトル場', '2つの点電荷の電場');
+    await loadSample(page, ['平面', 'ベクトル場', '2つの点電荷の電場']);
     await expect(preview(page)).toBeVisible();
     const before = await outputPreview(page).innerHTML();
     await preview(page).scrollIntoViewIfNeeded();

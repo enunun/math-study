@@ -60,78 +60,96 @@ interface SampleGroup {
   samples: readonly SceneTemplate[];
 }
 
+/** 見本の，平面の図と空間の図の分け．分けの中を，種別(まとまり)で分ける． */
+interface SampleTier {
+  label: string;
+  groups: readonly SampleGroup[];
+}
+
 /**
  * 見本．そのまま使える，完成した図である．記事の図と，ここで書いた図(`sample-scenes.ts`)があり，
- * 平面の図，空間の図の順に，分野ごとにまとめる．選ぶと，今の図を置き換える．
+ * 平面の図と空間の図に分け，その中を種別(分野)で分ける．選ぶと，今の図を置き換える．
  */
-const SAMPLE_GROUPS: readonly SampleGroup[] = [
+const SAMPLE_TIERS: readonly SampleTier[] = [
   {
-    label: '平面：関数とグラフ',
-    samples: [
-      articleSample('graphs', '関数のグラフ', 'sine-and-shifted-sine'),
-      articleSample('region', '2つのグラフの間の領域', 'sine-cosine-region'),
-      articleSample('tangentLine', '接線', 'tangent-line-on-parabola'),
-      ...ANALYSIS_SAMPLE_SCENES,
+    label: '平面',
+    groups: [
+      {
+        label: '関数とグラフ',
+        samples: [
+          articleSample('graphs', '関数のグラフ', 'sine-and-shifted-sine'),
+          articleSample('region', '2つのグラフの間の領域', 'sine-cosine-region'),
+          articleSample('tangentLine', '接線', 'tangent-line-on-parabola'),
+          ...ANALYSIS_SAMPLE_SCENES,
+        ],
+      },
+      {
+        label: '図形',
+        samples: [
+          articleSample('vectors', 'ベクトルの和', 'vector-addition'),
+          ELLIPSE_FOCI_SAMPLE,
+          articleSample('sierpinski', 'Sierpińskiの三角形', 'sierpinski-triangle'),
+        ],
+      },
+      {
+        label: '楕円曲線と楕円関数',
+        samples: [
+          articleSample('ellipticAddition', '楕円曲線の点の和', 'elliptic-curve-addition'),
+          articleSample('ellipticDoubling', '楕円曲線の点の2倍', 'elliptic-curve-doubling'),
+          articleSample('jacobiFunctions', 'Jacobiの楕円関数', 'jacobi-elliptic-functions'),
+        ],
+      },
+      {
+        label: '色で表す図と複素関数',
+        samples: [
+          articleSample('heatmapContours', '値の色と等高線', 'heatmap-with-contours'),
+          articleSample('gammaColoring', 'ガンマ関数の色塗り', 'gamma-domain-coloring'),
+          articleSample(
+            'weierstrassColoring',
+            'Weierstrassの℘の色塗り',
+            'weierstrass-p-domain-coloring',
+          ),
+        ],
+      },
+      { label: 'ベクトル場', samples: VECTOR_FIELD_SAMPLES },
+      ...PLANE_SYMMETRY_GROUPS,
+      { label: '結晶と逆格子', samples: PLANE_CRYSTAL_SAMPLES },
     ],
   },
   {
-    label: '平面：図形',
-    samples: [
-      articleSample('vectors', 'ベクトルの和', 'vector-addition'),
-      ELLIPSE_FOCI_SAMPLE,
-      articleSample('sierpinski', 'Sierpińskiの三角形', 'sierpinski-triangle'),
+    label: '空間',
+    groups: [
+      {
+        label: '曲面',
+        samples: [
+          articleSample('sphere', '球と座標軸', 'sphere-with-axes'),
+          articleSample('paraboloid', '放物面と座標軸', 'paraboloid-with-axes'),
+          articleSample('circles', '球の上の円', 'sphere-with-circles'),
+          articleSample('tangentPlane', '接平面', 'tangent-plane-on-paraboloid'),
+          articleSample('cone', '円錐と切り口', 'cone-with-cuts'),
+          articleSample('cylinder', '球と円柱の交線', 'sphere-and-cylinder'),
+          ...SURFACE_SAMPLES,
+        ],
+      },
+      {
+        label: '曲線とベクトル',
+        samples: [
+          articleSample('spaceVectors', '空間のベクトルの和', 'space-vector-addition'),
+          ...SPACE_CURVE_SAMPLES,
+        ],
+      },
+      { label: '4次元', samples: FOUR_SPACE_SAMPLE_SCENES },
+      { label: 'ベクトル場', samples: SPACE_VECTOR_FIELD_SAMPLES },
+      ...SPACE_SYMMETRY_GROUPS,
+      { label: '結晶と逆格子', samples: SPACE_CRYSTAL_SAMPLES },
     ],
   },
-  {
-    label: '平面：楕円曲線と楕円関数',
-    samples: [
-      articleSample('ellipticAddition', '楕円曲線の点の和', 'elliptic-curve-addition'),
-      articleSample('ellipticDoubling', '楕円曲線の点の2倍', 'elliptic-curve-doubling'),
-      articleSample('jacobiFunctions', 'Jacobiの楕円関数', 'jacobi-elliptic-functions'),
-    ],
-  },
-  {
-    label: '平面：色で表す図と複素関数',
-    samples: [
-      articleSample('heatmapContours', '値の色と等高線', 'heatmap-with-contours'),
-      articleSample('gammaColoring', 'ガンマ関数の色塗り', 'gamma-domain-coloring'),
-      articleSample(
-        'weierstrassColoring',
-        'Weierstrassの℘の色塗り',
-        'weierstrass-p-domain-coloring',
-      ),
-    ],
-  },
-  { label: '平面：ベクトル場', samples: VECTOR_FIELD_SAMPLES },
-  ...PLANE_SYMMETRY_GROUPS,
-  { label: '平面：結晶と逆格子', samples: PLANE_CRYSTAL_SAMPLES },
-  {
-    label: '空間：曲面',
-    samples: [
-      articleSample('sphere', '球と座標軸', 'sphere-with-axes'),
-      articleSample('paraboloid', '放物面と座標軸', 'paraboloid-with-axes'),
-      articleSample('circles', '球の上の円', 'sphere-with-circles'),
-      articleSample('tangentPlane', '接平面', 'tangent-plane-on-paraboloid'),
-      articleSample('cone', '円錐と切り口', 'cone-with-cuts'),
-      articleSample('cylinder', '球と円柱の交線', 'sphere-and-cylinder'),
-      ...SURFACE_SAMPLES,
-    ],
-  },
-  {
-    label: '空間：曲線とベクトル',
-    samples: [
-      articleSample('spaceVectors', '空間のベクトルの和', 'space-vector-addition'),
-      ...SPACE_CURVE_SAMPLES,
-    ],
-  },
-  { label: '空間：4次元', samples: FOUR_SPACE_SAMPLE_SCENES },
-  { label: '空間：ベクトル場', samples: SPACE_VECTOR_FIELD_SAMPLES },
-  ...SPACE_SYMMETRY_GROUPS,
-  { label: '空間：結晶と逆格子', samples: SPACE_CRYSTAL_SAMPLES },
 ];
 
-/** 見本の全部(まとまりの順)． */
-const EDITOR_SAMPLES: readonly SceneTemplate[] = SAMPLE_GROUPS.flatMap((group) => group.samples);
+/** 見本の全部(分けとまとまりの順)． */
+const EDITOR_SAMPLES: readonly SceneTemplate[] = SAMPLE_TIERS.flatMap((tier) =>
+  tier.groups.flatMap((group) => group.samples),
+);
 
-export { EDITOR_SAMPLES, SAMPLE_GROUPS };
-export type { SampleGroup };
+export { EDITOR_SAMPLES, SAMPLE_TIERS };
+export type { SampleGroup, SampleTier };

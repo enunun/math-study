@@ -46,7 +46,7 @@ test.describe('元に戻す・やり直す', () => {
   test('Ctrl+Zで見本の読み込みを戻し，Ctrl+Shift+Zでやり直せる', async ({ page }) => {
     await editor(page).getByRole('button', { name: '座標軸(平面)', exact: true }).click();
     const count = await objects(page).count();
-    await loadSample(page, '平面：ベクトル場', '2つの点電荷の電場');
+    await loadSample(page, ['平面', 'ベクトル場', '2つの点電荷の電場']);
     await expect(objects(page)).not.toHaveCount(count);
     const sampleCount = await objects(page).count();
     await page.locator('body').click({ position: { x: 1, y: 1 } });

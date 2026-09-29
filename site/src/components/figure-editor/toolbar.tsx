@@ -4,13 +4,13 @@ import type { ReactElement } from 'react';
 import { parseDraft } from '@/figure-editor/draft';
 import type { SceneDraft, ViewKind } from '@/figure-editor/draft';
 import type { JsonObject } from '@/figure-editor/json';
-import { SAMPLE_GROUPS } from '@/figure-editor/samples';
+import { SAMPLE_TIERS } from '@/figure-editor/samples';
 import { OBJECT_TEMPLATE_CATEGORIES, SCENE_TEMPLATES } from '@/figure-editor/templates';
 import type { Figure } from '@/wasm/figure';
 
 import { ExportButtons, STEM } from './export-buttons';
 import type { ExportProps } from './export-buttons';
-import { GroupedPicker } from './grouped-picker';
+import { GroupedPicker, TieredPicker } from './grouped-picker';
 import { HistoryControls } from './history-controls';
 import { ImageExportControls } from './image-export-controls';
 
@@ -21,17 +21,22 @@ interface Props {
   onMessage: (message: string) => void;
 }
 
-/** 見本(そのまま使える完成した図)の選択．平面・空間と分野で分けた分類から選ぶ．見本は，今の図を置き換える． */
+/**
+ * 見本(そのまま使える完成した図)の選択．平面・空間，種別，見本の3段で選ぶ．見本は，今の図を置き換える．
+ */
 function Samples({ onLoad }: Pick<Props, 'onLoad'>): ReactElement {
-  const categories = SAMPLE_GROUPS.map((group) => ({
-    label: group.label,
-    groups: [{ label: group.label, items: group.samples }],
+  const tiers = SAMPLE_TIERS.map((tier) => ({
+    label: tier.label,
+    categories: tier.groups.map((group) => ({
+      label: group.label,
+      groups: [{ label: group.label, items: group.samples }],
+    })),
   }));
   return (
-    <GroupedPicker
+    <TieredPicker
       title="見本"
       name="見本"
-      categories={categories}
+      tiers={tiers}
       action="読み込む"
       onPick={(sample) => {
         onLoad(sample.scene);

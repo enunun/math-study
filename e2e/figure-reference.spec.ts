@@ -47,7 +47,7 @@ test.describe('図のシーンのリファレンス', () => {
 
   test('図の作成のフォームから，選んだ種類の節を開ける', async ({ page }) => {
     await page.goto('tools/graphics/figure-editor/');
-    await loadSample(page, '空間：曲面', '円錐と切り口');
+    await loadSample(page, ['空間', '曲面', '円錐と切り口']);
     await page
       .getByRole('button', { name: /切り口「/u })
       .first()
