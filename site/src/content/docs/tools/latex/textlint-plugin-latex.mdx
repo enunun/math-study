@@ -1,0 +1,161 @@
+---
+title: '@enunun/textlint-plugin-latex'
+description: LaTeXの文書をtextlintで校正するためのプラグインである．別行立ての数式を前後の文の一部として扱い，数式の多い文書でも読者が読むとおりに文を区切る．
+date: 2026-10-21
+---
+
+import { Aside, LinkCard } from '@astrojs/starlight/components';
+
+<Aside title="この記事について">
+
+このページは，作者がnpmで公開したtextlintのプラグイン[@enunun/textlint-plugin-latex](https://www.npmjs.com/package/@enunun/textlint-plugin-latex)の紹介を，Claude Codeがまとめたものである．プラグイン自体も，Claude Codeとの対話で作った．
+
+</Aside>
+
+[textlint](https://textlint.org/)は，文章を規則に沿って校正するツールである．句読点の種類，文の長さ，である調とですます調の混在などを検査する．規則はMarkdownのような文書の構造を前提に書かれているので，LaTeXの文書を検査するには，LaTeXを読んでtextlintの構文木に変換するプラグインが要る．
+
+`@enunun/textlint-plugin-latex`は，このためのプラグインである．数式の多い日本語の文書を念頭に置き，文の区切りを読者が読むとおりに扱う．ソースは[enunun/textlint-plugin-latex](https://github.com/enunun/textlint-plugin-latex)で公開している．この記事の内容は，v0.1.1に基づく．LaTeXの構文解析には，[latex-utensils](https://github.com/tamuratak/latex-utensils)を使う．
+
+## 既存のプラグインとの違い
+
+LaTeXのためのtextlintのプラグインとしては，[textlint-plugin-latex2e](https://github.com/textlint/textlint-plugin-latex2e)が広く使われている．ただし数学の文書を検査すると，次のような誤検知や見落としが起きる．
+
+- 定義の中の箇条書きが，定義の本文とあわせて1つの長い文になる．`\item`を正しく扱えない不具合として，[issue #84](https://github.com/textlint/textlint-plugin-latex2e/issues/84)に報告されている．
+- 別行立ての数式の前で，段落が切れる．「〜とすると，」で段落が終わったとみなされ，句点の抜けとして報告される．
+- `\emph`の引数や脚注の中身は，検査されない．
+- 数式の環境の中のコメントでは，検査を止められない．
+
+最後のリリースは2023年で，READMEでは2026年9月30日を期限に新しいメンテナを募集している．このプラグインは，構文解析を同じlatex-utensilsに任せ，構文木への変換を一から作り直したものである．
+
+## インストールと設定
+
+textlintとあわせて，npmからインストールする．
+
+```sh
+pnpm add -D textlint @enunun/textlint-plugin-latex
+```
+
+textlintの設定ファイルで，プラグインを有効にする．
+
+```yaml
+plugins:
+  '@enunun/latex': true
+```
+
+自分で定義した命令や環境は，オプションで扱いを指定する．たとえば，用語を太字にして索引に載せる`\term[よみ]{用語}`は，引数を文の一部として検査したい．
+
+```yaml
+plugins:
+  '@enunun/latex':
+    textCommands:
+      - term
+```
+
+## LaTeXの要素の扱い
+
+主な要素は，次のように変換する．
+
+| LaTeXの要素                          | textlintでの扱い                                     |
+| :----------------------------------- | :--------------------------------------------------- |
+| 地の文                               | 段落の中の文字列．空行か`\par`で段落を分ける         |
+| `\chapter`，`\section`などの見出し   | 見出し                                               |
+| `\(...\)`，`$...$`                   | 文中のコード                                         |
+| 別行立ての数式                       | 前後の地の文と同じ段落の中のコード                   |
+| `itemize`，`enumerate`，`description` | 箇条書き．`\item`ごとに項目を分ける                 |
+| `verbatim`，`lstlisting`，`minted`   | コードブロック                                       |
+| 定理や証明などのそのほかの環境       | 環境の区切りで段落を分け，中身を検査する             |
+| `\emph`，`\textbf`などの文字修飾     | 引数を文の一部として検査する                         |
+| `\footnote`                          | 引数を別の段落として検査する                         |
+| `\caption`                           | 引数を見出しとして検査する                           |
+| `\label`，`\index`などの命令         | 検査しない．文の区切りにもしない                     |
+| `\cite`，`\cref`などのそのほかの命令 | 文中のコード                                         |
+| `%`によるコメント                    | 検査しない．文の区切りにもしない                     |
+| `\begin{document}`より前             | 検査しない                                           |
+
+キャプションを見出しとして扱うのは，キャプションに句点を付けない書き方が多いからである．見出しには，文末の句点を求める規則が働かない．
+
+### 数式
+
+行内の数式は，文中のコードになる．コードの値は，見た目の長さが数式とほぼ等しい文字列である．英字と数字はそのまま残し，ほかの記号や命令は1文字の`x`に置き換える．たとえば`\(a, b \in G\)`の値は`axbxG`である．
+
+こうするのは，文の長さを数える規則に，数式を見た目に近い長さで数えさせるためである．LaTeXのソースの長さで数えると，`\paren{a \cdot b}`のような数式が実際より長く数えられる．数式の中のコンマを読点として数えることもなくなる．
+
+別行立ての数式は，前後の地の文と同じ段落の中に置き，値を`x`の1文字にする．地の文から離して組まれるので，文の中では1語として数える．「〜とすると，［数式］である．」は1つの文になり，数式の前で句点が抜けているとは報告されない．
+
+### 行の途中の改行
+
+日本語の文字の間の改行は，LuaLaTeXで組むと何も出力しない．そこで，改行の前後の行は別々の文字列にし，改行と次の行の字下げを空白だけの文字列にする．「次の条件を満たす：」の直後で改行しても，コロンの後ろに空白があるとは報告されない．
+
+行末の`%`は，行をつなぐために使われる．このコメントは，改行ごと検査の対象から外し，文の区切りにもしない．
+
+### textlintへの指示
+
+`%`によるコメントのうち，`textlint-disable`と`textlint-enable`を含むものは，textlintへの指示として残す．範囲を指定して検査を止められる．
+
+```latex
+% textlint-disable
+ここは検査しない．
+% textlint-enable
+```
+
+数式の環境の中に書いた指示も使える．
+
+## オプション
+
+どのオプションも，組み込みの一覧に名前を追加する．
+
+| オプション             | 内容                                                       |
+| :--------------------- | :--------------------------------------------------------- |
+| `textCommands`         | 引数を文の一部として検査する命令                           |
+| `separateTextCommands` | 引数を別の段落として検査する命令                           |
+| `captionCommands`      | 引数を見出しとして検査する命令                             |
+| `ignoreCommands`       | 何も出力しない命令                                         |
+| `blockCommands`        | 段落を区切る命令                                           |
+| `mathEnvironments`     | 別行立ての数式として扱う環境                               |
+| `opaqueEnvironments`   | 中身を検査せず，数式と同じく文の一部として扱う環境         |
+| `ignoreEnvironments`   | 検査もせず，文の一部にもしない環境                         |
+| `listEnvironments`     | 箇条書きとして扱う環境                                     |
+| `commentDirectives`    | textlintへの指示とみなすコメントの目印                     |
+| `extensions`           | `.tex`のほかに扱う拡張子                                   |
+
+たとえば，`bussproofs`パッケージで証明図を組む`prooftree`環境は，組み込みの一覧で`opaqueEnvironments`に入れてある．証明図の中は文章ではないが，証明図の前後の文は1つの文として読まれる．
+
+## 規則の設定
+
+箇条書きは別の段落になる．そのため，「以下の条件を満たす：」のように箇条書きの前の段落が「：」で終わると，文末の句点を求める規則が報告する．これは数学の文書でよく使う書き方である．[textlint-rule-preset-ja-technical-writing](https://github.com/textlint-ja/textlint-rule-preset-ja-technical-writing)の規則`ja-no-mixed-period`では，`allowPeriodMarks`に「：」を加えて許すとよい．
+
+```yaml
+rules:
+  preset-ja-technical-writing:
+    ja-no-mixed-period:
+      periodMark: '．'
+      allowPeriodMarks:
+        - '：'
+```
+
+`\emph`の引数は強調として変換する．規則によっては強調の中を引用とみなして検査しないので，Markdownの強調と同じ扱いになる．
+
+## 既存のプラグインとの比較
+
+作者の著書『0から始める数理論理学入門』の本文の8ファイル(約8100行)を，同じ規則で検査して比べた．規則はtextlint-rule-preset-ja-technical-writingなどである．
+
+| 規則                     | textlint-plugin-latex2e | このプラグイン |
+| :----------------------- | ----------------------: | -------------: |
+| 全体                     |                   780件 |          361件 |
+| `sentence-length`        |                   209件 |            8件 |
+| `ja-no-mixed-period`     |                   328件 |           96件 |
+| `no-doubled-conjunction` |                    10件 |           16件 |
+
+文の長さの指摘は，箇条書きを1つの文とみなしていた誤検知がなくなって大きく減った．句点の抜けの指摘の多くは，箇条書きの前の「：」である．上の規則の設定を加えると，96件は9件になる．
+
+同じ接続詞の連続の指摘が増えたのは，見落としがなくなったからである．textlintの文の分割は，段落の文字列を先頭から読み，構文木のどの要素にも属さない文字に出会うとそこで終わる．このプラグインは段落の中の要素がすきまなく段落を覆うように変換するので，段落の最後まで文に分けられる．
+
+## テストとリリース
+
+仕様の項目ごとに単体テストを書いており，組み込みの命令と環境の一覧はすべての項目をテストする．変換結果を得るたびに，位置情報が元の文書と一致することや，段落の中の要素がすきまなく段落を覆うことも確かめる．ソースの行，分岐，関数の網羅率は，どれも100%でなければテストが失敗する．
+
+npmへの公開は，GitHub Actionsから行う．タグをpushすると，検査のうえで公開し，GitHubのリリースを作る．公開した版には，どのコミットから作られたかを示す来歴(provenance)の署名が付く．
+
+LaTeXで数学書を書くためのテンプレートでも，このプラグインで原稿を校正している．
+
+<LinkCard title="latex-book-template" description="LuaLaTeXで日本語の数学書を書くためのテンプレートリポジトリ" href="../latex-book-template/" />
