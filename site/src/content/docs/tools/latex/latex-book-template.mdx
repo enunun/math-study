@@ -1,0 +1,126 @@
+---
+title: latex-book-template
+description: LuaLaTeXで日本語の数学書を書くためのGitHubのテンプレートリポジトリである．TeX Liveの公式イメージの開発用コンテナで，整形，校正，時代遅れの命令の検査とビルドまでをまとめて行う．
+date: 2026-10-21
+---
+
+import { Aside, LinkCard } from '@astrojs/starlight/components';
+
+<Aside title="この記事について">
+
+このページは，作者が公開したテンプレートリポジトリ[enunun/latex-book-template](https://github.com/enunun/latex-book-template)の紹介を，Claude Codeがまとめたものである．テンプレート自体も，Claude Codeとの対話で作った．
+
+</Aside>
+
+`latex-book-template`は，LuaLaTeXで日本語の数学書を書くためのテンプレートリポジトリである．文書クラスは`ltjsbook`で，A5判の本を作る．定理環境や索引のように，数学書に必要で本の中身によらない部分をあらかじめ用意してある．原稿の整形，文章の校正，時代遅れの命令の検査，PDFのビルドは，どれも開発用コンテナの中のコマンド1つで動く．
+
+## 新しい本の始め方
+
+GitHubのリポジトリの画面で「Use this template」を押し，新しい本のリポジトリを作る．その後の手順は次のとおりである．
+
+1. `PROJECT_NAME`という文字列を，プロジェクト名に置き換える．対象は`devcontainer.json`，`compose.yml`，`CLAUDE.md`の3つである．
+2. `src/main.tex`の冒頭にある書誌情報を書き換える．
+3. VSCodeで「Reopen in Container」を実行する．初回は依存パッケージのインストールとGitのフックの設定が走る．
+4. 依存パッケージのlockファイルをコミットする．テンプレートの`.gitignore`は`pnpm-lock.yaml`を除外しているので，その行を消し，`pnpm install`で作ったファイルをコミットする．
+5. `src/contents/chapter01.tex`を見本にして章のファイルを作り，`src/main.tex`から`\include`する．
+
+書誌情報は，書名や著者名，発行日などを表すマクロである．表紙，奥付，PDFのメタデータはどれもこのマクロから作るので，書き換えるのは1か所で済む．
+
+```latex
+\newcommand{\booktitle}{書名}
+\newcommand{\bookedition}{初版}
+\newcommand{\bookauthor}{著者名}
+\newcommand{\bookdate}{2026年12月31日}
+```
+
+## 開発用コンテナ
+
+開発用コンテナは，TeX Liveの公式イメージ`texlive/texlive:latest`をもとにしている．このイメージは，その年のTeX Liveをすべて含む．タスクの実行に使う[mise](https://mise.jdx.dev/)も，公式イメージから実行ファイルだけを取り込む．
+
+公式イメージを使う理由の1つは，latexindentがそのまま動くことにある．latexindentはPerlで書かれた整形ツールであり，いくつかのPerlモジュールを必要とする．公式イメージにはそれらが含まれているので，追加のインストールは要らない．
+
+TeX Liveの年度を固定したいときは，`Dockerfile`の`FROM`を`texlive/texlive:TL2025-historic`のようなタグにする．
+
+## 原稿の構成
+
+原稿は`src/`の下に置く．プリアンブルは役割ごとにファイルを分けてあり，本文は1章を1ファイルにする．
+
+| ファイル                    | 内容                                                       |
+| :-------------------------- | :--------------------------------------------------------- |
+| `main.tex`                  | 書誌情報と章の読み込み順                                   |
+| `preamble/packages.tex`     | パッケージの読み込み                                       |
+| `preamble/fonts.tex`        | 欧文，数式，和文のフォント                                 |
+| `preamble/layout.tex`       | 見出し，式番号，キャプションの体裁                         |
+| `preamble/theorems.tex`     | 定理環境                                                   |
+| `preamble/macros.tex`       | 括弧類や冪集合などの汎用の数式マクロ                       |
+| `preamble/index.tex`        | 記号索引と用語索引                                         |
+| `preamble/references.tex`   | ハイパーリンク，相互参照，参考文献                         |
+| `contents/`                 | 本文の章．`intro.tex`は前付け，`answer.tex`は演習の解答    |
+| `colophon.tex`              | 奥付                                                       |
+| `reference/book.bib`        | 参考文献のデータベース                                     |
+
+フォントは，欧文と数式がXITS，和文が原ノ味フォントである．数の集合は，numbersetsパッケージのコマンドで書く．
+
+<LinkCard title="numbersetsパッケージ" description="数の集合を意味を表すコマンドで書くためのLaTeXパッケージ" href="../numbersets/" />
+
+## 数学書のための設定
+
+定理環境として，定義(`Def`)，定理(`Thm`)，補題(`Lemma`)，系(`Corollary`)，例(`Ex`)，注意(`Note`)，演習(`Que`)を用意してある．演習以外は，節ごとに共通の番号で数える．
+
+相互参照には`cleveref`パッケージを使い，参照先の種類を和文で表示する．`\cref{Def:group}`は「定義1.1」のようになる．ラベルは`環境名:識別子`の形にする約束である．
+
+索引は，記号索引と用語索引の2つを作る．用語を太字にして用語索引に載せるコマンド`\term`も用意してある．任意引数には読みを書き，索引はこの読みの順に並ぶ．
+
+```latex
+\begin{Def} \label[Def]{Def:group}
+	集合\(G\)と写像の組が\term[ぐん]{群}であるとは，以下の条件をすべて満たすことをいう：
+	\begin{enumerate}
+		\item 任意の\(a, b, c \in G\)に対し\(\paren{a \cdot b} \cdot c = a \cdot \paren{b \cdot c}\)である．
+	\end{enumerate}
+\end{Def}
+```
+
+節の見出しには「§」が付き，参照も「§1.1」のように表示される．演習の解答などの後付けでは「§」を付けない．
+
+ビルドには[llmk](https://ctan.org/pkg/llmk)を使う．手順は`src/llmk.toml`にあり，LuaLaTeX，biber，upmendexを決まった順に実行する．
+
+## 整形と検査
+
+原稿の整形と検査は，次のタスクで行う．
+
+| コマンド            | 内容                                                           |
+| :------------------ | :------------------------------------------------------------- |
+| `mise run build`    | 原稿をビルドし，`src/main.pdf`を作る                           |
+| `mise run fmt`      | latexindentで原稿を整形する                                    |
+| `mise run lint`     | 整形の検査と，原稿とMarkdownの文章の校正を行う                 |
+| `mise run lint:nag` | ビルドし，時代遅れの命令や環境があれば失敗する                 |
+| `mise run check`    | 上の検査とビルドをまとめて行う                                 |
+
+コミットするときには，Gitのフックがステージしたファイルを整形し，文章を校正する．VSCodeでは，原稿を保存したときにlatexindentが整形する．
+
+### 文章の校正
+
+原稿の文章は，[textlint](https://textlint.org/)で校正する．句読点を「，」と「．」にそろえる，である調にそろえる，一文を長くしすぎない，といった規則を確かめる．LaTeXの原稿をtextlintで読むには，作者が作ったプラグイン`@enunun/textlint-plugin-latex`を使う．
+
+<LinkCard title="@enunun/textlint-plugin-latex" description="LaTeXの文書をtextlintで校正するためのプラグイン" href="../textlint-plugin-latex/" />
+
+このプラグインは，別行立ての数式を前後の地の文と同じ文の一部として扱う．「〜とすると，［数式］である．」は1つの文になり，数式の前で句点が抜けているとは報告されない．
+
+数学書では，「以下の条件を満たす：」と書いてから箇条書きを続けることが多い．そこで，箇条書きの前の段落は「：」で終わってよいことにしてある．
+
+### 時代遅れの命令の検査
+
+LaTeXには，今では使うべきでない命令や環境が残っている．たとえば`\bf`，`eqnarray`環境，`$$...$$`による別行立ての数式である．テンプレートは[nag](https://ctan.org/pkg/nag)パッケージを読み込み，これらをビルドのログで警告させる．`mise run lint:nag`は，ビルドのログにnagの警告があれば失敗する．
+
+```text
+Package nag Warning: Command \bf is an old LaTeX 2.09 command.
+(nag)                Use \bfseries or \textbf instead
+Package nag Warning: Environment eqnarray is obsolete.
+(nag)                Use amsmath's align instead
+```
+
+## GitHub Actionsでのビルド
+
+GitHub Actionsのワークフロー`build.yml`は，Actionsの画面から手動で実行する．開発用コンテナと同じイメージを使い，整形とnagを検査してからPDFを作る．タグを指定して実行すると，そのタグのリリースにPDFを添付する．
+
+テンプレートのままでは，Actionsで文章の校正は行わない．校正に使うパッケージの版を固定するlockファイルが，テンプレートにないからである．lockファイルをコミットしたら，`build.yml`の検査を`mise run check`に置き換えるとよい．
